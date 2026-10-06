@@ -1,0 +1,109 @@
+source = "state.paths"
+
+[[constraints]]
+id = "keypath_select"
+kind = "invariant"
+expr = "select(state, [keypath k1, keypath k2]) equals state[k1][k2], and undefined when any step is absent"
+traces_to = "[[state.paths]]"
+
+[[constraints]]
+id = "immutable_update"
+kind = "invariant"
+expr = "set, update and delete never mutate their input and return a new root"
+traces_to = "[[state.paths]]"
+
+[[constraints]]
+id = "structural_sharing"
+kind = "invariant"
+expr = "branches not on the updated path keep reference equality"
+traces_to = "[[state.paths]]"
+
+[[constraints]]
+id = "nth_navigator"
+kind = "invariant"
+expr = "nth(i) selects element i of a sequence, and on a map seq-nth(i) selects the i-th entry as a pair that keeps its map shape when written back"
+traces_to = "[[state.paths]]"
+
+[[constraints]]
+id = "entry_key_value"
+kind = "invariant"
+expr = "within a map entry pair, nth(0) addresses the key and nth(1) addresses the value"
+traces_to = "[[state.paths]]"
+
+[[constraints]]
+id = "filter_selects_subseq"
+kind = "invariant"
+expr = "filter(pred) selects the sub-sequence of matching elements, where a keyword predicate means truthiness of that field"
+traces_to = "[[state.paths]]"
+
+[[constraints]]
+id = "filter_merges_back"
+kind = "invariant"
+expr = "updating through filter(pred) rewrites matching elements in their original positions and leaves non-matching elements untouched"
+traces_to = "[[state.paths]]"
+
+[[constraints]]
+id = "filter_delete_removes"
+kind = "invariant"
+expr = "deleting an element through filter(pred) removes exactly that element from the underlying sequence"
+traces_to = "[[state.paths]]"
+
+[[constraints]]
+id = "take_drop_ranges"
+kind = "invariant"
+expr = "take(n) addresses the prefix of length min(n, count) and drop(n) the suffix from n, both writable"
+traces_to = "[[state.paths]]"
+
+[[constraints]]
+id = "nil_to_val"
+kind = "invariant"
+expr = "nilToVal(v) reads nil as v and writes through unchanged otherwise"
+traces_to = "[[state.paths]]"
+
+[[constraints]]
+id = "keypath_list"
+kind = "invariant"
+expr = "keypathList(ks) behaves like nested keypath steps, as get-in does"
+traces_to = "[[state.paths]]"
+
+[[constraints]]
+id = "collect_one"
+kind = "invariant"
+expr = "collectOne(path) prepends the value at path to the arguments of the update function, and several collectOne steps preserve their order"
+traces_to = "[[state.paths]]"
+
+[[constraints]]
+id = "nested_paths_flatten"
+kind = "invariant"
+expr = "a path containing nested path arrays behaves as their concatenation"
+traces_to = "[[state.paths]]"
+
+[[constraints]]
+id = "rest_args_map"
+kind = "invariant"
+expr = "restArgsMap views a flat key-value list as a map and writes back as a flat list"
+traces_to = "[[state.paths]]"
+
+[[constraints]]
+id = "delete_removes"
+kind = "invariant"
+expr = "deleting at a map key removes the key and at a sequence index splices the element"
+traces_to = "[[state.paths]]"
+
+[[constraints]]
+id = "special_navigators"
+kind = "invariant"
+expr = "ALL visits every element, FIRST and LAST address the ends, MAP_VALS visits map values, END addresses the insertion point after the last element, META addresses metadata"
+traces_to = "[[state.paths]]"
+
+[[constraints]]
+id = "path_serialisable"
+kind = "invariant"
+expr = "a path is a plain array, and JSON-serialisable except for navigators that hold a function, namely filter with a function predicate"
+traces_to = "[[state.paths]]"
+
+[[constraints]]
+id = "unknown_navigator_throws"
+kind = "invariant"
+expr = "an unrecognised navigator name raises an error naming it"
+traces_to = "[[state.paths]]"

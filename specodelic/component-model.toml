@@ -1,0 +1,103 @@
+source = "component.model"
+
+[[constraints]]
+id = "single_map_arg"
+kind = "invariant"
+expr = "a component declaration has exactly one parameter, either a symbol or a map pattern, and anything else is rejected at definition time"
+traces_to = "[[component.model]]"
+
+[[constraints]]
+id = "prop_has_path"
+kind = "invariant"
+expr = "for every declared prop p the component receives both p and dollar p"
+traces_to = "[[component.model]]"
+
+[[constraints]]
+id = "path_resolves"
+kind = "invariant"
+expr = "select(state, dollar p) deep-equals p at render time"
+traces_to = "[[component.model]]"
+
+[[constraints]]
+id = "implicit_extra_context"
+kind = "invariant"
+expr = "every component also receives extra and context with their paths, even when not declared"
+traces_to = "[[component.model]]"
+
+[[constraints]]
+id = "defaults_applied"
+kind = "invariant"
+expr = "when a prop is absent or nil and a default is declared the default is the value, and the path carries a nilToVal step"
+traces_to = "[[component.model]]"
+
+[[constraints]]
+id = "contextual_source"
+kind = "invariant"
+expr = "a contextual prop reads its value from context[p] and its path is the context path plus keypath p, and the call site cannot override it"
+traces_to = "[[component.model]]"
+
+[[constraints]]
+id = "as_binding_whole_map"
+kind = "invariant"
+expr = "an as name is bound to the complete props map including filled-in defaults"
+traces_to = "[[component.model]]"
+
+[[constraints]]
+id = "literal_call_paths"
+kind = "invariant"
+expr = "when called with a literal map, each key's path is the path expression written for it, and an explicit dollar key in the map wins"
+traces_to = "[[component.model]]"
+
+[[constraints]]
+id = "nonliteral_call_fill"
+kind = "invariant"
+expr = "when called with a non-literal map value m, each missing dollar key is filled from m when m contains the key and from the call site extra otherwise"
+traces_to = "[[component.model]]"
+
+[[constraints]]
+id = "nonliteral_missing_vals"
+kind = "invariant"
+expr = "for a non-literal call, missing values are filled from extra, then from the default, and contextual values from context"
+traces_to = "[[component.model]]"
+
+[[constraints]]
+id = "call_site_identity"
+kind = "invariant"
+expr = "the extra of a child is addressed by a key derived from the sorted explicit prop paths, so the same call site keeps the same extra across renders and different call sites get different extra"
+traces_to = "[[component.model]]"
+
+[[constraints]]
+id = "render_pure"
+kind = "invariant"
+expr = "render depends only on props, path values, extra and context"
+traces_to = "[[component.model]]"
+
+[[constraints]]
+id = "render_cached"
+kind = "advisory"
+expr = "an equal props map yields a cached render keyed by component name plus props, and the cache is reset when any component is redefined"
+traces_to = "[[component.model]]"
+
+[[constraints]]
+id = "event_forwarding"
+kind = "invariant"
+expr = "a component forwards pointer, key, key-event and global-move events to its rendered view, and answers the has-* queries from it"
+traces_to = "[[component.model]]"
+
+[[constraints]]
+id = "clipboard_forwarding"
+kind = "advisory"
+expr = "the original leaves clipboard events unforwarded by default and the port forwards them so that textarea copy and paste work"
+traces_to = "[[component.model]]"
+
+[[constraints]]
+id = "sizing_props"
+kind = "invariant"
+expr = "a component declaring width or height as props supports setWidth and setHeight by assoc, and stretch flags are read from its stretch props"
+traces_to = "[[component.model]]"
+
+[[constraints]]
+id = "recursive_components"
+kind = "invariant"
+expr = "a component may call itself and the derivation treats the recursive call as a component call"
+traces_to = "[[component.model]]"

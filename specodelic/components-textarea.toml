@@ -1,0 +1,133 @@
+source = "components.textarea"
+
+[[constraints]]
+id = "focus_by_path"
+kind = "invariant"
+expr = "a textarea is focused exactly when context focus deep-equals its text path, and request-focus sets focus to that path"
+traces_to = "[[components.textarea]]"
+
+[[constraints]]
+id = "request_focus_on_hit"
+kind = "invariant"
+expr = "a pointer down inside the textarea that yields intents returns request-focus followed by those intents, and a pointer down that yields none returns nothing"
+traces_to = "[[components.textarea]]"
+
+[[constraints]]
+id = "keys_need_focus"
+kind = "invariant"
+expr = "an unfocused textarea returns no effects for key-press or clipboard events"
+traces_to = "[[components.textarea]]"
+
+[[constraints]]
+id = "key_map"
+kind = "invariant"
+expr = "up, down, left, right, enter and backspace map to previous-line, next-line, backward-char, forward-char, insert-newline and delete-backward, any string inserts text, and any other key is ignored"
+traces_to = "[[components.textarea]]"
+
+[[constraints]]
+id = "insert_splice"
+kind = "invariant"
+expr = "inserting s with cursor c and no selection yields text[0..c] + s + text[c..] with cursor c + len(s), and a nil text yields s"
+traces_to = "[[components.textarea]]"
+
+[[constraints]]
+id = "insert_replaces_selection"
+kind = "invariant"
+expr = "with a select cursor the range from min(c, sc) to max(c, sc), clamped to len(text), is replaced by s, the cursor becomes min(c, sc) + len(s), and the selection is cleared"
+traces_to = "[[components.textarea]]"
+
+[[constraints]]
+id = "delete_backward_rule"
+kind = "invariant"
+expr = "with no selection it removes the character before the cursor, where the cursor is first clamped to len(text) and a cursor at 0 removes nothing and with a selection it removes the selected range, and the cursor becomes max(0, min(sc, c) or c - 1) and the selection is cleared"
+traces_to = "[[components.textarea]]"
+
+[[constraints]]
+id = "cursor_clamped"
+kind = "invariant"
+expr = "after any effect 0 <= cursor <= len(text), forward-char gives min(len, c + 1) and backward-char gives max(0, min(len, c) - 1), and both clear the selection"
+traces_to = "[[components.textarea]]"
+
+[[constraints]]
+id = "previous_line_quirk"
+kind = "invariant"
+expr = "previous-line clears the selection and sets the cursor to the index of the last newline at or before c - 1, or to 0 when there is none, which is the newline character itself and not the line start"
+traces_to = "[[components.textarea]]"
+
+[[constraints]]
+id = "next_line_rule"
+kind = "invariant"
+expr = "next-line clears the selection and sets the cursor to one past the next newline at or after c, or to len(text) when there is none"
+traces_to = "[[components.textarea]]"
+
+[[constraints]]
+id = "pointer_down_cursor"
+kind = "invariant"
+expr = "a pointer down moves the cursor to indexForPosition(font, text, x, y), stores mpos and down-pos as the position, and clears the selection"
+traces_to = "[[components.textarea]]"
+
+[[constraints]]
+id = "drag_tracks"
+kind = "invariant"
+expr = "a pointer move while down-pos is set stores mpos, and with no down-pos it returns nothing"
+traces_to = "[[components.textarea]]"
+
+[[constraints]]
+id = "finish_drag_rule"
+kind = "invariant"
+expr = "on pointer up the end index is indexForPosition at the position, the selection start is the index at down-pos when it differs from the end index, plus one when it lies after the end index, and down-pos is cleared"
+traces_to = "[[components.textarea]]"
+
+[[constraints]]
+id = "double_click_word"
+kind = "invariant"
+expr = "a second click within 500 ms and with squared distance under 100 from the last click selects from the whitespace-bounded word start to the next whitespace or the end of text, and every click records the time and position"
+traces_to = "[[components.textarea]]"
+
+[[constraints]]
+id = "clipboard_copy_rule"
+kind = "invariant"
+expr = "copy with focus and a selection returns the clipboard-copy effect with text[min..max] and otherwise returns nothing"
+traces_to = "[[components.textarea]]"
+
+[[constraints]]
+id = "clipboard_cut_rule"
+kind = "invariant"
+expr = "cut with focus and a selection sets the cursor to the range start, clears the selection, sets the text without the range, and returns clipboard-cut with the range and a new-text notification"
+traces_to = "[[components.textarea]]"
+
+[[constraints]]
+id = "clipboard_paste_rule"
+kind = "invariant"
+expr = "paste with focus returns insert-text with the pasted string"
+traces_to = "[[components.textarea]]"
+
+[[constraints]]
+id = "text_state_split"
+kind = "invariant"
+expr = "text and focus are edited in app state while cursor, select-cursor, down-pos, mpos and last-click are edited in the textarea-state extra map"
+traces_to = "[[components.textarea]]"
+
+[[constraints]]
+id = "border_default"
+kind = "invariant"
+expr = "the bordered variant is the default, with padding 5 on x and 2 on y and a 0.65 gray stroke, and the light variant has no border and a 0.97 gray fill"
+traces_to = "[[components.textarea]]"
+
+[[constraints]]
+id = "selection_drawn"
+kind = "invariant"
+expr = "a selection draws a highlight over its range, and a focused textarea draws a translucent gray cursor"
+traces_to = "[[components.textarea]]"
+
+[[constraints]]
+id = "enter_event_bubbles"
+kind = "invariant"
+expr = "the enter key effect is a normal effect so a wrapping handler can replace it, as todo-app does"
+traces_to = "[[components.textarea]]"
+
+[[constraints]]
+id = "ime_compose"
+kind = "advisory"
+expr = "composition input from a mobile keyboard is applied as one insert-text at the end of composition"
+traces_to = "[[components.textarea]]"

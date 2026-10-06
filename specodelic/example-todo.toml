@@ -1,0 +1,133 @@
+source = "example.todo"
+
+[[constraints]]
+id = "delete_x_geometry"
+kind = "invariant"
+expr = "delete-X draws two strokes of width 3 in red [1, 0, 0] from [0, 0] to [10, 10] and from [10, 0] to [0, 10], and has bounds [10, 10]"
+traces_to = "[[example.todo]]"
+
+[[constraints]]
+id = "item_layout"
+kind = "invariant"
+expr = "todo-item is a horizontal layout of the delete X translated by (5, 5), the checkbox translated by (10, 4), a spacer 10 wide, and the textarea"
+traces_to = "[[example.todo]]"
+
+[[constraints]]
+id = "item_bindings"
+kind = "invariant"
+expr = "the checkbox is bound to the complete flag of the todo and the textarea to its description, with paths through the todo path"
+traces_to = "[[example.todo]]"
+
+[[constraints]]
+id = "delete_emits"
+kind = "invariant"
+expr = "a pointer down inside the delete X region returns exactly delete with the todo path"
+traces_to = "[[example.todo]]"
+
+[[constraints]]
+id = "delete_removes_item"
+kind = "invariant"
+expr = "applying delete at a todo path removes exactly that todo from the underlying list, keeping the order of the rest"
+traces_to = "[[example.todo]]"
+
+[[constraints]]
+id = "complete_toggles"
+kind = "invariant"
+expr = "a pointer down on a checkbox toggles the complete flag of that todo only"
+traces_to = "[[example.todo]]"
+
+[[constraints]]
+id = "list_spacing"
+kind = "invariant"
+expr = "todo-list is a vertical layout with a spacer of height 5 interposed between rows"
+traces_to = "[[example.todo]]"
+
+[[constraints]]
+id = "toggle_render"
+kind = "invariant"
+expr = "in toggle the selected option is a plain label and every other option is a clickable label in gray [0.8, 0.8, 0.8] separated by 5 px spacers"
+traces_to = "[[example.todo]]"
+
+[[constraints]]
+id = "toggle_sets_filter"
+kind = "invariant"
+expr = "clicking a non-selected option returns set with the selected path and that option, and the selected option itself handles nothing"
+traces_to = "[[example.todo]]"
+
+[[constraints]]
+id = "filter_default"
+kind = "invariant"
+expr = "selected-filter defaults to the unfiltered option"
+traces_to = "[[example.todo]]"
+
+[[constraints]]
+id = "filter_fns"
+kind = "invariant"
+expr = "unfiltered shows every todo, active shows todos with complete? false and complete shows todos with complete? true"
+traces_to = "[[example.todo]]"
+
+[[constraints]]
+id = "unknown_filter_all"
+kind = "advisory"
+expr = "an unknown filter name shows all todos, whereas the original falls back to a keyword that hides everything"
+traces_to = "[[example.todo]]"
+
+[[constraints]]
+id = "filtered_paths_original"
+kind = "invariant"
+expr = "an item shown at visible index j under a filter has the path todos then filter then seq-nth(j), so select, set, toggle and delete reach the matching original element"
+traces_to = "[[example.todo]]"
+
+[[constraints]]
+id = "add_button"
+kind = "invariant"
+expr = "the Add Todo button returns add-todo with the todos path and the current next-todo-text, then set next-todo-text to the empty string"
+traces_to = "[[example.todo]]"
+
+[[constraints]]
+id = "add_appends"
+kind = "invariant"
+expr = "applying add-todo appends a todo with that description and complete? false to the end of the underlying list"
+traces_to = "[[example.todo]]"
+
+[[constraints]]
+id = "enter_adds"
+kind = "invariant"
+expr = "the Enter key while the new-todo textarea is focused returns the same two effects as the Add Todo button instead of inserting a newline"
+traces_to = "[[example.todo]]"
+
+[[constraints]]
+id = "enter_unfocused_nothing"
+kind = "invariant"
+expr = "the Enter key while the new-todo textarea is not focused returns nothing"
+traces_to = "[[example.todo]]"
+
+[[constraints]]
+id = "other_keys_default"
+kind = "invariant"
+expr = "any key other than Enter returns the textarea's default effects unchanged"
+traces_to = "[[example.todo]]"
+
+[[constraints]]
+id = "new_todo_layout"
+kind = "invariant"
+expr = "the new-todo textarea is translated by (10, 10) beside the Add Todo button, followed by a 10 px spacer, the toggle, a 10 px spacer, and the list"
+traces_to = "[[example.todo]]"
+
+[[constraints]]
+id = "image_render"
+kind = "invariant"
+expr = "the app renders to an image with no window from plain state, as save-image does in the original"
+traces_to = "[[example.todo]]"
+
+[[constraints]]
+id = "backend_portable"
+kind = "invariant"
+expr = "the same todo-app definition runs on the canvas, dom and text-terminal backends without change"
+traces_to = "[[example.todo]]"
+
+[[constraints]]
+id = "todo_touch_targets"
+kind = "invariant"
+expr = "the delete X, checkbox and toggle labels each have a hit area of at least 44 by 44 on touch devices while their drawn size is unchanged"
+traces_to = "[[example.todo]]"

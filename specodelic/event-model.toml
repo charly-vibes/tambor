@@ -1,0 +1,91 @@
+source = "event.model"
+
+[[constraints]]
+id = "hit_half_open"
+kind = "invariant"
+expr = "a node accepts a pointer position only when 0 <= x - originX < width and 0 <= y - originY < height, so the right and bottom edges are exclusive"
+traces_to = "[[event.model]]"
+
+[[constraints]]
+id = "local_pos_passed"
+kind = "invariant"
+expr = "a pointer handler receives the position relative to its own node origin"
+traces_to = "[[event.model]]"
+
+[[constraints]]
+id = "coords_translated"
+kind = "invariant"
+expr = "descending through Translate(x, y) subtracts x and y from the event position"
+traces_to = "[[event.model]]"
+
+[[constraints]]
+id = "pointer_first_match"
+kind = "invariant"
+expr = "for mouse-event, mouse-move, scroll and drop the children are tried in reverse order and the first non-empty intent list wins, and later children are not consulted"
+traces_to = "[[event.model]]"
+
+[[constraints]]
+id = "down_handler_terminal"
+kind = "invariant"
+expr = "an on-mouse-down node calls its handler on a mouse-down inside bounds and does not descend into its children for that event"
+traces_to = "[[event.model]]"
+
+[[constraints]]
+id = "up_handler_descends"
+kind = "invariant"
+expr = "an on-mouse-down node forwards a mouse-up to its children in reverse order, and symmetrically an on-mouse-up node forwards a mouse-down"
+traces_to = "[[event.model]]"
+
+[[constraints]]
+id = "outside_bounds_nil"
+kind = "invariant"
+expr = "a pointer event outside the bounds of a node yields no intents from that node"
+traces_to = "[[event.model]]"
+
+[[constraints]]
+id = "key_concat"
+kind = "invariant"
+expr = "key-press, key-event and clipboard events visit every child in order and concatenate the results"
+traces_to = "[[event.model]]"
+
+[[constraints]]
+id = "global_move_all"
+kind = "invariant"
+expr = "mouse-move-global visits every descendant, passing the position minus each origin, and concatenates the results"
+traces_to = "[[event.model]]"
+
+[[constraints]]
+id = "bubble_after_children"
+kind = "invariant"
+expr = "after the child results are collected the node applies its bubble function once, and the default is identity"
+traces_to = "[[event.model]]"
+
+[[constraints]]
+id = "capability_queries"
+kind = "invariant"
+expr = "has-key-press, has-key-event and has-mouse-move-global are true when the node or any descendant handles that event, so a backend can skip delivery"
+traces_to = "[[event.model]]"
+
+[[constraints]]
+id = "button_fires_on_down"
+kind = "invariant"
+expr = "a ui button returns its on-click result on a mouse-down inside its bounds and nothing on mouse-up"
+traces_to = "[[event.model]]"
+
+[[constraints]]
+id = "event_pure"
+kind = "invariant"
+expr = "dispatching an event never mutates the view tree or state"
+traces_to = "[[event.model]]"
+
+[[constraints]]
+id = "pointer_unified"
+kind = "invariant"
+expr = "mouse, touch and pen input normalise to one pointer shape with position, button, down flag, modifiers and pointerType"
+traces_to = "[[event.model]]"
+
+[[constraints]]
+id = "tap_vs_drag"
+kind = "invariant"
+expr = "a pointer-up within 10 px and 300 ms of its pointer-down is a tap, which emits mouse-down then mouse-up, and anything else is a drag"
+traces_to = "[[event.model]]"

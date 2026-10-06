@@ -1,0 +1,49 @@
+source = "example.file_selector"
+
+[[constraints]]
+id = "row_layout"
+kind = "invariant"
+expr = "item-row is a horizontal layout of a non-interactive checkbox translated by (5, 5), a 5 px spacer and the name label"
+traces_to = "[[example.file_selector]]"
+
+[[constraints]]
+id = "row_default_toggle"
+kind = "invariant"
+expr = "on its own a row pointer down returns the built-in update of its selected? path with logical not"
+traces_to = "[[example.file_selector]]"
+
+[[constraints]]
+id = "set_intercept"
+kind = "invariant"
+expr = "the selector intercepts the built-in update from a row and replaces it with one update of the selected path that removes the name if present and adds it otherwise"
+traces_to = "[[example.file_selector]]"
+
+[[constraints]]
+id = "filter_matches"
+kind = "invariant"
+expr = "an item is shown when its lower-cased name contains the filter text as a substring, so the filter is matched against the lower-cased name as given"
+traces_to = "[[example.file_selector]]"
+
+[[constraints]]
+id = "filter_defaults"
+kind = "invariant"
+expr = "str-filter defaults to the empty string, which shows all items, and selected defaults to the empty set"
+traces_to = "[[example.file_selector]]"
+
+[[constraints]]
+id = "selected_membership"
+kind = "invariant"
+expr = "a row's selected? is whether the name is a member of the selected set"
+traces_to = "[[example.file_selector]]"
+
+[[constraints]]
+id = "selection_persists_under_filter"
+kind = "invariant"
+expr = "changing the filter does not change the selected set"
+traces_to = "[[example.file_selector]]"
+
+[[constraints]]
+id = "result_is_state"
+kind = "invariant"
+expr = "the final selection is read from the state after the app stops, as file-selector does"
+traces_to = "[[example.file_selector]]"

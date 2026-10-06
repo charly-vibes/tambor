@@ -1,0 +1,91 @@
+source = "ui.mobile"
+
+[[constraints]]
+id = "touch_maps_to_pointer"
+kind = "invariant"
+expr = "touchstart, touchmove and touchend map to mouse-down, mouse-move and mouse-up at the touch point, so every existing handler works unchanged"
+traces_to = "[[ui.mobile]]"
+
+[[constraints]]
+id = "hit_slop"
+kind = "invariant"
+expr = "a hit target smaller than 44 by 44 receives pointer events inside a 44 by 44 region centred on it, without changing its drawn size or its layout bounds"
+traces_to = "[[ui.mobile]]"
+
+[[constraints]]
+id = "slop_resolves_overlap"
+kind = "invariant"
+expr = "when slop regions of neighbouring targets overlap, the target whose centre is nearest to the touch point wins"
+traces_to = "[[ui.mobile]]"
+
+[[constraints]]
+id = "viewport_responsive"
+kind = "invariant"
+expr = "the root view is built from container size and reflows on any width from 320 px up"
+traces_to = "[[ui.mobile]]"
+
+[[constraints]]
+id = "no_horizontal_overflow"
+kind = "invariant"
+expr = "at 320 px width no content is wider than the viewport unless inside a horizontal scrollview"
+traces_to = "[[ui.mobile]]"
+
+[[constraints]]
+id = "thumb_zone_actions"
+kind = "advisory"
+expr = "primary actions sit in the bottom third of the screen"
+traces_to = "[[ui.mobile]]"
+
+[[constraints]]
+id = "gesture_set"
+kind = "invariant"
+expr = "supported gestures are tap, long-press, drag, flick and pinch, and each maps to a named intent"
+traces_to = "[[ui.mobile]]"
+
+[[constraints]]
+id = "soft_keyboard_bridge"
+kind = "invariant"
+expr = "focusing a textarea focuses a hidden input so the OS keyboard opens, and its input, backspace, enter and composition events become key-press events"
+traces_to = "[[ui.mobile]]"
+
+[[constraints]]
+id = "keyboard_avoidance"
+kind = "invariant"
+expr = "when the soft keyboard opens, the focused textarea is scrolled into the visible viewport"
+traces_to = "[[ui.mobile]]"
+
+[[constraints]]
+id = "selection_handles"
+kind = "advisory"
+expr = "on touch, a long-press on text selects a word and shows draggable selection handles that feed the drag-selection path"
+traces_to = "[[ui.mobile]]"
+
+[[constraints]]
+id = "orientation_supported"
+kind = "invariant"
+expr = "rotating the device relayouts without losing state"
+traces_to = "[[ui.mobile]]"
+
+[[constraints]]
+id = "reduced_motion"
+kind = "invariant"
+expr = "with prefers-reduced-motion set, momentum and transitions are disabled"
+traces_to = "[[ui.mobile]]"
+
+[[constraints]]
+id = "theme_aware"
+kind = "invariant"
+expr = "colors follow prefers-color-scheme, with explicit tokens for both themes"
+traces_to = "[[ui.mobile]]"
+
+[[constraints]]
+id = "haptics_optional"
+kind = "advisory"
+expr = "a short vibration on button taps where navigator.vibrate exists"
+traces_to = "[[ui.mobile]]"
+
+[[constraints]]
+id = "hover_off_on_touch"
+kind = "invariant"
+expr = "touch input never sets a hover flag and the hover visual is not shown"
+traces_to = "[[ui.mobile]]"

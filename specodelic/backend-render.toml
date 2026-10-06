@@ -1,0 +1,103 @@
+source = "backend.render"
+
+[[constraints]]
+id = "backend_contract"
+kind = "extension_point"
+expr = "a backend implements draw(view), measureText(text, font), indexForPosition(font, text, x, y), copyToClipboard(s), and an input subscription"
+traces_to = "[[backend.render]]"
+
+[[constraints]]
+id = "primitive_set"
+kind = "invariant"
+expr = "every backend draws label, text-selection, text-cursor, image, rectangle and rounded rectangle in stroke or fill, path, arc, translate, rotate, scale, color, style, stroke width and scissor, and unknown node types fall back to drawing their children"
+traces_to = "[[backend.render]]"
+
+[[constraints]]
+id = "draw_deterministic"
+kind = "invariant"
+expr = "drawing the same view twice yields identical output"
+traces_to = "[[backend.render]]"
+
+[[constraints]]
+id = "transform_stack_balanced"
+kind = "invariant"
+expr = "every push of a transform, clip or style is popped by the end of draw"
+traces_to = "[[backend.render]]"
+
+[[constraints]]
+id = "index_for_position_inverse"
+kind = "invariant"
+expr = "indexForPosition returns an index in 0..len(text) that is monotone in x on a single line, and positions left of the first glyph give 0 and beyond the last give len"
+traces_to = "[[backend.render]]"
+
+[[constraints]]
+id = "clipboard_service"
+kind = "invariant"
+expr = "copyToClipboard writes to the system clipboard where permitted, and paste events arrive as clipboard-paste events carrying the string"
+traces_to = "[[backend.render]]"
+
+[[constraints]]
+id = "headless_render"
+kind = "invariant"
+expr = "a view can be rendered to an image buffer with no window and no mounted DOM"
+traces_to = "[[backend.render]]"
+
+[[constraints]]
+id = "dpr_scaled"
+kind = "invariant"
+expr = "the canvas backing store is scaled by devicePixelRatio and CSS size is unchanged"
+traces_to = "[[backend.render]]"
+
+[[constraints]]
+id = "resize_redraws"
+kind = "invariant"
+expr = "a viewport or orientation change relayouts and redraws, passing the new container size to the app"
+traces_to = "[[backend.render]]"
+
+[[constraints]]
+id = "input_forwarded"
+kind = "invariant"
+expr = "raw pointer, wheel, key and clipboard events are normalised and forwarded with coordinates in view space"
+traces_to = "[[backend.render]]"
+
+[[constraints]]
+id = "key_normalisation"
+kind = "invariant"
+expr = "printable keys become one-character strings and Enter, Backspace and the four arrows become the named keys enter, backspace, up, down, left and right, and modifier keys alone produce nothing"
+traces_to = "[[backend.render]]"
+
+[[constraints]]
+id = "touch_action_none"
+kind = "invariant"
+expr = "the canvas disables browser panning and zoom so the router owns touch"
+traces_to = "[[backend.render]]"
+
+[[constraints]]
+id = "raf_coalesced"
+kind = "invariant"
+expr = "multiple repaint requests in one frame produce one draw"
+traces_to = "[[backend.render]]"
+
+[[constraints]]
+id = "backends_swappable"
+kind = "invariant"
+expr = "the same app view function and state run on every backend with no code change, and only measureText and drawing differ"
+traces_to = "[[backend.render]]"
+
+[[constraints]]
+id = "text_backend_metrics"
+kind = "advisory"
+expr = "the text backend treats one cell as one unit of width and height, and apps are laid out in those units"
+traces_to = "[[backend.render]]"
+
+[[constraints]]
+id = "a11y_mirror"
+kind = "advisory"
+expr = "the canvas backend keeps an offscreen accessibility tree mirroring interactive nodes"
+traces_to = "[[backend.render]]"
+
+[[constraints]]
+id = "safe_area_respected"
+kind = "invariant"
+expr = "root content is inset by the safe-area insets on notched devices"
+traces_to = "[[backend.render]]"

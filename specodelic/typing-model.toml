@@ -1,0 +1,127 @@
+source = "typing.model"
+
+[[constraints]]
+id = "strict_compiler"
+kind = "invariant"
+expr = "the library compiles under strict, noUncheckedIndexedAccess, exactOptionalPropertyTypes and noImplicitOverride with zero errors"
+traces_to = "[[typing.model]]"
+
+[[constraints]]
+id = "no_any_public"
+kind = "invariant"
+expr = "no exported signature contains any, and unknown is used where a type is genuinely open"
+traces_to = "[[typing.model]]"
+
+[[constraints]]
+id = "core_without_dom"
+kind = "invariant"
+expr = "the core package compiles with lib limited to ES2022 and no dom, so any DOM reference in core is a compile error"
+traces_to = "[[typing.model]]"
+
+[[constraints]]
+id = "node_union"
+kind = "invariant"
+expr = "every view node is a member of a discriminated union keyed by a type field, and a switch over it without a default fails to compile when a case is missing"
+traces_to = "[[typing.model]]"
+
+[[constraints]]
+id = "readonly_nodes"
+kind = "invariant"
+expr = "node and effect types are deeply readonly so assigning to a field is a compile error"
+traces_to = "[[typing.model]]"
+
+[[constraints]]
+id = "vec_tuples"
+kind = "invariant"
+expr = "positions and sizes are readonly two-element tuples and a three-element or array argument is a compile error"
+traces_to = "[[typing.model]]"
+
+[[constraints]]
+id = "typed_path"
+kind = "invariant"
+expr = "Path<S, T> is a lens from S to T, so select returns T, set requires a T, and composing Path<S, A> with Path<A, B> yields Path<S, B>"
+traces_to = "[[typing.model]]"
+
+[[constraints]]
+id = "path_mismatch_rejected"
+kind = "invariant"
+expr = "setting a string through a Path<S, number> is a compile error"
+traces_to = "[[typing.model]]"
+
+[[constraints]]
+id = "navigator_types"
+kind = "invariant"
+expr = "key narrows to the property type, nth to the element type, filter and take and drop keep the array type, nilToVal removes undefined, and collectOne prepends the collected type to the update function parameters"
+traces_to = "[[typing.model]]"
+
+[[constraints]]
+id = "dollar_keys_derived"
+kind = "invariant"
+expr = "the props type of a component maps each key k to k and to a dollar-k of type Path<Root, P[k]> using key remapping, so a missing or mistyped dollar prop fails to compile"
+traces_to = "[[typing.model]]"
+
+[[constraints]]
+id = "defaults_typed"
+kind = "invariant"
+expr = "a declared default makes the prop optional at the call site and non-optional inside the component body"
+traces_to = "[[typing.model]]"
+
+[[constraints]]
+id = "context_augmentable"
+kind = "invariant"
+expr = "the context type is an interface that applications extend by declaration merging, with focus as a built-in member"
+traces_to = "[[typing.model]]"
+
+[[constraints]]
+id = "effect_union"
+kind = "invariant"
+expr = "Effect is a discriminated tuple union whose built-ins update, set, get and delete carry typed paths, and applications register custom effects by extending an EffectMap interface"
+traces_to = "[[typing.model]]"
+
+[[constraints]]
+id = "dispatch_checked"
+kind = "invariant"
+expr = "dispatch accepts only members of the Effect union and rejects an unregistered effect type or wrong argument types at compile time"
+traces_to = "[[typing.model]]"
+
+[[constraints]]
+id = "handler_signatures"
+kind = "invariant"
+expr = "each event handler type has a fixed signature, for example a mouse-down handler takes a Vec2 and returns readonly Effect[], and a wrap-on handler receives the typed default handler first"
+traces_to = "[[typing.model]]"
+
+[[constraints]]
+id = "intercept_typed"
+kind = "invariant"
+expr = "on(type, fn) infers the parameters of fn from the registered effect type so the argument types are checked"
+traces_to = "[[typing.model]]"
+
+[[constraints]]
+id = "component_generic"
+kind = "invariant"
+expr = "defui infers the props type from the render function and calling a component with a missing required prop or an extra unknown prop fails to compile"
+traces_to = "[[typing.model]]"
+
+[[constraints]]
+id = "types_erased"
+kind = "invariant"
+expr = "removing all type annotations leaves behaviour unchanged, so no runtime check depends on a type"
+traces_to = "[[typing.model]]"
+
+[[constraints]]
+id = "type_tests_in_ci"
+kind = "invariant"
+expr = "type-level tests using expectTypeOf and ts-expect-error pins run in CI and fail the build on regression"
+traces_to = "[[typing.model]]"
+
+[[constraints]]
+id = "esm_with_declarations"
+kind = "invariant"
+expr = "the package ships ES modules with bundled declaration files and an exports map, with side-effect-free modules so unused components tree-shake"
+traces_to = "[[typing.model]]"
+
+[[constraints]]
+id = "serialisable_effects"
+kind = "invariant"
+expr = "effect arguments other than update functions and filter predicates are JSON-serialisable values, and the type system marks function-bearing effects"
+traces_to = "[[typing.model]]"

@@ -1,0 +1,61 @@
+source = "components.select"
+
+[[constraints]]
+id = "header_toggles"
+kind = "invariant"
+expr = "a pointer down on the header returns the effect that updates open? with logical not"
+traces_to = "[[components.select]]"
+
+[[constraints]]
+id = "header_label"
+kind = "invariant"
+expr = "the header shows the label of the first option whose value equals selected, and a gray no selection text when none matches or selected is nil"
+traces_to = "[[components.select]]"
+
+[[constraints]]
+id = "list_when_open"
+kind = "invariant"
+expr = "the list is part of the view only when open? is true"
+traces_to = "[[components.select]]"
+
+[[constraints]]
+id = "row_select_effect"
+kind = "invariant"
+expr = "a pointer down on a row returns select with the selected path and the row value"
+traces_to = "[[components.select]]"
+
+[[constraints]]
+id = "select_closes"
+kind = "invariant"
+expr = "the dropdown rewrites a select intent into select followed by the effect that sets open? to false"
+traces_to = "[[components.select]]"
+
+[[constraints]]
+id = "select_sets_value"
+kind = "invariant"
+expr = "the select effect sets the selected path to the value"
+traces_to = "[[components.select]]"
+
+[[constraints]]
+id = "row_visuals"
+kind = "invariant"
+expr = "the selected row has a blue fill [0, 0.48, 1] with a white label and a hovered row has a light gray fill [0.976, 0.976, 0.976]"
+traces_to = "[[components.select]]"
+
+[[constraints]]
+id = "list_geometry"
+kind = "invariant"
+expr = "the row width is the widest label plus 24, a row is label height plus 4 tall, and the box has 8 padding on y and rounded corners of 4"
+traces_to = "[[components.select]]"
+
+[[constraints]]
+id = "row_hover_keyed"
+kind = "invariant"
+expr = "row hover flags are stored in extra under a key made of the hover marker and the row value, so rows hover independently"
+traces_to = "[[components.select]]"
+
+[[constraints]]
+id = "touch_rows"
+kind = "invariant"
+expr = "rows are at least 44 px tall on touch devices"
+traces_to = "[[components.select]]"

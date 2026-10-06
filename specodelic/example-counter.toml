@@ -1,0 +1,55 @@
+source = "example.counter"
+
+[[constraints]]
+id = "counter_layout"
+kind = "invariant"
+expr = "the counter is a horizontal layout of the more button then the label, in that order"
+traces_to = "[[example.counter]]"
+
+[[constraints]]
+id = "more_emits_increment"
+kind = "invariant"
+expr = "a pointer down inside the more button returns exactly one effect, counter-increment with the num path"
+traces_to = "[[example.counter]]"
+
+[[constraints]]
+id = "increment_applies"
+kind = "invariant"
+expr = "applying counter-increment adds 1 to the number at the path and changes nothing else"
+traces_to = "[[example.counter]]"
+
+[[constraints]]
+id = "stack_layout"
+kind = "invariant"
+expr = "counter-counter is a vertical layout of the Add Counter button then one counter per entry of nums, in order"
+traces_to = "[[example.counter]]"
+
+[[constraints]]
+id = "independent_counters"
+kind = "invariant"
+expr = "a counter at index i has the path nums then seq-nth(i), so pressing it changes only entry i"
+traces_to = "[[example.counter]]"
+
+[[constraints]]
+id = "add_appends_zero"
+kind = "invariant"
+expr = "pressing Add Counter returns add-counter with the nums path, and applying it appends 0"
+traces_to = "[[example.counter]]"
+
+[[constraints]]
+id = "label_shows_number"
+kind = "invariant"
+expr = "the label text is the decimal string of num"
+traces_to = "[[example.counter]]"
+
+[[constraints]]
+id = "raw_mode_supported"
+kind = "invariant"
+expr = "a handler that mutates external state and returns nil is allowed in raw mode and triggers a repaint"
+traces_to = "[[example.counter]]"
+
+[[constraints]]
+id = "counter_touch_target"
+kind = "invariant"
+expr = "the more button has a hit area of at least 44 by 44 on touch devices"
+traces_to = "[[example.counter]]"

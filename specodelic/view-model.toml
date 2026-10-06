@@ -1,0 +1,73 @@
+source = "view.model"
+
+[[constraints]]
+id = "immutable_nodes"
+kind = "invariant"
+expr = "nodes are frozen after construction and typed readonly; updates return new nodes"
+traces_to = "[[view.model]]"
+
+[[constraints]]
+id = "bounds_total"
+kind = "invariant"
+expr = "bounds(node) returns [w, h] with w and h finite and at least 0 for every node type, and nil has bounds [0, 0]"
+traces_to = "[[view.model]]"
+
+[[constraints]]
+id = "container_bounds_max"
+kind = "invariant"
+expr = "a container with no explicit size has bounds equal to the max over children of origin plus size, starting from [0, 0]"
+traces_to = "[[view.model]]"
+
+[[constraints]]
+id = "translate_origin"
+kind = "invariant"
+expr = "Translate(x, y, d) has origin [x, y] and bounds equal to the child bounds, so the offset shows up as origin and not as size"
+traces_to = "[[view.model]]"
+
+[[constraints]]
+id = "origin_default"
+kind = "invariant"
+expr = "origin(node) is [0, 0] for every node except Translate and other explicitly offset types"
+traces_to = "[[view.model]]"
+
+[[constraints]]
+id = "group_is_node"
+kind = "invariant"
+expr = "a vector or list of nodes behaves as a group node whose children are its elements, and nil behaves as an empty node"
+traces_to = "[[view.model]]"
+
+[[constraints]]
+id = "make_node_roundtrip"
+kind = "invariant"
+expr = "makeNode(node, children(node)) deep-equals node"
+traces_to = "[[view.model]]"
+
+[[constraints]]
+id = "text_measure_injected"
+kind = "invariant"
+expr = "label size comes from an injected measure function so bounds work headless and per backend"
+traces_to = "[[view.model]]"
+
+[[constraints]]
+id = "button_bounds"
+kind = "invariant"
+expr = "button bounds equal label bounds plus 12 on each axis"
+traces_to = "[[view.model]]"
+
+[[constraints]]
+id = "set_size_single_child"
+kind = "invariant"
+expr = "setWidth and setHeight on a handler wrapper succeed only when it has exactly one child and otherwise throw"
+traces_to = "[[view.model]]"
+
+[[constraints]]
+id = "checkbox_geometry"
+kind = "invariant"
+expr = "the ui checkbox is a 12 by 12 rounded square with radius 2, gray stroke when unchecked, and when checked a blue fill and border [0.2, 0.56, 0.99] with a white check path through [2, 6], [5, 9], [10, 2]"
+traces_to = "[[view.model]]"
+
+[[constraints]]
+id = "style_wrappers_transparent"
+kind = "invariant"
+expr = "WithColor, WithStyle and WithStrokeWidth do not change bounds of their children"
+traces_to = "[[view.model]]"

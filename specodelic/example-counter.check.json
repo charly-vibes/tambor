@@ -1,0 +1,13 @@
+{
+  "backend": {
+    "engine": "stateright",
+    "version": "0.31.0"
+  },
+  "bound": {
+    "max_depth": 100
+  },
+  "outcome": "exploration_only",
+  "invariants_checked": [],
+  "artifact_sha256": "3dc2b24a4ed94f90b2e4a1b2054f3ddf4092300f15da0ec7b635035d24e03d71",
+  "states_explored": 2
+}

@@ -1,0 +1,61 @@
+source = "event.bubble"
+
+[[constraints]]
+id = "intercept_by_type"
+kind = "invariant"
+expr = "an on(type, fn) node replaces every descendant intent whose first element equals type with fn applied to the remaining elements"
+traces_to = "[[event.bubble]]"
+
+[[constraints]]
+id = "intercept_args_spread"
+kind = "invariant"
+expr = "the intercept handler receives the intent arguments as positional arguments, so on(select, fn(selectedPath, value)) sees the path and value"
+traces_to = "[[event.bubble]]"
+
+[[constraints]]
+id = "other_intents_pass"
+kind = "invariant"
+expr = "intents of any other type pass through unchanged and keep their relative order"
+traces_to = "[[event.bubble]]"
+
+[[constraints]]
+id = "intercept_may_expand"
+kind = "invariant"
+expr = "an intercept handler may return zero, one or many intents, and its output is spliced in place of the original"
+traces_to = "[[event.bubble]]"
+
+[[constraints]]
+id = "innermost_first"
+kind = "invariant"
+expr = "nested interceptors apply from the innermost to the outermost as the intents bubble up"
+traces_to = "[[event.bubble]]"
+
+[[constraints]]
+id = "wrap_on_middleware"
+kind = "invariant"
+expr = "the handler of wrap-on receives the default handler as its first argument and may call it, change its output, or skip it"
+traces_to = "[[event.bubble]]"
+
+[[constraints]]
+id = "wrap_on_ordering"
+kind = "invariant"
+expr = "with several event and handler pairs in one wrap-on call, the first pair is outermost"
+traces_to = "[[event.bubble]]"
+
+[[constraints]]
+id = "on_multi_pairs"
+kind = "invariant"
+expr = "on accepts several event and handler pairs followed by one body and is equivalent to nesting the single-pair forms"
+traces_to = "[[event.bubble]]"
+
+[[constraints]]
+id = "on_bubble_raw"
+kind = "invariant"
+expr = "on-bubble receives the whole intent list of its children and its return value replaces it"
+traces_to = "[[event.bubble]]"
+
+[[constraints]]
+id = "intercept_builtin_effects"
+kind = "invariant"
+expr = "the built-in effect types update, set and delete can be intercepted like any custom type, as the file selector does with on update"
+traces_to = "[[event.bubble]]"

@@ -1,0 +1,73 @@
+source = "app.toplevel"
+
+[[constraints]]
+id = "all_events_dispatched"
+kind = "invariant"
+expr = "the result of every routed event (move, mouse event, drop, scroll, key event, key press, global move, enter, clipboard) is passed to the handler"
+traces_to = "[[app.toplevel]]"
+
+[[constraints]]
+id = "global_move_always"
+kind = "invariant"
+expr = "the root always reports has-mouse-move-global as true so hover-out works"
+traces_to = "[[app.toplevel]]"
+
+[[constraints]]
+id = "start_scroll_intercept"
+kind = "invariant"
+expr = "a mouse-down that yields start-scroll intents sets scroll-state to the scroll function and the position, using the deepest start-scroll intent which is the last one"
+traces_to = "[[app.toplevel]]"
+
+[[constraints]]
+id = "start_scroll_replaced"
+kind = "invariant"
+expr = "the chosen start-scroll intent is replaced by the result of calling its function with [0, 0], and the other intents keep their order with every start-scroll intent removed"
+traces_to = "[[app.toplevel]]"
+
+[[constraints]]
+id = "scroll_drag_delta"
+kind = "invariant"
+expr = "while scroll-state is set a mouse-move calls the stored function with the position minus the stored start position and returns its intents instead of routing the move"
+traces_to = "[[app.toplevel]]"
+
+[[constraints]]
+id = "scroll_release"
+kind = "invariant"
+expr = "a mouse-up while scroll-state is set returns only the effect that clears scroll-state"
+traces_to = "[[app.toplevel]]"
+
+[[constraints]]
+id = "click_away_blurs"
+kind = "invariant"
+expr = "a mouse-down with no intents and a non-nil focus returns the effect that sets focus to nil"
+traces_to = "[[app.toplevel]]"
+
+[[constraints]]
+id = "focus_kept_on_hit"
+kind = "invariant"
+expr = "a mouse-down with intents never clears focus"
+traces_to = "[[app.toplevel]]"
+
+[[constraints]]
+id = "state_namespaces"
+kind = "invariant"
+expr = "extra, context and top-extra live under reserved keys of the state, with focus inside context and scroll-state inside top-extra"
+traces_to = "[[app.toplevel]]"
+
+[[constraints]]
+id = "initial_state_default"
+kind = "invariant"
+expr = "make-app with no initial state starts from an empty map"
+traces_to = "[[app.toplevel]]"
+
+[[constraints]]
+id = "drag_effect"
+kind = "effect"
+expr = "on drag start the root emits a set of scroll-state to function and position"
+traces_to = "[[app.toplevel]]"
+
+[[constraints]]
+id = "focus_effect"
+kind = "effect"
+expr = "on click-away the root emits a set of focus to nil"
+traces_to = "[[app.toplevel]]"

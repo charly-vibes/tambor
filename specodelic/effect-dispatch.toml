@@ -1,0 +1,97 @@
+source = "effect.dispatch"
+
+[[constraints]]
+id = "effects_are_data"
+kind = "invariant"
+expr = "an effect is a plain array whose first element is its type, and its arguments are JSON-serialisable except update functions"
+traces_to = "[[effect.dispatch]]"
+
+[[constraints]]
+id = "ordered_application"
+kind = "invariant"
+expr = "effects in a batch are applied strictly in order"
+traces_to = "[[effect.dispatch]]"
+
+[[constraints]]
+id = "builtin_update"
+kind = "invariant"
+expr = "update(path, f, ...args) replaces the value at path with f(old, ...args)"
+traces_to = "[[effect.dispatch]]"
+
+[[constraints]]
+id = "builtin_set_get_delete"
+kind = "invariant"
+expr = "set stores a value at path, get returns the value at path, and delete removes it"
+traces_to = "[[effect.dispatch]]"
+
+[[constraints]]
+id = "dispatch_overloads"
+kind = "invariant"
+expr = "dispatch accepts a single effect type, a single effect with args, or a sequence of effect vectors"
+traces_to = "[[effect.dispatch]]"
+
+[[constraints]]
+id = "unknown_effect_skipped"
+kind = "invariant"
+expr = "an unknown type is reported and skipped, returns nil, and the rest of the batch still runs"
+traces_to = "[[effect.dispatch]]"
+
+[[constraints]]
+id = "compose_via_dispatch"
+kind = "invariant"
+expr = "a registered effect receives dispatch first and any effect it dispatches is applied before it returns"
+traces_to = "[[effect.dispatch]]"
+
+[[constraints]]
+id = "registry_global"
+kind = "invariant"
+expr = "defeffect registers the handler in a global registry under its namespaced type and also exposes the function by name for isolated tests"
+traces_to = "[[effect.dispatch]]"
+
+[[constraints]]
+id = "args_captured_at_render"
+kind = "invariant"
+expr = "effect arguments are values captured when the handler returned, so add-todo then set next-todo-text to empty adds the text that was there at click time"
+traces_to = "[[effect.dispatch]]"
+
+[[constraints]]
+id = "empty_batch_noop"
+kind = "invariant"
+expr = "an empty or nil batch calls no handler and triggers no repaint"
+traces_to = "[[effect.dispatch]]"
+
+[[constraints]]
+id = "single_repaint"
+kind = "invariant"
+expr = "a batch triggers one repaint, scheduled on the next animation frame"
+traces_to = "[[effect.dispatch]]"
+
+[[constraints]]
+id = "handler_overridable"
+kind = "extension_point"
+expr = "an app may supply its own dispatch function for tests, undo history or an external store"
+traces_to = "[[effect.dispatch]]"
+
+[[constraints]]
+id = "make_app_state_forms"
+kind = "invariant"
+expr = "make-app accepts either a plain initial state or an atom-like cell, and uses the cell as given when it is one"
+traces_to = "[[effect.dispatch]]"
+
+[[constraints]]
+id = "container_size_injected"
+kind = "invariant"
+expr = "when the backend gives a container size it is placed in the context under the stretch container-size key before render"
+traces_to = "[[effect.dispatch]]"
+
+[[constraints]]
+id = "counter_effects"
+kind = "invariant"
+expr = "counter-increment updates a path with inc, and add-counter updates a path with conj of 0"
+traces_to = "[[effect.dispatch]]"
+
+[[constraints]]
+id = "clipboard_effects"
+kind = "invariant"
+expr = "clipboard-copy and clipboard-cut write the string to the system clipboard through the backend"
+traces_to = "[[effect.dispatch]]"

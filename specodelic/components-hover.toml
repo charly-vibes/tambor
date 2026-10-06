@@ -1,0 +1,55 @@
+source = "components.hover"
+
+[[constraints]]
+id = "hover_enter"
+kind = "invariant"
+expr = "when hover? is false a mouse-move over the body returns the effect that sets hover? to true"
+traces_to = "[[components.hover]]"
+
+[[constraints]]
+id = "hover_leave"
+kind = "invariant"
+expr = "when hover? is true a global mouse-move at x < 0, x > w, y < 0 or y > h returns the child intents plus the effect that sets hover? to false"
+traces_to = "[[components.hover]]"
+
+[[constraints]]
+id = "hover_stays_inside"
+kind = "invariant"
+expr = "when hover? is true a global mouse-move inside the box returns only the child intents"
+traces_to = "[[components.hover]]"
+
+[[constraints]]
+id = "mouse_out_callback"
+kind = "invariant"
+expr = "on-mouse-out additionally returns the mouse-out callback intents on leave, and on enter returns set hover? true followed by the child intents"
+traces_to = "[[components.hover]]"
+
+[[constraints]]
+id = "button_component"
+kind = "invariant"
+expr = "the basic button is an on-hover wrapper around a ui button with text, on-click and the hover flag, and on-click is a function with no arguments returning intents"
+traces_to = "[[components.hover]]"
+
+[[constraints]]
+id = "button_hover_visual"
+kind = "invariant"
+expr = "a hovered button draws a light gray rounded fill behind its border"
+traces_to = "[[components.hover]]"
+
+[[constraints]]
+id = "checkbox_toggle"
+kind = "invariant"
+expr = "a pointer down on a checkbox returns exactly the toggle effect carrying its checked path, and toggle updates that path with logical not"
+traces_to = "[[components.hover]]"
+
+[[constraints]]
+id = "checkbox_view_only"
+kind = "invariant"
+expr = "the plain ui checkbox draws state but handles no events"
+traces_to = "[[components.hover]]"
+
+[[constraints]]
+id = "touch_no_hover"
+kind = "advisory"
+expr = "hover effects are produced only for pointerType mouse"
+traces_to = "[[components.hover]]"

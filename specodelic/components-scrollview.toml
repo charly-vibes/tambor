@@ -1,0 +1,79 @@
+source = "components.scrollview"
+
+[[constraints]]
+id = "default_offset"
+kind = "invariant"
+expr = "offset defaults to [0, 0]"
+traces_to = "[[components.scrollview]]"
+
+[[constraints]]
+id = "content_translated"
+kind = "invariant"
+expr = "the body is drawn translated by [-ox, -oy] inside a clip of scroll-bounds"
+traces_to = "[[components.scrollview]]"
+
+[[constraints]]
+id = "range_formula"
+kind = "invariant"
+expr = "the maximum offset per axis is max(0, total - viewport), and clamp(v) is max(0, min(max, v))"
+traces_to = "[[components.scrollview]]"
+
+[[constraints]]
+id = "wheel_defers_to_children"
+kind = "invariant"
+expr = "on a scroll event the child intents are returned when non-empty so that a nested scrollview wins"
+traces_to = "[[components.scrollview]]"
+
+[[constraints]]
+id = "wheel_updates_offset"
+kind = "invariant"
+expr = "otherwise, when the clamped new offset differs from the current one on either axis, it returns updates setting x to clamp(ox + dx) and y to clamp(oy + dy), and when both are unchanged it returns nothing"
+traces_to = "[[components.scrollview]]"
+
+[[constraints]]
+id = "stale_offset_snaps"
+kind = "invariant"
+expr = "an out-of-range stored offset is not clamped on render and is clamped by the next scroll update"
+traces_to = "[[components.scrollview]]"
+
+[[constraints]]
+id = "bars_conditional"
+kind = "invariant"
+expr = "the vertical bar exists only when total height exceeds the viewport height and is placed at x = width, and the horizontal bar only when total width exceeds the width and is placed at y = height"
+traces_to = "[[components.scrollview]]"
+
+[[constraints]]
+id = "thumb_geometry"
+kind = "invariant"
+expr = "a thumb starts at offset / total and ends at (offset + viewport) / total of the track, with a track thickness of 7 and rounded ends"
+traces_to = "[[components.scrollview]]"
+
+[[constraints]]
+id = "bar_drag"
+kind = "invariant"
+expr = "a pointer down on a bar returns start-scroll whose function maps the pointer delta to set offset = clamp(div0(position, viewport) * max offset)"
+traces_to = "[[components.scrollview]]"
+
+[[constraints]]
+id = "div0_safe"
+kind = "invariant"
+expr = "division by a zero viewport yields 0 and never NaN or infinity"
+traces_to = "[[components.scrollview]]"
+
+[[constraints]]
+id = "clip_events"
+kind = "invariant"
+expr = "content outside the viewport receives no pointer events"
+traces_to = "[[components.scrollview]]"
+
+[[constraints]]
+id = "touch_drag_scrolls"
+kind = "invariant"
+expr = "a one-finger drag over content that has no handler for the gesture scrolls by the drag delta"
+traces_to = "[[components.scrollview]]"
+
+[[constraints]]
+id = "momentum"
+kind = "advisory"
+expr = "a flick continues with decaying velocity and stops at the range ends, and is disabled under reduced motion"
+traces_to = "[[components.scrollview]]"

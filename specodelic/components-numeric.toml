@@ -1,0 +1,67 @@
+source = "components.numeric"
+
+[[constraints]]
+id = "counter_default"
+kind = "invariant"
+expr = "num defaults to 0"
+traces_to = "[[components.numeric]]"
+
+[[constraints]]
+id = "counter_dec_rule"
+kind = "invariant"
+expr = "decrement updates num to max(min, num - 1) when min is given and to num - 1 otherwise"
+traces_to = "[[components.numeric]]"
+
+[[constraints]]
+id = "counter_inc_rule"
+kind = "invariant"
+expr = "increment updates num to min(max, num + 1) when max is given and to num + 1 otherwise"
+traces_to = "[[components.numeric]]"
+
+[[constraints]]
+id = "counter_label_width"
+kind = "invariant"
+expr = "the label is padded on both sides so the centred area is at least 20 wide"
+traces_to = "[[components.numeric]]"
+
+[[constraints]]
+id = "counter_buttons"
+kind = "invariant"
+expr = "the minus and plus buttons are basic buttons whose on-click returns the dec and inc effects with the path and the limit"
+traces_to = "[[components.numeric]]"
+
+[[constraints]]
+id = "slider_mapping"
+kind = "invariant"
+expr = "the value is min + (x / maxWidth) * (max - min), truncated toward zero when integer? is true, then clamped to [min, max]"
+traces_to = "[[components.numeric]]"
+
+[[constraints]]
+id = "slider_gesture"
+kind = "invariant"
+expr = "pointer down sets mdown? true and updates, pointer move updates only while mdown? is true, and pointer up sets mdown? false and updates"
+traces_to = "[[components.numeric]]"
+
+[[constraints]]
+id = "slider_label"
+kind = "invariant"
+expr = "the label shows num itself when integer? and num with two decimals otherwise"
+traces_to = "[[components.numeric]]"
+
+[[constraints]]
+id = "slider_fill"
+kind = "invariant"
+expr = "the filled width is maxWidth * (num - min) / (max - min)"
+traces_to = "[[components.numeric]]"
+
+[[constraints]]
+id = "slider_max_width_default"
+kind = "invariant"
+expr = "maxWidth defaults to 100"
+traces_to = "[[components.numeric]]"
+
+[[constraints]]
+id = "slider_pointer_capture"
+kind = "advisory"
+expr = "on touch the slider keeps receiving moves after the finger leaves its bounds until release"
+traces_to = "[[components.numeric]]"

@@ -1,0 +1,55 @@
+source = "view.layout"
+
+[[constraints]]
+id = "vstack_offsets"
+kind = "invariant"
+expr = "the first child is untranslated and child i (i at least 1) is translated on y by the sum over j below i of height plus origin y plus 1, with the gap configurable and defaulting to 1"
+traces_to = "[[view.layout]]"
+
+[[constraints]]
+id = "hstack_offsets"
+kind = "invariant"
+expr = "the same rule on the x axis using width and origin x"
+traces_to = "[[view.layout]]"
+
+[[constraints]]
+id = "layout_empty_nil"
+kind = "invariant"
+expr = "a layout of zero children returns nil and does not throw"
+traces_to = "[[view.layout]]"
+
+[[constraints]]
+id = "spacer_occupies"
+kind = "invariant"
+expr = "a spacer(x, y) has bounds [x, y], draws nothing and shifts later siblings by its size plus the gap"
+traces_to = "[[view.layout]]"
+
+[[constraints]]
+id = "center_exact"
+kind = "invariant"
+expr = "center(elem, [W, H]) translates elem by ((W - w) / 2, (H - h) / 2)"
+traces_to = "[[view.layout]]"
+
+[[constraints]]
+id = "table_columns_aligned"
+kind = "invariant"
+expr = "in table-layout every cell in a column shares an x offset equal to the sum of earlier column widths plus padding, and every cell in a row shares a y offset likewise"
+traces_to = "[[view.layout]]"
+
+[[constraints]]
+id = "stretch_resolved"
+kind = "invariant"
+expr = "a node reporting stretch-width or stretch-height is resolved against the container size before drawing"
+traces_to = "[[view.layout]]"
+
+[[constraints]]
+id = "layout_pure"
+kind = "invariant"
+expr = "layout reads and writes no DOM and no global state"
+traces_to = "[[view.layout]]"
+
+[[constraints]]
+id = "layout_reflows"
+kind = "invariant"
+expr = "layout is a function of container size and content, so a changed container size yields a new layout with no stale cache"
+traces_to = "[[view.layout]]"

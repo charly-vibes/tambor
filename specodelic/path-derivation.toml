@@ -1,0 +1,133 @@
+source = "path.derivation"
+
+[[constraints]]
+id = "every_binding_has_path"
+kind = "invariant"
+expr = "every name bound by destructuring, let, when-let, if-let or for has a dollar path"
+traces_to = "[[path.derivation]]"
+
+[[constraints]]
+id = "extract_law"
+kind = "invariant"
+expr = "for every bound name x, select(state, path of x) equals the value x had at render time"
+traces_to = "[[path.derivation]]"
+
+[[constraints]]
+id = "update_law"
+kind = "invariant"
+expr = "for every bound name x and value v, destructuring the structure after set(path of x, v) binds x to v"
+traces_to = "[[path.derivation]]"
+
+[[constraints]]
+id = "transform_law"
+kind = "invariant"
+expr = "transform(path of x, f) changes only x so that the new x equals f applied to the old x"
+traces_to = "[[path.derivation]]"
+
+[[constraints]]
+id = "any_binding_form_compiles"
+kind = "invariant"
+expr = "any combination of positional, nested, rest, as, keys, strs, syms, or-defaults and explicit key bindings yields paths without error"
+traces_to = "[[path.derivation]]"
+
+[[constraints]]
+id = "rest_binding_path"
+kind = "invariant"
+expr = "a rest binding takes the path of the remaining sequence, and a rest map binding uses restArgsMap"
+traces_to = "[[path.derivation]]"
+
+[[constraints]]
+id = "map_iteration_seq_nth"
+kind = "invariant"
+expr = "iterating a map with for and destructuring [k v] binds dollar v to a seq-nth(i) then nth(1) path, so writing it changes the i-th value of the map"
+traces_to = "[[path.derivation]]"
+
+[[constraints]]
+id = "key_paths_read_only"
+kind = "invariant"
+expr = "a path ending at a map key is readable but writing it is unsupported and must raise or be refused"
+traces_to = "[[path.derivation]]"
+
+[[constraints]]
+id = "vector_of_pairs_destructure"
+kind = "invariant"
+expr = "destructuring [[k1 v1] [k2 v2] & more] over a map binds dollar k1, v1, k2, v2 to the first two entries in order"
+traces_to = "[[path.derivation]]"
+
+[[constraints]]
+id = "when_let_guards_body"
+kind = "invariant"
+expr = "when-let with a nil or false value renders nothing and so produces no handlers, otherwise the body sees paths into the bound value"
+traces_to = "[[path.derivation]]"
+
+[[constraints]]
+id = "if_let_branches"
+kind = "invariant"
+expr = "in if-let the then branch sees the new bindings and the else branch sees only the outer ones"
+traces_to = "[[path.derivation]]"
+
+[[constraints]]
+id = "shadowing_uses_binding_time"
+kind = "invariant"
+expr = "a path is computed from the dependencies at the time of binding, so a later rebinding of a name does not change an earlier derived path"
+traces_to = "[[path.derivation]]"
+
+[[constraints]]
+id = "fn_params_shadow"
+kind = "invariant"
+expr = "a nested function parameter with the same name as a bound name hides its path inside the function body"
+traces_to = "[[path.derivation]]"
+
+[[constraints]]
+id = "known_call_table"
+kind = "invariant"
+expr = "derivation understands nth, get, get-in, keyword call, filter, take, drop, or, assoc, select-one and root-deref, and these map to the navigators nth, keypath, keypathList, keypath, filter, take, drop, nilToVal, identity, path and rawPath"
+traces_to = "[[path.derivation]]"
+
+[[constraints]]
+id = "get_with_default"
+kind = "invariant"
+expr = "get with a default value adds a nilToVal step"
+traces_to = "[[path.derivation]]"
+
+[[constraints]]
+id = "assoc_transparent"
+kind = "invariant"
+expr = "assoc onto a map does not change the path of that map"
+traces_to = "[[path.derivation]]"
+
+[[constraints]]
+id = "literal_is_constant"
+kind = "invariant"
+expr = "a literal value has a constant segment that cannot be written"
+traces_to = "[[path.derivation]]"
+
+[[constraints]]
+id = "unknown_call_opaque"
+kind = "invariant"
+expr = "the result of an unrecognised function call has an opaque path that is readable as a value but never writable"
+traces_to = "[[path.derivation]]"
+
+[[constraints]]
+id = "filter_path_composes"
+kind = "invariant"
+expr = "iterating over (filter pred xs) gives each item the path of xs followed by filter(pred) then seq-nth(i), so the item edits the underlying list"
+traces_to = "[[path.derivation]]"
+
+[[constraints]]
+id = "unsupported_loops_throw"
+kind = "invariant"
+expr = "the removed forms fori, for-kv and for-with-last raise an error saying they are no longer supported"
+traces_to = "[[path.derivation]]"
+
+[[constraints]]
+id = "unbound_dollar_literal"
+kind = "invariant"
+expr = "a dollar name with no bound base name is left as a plain symbol and is never replaced"
+traces_to = "[[path.derivation]]"
+
+[[constraints]]
+id = "strategy_agnostic"
+kind = "extension_point"
+expr = "the typed runtime ref strategy and the compiler transformer strategy are interchangeable and must pass identical vectors"
+traces_to = "[[path.derivation]]"
