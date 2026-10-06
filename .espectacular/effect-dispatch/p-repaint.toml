@@ -1,0 +1,11 @@
+archetype = "SA"
+authored_with = "0.9.2"
+derived_from = "p_repaint@1cb43da641c9"
+description = "exactly one repaint is scheduled"
+falsifiability_class = "safety"
+id = "p-repaint"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh effect-dispatch p-repaint" }]

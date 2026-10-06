@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_button_visual@14398597d8a3"
+description = "only the hovered view contains the fill"
+falsifiability_class = "safety"
+id = "p-button-visual"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh components-hover p-button-visual" }]

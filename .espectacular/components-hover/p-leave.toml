@@ -1,0 +1,11 @@
+archetype = "SA"
+authored_with = "0.9.2"
+derived_from = "p_leave@bd5904efd2ca"
+description = "each adds set hover? false to the child intents"
+falsifiability_class = "safety"
+id = "p-leave"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh components-hover p-leave" }]

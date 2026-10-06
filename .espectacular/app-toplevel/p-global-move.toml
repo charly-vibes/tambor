@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_global_move@e2b0be1a8767"
+description = "has-mouse-move-global is true"
+falsifiability_class = "safety"
+id = "p-global-move"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh app-toplevel p-global-move" }]

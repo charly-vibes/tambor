@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_touch_hover@fad3f6ffd761"
+description = "hover? is never set"
+falsifiability_class = "safety"
+id = "p-touch-hover"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh components-hover p-touch-hover" }]

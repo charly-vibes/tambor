@@ -1,0 +1,11 @@
+archetype = "SA"
+authored_with = "0.9.2"
+derived_from = "p_enter@000945b1a6fb"
+description = "the effect sets hover? to true"
+falsifiability_class = "safety"
+id = "p-enter"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh components-hover p-enter" }]

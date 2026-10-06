@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_filter_merge@39ff577aae68"
+description = "updating the second visible active todo changes original index 1"
+falsifiability_class = "safety"
+id = "p-filter-merge"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh state-paths p-filter-merge" }]

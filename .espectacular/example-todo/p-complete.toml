@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_complete@5f637d2ed34a"
+description = "only the second todo becomes complete"
+falsifiability_class = "safety"
+id = "p-complete"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh example-todo p-complete" }]

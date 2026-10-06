@@ -1,0 +1,11 @@
+archetype = "SA"
+authored_with = "0.9.2"
+derived_from = "p_examples@aeee0b2b9340"
+description = "every scenario passes on each backend"
+falsifiability_class = "safety"
+id = "p-examples"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh membrane p-examples" }]

@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_overflow@af11c2269651"
+description = "no node extends past the viewport"
+falsifiability_class = "safety"
+id = "p-overflow"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh ui-mobile p-overflow" }]

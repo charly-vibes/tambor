@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_bubble@01bbc4a06623"
+description = "bubble runs exactly once per event"
+falsifiability_class = "safety"
+id = "p-bubble"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh event-model p-bubble" }]

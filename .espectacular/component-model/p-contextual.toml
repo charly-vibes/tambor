@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_contextual@fba50ad886c7"
+description = "c is nil because context has no c, and with context c 13 it reads 13 with path context then c"
+falsifiability_class = "safety"
+id = "p-contextual"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh component-model p-contextual" }]

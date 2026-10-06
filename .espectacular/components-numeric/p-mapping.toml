@@ -1,0 +1,11 @@
+archetype = "SA"
+authored_with = "0.9.2"
+derived_from = "p_mapping@89ed1e29b830"
+description = "12, 5 and 20"
+falsifiability_class = "safety"
+id = "p-mapping"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh components-numeric p-mapping" }]

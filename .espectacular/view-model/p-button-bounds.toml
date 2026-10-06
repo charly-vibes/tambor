@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_button_bounds@b43f17b61e20"
+description = "bounds equal label bounds plus [12, 12]"
+falsifiability_class = "safety"
+id = "p-button-bounds"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh view-model p-button-bounds" }]

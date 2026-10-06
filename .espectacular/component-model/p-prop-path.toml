@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_prop_path@1d32a883f189"
+description = "every prop has a path counterpart"
+falsifiability_class = "safety"
+id = "p-prop-path"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh component-model p-prop-path" }]

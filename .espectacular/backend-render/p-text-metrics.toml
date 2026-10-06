@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_text_metrics@533661ce60b8"
+description = "a label of 5 characters measures 5 by 1"
+falsifiability_class = "safety"
+id = "p-text-metrics"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh backend-render p-text-metrics" }]

@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_mouse_out@f35bd38a66a1"
+description = "callback intents follow the set false"
+falsifiability_class = "safety"
+id = "p-mouse-out"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh components-hover p-mouse-out" }]

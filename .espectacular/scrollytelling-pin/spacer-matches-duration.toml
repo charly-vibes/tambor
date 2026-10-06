@@ -1,0 +1,11 @@
+archetype = "SA"
+authored_with = "0.9.2"
+derived_from = "spacer_matches_duration@9158d8969257"
+description = "`spacer_height == d`"
+falsifiability_class = "safety"
+id = "spacer-matches-duration"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh scrollytelling-pin spacer-matches-duration" }]

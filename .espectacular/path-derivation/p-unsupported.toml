@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_unsupported@201e0048c042"
+description = "each raises the documented error"
+falsifiability_class = "safety"
+id = "p-unsupported"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh path-derivation p-unsupported" }]

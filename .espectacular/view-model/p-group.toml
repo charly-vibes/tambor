@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_group@6bb099cbe9dd"
+description = "children are the elements and nil members measure [0, 0]"
+falsifiability_class = "safety"
+id = "p-group"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh view-model p-group" }]

@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_builtin@4299e021ed6f"
+description = "the wrapper replaces it with the set-membership update and the original never reaches the dispatcher"
+falsifiability_class = "safety"
+id = "p-builtin"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh event-bubble p-builtin" }]

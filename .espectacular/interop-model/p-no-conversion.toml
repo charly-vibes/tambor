@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_no_conversion@642f92816501"
+description = "total time is under 1000 ms and no conversion function is called"
+falsifiability_class = "safety"
+id = "p-no-conversion"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh interop-model p-no-conversion" }]

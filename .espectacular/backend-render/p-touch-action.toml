@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_touch_action@3615db487c67"
+description = "computed touch-action is none"
+falsifiability_class = "safety"
+id = "p-touch-action"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh backend-render p-touch-action" }]

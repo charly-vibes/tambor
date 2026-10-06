@@ -1,0 +1,11 @@
+archetype = "SA"
+authored_with = "0.9.2"
+derived_from = "p_scroll_release@c4de114bcdd7"
+description = "the only effect is set scroll-state to nil"
+falsifiability_class = "safety"
+id = "p-scroll-release"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh app-toplevel p-scroll-release" }]

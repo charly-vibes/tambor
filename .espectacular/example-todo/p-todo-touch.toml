@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_todo_touch@5012323b0a03"
+description = "each hit area is at least 44 by 44 and the visual bounds are unchanged"
+falsifiability_class = "safety"
+id = "p-todo-touch"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh example-todo p-todo-touch" }]

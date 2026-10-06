@@ -1,0 +1,11 @@
+archetype = "SA"
+authored_with = "0.9.2"
+derived_from = "p_path_get@8f2b4a6408ff"
+description = "select equals the prop value"
+falsifiability_class = "safety"
+id = "p-path-get"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh component-model p-path-get" }]

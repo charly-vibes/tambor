@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_label@55d2b35b8bfa"
+description = "3 and 3.14"
+falsifiability_class = "safety"
+id = "p-label"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh components-numeric p-label" }]

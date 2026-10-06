@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_delete@99f87e8fe095"
+description = "no change at 0, one char removed at 3, range removed with a selection"
+falsifiability_class = "safety"
+id = "p-delete"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh components-textarea p-delete" }]

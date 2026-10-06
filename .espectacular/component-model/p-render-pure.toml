@@ -1,0 +1,11 @@
+archetype = "SA"
+authored_with = "0.9.2"
+derived_from = "p_render_pure@f6c71e137c5e"
+description = "outputs deep-equal"
+falsifiability_class = "safety"
+id = "p-render-pure"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh component-model p-render-pure" }]

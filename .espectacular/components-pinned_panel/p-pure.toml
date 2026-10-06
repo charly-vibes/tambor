@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_pure@2e2ecd09b108"
+description = "identical output view value both times"
+falsifiability_class = "safety"
+id = "p-pure"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh components-pinned_panel p-pure" }]

@@ -1,0 +1,11 @@
+archetype = "SA"
+authored_with = "0.9.2"
+derived_from = "p_start_scroll@e733e86487df"
+description = "scroll-state holds the last one and the position"
+falsifiability_class = "safety"
+id = "p-start-scroll"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh app-toplevel p-start-scroll" }]

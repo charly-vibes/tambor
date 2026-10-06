@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_style@c29ced40ddc2"
+description = "bounds equal the unwrapped bounds"
+falsifiability_class = "safety"
+id = "p-style"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh view-model p-style" }]

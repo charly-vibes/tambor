@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_nth@94c2aae6093a"
+description = "map entries written back keep a map"
+falsifiability_class = "safety"
+id = "p-nth"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh state-paths p-nth" }]

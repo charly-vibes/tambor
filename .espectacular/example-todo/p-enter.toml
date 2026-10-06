@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_enter@25ab42a3d9d1"
+description = "effects equal those of the button"
+falsifiability_class = "safety"
+id = "p-enter"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh example-todo p-enter" }]

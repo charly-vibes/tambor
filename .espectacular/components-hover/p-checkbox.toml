@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_checkbox@71b4c081d9f5"
+description = "the effect is toggle with the checked path and applying it flips the value"
+falsifiability_class = "safety"
+id = "p-checkbox"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh components-hover p-checkbox" }]

@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_filter_default@96016b4de52b"
+description = "the unfiltered option is selected and three rows render"
+falsifiability_class = "safety"
+id = "p-filter-default"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh example-todo p-filter-default" }]

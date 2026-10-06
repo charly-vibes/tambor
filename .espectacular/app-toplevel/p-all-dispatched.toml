@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_all_dispatched@232fbfc1d4f6"
+description = "the handler is called once per event"
+falsifiability_class = "safety"
+id = "p-all-dispatched"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh app-toplevel p-all-dispatched" }]

@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_intercept@6673de41a987"
+description = "tsc reports an error"
+falsifiability_class = "safety"
+id = "p-intercept"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh typing-model p-intercept" }]

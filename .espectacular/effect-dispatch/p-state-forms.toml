@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_state_forms@6382aedcfa3c"
+description = "both run and the cell is shared not copied"
+falsifiability_class = "safety"
+id = "p-state-forms"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh effect-dispatch p-state-forms" }]

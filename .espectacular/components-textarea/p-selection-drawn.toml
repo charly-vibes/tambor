@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_selection_drawn@ff64e82f32ac"
+description = "highlight and cursor nodes exist"
+falsifiability_class = "safety"
+id = "p-selection-drawn"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh components-textarea p-selection-drawn" }]

@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_cache@a81651221f56"
+description = "second render reuses the first, and redefinition clears the cache"
+falsifiability_class = "safety"
+id = "p-cache"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh component-model p-cache" }]

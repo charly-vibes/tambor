@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_up_descends@571301447568"
+description = "the inner up handler fires"
+falsifiability_class = "safety"
+id = "p-up-descends"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh event-model p-up-descends" }]

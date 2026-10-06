@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_image@8984baf383d0"
+description = "an image buffer of non-zero size is produced"
+falsifiability_class = "safety"
+id = "p-image"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh example-todo p-image" }]

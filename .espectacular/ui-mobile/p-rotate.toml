@@ -1,0 +1,11 @@
+archetype = "SA"
+authored_with = "0.9.2"
+derived_from = "p_rotate@4ec52054a7a0"
+description = "state is deep-equal after rotation"
+falsifiability_class = "safety"
+id = "p-rotate"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh ui-mobile p-rotate" }]

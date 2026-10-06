@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_other_keys@2e02833e6288"
+description = "the textarea default insert-text effect is returned"
+falsifiability_class = "safety"
+id = "p-other-keys"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh example-todo p-other-keys" }]

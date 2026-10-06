@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_iterables@41e3b68d14ca"
+description = "all three produce the same view and the output children is an array"
+falsifiability_class = "safety"
+id = "p-iterables"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh interop-model p-iterables" }]

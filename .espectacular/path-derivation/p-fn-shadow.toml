@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_fn_shadow@6e547cfb1ee8"
+description = "the inner name is not replaced"
+falsifiability_class = "safety"
+id = "p-fn-shadow"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh path-derivation p-fn-shadow" }]

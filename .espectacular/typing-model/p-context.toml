@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_context@c368a6ff102b"
+description = "the field is typed in every component"
+falsifiability_class = "safety"
+id = "p-context"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh typing-model p-context" }]

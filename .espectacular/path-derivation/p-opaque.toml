@@ -1,0 +1,11 @@
+archetype = "SA"
+authored_with = "0.9.2"
+derived_from = "p_opaque@f145d7632018"
+description = "value readable and path write refused"
+falsifiability_class = "safety"
+id = "p-opaque"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh path-derivation p-opaque" }]

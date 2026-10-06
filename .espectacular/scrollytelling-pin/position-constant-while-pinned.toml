@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "position_constant_while_pinned@e6b96f65bae8"
+description = "`viewport_position(target) is constant across every sampled frame`"
+falsifiability_class = "safety"
+id = "position-constant-while-pinned"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh scrollytelling-pin position-constant-while-pinned" }]

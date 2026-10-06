@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "resize_recomputes_spacer@ae09739f6ccc"
+description = "`spacer_height == new authored duration`"
+falsifiability_class = "safety"
+id = "resize-recomputes-spacer"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh scrollytelling-pin resize-recomputes-spacer" }]

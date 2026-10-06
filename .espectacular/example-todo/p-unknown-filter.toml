@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_unknown_filter@494efd0f3d0a"
+description = "three rows render"
+falsifiability_class = "safety"
+id = "p-unknown-filter"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh example-todo p-unknown-filter" }]

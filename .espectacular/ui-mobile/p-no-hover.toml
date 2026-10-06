@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_no_hover@76ad4fcf49cb"
+description = "hover? is never set"
+falsifiability_class = "safety"
+id = "p-no-hover"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh ui-mobile p-no-hover" }]

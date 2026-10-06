@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_key_concat@38329fdbec82"
+description = "the output is the three results in order"
+falsifiability_class = "safety"
+id = "p-key-concat"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh event-model p-key-concat" }]

@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_label_width@150d995b9f47"
+description = "centred area is at least 20"
+falsifiability_class = "safety"
+id = "p-label-width"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh components-numeric p-label-width" }]

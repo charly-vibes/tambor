@@ -1,0 +1,11 @@
+archetype = "SA"
+authored_with = "0.9.2"
+derived_from = "p_finish_drag@208c3264cd42"
+description = "selection and cursor follow the rule and down-pos is nil"
+falsifiability_class = "safety"
+id = "p-finish-drag"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh components-textarea p-finish-drag" }]

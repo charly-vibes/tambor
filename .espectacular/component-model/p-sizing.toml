@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_sizing@14578812039d"
+description = "setWidth returns a component with the new width prop"
+falsifiability_class = "safety"
+id = "p-sizing"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh component-model p-sizing" }]

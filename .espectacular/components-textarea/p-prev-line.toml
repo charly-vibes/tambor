@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_prev_line@85368b783a76"
+description = "cursor becomes 2 and the selection is cleared"
+falsifiability_class = "safety"
+id = "p-prev-line"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh components-textarea p-prev-line" }]

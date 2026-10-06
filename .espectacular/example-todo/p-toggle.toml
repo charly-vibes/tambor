@@ -1,0 +1,11 @@
+archetype = "SA"
+authored_with = "0.9.2"
+derived_from = "p_toggle@9d2176c7059e"
+description = "effect is set selected-filter to active, and a click on the selected label returns nothing"
+falsifiability_class = "safety"
+id = "p-toggle"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh example-todo p-toggle" }]

@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_delete@dc0180ff792c"
+description = "list becomes second, third"
+falsifiability_class = "safety"
+id = "p-delete"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh example-todo p-delete" }]

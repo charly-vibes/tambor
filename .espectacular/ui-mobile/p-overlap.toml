@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_overlap@022bd02f3012"
+description = "a touch between them picks the nearer centre"
+falsifiability_class = "safety"
+id = "p-overlap"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh ui-mobile p-overlap" }]

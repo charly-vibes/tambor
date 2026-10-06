@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_macro_optional@1fb4c9ebd60d"
+description = "both produce deep-equal views and effects"
+falsifiability_class = "safety"
+id = "p-macro-optional"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh interop-model p-macro-optional" }]

@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_innermost@1d2eae713faf"
+description = "the inner one rewrites it first and the outer never sees the original"
+falsifiability_class = "safety"
+id = "p-innermost"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh event-bubble p-innermost" }]

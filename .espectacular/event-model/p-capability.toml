@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_capability@3e0dd9ff09e3"
+description = "the query matches whether any descendant handles the event"
+falsifiability_class = "safety"
+id = "p-capability"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh event-model p-capability" }]

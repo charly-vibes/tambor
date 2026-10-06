@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_row_default@6c60fcf3ffa1"
+description = "the intent is update with the selected? path and not"
+falsifiability_class = "safety"
+id = "p-row-default"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh example-file_selector p-row-default" }]

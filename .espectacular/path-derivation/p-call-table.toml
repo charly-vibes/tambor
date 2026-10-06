@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_call_table@d3e11271bc16"
+description = "the navigator list matches the table"
+falsifiability_class = "safety"
+id = "p-call-table"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh path-derivation p-call-table" }]

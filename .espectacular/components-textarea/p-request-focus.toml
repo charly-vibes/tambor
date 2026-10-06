@@ -1,0 +1,11 @@
+archetype = "SA"
+authored_with = "0.9.2"
+derived_from = "p_request_focus@9c6bcbf6c15b"
+description = "inside returns request-focus first, empty returns nothing"
+falsifiability_class = "safety"
+id = "p-request-focus"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh components-textarea p-request-focus" }]

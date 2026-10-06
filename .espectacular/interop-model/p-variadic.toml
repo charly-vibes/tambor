@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_variadic@abeb44ba0960"
+description = "the views deep-equal"
+falsifiability_class = "safety"
+id = "p-variadic"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh interop-model p-variadic" }]

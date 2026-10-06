@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_no_jump@ecafa17be7de"
+description = "screen position immediately before and after the step are equal"
+falsifiability_class = "safety"
+id = "p-no-jump"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh components-pinned_panel p-no-jump" }]

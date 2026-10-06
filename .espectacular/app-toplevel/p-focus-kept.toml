@@ -1,0 +1,11 @@
+archetype = "SA"
+authored_with = "0.9.2"
+derived_from = "p_focus_kept@67929665211b"
+description = "focus is untouched"
+falsifiability_class = "safety"
+id = "p-focus-kept"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh app-toplevel p-focus-kept" }]

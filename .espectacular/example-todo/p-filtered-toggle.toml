@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_filtered_toggle@ff94fce7424e"
+description = "third becomes open and the next render under complete shows no rows"
+falsifiability_class = "safety"
+id = "p-filtered-toggle"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh example-todo p-filtered-toggle" }]

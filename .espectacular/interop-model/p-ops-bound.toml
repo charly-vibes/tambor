@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_ops_bound@f95429faa516"
+description = "each behaves per its own ops"
+falsifiability_class = "safety"
+id = "p-ops-bound"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh interop-model p-ops-bound" }]

@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_args@11f404069c86"
+description = "the handler is called with exactly path and value"
+falsifiability_class = "safety"
+id = "p-args"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh event-bubble p-args" }]

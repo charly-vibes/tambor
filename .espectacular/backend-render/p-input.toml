@@ -1,0 +1,11 @@
+archetype = "SA"
+authored_with = "0.9.2"
+derived_from = "p_input@5d7e5b58e6f3"
+description = "the router receives view-space coordinates"
+falsifiability_class = "safety"
+id = "p-input"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh backend-render p-input" }]

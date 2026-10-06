@@ -1,0 +1,11 @@
+archetype = "SA"
+authored_with = "0.9.2"
+derived_from = "p_bounds@94a77af8d371"
+description = "all bounds are finite and non-negative, and bounds(nil) equals [0, 0]"
+falsifiability_class = "safety"
+id = "p-bounds"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh view-model p-bounds" }]

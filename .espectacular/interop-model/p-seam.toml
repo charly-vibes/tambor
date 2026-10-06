@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_seam@ecd4eed0f936"
+description = "update at one path works and default ops are used when none are given"
+falsifiability_class = "safety"
+id = "p-seam"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh interop-model p-seam" }]

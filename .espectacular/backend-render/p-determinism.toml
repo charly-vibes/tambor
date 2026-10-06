@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_determinism@a511a5671860"
+description = "two draws produce equal pixels"
+falsifiability_class = "safety"
+id = "p-determinism"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh backend-render p-determinism" }]

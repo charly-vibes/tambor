@@ -1,0 +1,11 @@
+archetype = "SA"
+authored_with = "0.9.2"
+derived_from = "p_vstack@5c5fec8949f0"
+description = "children are ordered with no vertical overlap, and sizes 10, 20, 30 give offsets 0, 11 and 32"
+falsifiability_class = "safety"
+id = "p-vstack"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh view-layout p-vstack" }]

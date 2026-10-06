@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_layout_pure@9b7628a12eb7"
+description = "layout runs with no DOM"
+falsifiability_class = "safety"
+id = "p-layout-pure"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh view-layout p-layout-pure" }]

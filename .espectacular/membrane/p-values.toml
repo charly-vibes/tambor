@@ -1,0 +1,11 @@
+archetype = "SA"
+authored_with = "0.9.2"
+derived_from = "p_values@b34c4d941d0b"
+description = "JSON round-trip of a view deep-equals the original, and its type is a member of the View union"
+falsifiability_class = "safety"
+id = "p-values"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh membrane p-values" }]

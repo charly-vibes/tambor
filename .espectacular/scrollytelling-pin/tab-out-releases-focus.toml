@@ -1,0 +1,11 @@
+archetype = "SA"
+authored_with = "0.9.2"
+derived_from = "tab_out_releases_focus@b0cbba3178bd"
+description = "`check(pin_state) == released`"
+falsifiability_class = "safety"
+id = "tab-out-releases-focus"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh scrollytelling-pin tab-out-releases-focus" }]

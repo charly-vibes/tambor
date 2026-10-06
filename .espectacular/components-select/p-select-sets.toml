@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_select_sets@fced402ef4c4"
+description = "the selected path holds the value"
+falsifiability_class = "safety"
+id = "p-select-sets"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh components-select p-select-sets" }]

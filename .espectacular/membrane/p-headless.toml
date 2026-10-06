@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_headless@271cea1127e6"
+description = "import succeeds and bounds of a label tree is computed"
+falsifiability_class = "safety"
+id = "p-headless"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh membrane p-headless" }]

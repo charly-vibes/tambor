@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_keypath_list@1b2d1a64f95a"
+description = "equals nested keypath steps"
+falsifiability_class = "safety"
+id = "p-keypath-list"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh state-paths p-keypath-list" }]

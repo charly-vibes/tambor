@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_coords@1c6e976c337b"
+description = "handler sees the point minus the sum of offsets"
+falsifiability_class = "safety"
+id = "p-coords"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh event-model p-coords" }]

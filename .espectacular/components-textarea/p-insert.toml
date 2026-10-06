@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_insert@4c604d6597f0"
+description = "hello becomes heXYllo cursor 4, and nil gives XY"
+falsifiability_class = "safety"
+id = "p-insert"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh components-textarea p-insert" }]

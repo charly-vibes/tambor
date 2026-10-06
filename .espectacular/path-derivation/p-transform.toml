@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_transform@669f4504d0ee"
+description = "the selected value is one more and nothing else changes"
+falsifiability_class = "safety"
+id = "p-transform"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh path-derivation p-transform" }]

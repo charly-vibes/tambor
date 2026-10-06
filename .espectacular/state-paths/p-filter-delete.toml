@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_filter_delete@bc446a21a250"
+description = "deleting the second visible active todo leaves first and third"
+falsifiability_class = "safety"
+id = "p-filter-delete"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh state-paths p-filter-delete" }]

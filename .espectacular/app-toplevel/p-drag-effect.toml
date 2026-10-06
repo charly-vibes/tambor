@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_drag_effect@8766ed083aa7"
+description = "the set scroll-state effect is emitted"
+falsifiability_class = "safety"
+id = "p-drag-effect"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh app-toplevel p-drag-effect" }]

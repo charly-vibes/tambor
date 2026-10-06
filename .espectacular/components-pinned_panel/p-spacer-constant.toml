@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_spacer_constant@3c1223f4ae36"
+description = "total scrollview content height is unchanged by activation state"
+falsifiability_class = "safety"
+id = "p-spacer-constant"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh components-pinned_panel p-spacer-constant" }]

@@ -1,0 +1,11 @@
+archetype = "SA"
+authored_with = "0.9.2"
+derived_from = "p_reflow@9848b8a16bf9"
+description = "the second layout differs and is not a cached copy of the first"
+falsifiability_class = "safety"
+id = "p-reflow"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh view-layout p-reflow" }]

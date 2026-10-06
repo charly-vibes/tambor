@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_motion@633dc7063c1d"
+description = "no momentum frames are scheduled"
+falsifiability_class = "safety"
+id = "p-motion"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh ui-mobile p-motion" }]

@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_thumb@2f4a0a96fdaa"
+description = "y of each is in the bottom third"
+falsifiability_class = "safety"
+id = "p-thumb"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh ui-mobile p-thumb" }]

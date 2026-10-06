@@ -1,0 +1,11 @@
+archetype = "SA"
+authored_with = "0.9.2"
+derived_from = "p_intercept@0b152a81da57"
+description = "a request-focus intent becomes the set-focus intent from the textarea example"
+falsifiability_class = "safety"
+id = "p-intercept"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh event-bubble p-intercept" }]

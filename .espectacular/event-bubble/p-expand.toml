@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_expand@ea560451b737"
+description = "both appear in place of the original"
+falsifiability_class = "safety"
+id = "p-expand"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh event-bubble p-expand" }]

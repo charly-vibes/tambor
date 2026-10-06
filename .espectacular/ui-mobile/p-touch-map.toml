@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_touch_map@61a6d7de3315"
+description = "the same effect as a mouse click is returned"
+falsifiability_class = "safety"
+id = "p-touch-map"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh ui-mobile p-touch-map" }]

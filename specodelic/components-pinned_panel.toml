@@ -1,0 +1,43 @@
+source = "components.pinned_panel"
+
+[[constraints]]
+id = "contextual_offset"
+kind = "invariant"
+expr = "the driving offset is read from `context.scroll`, never from a call-site prop, exactly as `focus` is contextual for textarea"
+traces_to = "[[components.pinned_panel]]"
+
+[[constraints]]
+id = "activation_range_formula"
+kind = "invariant"
+expr = "the panel is active iff `activation-range.start ≤ offset.y ≤ activation-range.end`"
+traces_to = "[[components.pinned_panel]]"
+
+[[constraints]]
+id = "body_drawn_untranslated_when_active"
+kind = "invariant"
+expr = "while active, the body draws at the fixed screen position it would occupy when `offset.y == activation-range.start`, ignoring the ambient scrollview translation"
+traces_to = "[[components.pinned_panel]]"
+
+[[constraints]]
+id = "spacer_matches_body_extent"
+kind = "invariant"
+expr = "a spacer occupying the body's full authored extent (`activation-range.end − activation-range.start` content-space units) is present in untranslated content flow at all times, active or not, so the ambient scrollview's own range_formula total height is unaffected by activation state"
+traces_to = "[[components.pinned_panel]]"
+
+[[constraints]]
+id = "release_continuous"
+kind = "invariant"
+expr = "at `offset.y == activation-range.end`, the screen position computed by the active branch equals the screen position computed by the inactive (normally-translated) branch — no discontinuity across the boundary"
+traces_to = "[[components.pinned_panel]]"
+
+[[constraints]]
+id = "nested_panel_priority"
+kind = "invariant"
+expr = "when two pinned_panels are simultaneously active, the one later in the view tree paints on top, unless an explicit `z` prop overrides this"
+traces_to = "[[components.pinned_panel]]"
+
+[[constraints]]
+id = "render_pure"
+kind = "invariant"
+expr = "activation, screen position and spacer height are all computed solely from `offset`, `activation-range` and `body` — no I/O, no imperative stored state, recomputed fresh every render"
+traces_to = "[[components.pinned_panel]]"

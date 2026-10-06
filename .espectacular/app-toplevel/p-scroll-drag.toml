@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_scroll_drag@d46cb382ee14"
+description = "the function receives [3, 7]"
+falsifiability_class = "safety"
+id = "p-scroll-drag"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh app-toplevel p-scroll-drag" }]

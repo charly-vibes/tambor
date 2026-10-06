@@ -1,0 +1,11 @@
+archetype = "SA"
+authored_with = "0.9.2"
+derived_from = "p_raf@4b669cf88c87"
+description = "one draw per frame"
+falsifiability_class = "safety"
+id = "p-raf"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh backend-render p-raf" }]

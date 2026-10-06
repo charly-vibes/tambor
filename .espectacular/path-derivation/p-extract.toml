@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_extract@57f769251138"
+description = "select by path equals the destructured value"
+falsifiability_class = "safety"
+id = "p-extract"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh path-derivation p-extract" }]

@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_clipboard_effects@2bc6108e3bf4"
+description = "the backend clipboard receives hello"
+falsifiability_class = "safety"
+id = "p-clipboard-effects"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh effect-dispatch p-clipboard-effects" }]

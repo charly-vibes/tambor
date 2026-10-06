@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_nil_val@daa9b48a5edb"
+description = "reads return the default"
+falsifiability_class = "safety"
+id = "p-nil-val"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh state-paths p-nil-val" }]

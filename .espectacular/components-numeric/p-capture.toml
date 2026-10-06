@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_capture@a2708de41125"
+description = "updates continue until release"
+falsifiability_class = "safety"
+id = "p-capture"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh components-numeric p-capture" }]

@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_spacing@bb7cff56b26e"
+description = "row offsets differ by row height plus 5 plus the gap"
+falsifiability_class = "safety"
+id = "p-spacing"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh example-todo p-spacing" }]

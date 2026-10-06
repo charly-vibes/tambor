@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_assoc@da3bb4a9d60c"
+description = "path equals the original map path"
+falsifiability_class = "safety"
+id = "p-assoc"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh path-derivation p-assoc" }]

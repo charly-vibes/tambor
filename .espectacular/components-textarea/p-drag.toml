@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_drag@e606d2425994"
+description = "mpos is set only with down-pos"
+falsifiability_class = "safety"
+id = "p-drag"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh components-textarea p-drag" }]

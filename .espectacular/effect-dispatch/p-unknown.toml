@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_unknown@1e428ac0d4e0"
+description = "later effects still apply and nothing throws"
+falsifiability_class = "safety"
+id = "p-unknown"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh effect-dispatch p-unknown" }]

@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_new_todo_layout@57ddfef698c5"
+description = "top row textarea origin is [10, 10] relative to the button's right edge and the toggle is below it"
+falsifiability_class = "safety"
+id = "p-new-todo-layout"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh example-todo p-new-todo-layout" }]

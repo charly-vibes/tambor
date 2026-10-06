@@ -1,0 +1,11 @@
+archetype = "SA"
+authored_with = "0.9.2"
+derived_from = "p_pass@9c28b2889e3f"
+description = "non-matching intents keep identity and order"
+falsifiability_class = "safety"
+id = "p-pass"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh event-bubble p-pass" }]

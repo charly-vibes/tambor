@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_namespaces@08372627ac7f"
+description = "reserved keys never collide with user keys"
+falsifiability_class = "safety"
+id = "p-namespaces"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh app-toplevel p-namespaces" }]

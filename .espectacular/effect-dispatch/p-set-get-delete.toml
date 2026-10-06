@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_set_get_delete@3cb76a6ab72c"
+description = "set then get returns the value and delete then get returns undefined"
+falsifiability_class = "safety"
+id = "p-set-get-delete"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh effect-dispatch p-set-get-delete" }]

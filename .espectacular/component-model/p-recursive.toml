@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_recursive@1d4d9f164588"
+description = "the recursion renders to the data depth"
+falsifiability_class = "safety"
+id = "p-recursive"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh component-model p-recursive" }]

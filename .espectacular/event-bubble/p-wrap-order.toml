@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_wrap_order@b22f05f68abb"
+description = "the first pair wraps the second"
+falsifiability_class = "safety"
+id = "p-wrap-order"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh event-bubble p-wrap-order" }]

@@ -1,0 +1,11 @@
+archetype = "SA"
+authored_with = "0.9.2"
+derived_from = "p_avoid@834df7ba742e"
+description = "the focused textarea is inside the visible area"
+falsifiability_class = "safety"
+id = "p-avoid"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh ui-mobile p-avoid" }]

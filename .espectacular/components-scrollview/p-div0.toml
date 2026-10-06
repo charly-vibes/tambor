@@ -1,0 +1,11 @@
+archetype = "SA"
+authored_with = "0.9.2"
+derived_from = "p_div0@d0d57a686d44"
+description = "offset is 0 and finite"
+falsifiability_class = "safety"
+id = "p-div0"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh components-scrollview p-div0" }]

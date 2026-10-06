@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_momentum@3b0baa372621"
+description = "offset keeps changing then settles, and is static under reduced motion"
+falsifiability_class = "safety"
+id = "p-momentum"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh components-scrollview p-momentum" }]

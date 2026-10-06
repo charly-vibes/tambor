@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_wheel_child@f8209cd6ca79"
+description = "the child's intents are returned"
+falsifiability_class = "safety"
+id = "p-wheel-child"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh components-scrollview p-wheel-child" }]

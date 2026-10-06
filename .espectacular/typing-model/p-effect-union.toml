@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_effect_union@c906866c8a6c"
+description = "it appears in the union with its argument types"
+falsifiability_class = "safety"
+id = "p-effect-union"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh typing-model p-effect-union" }]

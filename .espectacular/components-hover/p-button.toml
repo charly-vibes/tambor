@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_button@0ceb9b21d568"
+description = "pointer down inside returns the on-click result and up returns nothing"
+falsifiability_class = "safety"
+id = "p-button"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh components-hover p-button" }]

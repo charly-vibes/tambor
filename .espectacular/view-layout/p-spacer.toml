@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_spacer@490f9a4c01a5"
+description = "spacer(0, 5) between two rows pushes the second row down by 5 plus gaps"
+falsifiability_class = "safety"
+id = "p-spacer"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh view-layout p-spacer" }]

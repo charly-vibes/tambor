@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_registry@a38ea8d2d7ae"
+description = "it is both dispatchable by type and callable directly"
+falsifiability_class = "safety"
+id = "p-registry"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh effect-dispatch p-registry" }]

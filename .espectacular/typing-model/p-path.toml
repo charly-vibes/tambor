@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_path@f836bbe02aa0"
+description = "the result has type Path<S, B> and select returns B"
+falsifiability_class = "safety"
+id = "p-path"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh typing-model p-path" }]

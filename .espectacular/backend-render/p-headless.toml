@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_headless@36d05f567fb2"
+description = "an image of non-zero size is produced"
+falsifiability_class = "safety"
+id = "p-headless"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh backend-render p-headless" }]

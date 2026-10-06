@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_forward@d99c4a795e12"
+description = "the rendered view's handlers receive them"
+falsifiability_class = "safety"
+id = "p-forward"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh component-model p-forward" }]

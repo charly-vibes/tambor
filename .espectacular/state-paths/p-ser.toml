@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_ser@1fd394555674"
+description = "JSON round-trip is lossless for paths without a function predicate, and a keyword-style filter round-trips"
+falsifiability_class = "safety"
+id = "p-ser"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh state-paths p-ser" }]

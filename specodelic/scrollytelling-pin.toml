@@ -1,0 +1,37 @@
+source = "scrollytelling.pin"
+
+[[constraints]]
+id = "fixed_during_active"
+kind = "invariant"
+expr = "`∀ position within the Boundary: the target element's viewport-relative position is constant` — realized by [[components.pinned_panel.body_drawn_untranslated_when_active]]"
+traces_to = "[[scrollytelling.pin]]"
+
+[[constraints]]
+id = "spacer_reserves_height"
+kind = "invariant"
+expr = "`ScrollSpacer height == the Pin's authored scroll duration, for the entire time the Pin is active` — realized by [[components.pinned_panel.spacer_matches_body_extent]] together with [[components.scrollview.range_formula]]"
+traces_to = "[[scrollytelling.pin]]"
+
+[[constraints]]
+id = "release_no_jump"
+kind = "invariant"
+expr = "`at Boundary end: the pin releases and control returns to native flow within the same frame, with no discontinuity in rendered position` — realized by [[components.pinned_panel.release_continuous]]"
+traces_to = "[[scrollytelling.pin]]"
+
+[[constraints]]
+id = "spacer_recomputed_on_resize"
+kind = "invariant"
+expr = "`target element size changes after initialization ⟹ ScrollSpacer height is recomputed on the next onRefresh` — realized for free by [[components.pinned_panel.render_pure]] together with [[backend.render.resize_redraws]], since nothing is cached in the first place"
+traces_to = "[[scrollytelling.pin]]"
+
+[[constraints]]
+id = "nested_pin_priority"
+kind = "invariant"
+expr = "`∀ nested Pins: stacking order resolves by explicit priority, defaulting to document order when priority is unset` — realized by [[components.pinned_panel.nested_panel_priority]]"
+traces_to = "[[scrollytelling.pin]]"
+
+[[constraints]]
+id = "focus_releases_pin"
+kind = "invariant"
+expr = "`keyboard focus would move past the last interactive element inside an active Pin ⟹ the Pin releases rather than trapping focus` — **open gap**, see Notes"
+traces_to = "[[scrollytelling.pin]]"

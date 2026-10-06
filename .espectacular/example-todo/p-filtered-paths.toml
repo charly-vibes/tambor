@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_filtered_paths@bd9459df760b"
+description = "original list becomes first, third"
+falsifiability_class = "safety"
+id = "p-filtered-paths"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh example-todo p-filtered-paths" }]

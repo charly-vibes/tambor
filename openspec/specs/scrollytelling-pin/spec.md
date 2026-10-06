@@ -1,0 +1,134 @@
+---
+id: spec
+kind: intent
+checked_against_core: clear
+statement: "WHILE a Pin's Boundary is active, THE Pin SHALL fix its target
+  element's position relative to the viewport, reserve equivalent layout
+  space via a ScrollSpacer, and SHALL release the element back to native
+  document flow at the Boundary's end without a visual jump."
+---
+
+# Pin (bridged onto membrane-js)
+
+Unchanged from the original DOM-oriented specification in intent — this
+file still states the library-level requirement. What changed is *how*
+it is satisfied: there is no native document scroll or `position: fixed`
+in membrane-js, so every Constraint below is realized by composing
+[[components.scrollview]] (the offset source) with the new
+[[components.pinned_panel]] (specified in `components-pinned_panel.md`)
+rather than by browser layout. Each row's expr names, in prose, the
+component-level invariant doing the actual work — not as a structured
+`observes` reference, since `observes` is reserved for `effect`-kind
+Constraints (Reference Typing) and none of these targets are effects.
+
+## Constraints
+
+| id                           | kind      | expr                                                                                                          | traces_to               |
+|---------------------------------|-----------|------------------------------------------------------------------------------------------------------------------|------------------------------|
+| fixed_during_active | invariant | `∀ position within the Boundary: the target element's viewport-relative position is constant` — realized by components.pinned_panel.body_drawn_untranslated_when_active (cross-file) | [[spec]] |
+| spacer_reserves_height | invariant | `ScrollSpacer height == the Pin's authored scroll duration, for the entire time the Pin is active` — realized by components.pinned_panel.spacer_matches_body_extent (cross-file) together with components.scrollview.range_formula (cross-file) | [[spec]] |
+| release_no_jump | invariant | `at Boundary end: the pin releases and control returns to native flow within the same frame, with no discontinuity in rendered position` — realized by components.pinned_panel.release_continuous (cross-file) | [[spec]] |
+| spacer_recomputed_on_resize | invariant | `target element size changes after initialization ⟹ ScrollSpacer height is recomputed on the next onRefresh` — realized for free by components.pinned_panel.render_pure (cross-file) together with backend.render.resize_redraws (cross-file), since nothing is cached in the first place | [[spec]] |
+| nested_pin_priority | invariant | `∀ nested Pins: stacking order resolves by explicit priority, defaulting to document order when priority is unset` — realized by components.pinned_panel.nested_panel_priority (cross-file) | [[spec]] |
+| focus_releases_pin | invariant | `keyboard focus would move past the last interactive element inside an active Pin ⟹ the Pin releases rather than trapping focus` — **open gap**, see Notes | [[spec]] |
+
+## Model
+
+### States
+- `unpinned`
+- `pinned`
+- `released`
+
+### Transitions
+
+| id                   | from     | to       | guard                                                          |
+|----------------------|----------|----------|---------------------------------------------------------------------|
+| pin | unpinned | pinned | [[spec.spacer_reserves_height]] |
+| release | pinned | released | [[spec.release_no_jump]] |
+| release_on_focus_out | pinned | released | [[spec.focus_releases_pin]] |
+| unpin | released | unpinned | `scroll returns above the Pin's start boundary` |
+
+## Properties
+
+| id                        | kind | derives_from                                          | generator                                             | predicate                                                                    |
+|------------------------------|------|--------------------------------------------------------------|----------------------------------------------------------------|-------------------------------------------------------------------------------------|
+| position_constant_while_pinned | unit | [[spec.fixed_during_active]] | `scroll_sweep_within_pin_boundary()` | `viewport_position(target) is constant across every sampled frame` |
+| spacer_matches_duration | unit | [[spec.spacer_reserves_height]] | `pin_with(authored_duration: d)` | `spacer_height == d` |
+| no_visual_jump_on_release | unit | [[spec.release_no_jump]] | `scroll_past_pin_end_boundary()` | `rendered_position(frame_before_release) == rendered_position(frame_after_release)` |
+| resize_recomputes_spacer | unit | [[spec.spacer_recomputed_on_resize]] | `resize_pinned_target_then_refresh()` | `spacer_height == new authored duration` |
+| nested_priority_resolved | unit | [[spec.nested_pin_priority]] | `two_nested_pins(priority: unset)` | `stacking_order == document_order` |
+| tab_out_releases_focus | unit | [[spec.focus_releases_pin]] | `tab_past_last_interactive_element_in_pin()` | `check(pin_state) == released` |
+
+## Notes
+
+`checked_against_core: clear`. Three of six Constraints are satisfied
+**for free** by composing existing membrane-js guarantees rather than
+needing new primitive-level work:
+
+- `spacer_recomputed_on_resize` was a real engineering concern on the web
+  (stale cached layout after a resize). On membrane-js it's not a
+  separate mechanism at all — [[component.model.render_pure]] recomputes
+  every value fresh on every render, and [[backend.render.resize_redraws]]
+  already guarantees a redraw follows any container resize. There is
+  nothing to "recompute on refresh" because nothing is ever cached in
+  the first place.
+- `fixed_during_active` and `release_no_jump` reduce directly to
+  [[components.pinned_panel]]'s own `body_drawn_untranslated_when_active`
+  and `release_continuous` — restated here only to keep this file's
+  intent self-contained for a reader who hasn't opened
+  `components-pinned_panel.md`.
+
+One Constraint remains an **open gap**, carried over unresolved rather
+than silently dropped or claimed-solved: `focus_releases_pin` names no
+realizing invariant because nothing in this corpus
+([[component.model]], [[backend.render]], or the new
+[[components.pinned_panel]]) specifies keyboard focus traversal order
+across the Membrane component tree. Closing this honestly requires
+either a new corpus-level focus-order spec, or narrowing this Constraint
+to the DOM backend specifically (where native Tab order might apply) —
+not something `pinned_panel` can claim on its own. See the matching note
+in `components-pinned_panel.md`.
+
+## Requirements
+
+### Requirement: Property coverage mirror
+
+Every property row is verified by exactly one dedicated scenario;
+`ah sync` derives one contract per VERIFIES link.
+
+#### Scenario: position_constant_while_pinned
+
+- **WHEN** `scroll_sweep_within_pin_boundary()`
+- **THEN** `viewport_position(target) is constant across every sampled frame`
+- **VERIFIES** [[spec.position_constant_while_pinned]]
+
+#### Scenario: spacer_matches_duration
+
+- **WHEN** `pin_with(authored_duration: d)`
+- **THEN** `spacer_height == d`
+- **VERIFIES** [[spec.spacer_matches_duration]]
+
+#### Scenario: no_visual_jump_on_release
+
+- **WHEN** `scroll_past_pin_end_boundary()`
+- **THEN** `rendered_position(frame_before_release) == rendered_position(frame_after_release)`
+- **VERIFIES** [[spec.no_visual_jump_on_release]]
+
+#### Scenario: resize_recomputes_spacer
+
+- **WHEN** `resize_pinned_target_then_refresh()`
+- **THEN** `spacer_height == new authored duration`
+- **VERIFIES** [[spec.resize_recomputes_spacer]]
+
+#### Scenario: nested_priority_resolved
+
+- **WHEN** `two_nested_pins(priority: unset)`
+- **THEN** `stacking_order == document_order`
+- **VERIFIES** [[spec.nested_priority_resolved]]
+
+#### Scenario: tab_out_releases_focus
+
+- **WHEN** `tab_past_last_interactive_element_in_pin()`
+- **THEN** `check(pin_state) == released`
+- **VERIFIES** [[spec.tab_out_releases_focus]]
+

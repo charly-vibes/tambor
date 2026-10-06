@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_captured@160b6c069164"
+description = "state ends with a todo hello and next-todo-text empty"
+falsifiability_class = "safety"
+id = "p-captured"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh effect-dispatch p-captured" }]

@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_get_default@5e4e98df0f56"
+description = "reading an absent key gives 42"
+falsifiability_class = "safety"
+id = "p-get-default"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh path-derivation p-get-default" }]

@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_typescript@ea092aa6fba3"
+description = "tsc strict passes and declarations are emitted"
+falsifiability_class = "safety"
+id = "p-typescript"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh membrane p-typescript" }]

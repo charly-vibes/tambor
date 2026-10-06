@@ -1,0 +1,11 @@
+archetype = "SA"
+authored_with = "0.9.2"
+derived_from = "p_click_away@0d228687ca72"
+description = "the effect sets focus to nil"
+falsifiability_class = "safety"
+id = "p-click-away"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh app-toplevel p-click-away" }]

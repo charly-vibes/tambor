@@ -1,0 +1,11 @@
+archetype = "SA"
+authored_with = "0.9.2"
+derived_from = "p_header_toggle@5de9110570e7"
+description = "the effect flips open?"
+falsifiability_class = "safety"
+id = "p-header-toggle"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh components-select p-header-toggle" }]

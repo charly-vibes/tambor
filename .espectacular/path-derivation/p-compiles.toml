@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_compiles@482abcb68355"
+description = "derivation never throws"
+falsifiability_class = "safety"
+id = "p-compiles"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh path-derivation p-compiles" }]

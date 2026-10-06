@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_functions@ad6d53b37d36"
+description = "both are called with the same arguments"
+falsifiability_class = "safety"
+id = "p-functions"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh interop-model p-functions" }]

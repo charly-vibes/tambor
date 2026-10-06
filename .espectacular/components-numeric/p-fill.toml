@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_fill@60f98868df66"
+description = "width is 15"
+falsifiability_class = "safety"
+id = "p-fill"
+status = "active"
+superseded_by = ""
+
+[tests]
+shell = [{ command = "tools/scaffold-check.sh components-numeric p-fill" }]
