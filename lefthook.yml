@@ -1,0 +1,41 @@
+# Hard gates — commit and push are blocked on failure.
+# Tools: espectacular (ah), pretender, testaruda.
+#
+# pre-commit: fast, structural checks.
+# pre-push:   full execution (contract tests, test selection loop, whole-repo scan).
+#
+# NOTE: pretender runs via lefthook (single hook owner). Do NOT also run
+# `pretender hooks install` — its native shim would fight lefthook for
+# .git/hooks/pre-commit. pretender doctor will report the shim as missing;
+# that is expected here.
+
+pre-commit:
+  parallel: true
+  jobs:
+    - name: espectacular-structural
+      run: ah check
+
+    - name: pretender-gate-staged
+      run: pretender check --staged --mode gate
+
+    - name: testaruda-config
+      run: testaruda doctor
+
+pre-push:
+  jobs:
+    - name: espectacular-contracts
+      run: ah check --run-tests
+
+    - name: pretender-gate-full
+      run: pretender check --mode gate
+
+    - name: testaruda-exec
+      # exec loop: select → run → ingest → calibrate.
+      # Exit 0 = selected tests ran and passed; exit 20 = no tests affected
+      # (benign — nothing to run). Any other code blocks the push.
+      run: |
+        testaruda exec
+        code=$?
+        if [ "$code" -eq 0 ] || [ "$code" -eq 20 ]; then exit 0; fi
+        echo "testaruda exec failed with exit code $code" >&2
+        exit "$code"

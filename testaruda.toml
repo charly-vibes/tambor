@@ -1,0 +1,31 @@
+# testaruda configuration
+
+[adapters]
+# Default adapter when no extension matches.
+# Tambor's test stack is vitest + fast-check (TypeScript).
+default = "testaruda-adapter-typescript"
+
+[adapters.extensions]
+# Map file extensions to adapter binaries.
+# Adapters must be installed on PATH or specified as absolute paths.
+".rs" = "testaruda-adapter-rust"
+".py" = "testaruda-adapter-python"
+".jl" = "testaruda-adapter-julia"
+".ts" = "testaruda-adapter-typescript"
+".tsx" = "testaruda-adapter-typescript"
+".mts" = "testaruda-adapter-typescript"
+".cts" = "testaruda-adapter-typescript"
+".clj" = "testaruda-adapter-clojure"
+".cljs" = "testaruda-adapter-clojure"
+".cljc" = "testaruda-adapter-clojure"
+
+[discover]
+# Directory/file names to exclude from discover walks.
+# Matches the end of the directory name (e.g., ".venv" matches any path
+# ending in ".venv"). The default list covers common tool/build artifacts.
+exclude = ["target", ".git", "node_modules", ".venv", "venv",
+          "__pycache__", ".mypy_cache", ".pytest_cache",
+          "build", "dist", ".tox",
+          # specodelic artifacts: *_props.rs are proptest scaffolds (specodelic 0.4.0
+          # cannot execute them) — never a Cargo project, never a test target.
+          "specodelic"]
