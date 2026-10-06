@@ -7,5 +7,5 @@ id = "p-theme"
 status = "active"
 superseded_by = ""
 
-[tests]
-shell = [{ command = "tools/scaffold-check.sh ui-mobile p-theme" }]
+[[tests.shell]]
+command = "tools/scaffold-check.sh ui-mobile p-theme"

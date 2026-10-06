@@ -7,5 +7,5 @@ id = "p-immut"
 status = "active"
 superseded_by = ""
 
-[tests]
-shell = [{ command = "tools/scaffold-check.sh state-paths p-immut" }]
+[[tests.shell]]
+command = "tools/scaffold-check.sh state-paths p-immut"

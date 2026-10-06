@@ -7,5 +7,5 @@ id = "p-start-scroll"
 status = "active"
 superseded_by = ""
 
-[tests]
-shell = [{ command = "tools/scaffold-check.sh app-toplevel p-start-scroll" }]
+[[tests.shell]]
+command = "tools/scaffold-check.sh app-toplevel p-start-scroll"

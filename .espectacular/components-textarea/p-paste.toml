@@ -7,5 +7,5 @@ id = "p-paste"
 status = "active"
 superseded_by = ""
 
-[tests]
-shell = [{ command = "tools/scaffold-check.sh components-textarea p-paste" }]
+[[tests.shell]]
+command = "tools/scaffold-check.sh components-textarea p-paste"

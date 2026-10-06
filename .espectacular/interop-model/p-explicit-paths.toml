@@ -7,5 +7,5 @@ id = "p-explicit-paths"
 status = "active"
 superseded_by = ""
 
-[tests]
-shell = [{ command = "tools/scaffold-check.sh interop-model p-explicit-paths" }]
+[[tests.shell]]
+command = "tools/scaffold-check.sh interop-model p-explicit-paths"

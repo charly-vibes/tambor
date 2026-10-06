@@ -7,5 +7,5 @@ id = "p-examples"
 status = "active"
 superseded_by = ""
 
-[tests]
-shell = [{ command = "tools/scaffold-check.sh membrane p-examples" }]
+[[tests.shell]]
+command = "tools/scaffold-check.sh membrane p-examples"

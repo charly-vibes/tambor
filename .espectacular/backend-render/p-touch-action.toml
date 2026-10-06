@@ -7,5 +7,5 @@ id = "p-touch-action"
 status = "active"
 superseded_by = ""
 
-[tests]
-shell = [{ command = "tools/scaffold-check.sh backend-render p-touch-action" }]
+[[tests.shell]]
+command = "tools/scaffold-check.sh backend-render p-touch-action"

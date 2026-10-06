@@ -7,5 +7,5 @@ id = "p-header-toggle"
 status = "active"
 superseded_by = ""
 
-[tests]
-shell = [{ command = "tools/scaffold-check.sh components-select p-header-toggle" }]
+[[tests.shell]]
+command = "tools/scaffold-check.sh components-select p-header-toggle"

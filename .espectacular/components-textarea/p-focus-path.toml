@@ -7,5 +7,5 @@ id = "p-focus-path"
 status = "active"
 superseded_by = ""
 
-[tests]
-shell = [{ command = "tools/scaffold-check.sh components-textarea p-focus-path" }]
+[[tests.shell]]
+command = "tools/scaffold-check.sh components-textarea p-focus-path"

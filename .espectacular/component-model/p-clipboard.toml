@@ -7,5 +7,5 @@ id = "p-clipboard"
 status = "active"
 superseded_by = ""
 
-[tests]
-shell = [{ command = "tools/scaffold-check.sh component-model p-clipboard" }]
+[[tests.shell]]
+command = "tools/scaffold-check.sh component-model p-clipboard"

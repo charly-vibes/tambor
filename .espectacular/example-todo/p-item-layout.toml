@@ -7,5 +7,5 @@ id = "p-item-layout"
 status = "active"
 superseded_by = ""
 
-[tests]
-shell = [{ command = "tools/scaffold-check.sh example-todo p-item-layout" }]
+[[tests.shell]]
+command = "tools/scaffold-check.sh example-todo p-item-layout"

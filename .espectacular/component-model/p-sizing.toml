@@ -7,5 +7,5 @@ id = "p-sizing"
 status = "active"
 superseded_by = ""
 
-[tests]
-shell = [{ command = "tools/scaffold-check.sh component-model p-sizing" }]
+[[tests.shell]]
+command = "tools/scaffold-check.sh component-model p-sizing"

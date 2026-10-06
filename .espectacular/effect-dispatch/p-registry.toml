@@ -7,5 +7,5 @@ id = "p-registry"
 status = "active"
 superseded_by = ""
 
-[tests]
-shell = [{ command = "tools/scaffold-check.sh effect-dispatch p-registry" }]
+[[tests.shell]]
+command = "tools/scaffold-check.sh effect-dispatch p-registry"

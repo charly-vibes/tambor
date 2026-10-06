@@ -7,5 +7,5 @@ id = "p-intercept"
 status = "active"
 superseded_by = ""
 
-[tests]
-shell = [{ command = "tools/scaffold-check.sh example-file_selector p-intercept" }]
+[[tests.shell]]
+command = "tools/scaffold-check.sh example-file_selector p-intercept"

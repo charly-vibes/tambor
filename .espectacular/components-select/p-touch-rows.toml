@@ -7,5 +7,5 @@ id = "p-touch-rows"
 status = "active"
 superseded_by = ""
 
-[tests]
-shell = [{ command = "tools/scaffold-check.sh components-select p-touch-rows" }]
+[[tests.shell]]
+command = "tools/scaffold-check.sh components-select p-touch-rows"

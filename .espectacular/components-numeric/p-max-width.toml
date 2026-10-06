@@ -7,5 +7,5 @@ id = "p-max-width"
 status = "active"
 superseded_by = ""
 
-[tests]
-shell = [{ command = "tools/scaffold-check.sh components-numeric p-max-width" }]
+[[tests.shell]]
+command = "tools/scaffold-check.sh components-numeric p-max-width"

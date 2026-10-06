@@ -7,5 +7,5 @@ id = "p-prop-path"
 status = "active"
 superseded_by = ""
 
-[tests]
-shell = [{ command = "tools/scaffold-check.sh component-model p-prop-path" }]
+[[tests.shell]]
+command = "tools/scaffold-check.sh component-model p-prop-path"

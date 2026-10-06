@@ -7,5 +7,5 @@ id = "p-contextual-source"
 status = "active"
 superseded_by = ""
 
-[tests]
-shell = [{ command = "tools/scaffold-check.sh components-pinned_panel p-contextual-source" }]
+[[tests.shell]]
+command = "tools/scaffold-check.sh components-pinned_panel p-contextual-source"

@@ -7,5 +7,5 @@ id = "p-row-default"
 status = "active"
 superseded_by = ""
 
-[tests]
-shell = [{ command = "tools/scaffold-check.sh example-file_selector p-row-default" }]
+[[tests.shell]]
+command = "tools/scaffold-check.sh example-file_selector p-row-default"

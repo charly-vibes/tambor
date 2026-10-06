@@ -7,5 +7,5 @@ id = "p-innermost"
 status = "active"
 superseded_by = ""
 
-[tests]
-shell = [{ command = "tools/scaffold-check.sh event-bubble p-innermost" }]
+[[tests.shell]]
+command = "tools/scaffold-check.sh event-bubble p-innermost"

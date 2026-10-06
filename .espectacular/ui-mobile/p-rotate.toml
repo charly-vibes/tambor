@@ -7,5 +7,5 @@ id = "p-rotate"
 status = "active"
 superseded_by = ""
 
-[tests]
-shell = [{ command = "tools/scaffold-check.sh ui-mobile p-rotate" }]
+[[tests.shell]]
+command = "tools/scaffold-check.sh ui-mobile p-rotate"

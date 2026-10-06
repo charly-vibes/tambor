@@ -7,5 +7,5 @@ id = "p-punctuated"
 status = "active"
 superseded_by = ""
 
-[tests]
-shell = [{ command = "tools/scaffold-check.sh interop-model p-punctuated" }]
+[[tests.shell]]
+command = "tools/scaffold-check.sh interop-model p-punctuated"

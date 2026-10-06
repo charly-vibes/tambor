@@ -7,5 +7,5 @@ id = "p-key-concat"
 status = "active"
 superseded_by = ""
 
-[tests]
-shell = [{ command = "tools/scaffold-check.sh event-model p-key-concat" }]
+[[tests.shell]]
+command = "tools/scaffold-check.sh event-model p-key-concat"

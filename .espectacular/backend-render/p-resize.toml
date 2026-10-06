@@ -7,5 +7,5 @@ id = "p-resize"
 status = "active"
 superseded_by = ""
 
-[tests]
-shell = [{ command = "tools/scaffold-check.sh backend-render p-resize" }]
+[[tests.shell]]
+command = "tools/scaffold-check.sh backend-render p-resize"

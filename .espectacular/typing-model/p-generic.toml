@@ -7,5 +7,5 @@ id = "p-generic"
 status = "active"
 superseded_by = ""
 
-[tests]
-shell = [{ command = "tools/scaffold-check.sh typing-model p-generic" }]
+[[tests.shell]]
+command = "tools/scaffold-check.sh typing-model p-generic"

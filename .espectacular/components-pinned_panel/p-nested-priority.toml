@@ -7,5 +7,5 @@ id = "p-nested-priority"
 status = "active"
 superseded_by = ""
 
-[tests]
-shell = [{ command = "tools/scaffold-check.sh components-pinned_panel p-nested-priority" }]
+[[tests.shell]]
+command = "tools/scaffold-check.sh components-pinned_panel p-nested-priority"

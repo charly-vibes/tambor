@@ -1,0 +1,11 @@
+archetype = "SA"
+authored_with = "0.9.2"
+derived_from = "p_add@8d479ac8df19"
+description = "nums becomes 0, 1, 2, 0 and a fifth row appears"
+falsifiability_class = "safety"
+id = "p-add"
+status = "active"
+superseded_by = ""
+
+[[tests.shell]]
+command = "tools/scaffold-check.sh example-counter p-add"

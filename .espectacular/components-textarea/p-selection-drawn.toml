@@ -7,5 +7,5 @@ id = "p-selection-drawn"
 status = "active"
 superseded_by = ""
 
-[tests]
-shell = [{ command = "tools/scaffold-check.sh components-textarea p-selection-drawn" }]
+[[tests.shell]]
+command = "tools/scaffold-check.sh components-textarea p-selection-drawn"

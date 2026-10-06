@@ -7,5 +7,5 @@ id = "p-vstack"
 status = "active"
 superseded_by = ""
 
-[tests]
-shell = [{ command = "tools/scaffold-check.sh view-layout p-vstack" }]
+[[tests.shell]]
+command = "tools/scaffold-check.sh view-layout p-vstack"

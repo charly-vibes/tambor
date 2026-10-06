@@ -1,0 +1,11 @@
+archetype = "SA"
+authored_with = "0.9.2"
+derived_from = "p_increment@c4c6dc1efc81"
+description = "state num becomes 11"
+falsifiability_class = "safety"
+id = "p-increment"
+status = "active"
+superseded_by = ""
+
+[[tests.shell]]
+command = "tools/scaffold-check.sh example-counter p-increment"

@@ -7,5 +7,5 @@ id = "p-label"
 status = "active"
 superseded_by = ""
 
-[tests]
-shell = [{ command = "tools/scaffold-check.sh components-numeric p-label" }]
+[[tests.shell]]
+command = "tools/scaffold-check.sh components-numeric p-label"

@@ -7,5 +7,5 @@ id = "p-assoc"
 status = "active"
 superseded_by = ""
 
-[tests]
-shell = [{ command = "tools/scaffold-check.sh path-derivation p-assoc" }]
+[[tests.shell]]
+command = "tools/scaffold-check.sh path-derivation p-assoc"

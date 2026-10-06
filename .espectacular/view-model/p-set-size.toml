@@ -7,5 +7,5 @@ id = "p-set-size"
 status = "active"
 superseded_by = ""
 
-[tests]
-shell = [{ command = "tools/scaffold-check.sh view-model p-set-size" }]
+[[tests.shell]]
+command = "tools/scaffold-check.sh view-model p-set-size"

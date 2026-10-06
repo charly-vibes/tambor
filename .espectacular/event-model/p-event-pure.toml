@@ -7,5 +7,5 @@ id = "p-event-pure"
 status = "active"
 superseded_by = ""
 
-[tests]
-shell = [{ command = "tools/scaffold-check.sh event-model p-event-pure" }]
+[[tests.shell]]
+command = "tools/scaffold-check.sh event-model p-event-pure"

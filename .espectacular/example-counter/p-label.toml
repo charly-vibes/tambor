@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_label@7eba7621f93e"
+description = "label text is 10"
+falsifiability_class = "safety"
+id = "p-label"
+status = "active"
+superseded_by = ""
+
+[[tests.shell]]
+command = "tools/scaffold-check.sh example-counter p-label"

@@ -7,5 +7,5 @@ id = "p-drag-effect"
 status = "active"
 superseded_by = ""
 
-[tests]
-shell = [{ command = "tools/scaffold-check.sh app-toplevel p-drag-effect" }]
+[[tests.shell]]
+command = "tools/scaffold-check.sh app-toplevel p-drag-effect"

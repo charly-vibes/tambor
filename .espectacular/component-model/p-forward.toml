@@ -7,5 +7,5 @@ id = "p-forward"
 status = "active"
 superseded_by = ""
 
-[tests]
-shell = [{ command = "tools/scaffold-check.sh component-model p-forward" }]
+[[tests.shell]]
+command = "tools/scaffold-check.sh component-model p-forward"

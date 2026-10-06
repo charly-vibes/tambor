@@ -7,5 +7,5 @@ id = "p-string-tags"
 status = "active"
 superseded_by = ""
 
-[tests]
-shell = [{ command = "tools/scaffold-check.sh interop-model p-string-tags" }]
+[[tests.shell]]
+command = "tools/scaffold-check.sh interop-model p-string-tags"

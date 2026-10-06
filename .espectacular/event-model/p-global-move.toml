@@ -7,5 +7,5 @@ id = "p-global-move"
 status = "active"
 superseded_by = ""
 
-[tests]
-shell = [{ command = "tools/scaffold-check.sh event-model p-global-move" }]
+[[tests.shell]]
+command = "tools/scaffold-check.sh event-model p-global-move"

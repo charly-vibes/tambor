@@ -7,5 +7,5 @@ id = "p-focus-effect"
 status = "active"
 superseded_by = ""
 
-[tests]
-shell = [{ command = "tools/scaffold-check.sh app-toplevel p-focus-effect" }]
+[[tests.shell]]
+command = "tools/scaffold-check.sh app-toplevel p-focus-effect"

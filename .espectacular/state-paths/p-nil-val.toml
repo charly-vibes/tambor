@@ -7,5 +7,5 @@ id = "p-nil-val"
 status = "active"
 superseded_by = ""
 
-[tests]
-shell = [{ command = "tools/scaffold-check.sh state-paths p-nil-val" }]
+[[tests.shell]]
+command = "tools/scaffold-check.sh state-paths p-nil-val"

@@ -7,5 +7,5 @@ id = "p-navigators"
 status = "active"
 superseded_by = ""
 
-[tests]
-shell = [{ command = "tools/scaffold-check.sh typing-model p-navigators" }]
+[[tests.shell]]
+command = "tools/scaffold-check.sh typing-model p-navigators"

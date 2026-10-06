@@ -7,5 +7,5 @@ id = "p-flatten"
 status = "active"
 superseded_by = ""
 
-[tests]
-shell = [{ command = "tools/scaffold-check.sh state-paths p-flatten" }]
+[[tests.shell]]
+command = "tools/scaffold-check.sh state-paths p-flatten"

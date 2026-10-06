@@ -7,5 +7,5 @@ id = "p-filtered-paths"
 status = "active"
 superseded_by = ""
 
-[tests]
-shell = [{ command = "tools/scaffold-check.sh example-todo p-filtered-paths" }]
+[[tests.shell]]
+command = "tools/scaffold-check.sh example-todo p-filtered-paths"

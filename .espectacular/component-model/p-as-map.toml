@@ -7,5 +7,5 @@ id = "p-as-map"
 status = "active"
 superseded_by = ""
 
-[tests]
-shell = [{ command = "tools/scaffold-check.sh component-model p-as-map" }]
+[[tests.shell]]
+command = "tools/scaffold-check.sh component-model p-as-map"

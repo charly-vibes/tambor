@@ -7,5 +7,5 @@ id = "p-every-binding"
 status = "active"
 superseded_by = ""
 
-[tests]
-shell = [{ command = "tools/scaffold-check.sh path-derivation p-every-binding" }]
+[[tests.shell]]
+command = "tools/scaffold-check.sh path-derivation p-every-binding"

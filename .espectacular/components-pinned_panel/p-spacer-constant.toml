@@ -7,5 +7,5 @@ id = "p-spacer-constant"
 status = "active"
 superseded_by = ""
 
-[tests]
-shell = [{ command = "tools/scaffold-check.sh components-pinned_panel p-spacer-constant" }]
+[[tests.shell]]
+command = "tools/scaffold-check.sh components-pinned_panel p-spacer-constant"

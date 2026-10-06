@@ -7,5 +7,5 @@ id = "p-button"
 status = "active"
 superseded_by = ""
 
-[tests]
-shell = [{ command = "tools/scaffold-check.sh components-hover p-button" }]
+[[tests.shell]]
+command = "tools/scaffold-check.sh components-hover p-button"

@@ -7,5 +7,5 @@ id = "p-override"
 status = "active"
 superseded_by = ""
 
-[tests]
-shell = [{ command = "tools/scaffold-check.sh effect-dispatch p-override" }]
+[[tests.shell]]
+command = "tools/scaffold-check.sh effect-dispatch p-override"

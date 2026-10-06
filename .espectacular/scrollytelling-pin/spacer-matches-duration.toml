@@ -7,5 +7,5 @@ id = "spacer-matches-duration"
 status = "active"
 superseded_by = ""
 
-[tests]
-shell = [{ command = "tools/scaffold-check.sh scrollytelling-pin spacer-matches-duration" }]
+[[tests.shell]]
+command = "tools/scaffold-check.sh scrollytelling-pin spacer-matches-duration"

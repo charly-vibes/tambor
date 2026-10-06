@@ -7,5 +7,5 @@ id = "p-momentum"
 status = "active"
 superseded_by = ""
 
-[tests]
-shell = [{ command = "tools/scaffold-check.sh components-scrollview p-momentum" }]
+[[tests.shell]]
+command = "tools/scaffold-check.sh components-scrollview p-momentum"

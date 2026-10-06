@@ -7,5 +7,5 @@ id = "p-unsupported"
 status = "active"
 superseded_by = ""
 
-[tests]
-shell = [{ command = "tools/scaffold-check.sh path-derivation p-unsupported" }]
+[[tests.shell]]
+command = "tools/scaffold-check.sh path-derivation p-unsupported"

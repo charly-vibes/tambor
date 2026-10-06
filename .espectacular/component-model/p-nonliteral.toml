@@ -7,5 +7,5 @@ id = "p-nonliteral"
 status = "active"
 superseded_by = ""
 
-[tests]
-shell = [{ command = "tools/scaffold-check.sh component-model p-nonliteral" }]
+[[tests.shell]]
+command = "tools/scaffold-check.sh component-model p-nonliteral"

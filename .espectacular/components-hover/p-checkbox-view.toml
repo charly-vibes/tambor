@@ -7,5 +7,5 @@ id = "p-checkbox-view"
 status = "active"
 superseded_by = ""
 
-[tests]
-shell = [{ command = "tools/scaffold-check.sh components-hover p-checkbox-view" }]
+[[tests.shell]]
+command = "tools/scaffold-check.sh components-hover p-checkbox-view"

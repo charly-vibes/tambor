@@ -7,5 +7,5 @@ id = "p-stack"
 status = "active"
 superseded_by = ""
 
-[tests]
-shell = [{ command = "tools/scaffold-check.sh backend-render p-stack" }]
+[[tests.shell]]
+command = "tools/scaffold-check.sh backend-render p-stack"

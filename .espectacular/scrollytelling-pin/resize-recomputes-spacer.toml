@@ -7,5 +7,5 @@ id = "resize-recomputes-spacer"
 status = "active"
 superseded_by = ""
 
-[tests]
-shell = [{ command = "tools/scaffold-check.sh scrollytelling-pin resize-recomputes-spacer" }]
+[[tests.shell]]
+command = "tools/scaffold-check.sh scrollytelling-pin resize-recomputes-spacer"

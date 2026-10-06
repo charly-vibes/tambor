@@ -7,5 +7,5 @@ id = "p-namespaces"
 status = "active"
 superseded_by = ""
 
-[tests]
-shell = [{ command = "tools/scaffold-check.sh app-toplevel p-namespaces" }]
+[[tests.shell]]
+command = "tools/scaffold-check.sh app-toplevel p-namespaces"

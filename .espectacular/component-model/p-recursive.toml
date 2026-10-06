@@ -7,5 +7,5 @@ id = "p-recursive"
 status = "active"
 superseded_by = ""
 
-[tests]
-shell = [{ command = "tools/scaffold-check.sh component-model p-recursive" }]
+[[tests.shell]]
+command = "tools/scaffold-check.sh component-model p-recursive"

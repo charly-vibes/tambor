@@ -7,5 +7,5 @@ id = "p-gesture"
 status = "active"
 superseded_by = ""
 
-[tests]
-shell = [{ command = "tools/scaffold-check.sh components-numeric p-gesture" }]
+[[tests.shell]]
+command = "tools/scaffold-check.sh components-numeric p-gesture"

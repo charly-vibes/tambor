@@ -7,5 +7,5 @@ id = "p-activation"
 status = "active"
 superseded_by = ""
 
-[tests]
-shell = [{ command = "tools/scaffold-check.sh components-pinned_panel p-activation" }]
+[[tests.shell]]
+command = "tools/scaffold-check.sh components-pinned_panel p-activation"

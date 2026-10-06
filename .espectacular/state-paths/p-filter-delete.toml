@@ -7,5 +7,5 @@ id = "p-filter-delete"
 status = "active"
 superseded_by = ""
 
-[tests]
-shell = [{ command = "tools/scaffold-check.sh state-paths p-filter-delete" }]
+[[tests.shell]]
+command = "tools/scaffold-check.sh state-paths p-filter-delete"

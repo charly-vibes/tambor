@@ -7,5 +7,5 @@ id = "p-center"
 status = "active"
 superseded_by = ""
 
-[tests]
-shell = [{ command = "tools/scaffold-check.sh view-layout p-center" }]
+[[tests.shell]]
+command = "tools/scaffold-check.sh view-layout p-center"

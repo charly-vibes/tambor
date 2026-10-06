@@ -7,5 +7,5 @@ id = "p-bars"
 status = "active"
 superseded_by = ""
 
-[tests]
-shell = [{ command = "tools/scaffold-check.sh components-scrollview p-bars" }]
+[[tests.shell]]
+command = "tools/scaffold-check.sh components-scrollview p-bars"

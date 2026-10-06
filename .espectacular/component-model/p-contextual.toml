@@ -7,5 +7,5 @@ id = "p-contextual"
 status = "active"
 superseded_by = ""
 
-[tests]
-shell = [{ command = "tools/scaffold-check.sh component-model p-contextual" }]
+[[tests.shell]]
+command = "tools/scaffold-check.sh component-model p-contextual"

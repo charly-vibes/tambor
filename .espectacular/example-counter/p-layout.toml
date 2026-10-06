@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.9.2"
+derived_from = "p_layout@80012468a2af"
+description = "child 0 is the button and child 1 is the label with x offset greater than the button width"
+falsifiability_class = "safety"
+id = "p-layout"
+status = "active"
+superseded_by = ""
+
+[[tests.shell]]
+command = "tools/scaffold-check.sh example-counter p-layout"

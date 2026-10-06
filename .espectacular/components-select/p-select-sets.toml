@@ -7,5 +7,5 @@ id = "p-select-sets"
 status = "active"
 superseded_by = ""
 
-[tests]
-shell = [{ command = "tools/scaffold-check.sh components-select p-select-sets" }]
+[[tests.shell]]
+command = "tools/scaffold-check.sh components-select p-select-sets"

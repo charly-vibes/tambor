@@ -7,5 +7,5 @@ id = "p-counter-effects"
 status = "active"
 superseded_by = ""
 
-[tests]
-shell = [{ command = "tools/scaffold-check.sh effect-dispatch p-counter-effects" }]
+[[tests.shell]]
+command = "tools/scaffold-check.sh effect-dispatch p-counter-effects"

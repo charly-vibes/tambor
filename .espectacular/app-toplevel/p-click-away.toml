@@ -7,5 +7,5 @@ id = "p-click-away"
 status = "active"
 superseded_by = ""
 
-[tests]
-shell = [{ command = "tools/scaffold-check.sh app-toplevel p-click-away" }]
+[[tests.shell]]
+command = "tools/scaffold-check.sh app-toplevel p-click-away"

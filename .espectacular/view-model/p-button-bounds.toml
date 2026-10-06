@@ -7,5 +7,5 @@ id = "p-button-bounds"
 status = "active"
 superseded_by = ""
 
-[tests]
-shell = [{ command = "tools/scaffold-check.sh view-model p-button-bounds" }]
+[[tests.shell]]
+command = "tools/scaffold-check.sh view-model p-button-bounds"
