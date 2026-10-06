@@ -1,0 +1,9 @@
+plugins = []
+
+[project]
+name = "tambor"
+version = "2026.10.4"
+description = ""
+tool_commit = "4b806a0"
+
+[llm]
