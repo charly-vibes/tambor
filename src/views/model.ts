@@ -123,7 +123,7 @@ export type Elem = Node | readonly Elem[] | null | undefined;
 
 // Array.isArray does not narrow readonly arrays, so groups get an
 // explicit predicate.
-function isGroup(elem: Elem): elem is readonly Elem[] {
+export function isGroup(elem: Elem): elem is readonly Elem[] {
   return Array.isArray(elem);
 }
 

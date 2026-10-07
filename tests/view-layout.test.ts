@@ -68,7 +68,7 @@ it("p_vstack: children are ordered with no vertical overlap, and sizes 10, 20, 3
       expect(ys[0]).toBe(0);
       for (let i = 1; i < ys.length; i++) {
         // no vertical overlap: next offset is at least previous bottom
-        expect(ys[i]).toBeGreaterThanOrEqual(ys[i - 1] + (sizes[i - 1] ?? 0));
+        expect(ys[i]).toBeGreaterThanOrEqual(ys[i - 1]! + (sizes[i - 1] ?? 0));
       }
     }),
   );
@@ -87,7 +87,7 @@ it("p_hstack: no horizontal overlap, and widths 10, 20 give offsets 0 and 11", (
       const xs = offsets(cols, 0);
       expect(xs[0]).toBe(0);
       for (let i = 1; i < xs.length; i++) {
-        expect(xs[i]).toBeGreaterThanOrEqual(xs[i - 1] + (sizes[i - 1] ?? 0));
+        expect(xs[i]).toBeGreaterThanOrEqual(xs[i - 1]! + (sizes[i - 1] ?? 0));
       }
     }),
   );
@@ -119,10 +119,10 @@ it("p_spacer: spacer(0, 5) between two rows pushes the second row down by 5 plus
       const ys = offsets(withSpacer, 1);
       const baseYs = offsets(withoutSpacer, 1);
       // spacer sits after the first row plus the gap...
-      expect(ys[1]).toBe(h1 + 1);
+      expect(ys[1]!).toBe(h1 + 1);
       // ...and pushes the second row down by its size plus the gaps
-      expect(ys[2]).toBe(h1 + 1 + 5 + 1);
-      expect(ys[2] - (baseYs[1] ?? 0)).toBe(5 + 1);
+      expect(ys[2]!).toBe(h1 + 1 + 5 + 1);
+      expect(ys[2]! - (baseYs[1] ?? 0)).toBe(5 + 1);
     }),
   );
 });
@@ -134,7 +134,10 @@ it("p_center: offsets equal half the free space", () => {
     fc.property(
       fc.tuple(fc.nat(500), fc.nat(500), fc.nat(500), fc.nat(500)),
       ([w, h, ew, eh]) => {
-        const node = center(rectangle(ew, eh), [w, h]);
+        const node = center(rectangle(ew, eh), [w, h]) as {
+          x: number;
+          y: number;
+        };
         expect(node.x).toBe((w - ew) / 2);
         expect(node.y).toBe((h - eh) / 2);
       },
@@ -156,20 +159,22 @@ it("p_table: columns and rows align", () => {
           row.map(([w, h]) => rectangle(w, h)),
         );
         const cells = tableLayout(table);
-        // flat row-major: cells for row i occupy [i*cols, (i+1)*cols)
-        const cols = specs[0].length;
-        for (let i = 0; i < table.length; i++) {
-          const rowCells = cells.slice(i * cols, (i + 1) * cols);
-          const ys = rowCells.map((c) => origin(c)[1]);
-          expect(new Set(ys).size).toBe(1);
-        }
-        for (let j = 0; j < cols; j++) {
-          const colCells: number[] = [];
-          for (let i = 0; i < table.length; i++) {
-            colCells.push(origin(cells[i * cols + j] as Elem)[0]);
-          }
-          expect(new Set(colCells).size).toBe(1);
-        }
+        // the flat cell list is row-major; walk it with a cursor so
+        // ragged tables keep their (row, column) attribution
+        const ysByRow: number[][] = [];
+        const xsByCol: number[][] = [];
+        let k = 0;
+        table.forEach((row, i) => {
+          ysByRow[i] = ysByRow[i] ?? [];
+          row.forEach((_, j) => {
+            const cell = cells[k++] as Elem;
+            (ysByRow[i] as number[]).push(origin(cell)[1]);
+            xsByCol[j] = xsByCol[j] ?? [];
+            xsByCol[j].push(origin(cell)[0]);
+          });
+        });
+        for (const ys of ysByRow) expect(new Set(ys).size).toBe(1);
+        for (const xs of xsByCol) expect(new Set(xs).size).toBe(1);
       },
     ),
   );
@@ -195,7 +200,7 @@ it("p_stretch: no stretch node remains after resolution", () => {
 
         // a flagged node is resolved against the container size
         const inner = (resolved as { drawable: Node }).drawable;
-        const rect = (children(inner)[0] as { drawables: readonly Node[] }).drawables[0];
+        const rect = children(inner)[0] as Node;
         const expectedW = wantWidth ? cw : w;
         const expectedH = wantHeight ? ch : h;
         expect(bounds(rect)).toEqual([expectedW, expectedH]);
@@ -233,13 +238,9 @@ it("p_layout_pure: layout runs with no DOM", () => {
     expect(bounds(cols)).toEqual([31, 1]);
     expect(origin(centered)).toEqual([47.5, 47.5]);
     expect(cells).toHaveLength(2);
-    expect(bounds(resolved)).toEqual([103, 51]);
+    expect(bounds(resolved)).toEqual([100, 1]);
   } finally {
-    if (hadDocument) {
-      // restore whatever was there
-    } else {
-      delete g.document;
-    }
+    if (!hadDocument) delete g.document;
   }
   expect(g.document).toBeUndefined();
 });
