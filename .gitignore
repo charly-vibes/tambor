@@ -15,3 +15,10 @@ dist/
 # turu workspace — session notes are tracked; .whisper/private/ is
 # machine-specific knowledge, never pushed (git history is forever)
 .whisper/private/
+
+# Beads / Dolt files (added by bd init)
+.dolt/
+*.db
+.beads-credential-key
+.beads/proxieddb/
+*.gate.lock*
