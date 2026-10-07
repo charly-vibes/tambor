@@ -21,6 +21,21 @@ pre-commit:
     - name: testaruda-config
       run: testaruda doctor
 
+    - name: spec-drift-gate
+      # Regenerate deployed specs from the corpus and fail on any diff —
+      # an edited corpus file without redeploy cannot slip past the gates.
+      run: |
+        python3 tools/deploy_specs.py >/dev/null
+        git diff --exit-code -- openspec/specs/ || {
+          echo "drift: openspec/specs/ is stale — corpus changed without redeploy" >&2
+          git --no-pager diff --stat -- openspec/specs/ >&2
+          exit 1
+        }
+
+    - name: contract-drift-gate
+      # CI mode: report derived-contract drift without writing.
+      run: ah sync --check
+
 pre-push:
   jobs:
     - name: espectacular-contracts
@@ -39,3 +54,7 @@ pre-push:
         if [ "$code" -eq 0 ] || [ "$code" -eq 20 ]; then exit 0; fi
         echo "testaruda exec failed with exit code $code" >&2
         exit "$code"
+
+    - name: scaffold-debt-report
+      # Non-blocking: how many predicates are still todo!() scaffolds.
+      run: tools/scaffold-debt.sh

@@ -23,12 +23,27 @@ contract is bound to its proptest scaffold via
 `tools/scaffold-check.sh` (traceability gate — upgraded to vitest /
 fast-check entries as the implementation lands).
 
-    tools/deploy_specs.py        # specs/*.md -> openspec/specs/<spec>/spec.md
-    ah sync                      # derive/refresh contracts from Properties rows
-    ah check                     # structural spec-test correspondence (hard gate)
-    ah check --run-tests         # execute contract tests (hard push gate)
+The full loop for a spec change (edit the corpus, never
+`openspec/specs/` by hand):
 
-Gates are wired in `lefthook.yml`: `ah check` + pretender + testaruda
-doctor on pre-commit; `ah check --run-tests` + pretender (full) + testaruda
-exec on pre-push. Edits go to the corpus (`specs/`), then redeploy — never
-edit `openspec/specs/` by hand.
+    # 1. edit specs/<name>.md (rows, constraints, properties)
+    specodelic lint specs && specodelic graph specs
+    specodelic compile specs        # regenerate *_props.rs scaffolds
+    tools/deploy_specs.py           # redeploy dual-format copies
+    ah sync                         # derive/refresh contracts
+    # 2. wire any new contract: append [[tests.shell]] scaffold binding
+    #    (copy the pattern from an existing .espectacular/<spec>/*.toml)
+    ah check --run-tests            # verify all 329+ contracts
+
+Enforcement (all wired as hard gates in `lefthook.yml`):
+
+- pre-commit: `ah check`, pretender, testaruda doctor, **spec-drift gate**
+  (regenerates `openspec/specs/` from the corpus and fails on any diff —
+  an edited corpus file without redeploy cannot slip past), **contract-drift
+  gate** (`ah sync --check`)
+- pre-push: `ah check --run-tests`, pretender (full), testaruda exec, and a
+  non-blocking **scaffold-debt report** (`tools/scaffold-debt.sh`) counting
+  the `todo_predicate!` stubs still awaiting executable translation
+
+Edits go to the corpus (`specs/`), then redeploy — never edit
+`openspec/specs/` by hand.
