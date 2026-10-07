@@ -4,7 +4,7 @@
 # Asserts that a contract's property is bound to its specodelic proptest
 # scaffold: specodelic/<component>_props.rs exists and declares the test
 # function for this property. This is the traceability gate while the
-# membrane-ts port has no executable test suite yet; contracts are
+# tambor port has no executable test suite yet; contracts are
 # upgraded to vitest / fast-check entries as the implementation lands
 # (see corpus README: intended stack is vitest + fast-check).
 #

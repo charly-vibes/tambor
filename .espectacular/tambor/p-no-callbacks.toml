@@ -8,4 +8,4 @@ status = "active"
 superseded_by = ""
 
 [[tests.shell]]
-command = "tools/scaffold-check.sh membrane p-no-callbacks"
+command = "tools/scaffold-check.sh tambor p-no-callbacks"

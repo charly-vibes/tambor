@@ -1,4 +1,4 @@
-// Stand-in for membrane-ts core with an injectable DataOps seam (default = plain JS).
+// Stand-in for tambor core with an injectable DataOps seam (default = plain JS).
 export const jsOps = {
   get: (c, k) => (c == null ? undefined : c[k]),
   assoc: (c, k, v) => { const x = Array.isArray(c) ? c.slice() : { ...c }; x[k] = v; return x; },

@@ -1,7 +1,7 @@
 ---
 id: typing.model
 kind: intent
-statement: "THE membrane-ts library SHALL be written in strict TypeScript so that views, paths, props, effects and handlers are checked at compile time and invalid combinations fail to compile."
+statement: "THE tambor library SHALL be written in strict TypeScript so that views, paths, props, effects and handlers are checked at compile time and invalid combinations fail to compile."
 ---
 
 # typing.model

@@ -1,5 +1,5 @@
 (ns probe
-  (:require ["./membrane-lite.mjs" :as m]))
+  (:require ["./tambor-lite.mjs" :as m]))
 
 ;; 1. data literals, keywords, nesting
 (def state {:todos [{:description "first" :complete? false}

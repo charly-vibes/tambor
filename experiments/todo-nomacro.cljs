@@ -1,5 +1,5 @@
 (ns todo-nomacro
-  (:require ["./membrane-paths.mjs" :as m]))
+  (:require ["./tambor-paths.mjs" :as m]))
 
 (def filter-fns {:all (constantly true) :active (complement :complete?) :complete? :complete?})
 

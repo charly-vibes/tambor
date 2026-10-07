@@ -1,5 +1,5 @@
 (ns edges
-  (:require ["./membrane-lite.mjs" :as m]))
+  (:require ["./tambor-lite.mjs" :as m]))
 
 (def s {:a {:x 1} :b {:y 2}})
 

@@ -1,5 +1,5 @@
 (ns cljs-probe
-  (:require ["./membrane-lite.mjs" :as m]))
+  (:require ["./tambor-lite.mjs" :as m]))
 
 (def state {:todos [{:description "first" :complete? false}] :n 1})
 

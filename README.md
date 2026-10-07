@@ -1,13 +1,16 @@
-# tambor — membrane-js specs (v2)
+# tambor — specs (v2)
 
-Specodelic corpus for a strict-TypeScript, mobile-first port of
-phronmophobic/membrane, modelled from the repo's tests, examples and
-component source. See TRACEABILITY.md and EVALUATION.md.
+Specodelic corpus for **tambor**, a strict-TypeScript, mobile-first UI
+library. The Clojure library
+[phronmophobic/membrane](https://github.com/phronmophobic/membrane) is the
+inspiration and the acceptance baseline: the corpus is modelled from that
+repo's tests, examples and component source, and every row cites the Membrane
+source it was derived from (see TRACEABILITY.md and EVALUATION.md).
 
     specodelic lint specs && specodelic graph specs
     specodelic compile specs && specodelic model-check specs
 
-23 corpus specs (including the scrollytelling bridge: components.pinned_panel
+24 corpus specs (including the scrollytelling bridge: components.pinned_panel
 and scrollytelling.pin). Intended test stack: vitest + fast-check for
 properties, expectTypeOf for type tests. `verify` is not implemented in
 specodelic 0.4.0, so properties are proptest scaffolds

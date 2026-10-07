@@ -1,12 +1,12 @@
 ---
 id: spec
 kind: intent
-statement: "THE membrane-js library SHALL render a UI as a pure function of application state, where views are plain values, event handlers are pure functions that return effects, and a component edits parent state only through derived paths, all checked by strict TypeScript."
+statement: "THE tambor library SHALL render a UI as a pure function of application state, where views are plain values, event handlers are pure functions that return effects, and a component edits parent state only through derived paths, all checked by strict TypeScript."
 ---
 
-# membrane
+# tambor
 
-Root spec for the TypeScript port of Membrane (strict TS, mobile-first). Each child spec cites the Membrane source, test or example it was modelled from in its prose. The acceptance bar is the repo's own corpus: `test/membrane/component_test.clj`, `test/membrane/defui_test.clj`, and the `counter`, `todo`, `file_selector` and `kitchen_sink` examples. Reading order: typing.model, interop.model, view.model, view.layout, event.model, event.bubble, state.paths, path.derivation, component.model, effect.dispatch, app.toplevel, components.*, example.*, backend.render, ui.mobile.
+Root spec for tambor, the strict-TypeScript, mobile-first port of the Clojure Membrane UI library (phronmophobic/membrane). Each child spec cites the Membrane source, test or example it was modelled from in its prose. The acceptance bar is the repo's own corpus: `test/membrane/component_test.clj`, `test/membrane/defui_test.clj`, and the `counter`, `todo`, `file_selector` and `kitchen_sink` examples. Reading order: typing.model, interop.model, view.model, view.layout, event.model, event.bubble, state.paths, path.derivation, component.model, effect.dispatch, app.toplevel, components.*, example.*, backend.render, ui.mobile.
 
 ## Constraints
 

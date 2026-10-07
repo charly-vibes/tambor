@@ -5,7 +5,7 @@
 # Every occurrence is a property whose predicate is not yet translated to
 # an executable assertion (specodelic 0.4.0: verify unimplemented). The
 # contract-test gate currently verifies traceability, not behavior; this
-# number is the measurable gap that shrinks as the membrane-ts port lands.
+# number is the measurable gap that shrinks as the tambor port lands.
 #
 # Always exits 0 — reporting, not gating.
 

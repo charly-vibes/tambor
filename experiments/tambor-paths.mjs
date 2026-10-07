@@ -1,5 +1,5 @@
 // Stand-in: navigators incl. filterer, NONE-deletion, and a path-aware `each` (no macro).
-export const NONE = Symbol.for("membrane/none");
+export const NONE = Symbol.for("tambor/none");
 export const filter = (pred) => ({ nav: "filter", pred });
 const isF = (n) => n && n.nav === "filter";
 export const select = (st, path, i = 0) => {

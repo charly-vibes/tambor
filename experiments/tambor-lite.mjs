@@ -1,4 +1,4 @@
-// Stand-in for the compiled membrane-ts runtime: plain functions, string tags, array paths.
+// Stand-in for the compiled tambor runtime: plain functions, string tags, array paths.
 export const select = (state, path) => path.reduce((s, k) => (s == null ? undefined : s[k]), state);
 export const set = (state, path, v) => {
   if (path.length === 0) return v;

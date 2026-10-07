@@ -1,9 +1,9 @@
-# Using membrane-ts from squint and ClojureScript
+# Using tambor from squint and ClojureScript
 
 **Verdict.** Squint needs no adapter. ClojureScript needs one small injectable seam (five functions, written once) and no per-component wrappers. Both are possible only if the library is designed as a plain-data API, which `interop.model` now requires. A macro is optional sugar, not a dependency.
 
 ## What I tested (Node 22, squint-cljs 0.14.211, cherry-cljs 0.6.38)
-Cherry stands in for CLJS semantics (persistent collections, Keyword objects). The TS library was **not built yet**, so the `membrane-*.mjs` files are stand-ins with the same call shapes.
+Cherry stands in for CLJS semantics (persistent collections, Keyword objects). The TS library was **not built yet**, so the `tambor-*.mjs` files are stand-ins with the same call shapes.
 
 | # | Question | Result |
 |---|----------|--------|
@@ -39,7 +39,7 @@ Cherry stands in for CLJS semantics (persistent collections, Keyword objects). T
 What would count as a "big adapter": converting state per render, wrapping every component, or mirroring node classes. The design avoids all three.
 
 ## Spec changes
-New `interop.model` (19 constraints, 19 properties). `membrane.md` gains `host_agnostic`. `path.derivation` lists the macro and explicit tiers. 22 specs pass lint, graph, compile and model-check.
+New `interop.model` (19 constraints, 19 properties). `tambor.md` gains `host_agnostic`. `path.derivation` lists the macro and explicit tiers. 22 specs pass lint, graph, compile and model-check.
 
 ## Not verified
 - **Macro path-walker.** I only proved that squint macros work. Porting Membrane's `path-replace` (a few hundred lines, may depend on Specter at expansion time) is unproven. Spike it first.
@@ -49,6 +49,6 @@ New `interop.model` (19 constraints, 19 properties). `membrane.md` gains `host_a
 - The seam covers state and effects. Reading library-created view objects from CLJS is unproven.
 
 ## Suggested spikes
-1. Build the real `membrane-ts` core with `DataOps` and rerun `experiments/` against it.
+1. Build the real `tambor` core with `DataOps` and rerun `experiments/` against it.
 2. Port `defui` to a `.cljc` macro and run it on squint.
 3. Build the todo example with shadow-cljs `:advanced`.

@@ -8,12 +8,12 @@ statement: "WHILE a Pin's Boundary is active, THE Pin SHALL fix its target
   document flow at the Boundary's end without a visual jump."
 ---
 
-# Pin (bridged onto membrane-js)
+# Pin (bridged onto tambor)
 
 Unchanged from the original DOM-oriented specification in intent — this
 file still states the library-level requirement. What changed is *how*
 it is satisfied: there is no native document scroll or `position: fixed`
-in membrane-js, so every Constraint below is realized by composing
+in tambor, so every Constraint below is realized by composing
 [[components.scrollview]] (the offset source) with the new
 [[components.pinned_panel]] (specified in `components-pinned_panel.md`)
 rather than by browser layout. Each row's expr names, in prose, the
@@ -62,11 +62,11 @@ Constraints (Reference Typing) and none of these targets are effects.
 ## Notes
 
 `checked_against_core: clear`. Three of six Constraints are satisfied
-**for free** by composing existing membrane-js guarantees rather than
+**for free** by composing existing tambor guarantees rather than
 needing new primitive-level work:
 
 - `spacer_recomputed_on_resize` was a real engineering concern on the web
-  (stale cached layout after a resize). On membrane-js it's not a
+  (stale cached layout after a resize). On tambor it's not a
   separate mechanism at all — [[component.model.render_pure]] recomputes
   every value fresh on every render, and [[backend.render.resize_redraws]]
   already guarantees a redraw follows any container resize. There is

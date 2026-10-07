@@ -1,49 +1,49 @@
-source = "membrane"
+source = "tambor"
 
 [[constraints]]
 id = "views_are_values"
 kind = "invariant"
 expr = "a view is a plain serialisable value; building one performs no I/O and no mutation"
-traces_to = "[[membrane]]"
+traces_to = "[[tambor]]"
 
 [[constraints]]
 id = "handlers_are_pure"
 kind = "invariant"
 expr = "an event handler returns a list of effects and never mutates state directly"
-traces_to = "[[membrane]]"
+traces_to = "[[tambor]]"
 
 [[constraints]]
 id = "backend_optional"
 kind = "invariant"
 expr = "the core (view, layout, events, paths, components) has zero DOM dependencies; only backends touch the DOM"
-traces_to = "[[membrane]]"
+traces_to = "[[tambor]]"
 
 [[constraints]]
 id = "paths_not_callbacks"
 kind = "invariant"
 expr = "children change parent state by returning effects that carry paths, never by calling parent callbacks"
-traces_to = "[[membrane]]"
+traces_to = "[[tambor]]"
 
 [[constraints]]
 id = "examples_are_acceptance"
 kind = "invariant"
 expr = "the counter and todo examples run unchanged against every backend and pass their scenarios in example.counter and example.todo"
-traces_to = "[[membrane]]"
+traces_to = "[[tambor]]"
 
 [[constraints]]
 id = "typescript_strict"
 kind = "invariant"
 expr = "the whole library is strict TypeScript and ships declaration files, as specified in typing.model"
-traces_to = "[[membrane]]"
+traces_to = "[[tambor]]"
 
 [[constraints]]
 id = "host_agnostic"
 kind = "invariant"
 expr = "squint and ClojureScript programs use the library with no adapter layer beyond an optional five-function data-ops object, as specified in interop.model"
-traces_to = "[[membrane]]"
+traces_to = "[[tambor]]"
 
 [[constraints]]
 id = "mobile_first"
 kind = "invariant"
 expr = "every interaction reachable by mouse is reachable by touch with targets of at least 44 CSS px"
-traces_to = "[[membrane]]"
+traces_to = "[[tambor]]"

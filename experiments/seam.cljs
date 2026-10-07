@@ -1,5 +1,5 @@
 (ns seam
-  (:require ["./membrane-ops.mjs" :as m]))
+  (:require ["./tambor-ops.mjs" :as m]))
 
 (def cljs-ops
   #js {:get      (fn [c k] (get c k))

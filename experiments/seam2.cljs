@@ -1,4 +1,4 @@
-(ns seam2 (:require ["./membrane-ops.mjs" :as m]))
+(ns seam2 (:require ["./tambor-ops.mjs" :as m]))
 (def state {:todos (vec (for [i (range 5000)] {:description (str "t" i) :complete? false})) :n 1})
 (let [r (m/dispatch state [[:update [:todos 2 :complete?] not] [:update [:n] inc]])]
   (js/console.log "n:" (:n r) "shared:" (identical? (get-in state [:todos 3]) (get-in r [:todos 3]))))
