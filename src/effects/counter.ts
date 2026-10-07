@@ -26,8 +26,9 @@ import type { Effect } from "./dispatch.ts";
 // pressing it returns exactly one effect, counter-increment with the
 // num path (more_emits_increment).
 export function counter(num: number, $num?: Ref<number>): readonly Elem[] {
-  const onClick: Handler | undefined = $num
-    ? (): Effect[] => [["counter-increment", $num!.path]]
+  const numRef = $num;
+  const onClick: Handler | undefined = numRef
+    ? (): Effect[] => [["counter-increment", numRef.path]]
     : undefined;
   return horizontalLayout([button("more!", onClick), labelNode(decimalString(num))])!;
 }
@@ -39,8 +40,9 @@ export function counter(num: number, $num?: Ref<number>): readonly Elem[] {
 export function counterCounter(nums: readonly number[], $nums?: Ref<readonly number[]>): readonly Elem[] | null {
   const entryRefs = $nums?.each() as readonly Ref<number>[] | undefined;
   const rows = nums.map((n, i) => counter(n, entryRefs?.[i]));
-  const onAdd: Handler | undefined = $nums
-    ? (): Effect[] => [["add-counter", $nums!.path]]
+  const numsRef = $nums;
+  const onAdd: Handler | undefined = numsRef
+    ? (): Effect[] => [["add-counter", numsRef.path]]
     : undefined;
   return verticalLayout([button("Add Counter", onAdd), ...rows]);
 }
