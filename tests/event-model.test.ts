@@ -31,7 +31,7 @@ import { dispatch, hasKeyEvent, hasKeyPress, hasMouseMoveGlobal } from "../src/e
 it("p_half_open: positions 0 and 19 hit and 20 and -1 miss", () => {
   // The spec's example probe must hold verbatim: a 20x20 hit region
   // accepts 0 and 19 and rejects 20 and -1 (right/bottom edges exclusive).
-  const view = onHitRecorder();
+  const view = onHitRecorder().node;
   expect(dispatch(view, mouseDown([0, 0]))).toEqual([["hit"]]);
   expect(dispatch(view, mouseDown([19, 0]))).toEqual([["hit"]]);
   expect(dispatch(view, mouseDown([20, 0]))).toEqual([]);
@@ -49,7 +49,7 @@ it("p_half_open: positions 0 and 19 hit and 20 and -1 miss", () => {
       fc.nat(59),
       fc.nat(59),
       (w, h, ix, iy) => {
-        const hitView = onHitRecorder(w, h);
+        const hitView = onHitRecorder(w, h).node;
         expect(dispatch(hitView, mouseDown([ix % w, iy % h]))).toEqual([["hit"]]);
         expect(dispatch(hitView, mouseDown([w, iy % h]))).toEqual([]);
         expect(dispatch(hitView, mouseDown([ix % w, h]))).toEqual([]);
@@ -62,26 +62,27 @@ it("p_half_open: positions 0 and 19 hit and 20 and -1 miss", () => {
 
 // Local hit-test fixture: a handler node whose drawable sizes the hit
 // region; every accepted mouse-down is recorded and returns [["hit"]].
-function onHitRecorder(w = 20, h = 20): HandlerNode {
+function onHitRecorder(w = 20, h = 20): { node: HandlerNode; seen: Vec2[] } {
   const seen: Vec2[] = [];
   const node = on("mouse-down", (pos: unknown) => {
     seen.push(pos as Vec2);
     return [["hit"]];
   }, spacer(w, h));
-  (node as { seen?: Vec2[] }).seen = seen;
-  return node;
-}
-function seenOf(node: HandlerNode): readonly Vec2[] {
-  return (node as { seen?: Vec2[] }).seen ?? [];
+  return { node, seen };
 }
 
 // p_local — derives_from: event.model.local_pos_passed
 // generator: handler at translate(10, 10) probed at [15, 15]
 // predicate: handler sees [5, 5] and README returns the intent [:say-hello]
 it("p_local: handler sees [5, 5] and README returns the intent [:say-hello]", () => {
-  const view = translate(10, 10, onHitRecorder());
+  const seen: Vec2[] = [];
+  const handler = on("mouse-down", (pos: unknown) => {
+    seen.push(pos as Vec2);
+    return [["say-hello"]];
+  }, spacer(20, 20));
+  const view = translate(10, 10, handler);
   expect(dispatch(view, mouseDown([15, 15]))).toEqual([["say-hello"]]);
-  expect(seenOf(view.drawable as HandlerNode)).toEqual([[5, 5]]);
+  expect(seen).toEqual([[5, 5]]);
 
   // Generalized property: the handler always sees the probe minus the
   // translate offsets.
@@ -92,10 +93,10 @@ it("p_local: handler sees [5, 5] and README returns the intent [:say-hello]", ()
       fc.nat(19),
       fc.nat(19),
       (ox, oy, ax, ay) => {
-        const local = onHitRecorder();
-        const tree = translate(ox, oy, local);
+        const { node, seen } = onHitRecorder();
+        const tree = translate(ox, oy, node);
         expect(dispatch(tree, mouseDown([ox + ax, oy + ay]))).toEqual([["hit"]]);
-        expect(seenOf(local)).toEqual([[ax, ay]]);
+        expect(seen).toEqual([[ax, ay]]);
       },
     ),
   );
@@ -105,10 +106,10 @@ it("p_local: handler sees [5, 5] and README returns the intent [:say-hello]", ()
 // generator: nested translates
 // predicate: handler sees the point minus the sum of offsets
 it("p_coords: handler sees the point minus the sum of offsets", () => {
-  const inner = onHitRecorder();
-  const view = translate(3, 4, translate(5, 6, inner));
+  const { node, seen } = onHitRecorder();
+  const view = translate(3, 4, translate(5, 6, node));
   expect(dispatch(view, mouseDown([10, 13]))).toEqual([["hit"]]);
-  expect(seenOf(inner)).toEqual([[2, 3]]);
+  expect(seen).toEqual([[2, 3]]);
 
   fc.assert(
     fc.property(
@@ -119,10 +120,10 @@ it("p_coords: handler sees the point minus the sum of offsets", () => {
       fc.nat(9),
       fc.nat(9),
       (x1, y1, x2, y2, ax, ay) => {
-        const local = onHitRecorder();
-        const tree = translate(x1, y1, translate(x2, y2, local));
+        const { node, seen } = onHitRecorder();
+        const tree = translate(x1, y1, translate(x2, y2, node));
         expect(dispatch(tree, mouseDown([x1 + x2 + ax, y1 + y2 + ay]))).toEqual([["hit"]]);
-        expect(seenOf(local)).toEqual([[ax, ay]]);
+        expect(seen).toEqual([[ax, ay]]);
       },
     ),
   );
@@ -396,7 +397,7 @@ it("p_event_pure: tree and state unchanged afterwards", () => {
     translate(15, 0, on("key-press", () => [["read-key"]], spacer(2, 2))),
     button("go", () => [["read", state.n]]),
   ];
-  const stateBefore = structuredClone(state);
+  const stateBefore = JSON.parse(JSON.stringify(state)) as typeof state;
 
   const events: fc.Arbitrary<TamborEvent> = fc.oneof(
     fc.tuple(fc.nat(40), fc.nat(40)).map(([x, y]) => mouseDown([x, y])),
