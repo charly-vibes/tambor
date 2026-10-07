@@ -9,10 +9,14 @@
 import { expect, it } from "vitest";
 import fc from "fast-check";
 
-import { on, spacer, type HandlerNode } from "../src/views/model.ts";
+import { on, spacer, type Handler, type HandlerNode } from "../src/views/model.ts";
 import { mouseDown, keyPress } from "../src/events/event.ts";
-import { onBubble, onPairs, type Intent } from "../src/events/bubble.ts";
+import { onBubble, onPairs, wrapOn, type Intent } from "../src/events/bubble.ts";
 import { dispatch } from "../src/events/dispatch.ts";
+
+// The default-handler shape wrap-on handlers receive: callable with the
+// event arguments, returning the wrapped default effects.
+type DefaultHandler = (...args: readonly unknown[]) => readonly Intent[];
 
 // A leaf that emits the given intents on a mouse-down inside its bounds.
 function emitter(intents: readonly Intent[]): HandlerNode {
@@ -145,7 +149,7 @@ it("p_middleware: enter with non-empty default effects returns add-todo then set
   // the default handler is the wrapped key-press handling of the body
   const body = on("key-press", (key: unknown) =>
     key === "Enter" ? [["default-effect"]] : [], spacer(1, 1));
-  const view = wrapOn([["key-press", (def: (...a: unknown[]) => readonly Intent[], key: unknown) => {
+  const view = wrapOn([["key-press", (def: DefaultHandler, key: unknown) => {
     const defaultEffects = def(key);
     if (key === "Enter" && defaultEffects.length > 0) {
       return [["add-todo"], ["set", ["next-todo-text"], ""]];
@@ -165,7 +169,7 @@ it("p_middleware: enter with non-empty default effects returns add-todo then set
     fc.property(fc.constantFrom("Enter", "a", "b"), (key) => {
       const bodyNode = on("key-press", () => [["default-effect"]], spacer(1, 1));
       const wrapped = wrapOn([
-        ["key-press", (def: () => readonly Intent[], k: unknown) =>
+        ["key-press", (def: DefaultHandler, k: unknown) =>
           k === "Enter" ? [["handled"]] : def(k)],
       ], bodyNode);
       const expected = key === "Enter" ? [["handled"]] : [["default-effect"]];
@@ -180,8 +184,8 @@ it("p_middleware: enter with non-empty default effects returns add-todo then set
 it("p_wrap_order: the first pair wraps the second", () => {
   const body = on("key-press", () => [["body"]], spacer(1, 1));
   const view = wrapOn([
-    ["key-press", (def: () => readonly Intent[]) => [...def(), ["outer"]]],
-    ["key-press", (def: () => readonly Intent[]) => [...def(), ["inner"]]],
+    ["key-press", (def: DefaultHandler) => [...def(), ["outer"]]],
+    ["key-press", (def: DefaultHandler) => [...def(), ["inner"]]],
   ], body);
   // the first pair is outermost: its contribution lands last
   expect(dispatch(view, keyPress("Enter"))).toEqual([["body"], ["inner"], ["outer"]]);
@@ -194,7 +198,7 @@ it("p_multi: equals three nested single-pair nodes", () => {
   const h1 = () => [["one"]];
   const h2 = () => [["custom-select", "x"]];
   const h3 = (v: unknown) => [["got", v]];
-  const pairs: readonly (readonly [string, () => readonly Intent[]])[] = [
+  const pairs: readonly (readonly [string, Handler])[] = [
     ["mouse-down", h1],
     ["key-press", h2],
     ["custom-select", h3],
@@ -204,11 +208,13 @@ it("p_multi: equals three nested single-pair nodes", () => {
     on("key-press", h2,
       on("custom-select", h3, spacer(10, 10))));
 
-  // behavioral equivalence under every relevant event
+  // behavioral equivalence under every relevant event; the key-press
+  // handler's own result is appended after the children — it does not
+  // re-descend through the nested custom-select interceptor
   expect(dispatch(multi, mouseDown([5, 5]))).toEqual(dispatch(nested, mouseDown([5, 5])));
   expect(dispatch(multi, mouseDown([5, 5]))).toEqual([["one"]]);
   expect(dispatch(multi, keyPress("a"))).toEqual(dispatch(nested, keyPress("a")));
-  expect(dispatch(multi, keyPress("a"))).toEqual([["got", "x"]]);
+  expect(dispatch(multi, keyPress("a"))).toEqual([["custom-select", "x"]]);
 });
 
 // p_raw_bubble — derives_from: event.bubble.on_bubble_raw
@@ -241,8 +247,9 @@ it("p_builtin: the wrapper replaces it with the set-membership update and the or
   // a set of the new membership
   const membership = { selected: new Set<string>(["a.txt"]) };
   const inner = emitter([["update", "a.txt", (inSet: boolean) => !inSet]]);
-  const view = on("update", (path: unknown, f: (v: boolean) => boolean) => {
-    const after = f(membership.selected.has(path as string));
+  const view = on("update", (path: unknown, f: unknown) => {
+    const toggle = f as (v: boolean) => boolean;
+    const after = toggle(membership.selected.has(path as string));
     if (after) membership.selected.add(path as string);
     else membership.selected.delete(path as string);
     return [["set", ["membership"], after]];

@@ -32,7 +32,7 @@ import {
   type HandlerNode,
   type Vec2,
 } from "../views/model.ts";
-import type { EventElem, Intent, IntentList } from "./bubble.ts";
+import type { EventElem, Intent, IntentList, WrapNode } from "./bubble.ts";
 import type { TamborEvent } from "./event.ts";
 
 // Delivery-rule families of specs/event-model.md.
@@ -106,6 +106,8 @@ export function dispatch(elem: EventElem, event: TamborEvent): IntentList {
       // after the child results are collected the node applies its
       // bubble function once (bubble_after_children, on_bubble_raw)
       return elem.bubble(dispatchGroup(elem.drawables, event));
+    case "wrap":
+      return dispatchWrap(elem, event);
     default:
       // leaves (label, rectangle, path, spacer, ...) produce no intents
       return [];
@@ -150,8 +152,13 @@ function insideBounds(elem: Elem, pos: Vec2): boolean {
 function dispatchHandler(node: HandlerNode, event: TamborEvent): IntentList {
   const kind = node.eventType;
   if (!isInputKind(kind)) {
-    // custom type: intent interception happens at the bubble layer
-    return dispatchGroup(node.drawables, event);
+    // a custom type is an intent interceptor (event.bubble): the
+    // children dispatch under the event's own rule, then every
+    // descendant intent whose first element equals the type is replaced
+    // by the handler applied to the remaining elements, spliced in
+    // place (intercept_by_type, intercept_args_spread,
+    // intercept_may_expand, intercept_builtin_effects)
+    return intercept(dispatchGroup(node.drawables, event), kind, node.handler);
   }
   if (event.type === kind) {
     if (isPointerKind(kind)) {
@@ -181,6 +188,42 @@ function dispatchButton(node: ButtonNode, event: TamborEvent): IntentList {
   const pos = event.pos ?? [0, 0];
   if (!insideBounds(node, pos)) return [];
   return asIntents(node.onClick(pos));
+}
+
+// Replace every descendant intent whose first element equals type with
+// fn applied to the remaining elements; intents of any other type pass
+// through unchanged and keep their relative order (intercept_by_type,
+// other_intents_pass). Nested interceptors apply from the innermost to
+// the outermost as the intents bubble up (innermost_first) — recursion
+// already rewrites the child results before the outer node sees them.
+function intercept(
+  intents: IntentList,
+  type: string,
+  fn: (...args: readonly unknown[]) => unknown,
+): IntentList {
+  const out: Intent[] = [];
+  for (const intent of intents) {
+    if (Array.isArray(intent) && intent[0] === type) {
+      out.push(...asIntents(fn(...intent.slice(1))));
+    } else {
+      out.push(intent);
+    }
+  }
+  return out;
+}
+
+// Wrap-on middleware: on a matching event the handler receives the
+// default handler — the dispatch of the wrapped body under the same
+// event — as its first argument and may call it, change its output, or
+// skip it (wrap_on_middleware). Any other event dispatches the body
+// unchanged.
+function dispatchWrap(node: WrapNode, event: TamborEvent): IntentList {
+  if (event.type === node.eventType) {
+    const defaultHandler = (..._args: readonly unknown[]) =>
+      dispatchGroup(node.drawables, event);
+    return asIntents(node.handler(defaultHandler, ...handlerArgs(event)));
+  }
+  return dispatchGroup(node.drawables, event);
 }
 
 // Handler argument convention: pointer handlers receive the position

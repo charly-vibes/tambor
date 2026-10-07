@@ -1,16 +1,20 @@
-// Purpose: tambor's event bubble layer — intent interception and
-//   on-bubble nodes (event.bubble spec).
+// Purpose: tambor's event bubble layer — intent interception, on-bubble
+//   nodes, wrap-on middleware and multi-pair on (event.bubble spec).
 // Responsibilities: the Intent shape, the on-bubble node (its function
 //   receives the whole child intent list and its return replaces it),
-//   and the event-layer element type dispatch walks.
-// Rationale: specs/event-bubble.md is the design authority — after the
-//   child results are collected the node applies its bubble function
-//   once, and the default is identity (bubble_after_children);
-//   on-bubble receives the whole intent list of its children and its
-//   return value replaces it (on_bubble_raw). Wrap-on middleware and
-//   multi-pair on land with their own rows.
+//   wrap-on middleware (the handler receives the default handler
+//   first), the multi-pair on constructor that nests single-pair
+//   nodes, and the event-layer element type dispatch walks.
+// Rationale: specs/event-bubble.md is the design authority — a custom
+//   on type replaces descendant intents of that type
+//   (intercept_by_type), on-bubble receives the whole intent list of
+//   its children and its return value replaces it (on_bubble_raw),
+//   wrap-on handlers receive the default handler as their first
+//   argument (wrap_on_middleware), the first wrap-on pair is outermost
+//   (wrap_on_ordering), and on with several pairs equals nesting the
+//   single-pair forms (on_multi_pairs).
 
-import type { Elem, Handler } from "../views/model.ts";
+import { on, type Elem, type Handler } from "../views/model.ts";
 
 // Intents are plain data: [type, ...args].
 export type Intent = readonly unknown[];
@@ -27,11 +31,51 @@ export interface BubbleNode {
 }
 
 // Everything dispatch walks: the view-model nodes plus the event
-// layer's own bubble node.
-export type EventElem = Elem | BubbleNode;
+// layer's own bubble and wrap nodes.
+export type EventElem = Elem | BubbleNode | WrapNode;
 
 export function onBubble(bubble: BubbleFn, ...drawables: readonly EventElem[]): BubbleNode {
   return freeze({ type: "bubble", bubble, drawables });
+}
+
+// The wrap-on handler receives the default handler as its first
+// argument and may call it, change its output, or skip it
+// (wrap_on_middleware).
+export type WrapHandler = (
+  defaultHandler: (...args: readonly unknown[]) => IntentList,
+  ...args: readonly unknown[]
+) => IntentList;
+
+export interface WrapNode {
+  readonly type: "wrap";
+  readonly eventType: string;
+  readonly handler: WrapHandler;
+  readonly drawables: readonly EventElem[];
+}
+
+type Pair = readonly [string, Handler];
+
+// on accepts several event and handler pairs followed by one body and
+// is equivalent to nesting the single-pair forms (on_multi_pairs); the
+// first pair is outermost.
+export function onPairs(pairs: readonly Pair[], body: EventElem): EventElem {
+  return pairs.reduceRight<EventElem>((acc, [type, handler]) => {
+    // the innermost acc is the plain body; every wrapped layer is a
+    // single-pair handler node, which is an Elem
+    return on(type, handler, acc as Elem);
+  }, body);
+}
+
+// wrap-on with several pairs: the first pair is outermost
+// (wrap_on_ordering), so the pairs nest around the body.
+export function wrapOn(
+  pairs: readonly (readonly [string, WrapHandler])[],
+  body: EventElem,
+): WrapNode {
+  return pairs.reduceRight<EventElem>(
+    (acc, [type, handler]) => freeze({ type: "wrap", eventType: type, handler, drawables: [acc] }),
+    body,
+  ) as WrapNode;
 }
 
 // Local deep freeze — same discipline as the view-model nodes.
