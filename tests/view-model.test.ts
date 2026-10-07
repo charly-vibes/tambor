@@ -33,39 +33,45 @@ const stubMeasure: MeasureFn = (text) => [text.length, 1];
 
 // Random node arbitrary over the converted node types (generator for
 // p_frozen, p_bounds, p_origin, p_roundtrip).
-const nodeArb: fc.Arbitrary<Node> = fc.letrec((tie) => ({
-  leaf: fc.oneof(
-    fc.constant(label("hi", stubMeasure)),
-    fc.constant(rectangle(3, 4)),
-    fc.constant(roundedRectangle(5, 6, 1)),
-    fc.constant(path([0, 0], [2, 3])),
-    fc.constant(spacer(2, 3)),
-  ),
-  wrap: fc.oneof(
-    tie("node").map((c: Node) => withColor([0.1, 0.2, 0.3], c)),
-    tie("node").map((c: Node) => withStyle("stroke", c)),
-    tie("node").map((c: Node) => withStrokeWidth(2, c)),
-  ),
-  branch: fc
-    .tuple(fc.nat(50), fc.nat(50), tie("node"))
-    .map(([x, y, c]) => translate(x, y, c)),
-  node: fc.oneof(tie("leaf"), tie("wrap"), tie("branch")),
-})).node as fc.Arbitrary<Node>;
+const nodeArb: fc.Arbitrary<Node> = fc.letrec((tie) => {
+  const node = tie("node") as fc.Arbitrary<Node>;
+  return {
+    leaf: fc.oneof(
+      fc.constant(label("hi", stubMeasure)),
+      fc.constant(rectangle(3, 4)),
+      fc.constant(roundedRectangle(5, 6, 1)),
+      fc.constant(path([0, 0], [2, 3])),
+      fc.constant(spacer(2, 3)),
+    ),
+    wrap: fc.oneof(
+      node.map((c) => withColor([0.1, 0.2, 0.3], c)),
+      node.map((c) => withStyle("stroke", c)),
+      node.map((c) => withStrokeWidth(2, c)),
+    ),
+    branch: fc
+      .tuple(fc.nat(50), fc.nat(50), node)
+      .map(([x, y, c]) => translate(x, y, c)),
+    node: fc.oneof(tie("leaf"), tie("wrap"), tie("branch")),
+  };
+}).node as fc.Arbitrary<Node>;
 
 // Non-offset nodes (p_origin generator): no Translate anywhere.
-const nonOffsetArb: fc.Arbitrary<Node> = fc.letrec((tie) => ({
-  leaf: fc.oneof(
-    fc.constant(label("hi", stubMeasure)),
-    fc.constant(rectangle(3, 4)),
-    fc.constant(spacer(2, 3)),
-  ),
-  wrap: fc.oneof(
-    tie("node").map((c: Node) => withColor([0.4, 0.5, 0.6], c)),
-    tie("node").map((c: Node) => withStyle("fill", c)),
-    tie("node").map((c: Node) => withStrokeWidth(3, c)),
-  ),
-  node: fc.oneof(tie("leaf"), tie("wrap")),
-})).node as fc.Arbitrary<Node>;
+const nonOffsetArb: fc.Arbitrary<Node> = fc.letrec((tie) => {
+  const node = tie("node") as fc.Arbitrary<Node>;
+  return {
+    leaf: fc.oneof(
+      fc.constant(label("hi", stubMeasure)),
+      fc.constant(rectangle(3, 4)),
+      fc.constant(spacer(2, 3)),
+    ),
+    wrap: fc.oneof(
+      node.map((c) => withColor([0.4, 0.5, 0.6], c)),
+      node.map((c) => withStyle("fill", c)),
+      node.map((c) => withStrokeWidth(3, c)),
+    ),
+    node: fc.oneof(tie("leaf"), tie("wrap")),
+  };
+}).node as fc.Arbitrary<Node>;
 
 // Depth-first walk of an elem, yielding every node (groups flattened).
 function* walk(elem: Elem): Generator<Elem> {
@@ -174,13 +180,20 @@ it("p_container: bounds equal the max of origin plus size", () => {
 
 // p_translate — derives_from: view.model.translate_origin
 // generator: random offsets — predicate: origin equals [x, y] and bounds
-// equal child bounds
+// equal child bounds (membrane child-bounds: the drawable's origin plus
+// its bounds, so the translate's own offset shows up as origin and not
+// as size)
 it("p_translate: origin equals [x, y] and bounds equal child bounds", () => {
+  const childBounds = (elem: Elem): Vec2 => {
+    const [ox, oy] = origin(elem);
+    const [w, h] = bounds(elem);
+    return [ox + w, oy + h];
+  };
   fc.assert(
     fc.property(fc.nat(100), fc.nat(100), nodeArb, (x, y, child) => {
       const node = translate(x, y, child);
       expect(origin(node)).toEqual([x, y]);
-      expect(bounds(node)).toEqual(bounds(child));
+      expect(bounds(node)).toEqual(childBounds(child));
     }),
   );
 });
