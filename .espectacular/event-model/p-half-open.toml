@@ -9,3 +9,6 @@ superseded_by = ""
 
 [[tests.shell]]
 command = "tools/scaffold-check.sh event-model p-half-open"
+
+[[tests.vitest]]
+flags = "--testNamePattern=p_half_open"
