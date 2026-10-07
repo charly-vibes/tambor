@@ -1,0 +1,5 @@
+- 2026-10-07T00:09:28Z [id:afb3e10e35776d215b63767149749413b95b6e54ddf95f9ff4c73846573cf0e7] ### 2026-10-06 21:09 — snap
+  - Set up tambor spec layer end-to-end: membrane-ts specodelic corpus (23 specs incl. scrollytelling bridge) deployed to openspec dual-format via tools/deploy_specs.py, 329 ah contracts derived and scaffold-bound; hard commit+push gates wired in lefthook.yml (ah check/--run-tests, pretender gate, testaruda doctor/exec)
+  - Rule-of-5 review applied: spec-drift + contract-drift gates added to pre-commit, non-blocking scaffold-debt report (353 todo_predicate! stubs / 24 files) on push, README loop documented, openspec/project.md filled
+  - All work committed and pushed through the gates (HEAD 25887c0, origin/main up to date)
+  - **Next:** port implementation — replace todo_predicate! scaffolds with real vitest/fast-check contract tests as membrane-ts core lands (edit corpus specs/ → compile → deploy → ah sync → wire tests); upgrade [[tests.shell]] bindings as behavior tests materialize
