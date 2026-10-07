@@ -9,3 +9,6 @@ superseded_by = ""
 
 [[tests.shell]]
 command = "tools/scaffold-check.sh effect-dispatch p-state-forms"
+
+[[tests.vitest]]
+flags = "--testNamePattern=p_state_forms"
