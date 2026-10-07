@@ -14,7 +14,7 @@ import {
   counter as counterView,
   counterCounter as counterCounterView,
 } from "../src/effects/counter.ts";
-import { rootRef } from "../src/effects/ref.ts";
+import { rootRef, type Ref } from "../src/effects/ref.ts";
 import { makeApp, type Effect } from "../src/effects/dispatch.ts";
 import type { ButtonNode } from "../src/views/model.ts";
 
@@ -103,7 +103,7 @@ it("p_stack: four rows, button first then three counters", () => {
 // generator: state num 10 — predicate: state num becomes 11
 it("p_increment: state num becomes 11", () => {
   const state = { num: 10 };
-  const $num = rootRef(state).get("num");
+  const $num = rootRef(state).get("num") as Ref<number>;
   const rows = counterView(10, $num);
   // the more button emits exactly one counter-increment with the num path
   const effects = (rows[0] as ButtonNode).onClick?.() as Effect[];
@@ -119,7 +119,7 @@ it("p_increment: state num becomes 11", () => {
 // nums becomes 0, 2, 2
 it("p_independent: nums becomes 0, 2, 2", () => {
   const state = { nums: [0, 1, 2] };
-  const $nums = rootRef(state).get("nums");
+  const $nums = rootRef(state).get("nums") as Ref<readonly number[]>;
   const rows = counterCounterView([0, 1, 2], $nums) as readonly Elem[];
   // a counter at index i has the path nums then seq-nth(i); the second
   // more button lives in row 2 (row 0 is the Add Counter button)
@@ -136,7 +136,7 @@ it("p_independent: nums becomes 0, 2, 2", () => {
 // becomes 0, 1, 2, 0 and a fifth row appears
 it("p_add: nums becomes 0, 1, 2, 0 and a fifth row appears", () => {
   const state = { nums: [0, 1, 2] };
-  const $nums = rootRef(state).get("nums");
+  const $nums = rootRef(state).get("nums") as Ref<readonly number[]>;
   const rows = counterCounterView([0, 1, 2], $nums) as readonly Elem[];
   // pressing Add Counter returns add-counter with the nums path
   const effects = (rows[0] as ButtonNode).onClick?.() as Effect[];
@@ -146,6 +146,6 @@ it("p_add: nums becomes 0, 1, 2, 0 and a fifth row appears", () => {
   // applying it appends 0
   expect(app.getState()).toEqual({ nums: [0, 1, 2, 0] });
   // …and a fifth row appears on the next render
-  const after = counterCounterView([0, 1, 2, 0], rootRef(app.getState()).get("nums")) as readonly Elem[];
+  const after = counterCounterView([0, 1, 2, 0], rootRef(app.getState()).get("nums") as Ref<readonly number[]>) as readonly Elem[];
   expect(after).toHaveLength(5);
 });
