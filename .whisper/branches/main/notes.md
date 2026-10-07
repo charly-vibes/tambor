@@ -9,3 +9,7 @@
   - .whisper session notes now tracked in git (private/ stays ignored); pushed 4c457a5 (rename), bdff971+3a9019f (gitignore+notes) — all commit+push gates green, ah check --run-tests 329 passed
   - Status report flags still open: no baseline milestone agreed, 353 todo_predicate! scaffolds, no CI workflows
   - **Next:** start tambor implementation — replace todo_predicate! scaffolds with real vitest/fast-check contract tests; confirm test stack first (README proposal: vitest + fast-check + expectTypeOf)
+- 2026-10-07T18:32:33Z [id:de0fe8803e533e9634f8720ef33b6680f1c7dcefdaff90d960e3f22487a82458] (#testaruda) ### 2026-10-07 15:31 — snap
+  - Configured testaruda as the test runner: doctor all green, TypeScript adapter on PATH, exec loop verified (0 tests selected — expected, corpus is still todo_predicate! scaffolds); config already valid + gates in lefthook
+  - Set up wai autonomous orchestrator: scaffarded tdd-ro5 pipeline (9 steps) at .wai/resources/pipelines/tdd-ro5.toml — to edit prompts, then run 'wai pipeline start tdd-ro5 --topic=<topic>'
+  - **Next:** edit tdd-ro5 pipeline prompts for tambor specifics, then replace todo_predicate! scaffolds with real vitest/fast-check contract tests
