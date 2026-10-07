@@ -130,6 +130,26 @@ function withoutKey(value: object, key: PropertyKey): object {
   return out;
 }
 
+// Write a transformed sub-sequence back elementwise: every remaining
+// element keeps its original position, deletions shrink the underlying
+// sequence, and extras append after the last matched position.
+function writeBackSubseq(
+  value: unknown[],
+  matched: readonly number[],
+  child: readonly unknown[],
+): unknown[] {
+  const out = [...value];
+  const lastMatched = matched.length > 0 ? (matched[matched.length - 1] as number) : -1;
+  for (const [j, el] of child.entries()) {
+    if (j < matched.length) out[matched[j] as number] = el;
+    else out.splice(lastMatched + 1, 0, el); // extras append after the last match
+  }
+  for (let j = child.length; j < matched.length; j++) {
+    out.splice(matched[j] as number, 1); // deletions shrink the subseq
+  }
+  return out;
+}
+
 function keywordPred(pred: Pred | string): Pred {
   if (typeof pred === "string") return (x) => Boolean((x as Record<string, unknown>)?.[pred]);
   return pred;
@@ -302,20 +322,12 @@ function walk(
       // rewriting the sub-sequence elementwise keeps every matching
       // element in its original position and leaves non-matching
       // elements untouched
-      const out = [...(value as unknown[])];
       if (Array.isArray(child)) {
-        const lastMatched = matched.length > 0 ? (matched[matched.length - 1] as number) : -1;
-        for (const [j, el] of child.entries()) {
-          if (j < matched.length) out[matched[j] as number] = el;
-          else out.splice(lastMatched + 1, 0, el); // extras append after the last match
-        }
-        for (let j = child.length; j < matched.length; j++) {
-          out.splice(matched[j] as number, 1); // deletions shrink the subseq
-        }
-      } else {
-        // a scalar write replaces every matching element
-        for (const j of matched) out[j] = child;
+        return writeBackSubseq(value as unknown[], matched, child);
       }
+      // a scalar write replaces every matching element
+      const out = [...(value as unknown[])];
+      for (const j of matched) out[j] = child;
       return out;
     }
     case "take":
@@ -399,11 +411,10 @@ function walkSeq(
     children.push(walk(value[j], path, i + 1, ctx, leaf, true));
   }
   if (ctx.mode === "select") return children;
-  const out: unknown[] = [];
-  for (const child of children) {
-    if (child !== DELETED) out.push(child);
-  }
-  return out.length === value.length && out.every((c, j) => c === value[j]) ? value : out;
+  const kept = children.filter((c) => c !== DELETED);
+  const unchanged =
+    kept.length === value.length && kept.every((c, j) => c === value[j]);
+  return unchanged ? value : kept;
 }
 
 export function select(state: unknown, path: Path): unknown {
