@@ -9,23 +9,33 @@ import fc from "fast-check";
 
 import {
   bounds,
+  button,
+  checkbox,
   children,
   label,
   makeNode,
+  on,
   origin,
   rectangle,
   roundedRectangle,
   path,
+  setHeight,
+  setWidth,
   spacer,
   translate,
   withColor,
   withStyle,
   withStrokeWidth,
+  type Color,
   type Elem,
   type MeasureFn,
   type Node,
+  type Style,
   type Vec2,
 } from "../src/views/model.ts";
+
+// Inert handler — handler wrappers carry it as data; dispatch is T2/T3.
+const noopHandler = (): null => null;
 
 // Deterministic headless text measure (stub) — text_measure_injected
 // says label size comes from an injected measure function.
@@ -42,11 +52,15 @@ const nodeArb: fc.Arbitrary<Node> = fc.letrec((tie) => {
       fc.constant(roundedRectangle(5, 6, 1)),
       fc.constant(path([0, 0], [2, 3])),
       fc.constant(spacer(2, 3)),
+      fc.constant(button("ok")),
+      fc.constant(checkbox(true)),
+      fc.constant(checkbox(false)),
     ),
     wrap: fc.oneof(
       node.map((c) => withColor([0.1, 0.2, 0.3], c)),
       node.map((c) => withStyle("stroke", c)),
       node.map((c) => withStrokeWidth(2, c)),
+      node.map((c) => on("mouse-down", noopHandler, c)),
     ),
     branch: fc
       .tuple(fc.nat(50), fc.nat(50), node)
@@ -100,6 +114,9 @@ it("p_frozen: assigning to a node throws or is ignored", () => {
     "with-color": "color",
     "with-style": "style",
     "with-stroke-width": "strokeWidth",
+    handler: "eventType",
+    button: "text",
+    checkbox: "checked",
   };
   fc.assert(
     fc.property(nodeArb, (node) => {
@@ -265,6 +282,85 @@ it("p_measure: label bounds equal the stub output", () => {
     fc.property(fc.nat(500), fc.nat(500), (w, h) => {
       const measure: MeasureFn = () => [w, h];
       expect(bounds(label("any text", measure))).toEqual([w, h]);
+    }),
+  );
+});
+
+// p_button_bounds — derives_from: view.model.button_bounds
+// generator: random label text — predicate: bounds equal label bounds
+// plus [12, 12]
+it("p_button_bounds: bounds equal label bounds plus [12, 12]", () => {
+  fc.assert(
+    fc.property(fc.string({ maxLength: 30 }), (text) => {
+      const [lw, lh] = bounds(label(text));
+      expect(bounds(button(text))).toEqual([lw + 12, lh + 12]);
+    }),
+  );
+});
+
+// p_set_size — derives_from: view.model.set_size_single_child
+// generator: wrappers with one and two children — predicate: one child
+// succeeds and two children throws
+it("p_set_size: one child succeeds and two children throws", () => {
+  fc.assert(
+    fc.property(fc.nat(100), fc.nat(100), (w, h) => {
+      const one = on("mouse-down", noopHandler, rectangle(3, 4));
+      expect(bounds(setWidth(one, w))).toEqual([w, 4]);
+      expect(bounds(setHeight(one, h))).toEqual([3, h]);
+      const two = on("mouse-down", noopHandler, rectangle(3, 4), rectangle(5, 6));
+      expect(() => setWidth(two, w)).toThrow();
+      expect(() => setHeight(two, h)).toThrow();
+    }),
+  );
+});
+
+// The check path of the ui checkbox (checkbox_geometry).
+const CHECK_PATH: readonly Vec2[] = [
+  [2, 6],
+  [5, 9],
+  [10, 2],
+];
+
+function hasCheckPath(elem: Elem): boolean {
+  for (const e of walk(elem)) {
+    if (e !== null && !Array.isArray(e) && e.type === "path") {
+      if (JSON.stringify(e.points) === JSON.stringify(CHECK_PATH)) return true;
+    }
+  }
+  return false;
+}
+
+// p_checkbox_geometry — derives_from: view.model.checkbox_geometry
+// generator: checked true and false — predicate: bounds are 12 by 12 in
+// both states and only the checked view has the check path
+it("p_checkbox_geometry: bounds are 12 by 12 in both states and only the checked view has the check path", () => {
+  fc.assert(
+    fc.property(fc.boolean(), (checked) => {
+      const cb = checkbox(checked);
+      expect(bounds(cb)).toEqual([12, 12]);
+      expect(hasCheckPath(cb)).toBe(checked);
+    }),
+  );
+});
+
+// p_style — derives_from: view.model.style_wrappers_transparent
+// generator: random colors and styles — predicate: bounds equal the
+// unwrapped bounds
+it("p_style: bounds equal the unwrapped bounds", () => {
+  const colorArb: fc.Arbitrary<Color> = fc.array(
+    fc.float({ min: 0, max: 1, noNaN: true }),
+    { minLength: 3, maxLength: 4 },
+  );
+  const styleArb: fc.Arbitrary<Style> = fc.constantFrom(
+    "fill",
+    "stroke",
+    "stroke-and-fill",
+  );
+  fc.assert(
+    fc.property(colorArb, styleArb, fc.nat(5), nodeArb, (color, style, sw, child) => {
+      expect(bounds(withColor(color, child))).toEqual(bounds(child));
+      expect(bounds(withStyle(style, child))).toEqual(bounds(child));
+      expect(bounds(withStrokeWidth(sw, child))).toEqual(bounds(child));
     }),
   );
 });
