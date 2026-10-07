@@ -62,9 +62,13 @@ it("p_stack: four rows, button first then three counters", () => {
   const rows = counterCounter([0, 1, 2]) as readonly Elem[];
   expect(rows).toHaveLength(4);
   expect(rows[0]).toMatchObject({ type: "button" });
-  for (const [i, row] of (rows.slice(1) as readonly (readonly Elem[])[]).entries()) {
-    expect(Array.isArray(row)).toBe(true);
-    const [btn, lbl] = [row[0] as Node, row[1] as TranslateNode];
+  // each counter row is translated into place by the vertical layout;
+  // its drawable is the horizontal counter group
+  for (const [i, row] of (rows.slice(1) as readonly TranslateNode[]).entries()) {
+    expect(row.type).toBe("translate");
+    const counterRow = row.drawable as readonly Elem[];
+    expect(Array.isArray(counterRow)).toBe(true);
+    const [btn, lbl] = [counterRow[0] as Node, counterRow[1] as TranslateNode];
     expect(btn.type).toBe("button");
     expect(lbl.type).toBe("translate");
     expect(lbl.drawable).toMatchObject({ type: "label", text: String(i) });
@@ -73,13 +77,10 @@ it("p_stack: four rows, button first then three counters", () => {
   // Generalized property: one counter row per entry, in order.
   fc.assert(
     fc.property(fc.array(fc.integer({ min: 0, max: 999 }), { minLength: 0, maxLength: 8 }), (nums) => {
-      const stack = counterCounter(nums);
-      if (nums.length === 0) {
-        expect(stack).toBe(null);
-        return;
-      }
+      const stack = counterCounter(nums) as readonly Elem[];
+      // the Add Counter button row is always present
       expect(stack).toHaveLength(nums.length + 1);
-      expect((stack as readonly Elem[])[0]).toMatchObject({ type: "button" });
+      expect(stack[0]).toMatchObject({ type: "button" });
     }),
   );
 });
