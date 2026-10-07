@@ -12,3 +12,5 @@
 node_modules/
 target/
 dist/
+# turu private zone — machine-specific knowledge, never pushed (git history is forever)
+.whisper/private/
