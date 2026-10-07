@@ -9,3 +9,6 @@ superseded_by = ""
 
 [[tests.shell]]
 command = "tools/scaffold-check.sh state-paths p-immut"
+
+[[tests.vitest]]
+flags = "--testNamePattern=p_immut"

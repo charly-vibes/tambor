@@ -9,3 +9,6 @@ superseded_by = ""
 
 [[tests.shell]]
 command = "tools/scaffold-check.sh path-derivation p-if-let"
+
+[[tests.vitest]]
+flags = "--testNamePattern=p_if_let"

@@ -9,3 +9,6 @@ superseded_by = ""
 
 [[tests.shell]]
 command = "tools/scaffold-check.sh effect-dispatch p-clipboard-effects"
+
+[[tests.vitest]]
+flags = "--testNamePattern=p_clipboard_effects"
