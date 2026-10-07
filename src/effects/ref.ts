@@ -87,12 +87,7 @@ function makeRef(root: unknown, path: RefPath, value: unknown): Ref {
     },
     assoc(key: string, v: unknown): Ref {
       // assoc is transparent: same path, updated value
-      return {
-        value: { ...((value as Record<string, unknown>) ?? {}), [key]: v },
-        path,
-        root,
-        ...refMethods(root, path),
-      } as Ref;
+      return makeRef(root, path, { ...((value as Record<string, unknown>) ?? {}), [key]: v });
     },
     selectOne(p: RefPath): Ref {
       return derive(root, [...path, ["path", p] as const]);
@@ -116,14 +111,6 @@ function makeRef(root: unknown, path: RefPath, value: unknown): Ref {
     },
   };
   return ref;
-}
-
-// regenerating the method block keeps makeRef single-source; assoc
-// spreads it over a literal because its value differs
-function refMethods(root: unknown, path: RefPath) {
-  const base = makeRef(root, path, undefined);
-  const { value: _v, path: _p, root: _r, ...methods } = base;
-  return methods;
 }
 
 // what does iterating this value yield? sequences yield their
