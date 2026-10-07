@@ -4,13 +4,15 @@
 // Rationale: specs/example-counter.md is the design authority; each
 //   predicate here mirrors a Properties row (p_label first — tracer).
 
-import { expect, it } from "vitest";
+import { expect, it, vi } from "vitest";
 import fc from "fast-check";
 
 import { label } from "../src/label.ts";
+import { horizontalLayout } from "../src/views/layout.ts";
 import {
   bounds,
   button,
+  label as labelNode,
   type ButtonNode,
   type Elem,
   type Node,
@@ -26,7 +28,9 @@ import {
   counterCounter as counterCounterView,
 } from "../src/effects/counter.ts";
 import { rootRef, type Ref } from "../src/effects/ref.ts";
-import { makeApp, type Effect } from "../src/effects/dispatch.ts";
+import { makeApp, cell, type Effect } from "../src/effects/dispatch.ts";
+import { makeHeadlessApp } from "../src/app/app.ts";
+import { hitTargetSize } from "../src/app/touch.ts";
 
 const noopView = () => null;
 
@@ -204,4 +208,103 @@ it("p_add: nums becomes 0, 1, 2, 0 and a fifth row appears", () => {
   // …and a fifth row appears on the next render
   const after = counterCounterView([0, 1, 2, 0], rootRef(app.getState()).get("nums") as Ref<readonly number[]>) as readonly Elem[];
   expect(after).toHaveLength(5);
+});
+
+// ---------------------------------------------------------------------------
+// T4 (tambor-09l): the e2e wire — headless dispatch → apply → re-render —
+// plus the raw mode and touch-target host queries. p_raw last, per the
+// tracer plan (membrane counter.cljc acceptance).
+
+// p_raw — derives_from: example.counter.raw_mode_supported
+// generator: atom counter and a mutating handler — predicate: the atom is 1
+// after one click and one repaint occurred
+it("p_raw: the atom is 1 after one click and one repaint occurred", () => {
+  // The spec's example value must hold verbatim: the no-framework version —
+  // a cell holding the counter, and a more! button whose raw handler
+  // mutates it and returns nil. The view reads the atom at render time,
+  // like membrane's `#(my-app @counter-atom)` run loop.
+  const counterCell = cell(0);
+  const rawApp = makeHeadlessApp({
+    raw: true,
+    view: () =>
+      horizontalLayout([button("more!", () => {
+        counterCell.value = counterCell.value + 1;
+        return null;
+      }), labelNode(label(counterCell.value))]),
+  });
+
+  // the host repaint capability is the animation frame; record every one
+  const repaints: readonly (() => void)[] = [];
+  vi.stubGlobal("requestAnimationFrame", (cb: () => void): number => {
+    (repaints as (() => void)[]).push(cb);
+    return repaints.length;
+  });
+  try {
+    // one click: a mouse-down at the centre of the more! button
+    const tree = rawApp.render() as readonly Elem[];
+    const [w, h] = bounds(tree[0] as Node);
+    rawApp.send(mouseDown([w / 2, h / 2]));
+
+    // the atom is 1 …
+    expect(counterCell.value).toBe(1);
+    // …and one repaint occurred — the raw handler returned nil, so no
+    // effect batch ran, but the event still triggers a repaint
+    expect(repaints).toHaveLength(1);
+    // the repaint re-renders, and the next render shows the new value
+    repaints[0]?.();
+    expect(JSON.stringify(rawApp.render())).toContain("1");
+  } finally {
+    vi.unstubAllGlobals();
+  }
+
+  // Generalized property: for every num, one click on the raw counter
+  // leaves the atom incremented after exactly one repaint.
+  fc.assert(
+    fc.property(fc.integer({ min: 0, max: 999 }), (start) => {
+      const atom = cell(start);
+      const app = makeHeadlessApp({
+        raw: true,
+        view: () =>
+          horizontalLayout([button("more!", () => {
+            atom.value = atom.value + 1;
+            return null;
+          }), labelNode(label(atom.value))]),
+      });
+      const frames: readonly (() => void)[] = [];
+      vi.stubGlobal("requestAnimationFrame", (cb: () => void): number => {
+        (frames as (() => void)[]).push(cb);
+        return frames.length;
+      });
+      try {
+        const t = app.render() as readonly Elem[];
+        const [bw, bh] = bounds(t[0] as Node);
+        app.send(mouseDown([bw / 2, bh / 2]));
+        expect(atom.value).toBe(start + 1);
+        expect(frames).toHaveLength(1);
+      } finally {
+        vi.unstubAllGlobals();
+      }
+    }),
+  );
+});
+
+// p_touch — derives_from: example.counter.counter_touch_target
+// generator: touch device — predicate: hit area is at least 44 by 44
+it("p_touch: hit area is at least 44 by 44", () => {
+  // The spec's example value must hold verbatim: the more! button of the
+  // num 10 counter, on a touch device.
+  const rows = counter(10);
+  const [w, h] = hitTargetSize(rows[0] as Node, true);
+  expect(w).toBeGreaterThanOrEqual(44);
+  expect(h).toBeGreaterThanOrEqual(44);
+
+  // Generalized property: for every num, the more button's hit area on a
+  // touch device is at least 44 by 44.
+  fc.assert(
+    fc.property(fc.integer({ min: 0, max: 9999 }), (num) => {
+      const [bw, bh] = hitTargetSize(counter(num)[0] as Node, true);
+      expect(bw).toBeGreaterThanOrEqual(44);
+      expect(bh).toBeGreaterThanOrEqual(44);
+    }),
+  );
 });
