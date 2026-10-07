@@ -99,6 +99,18 @@ export function defaultHandler(state: unknown, effects: readonly Effect[], ctx: 
   return out;
 }
 
+// dispatch accepts a bare type (a single effect), type with args (one
+// effect), a sequence of effect vectors (a batch), or an empty/nil batch.
+function normalizeBatch(input: DispatchInput, rest: readonly unknown[]): readonly Effect[] {
+  if (input === null || input === undefined) return [];
+  if (typeof input === "string") return [[input, ...rest]];
+  if (Array.isArray(input)) {
+    if (input.length > 0 && typeof input[0] === "string") return [input as Effect];
+    return input as readonly Effect[];
+  }
+  return [input as Effect];
+}
+
 export interface ViewContext {
   [key: string]: unknown;
 }
@@ -147,20 +159,6 @@ export function makeApp(options: AppOptions): App {
   let state = useCell ? options.cell!.value : options.state;
   const handler = options.handler ?? defaultHandler;
 
-  const normalize = (input: DispatchInput, rest: unknown[]): readonly Effect[] => {
-    // a bare type is a single effect, a sequence of effect vectors is a
-    // batch, and type, ...args is one effect
-    if (input === null || input === undefined) return []; // nil batch
-    if (typeof input === "string") return [[input, ...rest]];
-    if (Array.isArray(input)) {
-      // a sequence of effect vectors is a batch; an empty array is an
-      // empty batch; a vector whose head is a type is one effect
-      if (input.length > 0 && typeof input[0] === "string") return [input as Effect];
-      return input as readonly Effect[];
-    }
-    return [input as Effect];
-  };
-
   const applyOne = (effect: Effect): void => {
     const [type, ...args] = effect;
     const fn = typeof type === "string" ? registry.get(type) : undefined;
@@ -175,7 +173,7 @@ export function makeApp(options: AppOptions): App {
   };
 
   const dispatch: DispatchFn = (input, ...rest) => {
-    const batch = normalize(input, rest);
+    const batch = normalizeBatch(input, rest);
     // an empty batch calls no handler and triggers no repaint
     if (batch.length === 0) return;
 
@@ -198,7 +196,7 @@ export function makeApp(options: AppOptions): App {
   // effects composed from inside a registered effect still apply
   // immediately, but never schedule their own repaint
   const internalDispatch: DispatchFn = (input, ...rest) => {
-    for (const effect of normalize(input, rest)) applyOne(effect);
+    for (const effect of normalizeBatch(input, rest)) applyOne(effect);
     return;
   };
 
