@@ -131,25 +131,19 @@ it("p_frozen: assigning to a node throws or is ignored", () => {
       expect(target[field]).toBe(before);
 
       // nested collections are frozen too
-      const drawables = (node as { drawables?: readonly unknown[] }).drawables;
-      if (drawables !== undefined) {
-        const lenBefore = drawables.length;
+      const collections = [
+        (node as { drawables?: readonly unknown[] }).drawables,
+        (node as { points?: readonly unknown[] }).points,
+      ];
+      for (const collection of collections) {
+        if (collection === undefined) continue;
+        const lenBefore = collection.length;
         try {
-          (drawables as unknown[]).push("MUTATED-SENTINEL");
+          (collection as unknown[]).push("MUTATED-SENTINEL");
         } catch {
           // throws is one allowed outcome
         }
-        expect(drawables.length).toBe(lenBefore);
-      }
-      const points = (node as { points?: readonly unknown[] }).points;
-      if (points !== undefined) {
-        const lenBefore = points.length;
-        try {
-          (points as unknown[]).push("MUTATED-SENTINEL");
-        } catch {
-          // throws is one allowed outcome
-        }
-        expect(points.length).toBe(lenBefore);
+        expect(collection.length).toBe(lenBefore);
       }
     }),
   );
