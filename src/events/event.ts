@@ -138,14 +138,11 @@ export function mouseMove(pos: Vec2, extra: Partial<TamborEvent> = {}): TamborEv
 }
 
 export function mouseMoveGlobal(pos: Vec2, extra: Partial<TamborEvent> = {}): TamborEvent {
-  return deepFreeze({ ...pointerEvent("mouse-move", pos, false, extra), type: "mouse-move-global" });
+  return pointerEvent("mouse-move-global", pos, false, extra);
 }
 
 export function mouseEnterGlobal(pos: Vec2, extra: Partial<TamborEvent> = {}): TamborEvent {
-  return deepFreeze({
-    ...pointerEvent("mouse-move", pos, false, extra),
-    type: "mouse-enter-global",
-  });
+  return pointerEvent("mouse-enter-global", pos, false, extra);
 }
 
 export function scroll(pos: Vec2, extra: Partial<TamborEvent> = {}): TamborEvent {

@@ -236,10 +236,9 @@ function handlerArgs(event: TamborEvent): readonly unknown[] {
       return [event.key];
     case "clipboard":
       return [event.data];
-    case "mouse-enter-global":
-    case "mouse-move-global":
-      return [event.pos ?? [0, 0]];
     default:
+      // mouse-enter-global and mouse-move-global handlers receive the
+      // (already origin-adjusted) position
       return [event.pos ?? [0, 0]];
   }
 }
