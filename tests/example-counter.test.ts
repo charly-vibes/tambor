@@ -8,8 +8,33 @@ import { expect, it } from "vitest";
 import fc from "fast-check";
 
 import { label } from "../src/label.ts";
-import { bounds, type Elem, type Node, type TranslateNode } from "../src/views/model.ts";
+import {
+  bounds,
+  button,
+  type ButtonNode,
+  type Elem,
+  type Node,
+  type TranslateNode,
+  type Vec2,
+} from "../src/views/model.ts";
 import { counter, counterCounter } from "../src/views/counter.ts";
+import { mouseDown } from "../src/events/event.ts";
+import { dispatch } from "../src/events/dispatch.ts";
+import type { EventElem } from "../src/events/bubble.ts";
+
+// The state path to a standalone counter's num: a keypath navigator
+// addressing the num entry of the app state (more_emits_increment;
+// "each counter's $num is nums plus seq-nth(i)" for the stacked form).
+const NUM_PATH: readonly unknown[] = [["keypath", "num"]];
+
+// The eventful counter view: the T1 counter layout with the more! button
+// carrying its pointer-down handler, which returns exactly one
+// counter-increment intent carrying the num path (more_emits_increment).
+function eventfulCounter(num: number): EventElem {
+  const rows = counter(num);
+  const btn = rows[0] as ButtonNode;
+  return [button(btn.text, () => [["counter-increment", NUM_PATH]]), rows[1]];
+}
 
 // p_label — derives_from: example.counter.label_shows_number
 // generator: num 10 — predicate: label text is the decimal string of num
@@ -50,6 +75,38 @@ it("p_layout: child 0 is the button and child 1 is the label with x offset great
       expect(lbl.type).toBe("translate");
       expect((lbl.drawable as Node).type).toBe("label");
       expect(lbl.x).toBeGreaterThan(bounds(btn)[0]);
+    }),
+  );
+});
+
+// p_more — derives_from: example.counter.more_emits_increment
+// generator: num 10 and a click at the button centre
+// predicate: intents equal one counter-increment with the path to num
+it("p_more: intents equal one counter-increment with the path to num", () => {
+  // The spec's example value must hold verbatim.
+  const view = eventfulCounter(10);
+  const btn = (view as readonly Elem[])[0] as ButtonNode;
+  const [w, h] = bounds(btn);
+  expect(dispatch(view, mouseDown([w / 2, h / 2]))).toEqual([
+    ["counter-increment", NUM_PATH],
+  ]);
+
+  // Generalized property: for every num, a click at the button centre
+  // yields exactly one counter-increment intent with the num path, and
+  // a click on the label yields none.
+  fc.assert(
+    fc.property(fc.integer({ min: 0, max: 9999 }), (num) => {
+      const tree = eventfulCounter(num);
+      const rows = tree as readonly Elem[];
+      const btnBounds = bounds(rows[0] as Node);
+      const centre: Vec2 = [btnBounds[0] / 2, btnBounds[1] / 2];
+      expect(dispatch(tree, mouseDown(centre))).toEqual([
+        ["counter-increment", NUM_PATH],
+      ]);
+      // the label (past the button) emits nothing
+      const lbl = rows[1] as TranslateNode;
+      const lblProbe: Vec2 = [lbl.x + 1, 0];
+      expect(dispatch(tree, mouseDown(lblProbe))).toEqual([]);
     }),
   );
 });
