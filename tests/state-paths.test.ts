@@ -24,13 +24,19 @@ import {
 // bare symbols ALL, FIRST, LAST, MAP-VALS, END and META.
 const keyGen = fc
   .string({ minLength: 1, maxLength: 4 })
-  .filter((k) => !["ALL", "FIRST", "LAST", "MAP-VALS", "END", "META"].includes(k));
+  // JS objects order integer-like keys first, which would break map
+  // entry ordering; the corpus's keys are keywords, never numeric
+  .filter(
+    (k) =>
+      !/^[0-9]/.test(k) &&
+      !["ALL", "FIRST", "LAST", "MAP-VALS", "END", "META"].includes(k),
+  );
 
 // A chain of keys plus a state containing that exact chain (with noise
 // siblings at every level), so direct indexing and select can agree.
 const chainState = fc
   .array(keyGen, { minLength: 1, maxLength: 3 })
-  .flatMap((keys) => {
+  .chain((keys) => {
     const build = (depth: number, leaf: unknown): Record<string, unknown> => {
       if (depth >= keys.length) return { leaf };
       return { [keys[depth] as string]: build(depth + 1, leaf), noise: { n: depth } };
@@ -63,7 +69,7 @@ it("p_select: select matches direct indexing", () => {
 it("p_immut: input deep-equals its prior snapshot", () => {
   fc.assert(
     fc.property(chainState, fc.integer(), fc.integer({ min: 0, max: 2 }), ({ keys, state }, v, kind) => {
-      const snapshot = structuredClone(state);
+      const snapshot = JSON.parse(JSON.stringify(state)) as typeof state;
       const path: Path = keys.map((k) => ["keypath", k]);
       if (kind === 0) setPath(state, path, v);
       else if (kind === 1) updatePath(state, path, (old) => ((old as number) ?? 0) + v);
@@ -201,10 +207,11 @@ it("p_take_drop: take and drop address disjoint covering ranges", () => {
       expect([...take, ...drop]).toEqual(xs);
       // both writable
       const bumped = take.map((v) => v + 1);
-      expect(setPath(xs, [["take", n]], bumped).slice(0, take.length)).toEqual(bumped);
+      expect((setPath(xs, [["take", n]], bumped) as number[]).slice(0, take.length)).toEqual(bumped);
       const droppedBumped = drop.map((v) => v + 1);
-      expect(setPath(xs, [["drop", n]], droppedBumped).slice(drop.length ? -drop.length : 0))
-        .toEqual(droppedBumped);
+      expect(setPath(xs, [["drop", n]], droppedBumped)).toEqual(
+        [...xs.slice(0, Math.min(n, xs.length)), ...droppedBumped],
+      );
     }),
   );
 });
@@ -218,7 +225,7 @@ it("p_nil_val: reads return the default", () => {
   // writes through unchanged otherwise
   expect(updatePath({ a: 5 }, [["keypath", "a"], ["nil-to-val", 42]], (v) => (v as number) + 1)).toEqual({ a: 6 });
   // a nil leaf reads as the default even for update
-  expect(updatePath(state, [["keypath", "a"], ["nil-to-val", 41]], (v) => (v as number) + 1)).toEqual({ a: 42 });
+  expect(updatePath({ a: null }, [["keypath", "a"], ["nil-to-val", 41]], (v) => (v as number) + 1)).toEqual({ a: 42 });
 });
 
 // p_keypath_list — derives_from: state.paths.keypath_list
@@ -273,7 +280,7 @@ it("p_flatten: selects equal the flat path", () => {
 it("p_rest_args: round-trip is lossless", () => {
   fc.assert(
     fc.property(
-      fc.set(keyGen, { minLength: 1, maxLength: 4 }).flatMap((ks) =>
+      fc.uniqueArray(keyGen, { minLength: 1, maxLength: 4 }).chain((ks) =>
         fc.array(fc.integer(), { minLength: ks.length, maxLength: ks.length }).map((vs) => ({ ks, vs })),
       ),
       ({ ks, vs }) => {
