@@ -10,6 +10,15 @@ import fc from "fast-check";
 import { label } from "../src/label.ts";
 import { bounds, type Elem, type Node, type TranslateNode } from "../src/views/model.ts";
 import { counter, counterCounter } from "../src/views/counter.ts";
+import {
+  counter as counterView,
+  counterCounter as counterCounterView,
+} from "../src/effects/counter.ts";
+import { rootRef } from "../src/effects/ref.ts";
+import { makeApp, type Effect } from "../src/effects/dispatch.ts";
+import type { ButtonNode } from "../src/views/model.ts";
+
+const noopView = () => null;
 
 // p_label — derives_from: example.counter.label_shows_number
 // generator: num 10 — predicate: label text is the decimal string of num
@@ -83,4 +92,60 @@ it("p_stack: four rows, button first then three counters", () => {
       expect(stack[0]).toMatchObject({ type: "button" });
     }),
   );
+});
+
+// ---------------------------------------------------------------------------
+// T3 (tambor-q7u): effect application — p_increment, p_independent, p_add.
+// These convert the state-path + effect-dispatch half of the spec; the
+// remaining rows stay with their owning ticket.
+
+// p_increment — derives_from: example.counter.increment_applies
+// generator: state num 10 — predicate: state num becomes 11
+it("p_increment: state num becomes 11", () => {
+  const state = { num: 10 };
+  const $num = rootRef(state).get("num");
+  const rows = counterView(10, $num);
+  // the more button emits exactly one counter-increment with the num path
+  const effects = (rows[0] as ButtonNode).onClick?.() as Effect[];
+  expect(effects).toEqual([["counter-increment", [["keypath", "num"]]]]);
+  // applying it adds 1 to the number at the path and changes nothing else
+  const app = makeApp({ view: noopView, state });
+  app.dispatch(effects);
+  expect(app.getState()).toEqual({ num: 11 });
+});
+
+// p_independent — derives_from: example.counter.independent_counters
+// generator: nums 0, 1, 2 and a click on the second more — predicate:
+// nums becomes 0, 2, 2
+it("p_independent: nums becomes 0, 2, 2", () => {
+  const state = { nums: [0, 1, 2] };
+  const $nums = rootRef(state).get("nums");
+  const rows = counterCounterView([0, 1, 2], $nums) as readonly Elem[];
+  // a counter at index i has the path nums then seq-nth(i); the second
+  // more button lives in row 2 (row 0 is the Add Counter button)
+  const second = ((rows[2] as TranslateNode).drawable as readonly Elem[])[0] as ButtonNode;
+  const effects = second.onClick?.() as Effect[];
+  expect(effects).toEqual([["counter-increment", [["keypath", "nums"], ["seq-nth", 1]]]]);
+  const app = makeApp({ view: noopView, state });
+  app.dispatch(effects);
+  expect(app.getState()).toEqual({ nums: [0, 2, 2] });
+});
+
+// p_add — derives_from: example.counter.add_appends_zero
+// generator: nums 0, 1, 2 and a click on Add Counter — predicate: nums
+// becomes 0, 1, 2, 0 and a fifth row appears
+it("p_add: nums becomes 0, 1, 2, 0 and a fifth row appears", () => {
+  const state = { nums: [0, 1, 2] };
+  const $nums = rootRef(state).get("nums");
+  const rows = counterCounterView([0, 1, 2], $nums) as readonly Elem[];
+  // pressing Add Counter returns add-counter with the nums path
+  const effects = (rows[0] as ButtonNode).onClick?.() as Effect[];
+  expect(effects).toEqual([["add-counter", [["keypath", "nums"]]]]);
+  const app = makeApp({ view: noopView, state });
+  app.dispatch(effects);
+  // applying it appends 0
+  expect(app.getState()).toEqual({ nums: [0, 1, 2, 0] });
+  // …and a fifth row appears on the next render
+  const after = counterCounterView([0, 1, 2, 0], rootRef(app.getState()).get("nums")) as readonly Elem[];
+  expect(after).toHaveLength(5);
 });
