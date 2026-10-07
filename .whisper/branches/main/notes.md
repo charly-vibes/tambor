@@ -3,3 +3,9 @@
   - Rule-of-5 review applied: spec-drift + contract-drift gates added to pre-commit, non-blocking scaffold-debt report (353 todo_predicate! stubs / 24 files) on push, README loop documented, openspec/project.md filled
   - All work committed and pushed through the gates (HEAD 25887c0, origin/main up to date)
   - **Next:** port implementation — replace todo_predicate! scaffolds with real vitest/fast-check contract tests as membrane-ts core lands (edit corpus specs/ → compile → deploy → ah sync → wire tests); upgrade [[tests.shell]] bindings as behavior tests materialize
+- 2026-10-07T18:18:04Z [id:ecfad71072dda9b7e36f850ca57d16fb86adbd27d1390b136358bb43f1a6697b] (#rename) ### 2026-10-07 15:17 — snap
+  - Renamed membrane-ts → tambor through the full loop: root spec id membrane→tambor (specs/tambor.md), statements in typing-model + scrollytelling-pin, 24 corpus files recompiled/redeployed, 329 contracts re-derived into .espectacular/tambor/ with scaffold bindings re-pointed, spk artifacts regenerated, experiments stand-ins renamed tambor-*.mjs (incl. Symbol.for("tambor/none")), docs updated
+  - phronmophobic/membrane retained everywhere as documented inspiration + acceptance baseline (README now states it explicitly)
+  - .whisper session notes now tracked in git (private/ stays ignored); pushed 4c457a5 (rename), bdff971+3a9019f (gitignore+notes) — all commit+push gates green, ah check --run-tests 329 passed
+  - Status report flags still open: no baseline milestone agreed, 353 todo_predicate! scaffolds, no CI workflows
+  - **Next:** start tambor implementation — replace todo_predicate! scaffolds with real vitest/fast-check contract tests; confirm test stack first (README proposal: vitest + fast-check + expectTypeOf)
