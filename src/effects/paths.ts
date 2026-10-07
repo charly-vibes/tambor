@@ -174,12 +174,12 @@ function walk(
     // special navigators
     switch (step) {
       case ALL: {
-        if (ctx.mode === "select" && isAbsent(value)) return undefined;
+        if (ctx.mode === "select" && !Array.isArray(value)) return undefined;
         if (!Array.isArray(value)) throw new Error("ALL requires a sequence");
         return walkSeq(value, path, i, ctx, leaf, 0, (value as unknown[]).length);
       }
       case MAP_VALS: {
-        if (ctx.mode === "select" && isAbsent(value)) return undefined;
+        if (ctx.mode === "select" && (value === null || typeof value !== "object")) return undefined;
         if (value === null || typeof value !== "object") throw new Error("MAP-VALS requires a map");
         const entries = entriesOf(value);
         const children = entries.map(([, v]) => walk(v, path, i + 1, ctx, leaf, true));
@@ -200,7 +200,7 @@ function walk(
       case FIRST:
         return walk(value, [["nth", 0] as Navigator, ...path.slice(i + 1)], 0, ctx, leaf, writeKey);
       case LAST: {
-        if (ctx.mode === "select" && isAbsent(value)) return undefined;
+        if (ctx.mode === "select" && !Array.isArray(value)) return undefined;
         if (!Array.isArray(value)) throw new Error("LAST requires a sequence");
         const idx = (value as unknown[]).length - 1;
         return walk(value, [["nth", idx] as Navigator, ...path.slice(i + 1)], 0, ctx, leaf, writeKey);
@@ -306,7 +306,7 @@ function walk(
       return out;
     }
     case "filter": {
-      if (ctx.mode === "select" && isAbsent(value)) return undefined;
+      if (ctx.mode === "select" && !Array.isArray(value)) return undefined;
       if (!Array.isArray(value)) throw new Error("filter requires a sequence");
       const pred = keywordPred(step[1] as Pred | string);
       const matched: number[] = [];
@@ -332,7 +332,7 @@ function walk(
     }
     case "take":
     case "drop": {
-      if (ctx.mode === "select" && isAbsent(value)) return undefined;
+      if (ctx.mode === "select" && !Array.isArray(value)) return undefined;
       if (!Array.isArray(value)) throw new Error(`${name} requires a sequence`);
       const n = step[1] as number;
       const len = (value as unknown[]).length;
@@ -369,7 +369,7 @@ function walk(
       return walk(value, path, i + 1, ctx, leaf, writeKey);
     }
     case "rest-args-map": {
-      if (ctx.mode === "select" && isAbsent(value)) return undefined;
+      if (ctx.mode === "select" && !Array.isArray(value)) return undefined;
       const flat = Array.isArray(value) ? (value as unknown[]) : [];
       const view: Record<PropertyKey, unknown> = {};
       for (let j = 0; j + 1 < flat.length; j += 2) view[flat[j] as PropertyKey] = flat[j + 1];

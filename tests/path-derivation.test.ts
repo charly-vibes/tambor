@@ -31,14 +31,17 @@ const keyGen = fc
 
 // A random key chain, a state containing that exact chain (with noise
 // siblings), and the ref derived by a chain of ref.get bindings.
-const chainBinding = fc.array(keyGen, { minLength: 1, maxLength: 3 }).map((keys) => {
+const chainBinding = fc
+  .array(keyGen, { minLength: 1, maxLength: 3 })
+  .map((keys) => {
   const build = (depth: number, leaf: unknown): Record<string, unknown> => {
     if (depth >= keys.length) return { leaf };
     return { [keys[depth] as string]: build(depth + 1, leaf), noise: { n: depth } };
   };
   const state = build(0, 42);
-  let ref = rootRef(state);
+  let ref: Ref = rootRef(state);
   for (const k of keys) ref = ref.get(k);
+  ref = ref.get("leaf");
   return { keys, state, ref };
 });
 
@@ -68,7 +71,7 @@ it("p_extract: select by path equals the destructured value", () => {
     fc.property(chainBinding, ({ keys, state, ref }) => {
       expect(ref.value).toBe(42);
       expect(select(state, ref.path)).toBe(ref.value);
-      expect(ref.path).toEqual(keys.map((k) => ["keypath", k]));
+      expect(ref.path).toEqual([...keys.map((k) => ["keypath", k]), ["keypath", "leaf"]]);
     }),
   );
   // a form through a vector
@@ -131,7 +134,7 @@ it("p_compiles: derivation never throws", () => {
   );
   fc.assert(
     fc.property(fc.array(ops, { maxLength: 4 }), (forms) => {
-      let r = rootRef(state);
+      let r: Ref = rootRef(state);
       for (const form of forms) r = form(r);
       // derivation of any combination yields paths without error
       expect(r.path).toBeInstanceOf(Array);
@@ -259,7 +262,9 @@ it("p_if_let: then path selects 1, nil yields no then handlers, else selects and
   const elseIntents = ifLet(
     rootRef(notObj).get("a"),
     () => [],
-    (r) => [["set", r.path, 2]],
+    // the else branch sees only the outer bindings: it re-derives its
+    // own name from the outer ref
+    (r) => [["set", r.get("c").path, 2]],
   );
   // the else path selects 1 on not-obj and sets to not-obj 2
   expect(select(notObj, (elseIntents as unknown[][])[0]![1] as Path)).toBe(1);
@@ -369,7 +374,7 @@ it("p_opaque: value readable and path write refused", () => {
 // and delete change only the original index 1
 it("p_filter_path: the item path of the second visible todo selects second", () => {
   const state = { todos: [{ text: "first" }, { text: "second" }, { text: "third", complete: true }] };
-  const active = (t: { complete?: boolean }) => !t.complete;
+  const active = (t: unknown) => !(t as { complete?: boolean }).complete;
   const items = rootRef(state).get("todos").filter(active).each();
   const second = items[1]!;
   // xs followed by filter(pred) then seq-nth(i)
@@ -409,7 +414,7 @@ it("p_unbound: the symbol is left alone", () => {
 // predicate: outputs are deep-equal
 it("p_strategy: outputs are deep-equal", () => {
   const state = { todos: [{ text: "first" }, { text: "second" }, { text: "third", complete: true }] };
-  const active = (t: { complete?: boolean }) => !t.complete;
+  const active = (t: unknown) => !(t as { complete?: boolean }).complete;
   const collected: unknown[] = [];
 
   // strategy 1: the typed runtime ref
