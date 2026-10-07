@@ -16,6 +16,10 @@ export type MeasureFn = (text: string) => Vec2;
 
 export type Style = "fill" | "stroke" | "stroke-and-fill";
 
+// Event handlers return intents; dispatch semantics land with
+// effect-dispatch/event-model. Handlers are carried as inert data here.
+export type Handler = (...args: readonly unknown[]) => unknown;
+
 export interface StretchOptions {
   readonly stretchWidth?: true;
   readonly stretchHeight?: true;
@@ -80,6 +84,25 @@ export interface WithStrokeWidthNode {
   readonly drawables: readonly Elem[];
 }
 
+export interface ButtonNode {
+  readonly type: "button";
+  readonly text: string;
+  readonly onClick?: Handler;
+  readonly hover?: boolean;
+}
+
+export interface HandlerNode {
+  readonly type: "handler";
+  readonly eventType: string;
+  readonly handler: Handler;
+  readonly drawables: readonly Elem[];
+}
+
+export interface CheckboxNode {
+  readonly type: "checkbox";
+  readonly checked: boolean;
+}
+
 export type Node =
   | Label
   | Rectangle
@@ -89,7 +112,10 @@ export type Node =
   | TranslateNode
   | WithColorNode
   | WithStyleNode
-  | WithStrokeWidthNode;
+  | WithStrokeWidthNode
+  | ButtonNode
+  | HandlerNode
+  | CheckboxNode;
 
 // Collections are drawables too: a vector of nodes is a group, and nil
 // draws nothing (group_is_node).
@@ -155,6 +181,27 @@ export function translate(x: number, y: number, drawable: Elem): TranslateNode {
   return deepFreeze({ type: "translate", x, y, drawable });
 }
 
+export function button(text: string, onClick?: Handler): ButtonNode {
+  const node: { type: "button"; text: string; onClick?: Handler; hover?: boolean } = {
+    type: "button",
+    text,
+  };
+  if (onClick !== undefined) node.onClick = onClick;
+  return deepFreeze(node);
+}
+
+export function on(
+  eventType: string,
+  handler: Handler,
+  ...drawables: readonly Elem[]
+): HandlerNode {
+  return deepFreeze({ type: "handler", eventType, handler, drawables });
+}
+
+export function checkbox(checked: boolean): CheckboxNode {
+  return deepFreeze({ type: "checkbox", checked });
+}
+
 export function withColor(color: Color, ...drawables: readonly Elem[]): WithColorNode {
   return deepFreeze({ type: "with-color", color, drawables });
 }
@@ -168,6 +215,35 @@ export function withStrokeWidth(
   ...drawables: readonly Elem[]
 ): WithStrokeWidthNode {
   return deepFreeze({ type: "with-stroke-width", strokeWidth, drawables });
+}
+
+// The ui checkbox draw: a 12 by 12 rounded square with radius 2, gray
+// stroke when unchecked, and when checked a blue fill and border with a
+// white check path through [2, 6], [5, 9], [10, 2] (checkbox_geometry).
+const CHECK_PATH: readonly Vec2[] = [
+  [2, 6],
+  [5, 9],
+  [10, 2],
+];
+const CHECKBOX_GRAY = 0.6862745098039216;
+const CHECKBOX_BORDER: Color = [0.14901960784313725, 0.5254901960784314, 0.9882352941176471];
+const CHECKBOX_FILL: Color = [0.2, 0.5607843137254902, 0.9882352941176471];
+
+function checkboxDraw(checked: boolean): Elem {
+  const square = roundedRectangle(12, 12, 2);
+  if (!checked) {
+    return withStyle("stroke", withColor([CHECKBOX_GRAY, CHECKBOX_GRAY, CHECKBOX_GRAY], square));
+  }
+  return withStyle("stroke", [
+    withStyle("fill", withColor(CHECKBOX_FILL, square)),
+    withColor(CHECKBOX_BORDER, square),
+    translate(
+      0,
+      1,
+      withStrokeWidth(1.5, withColor([0, 0, 0, 0.3], path(...CHECK_PATH))),
+    ),
+    withStrokeWidth(1.5, withColor([1, 1, 1], path(...CHECK_PATH))),
+  ]);
 }
 
 // The top left corner of an elem's bounds (origin_default: [0, 0]
@@ -185,6 +261,9 @@ export function origin(elem: Elem): Vec2 {
     case "with-color":
     case "with-style":
     case "with-stroke-width":
+    case "button":
+    case "handler":
+    case "checkbox":
       return [0, 0];
   }
   throw new Error(`unreachable node type: ${(elem as Node).type}`);
@@ -237,7 +316,15 @@ export function bounds(elem: Elem): Vec2 {
     case "with-color":
     case "with-style":
     case "with-stroke-width":
+    case "handler":
       return groupBounds(elem.drawables);
+    case "button": {
+      // button_bounds: label bounds plus 12 on each axis.
+      const [w, h] = bounds(label(elem.text));
+      return [w + 12, h + 12];
+    }
+    case "checkbox":
+      return groupBounds([checkboxDraw(elem.checked)]);
   }
   throw new Error(`unreachable node type: ${(elem as Node).type}`);
 }
@@ -261,15 +348,62 @@ export function children(elem: Elem): readonly Elem[] {
     case "with-color":
     case "with-style":
     case "with-stroke-width":
+    case "handler":
       return elem.drawables;
+    case "checkbox":
+      return [checkboxDraw(elem.checked)];
     case "label":
     case "rectangle":
     case "rounded-rectangle":
     case "path":
     case "spacer":
+    case "button":
       return [];
   }
   throw new Error(`unreachable node type: ${(elem as Node).type}`);
+}
+
+// setWidth/setHeight (set_size_single_child): on the handler wrapper
+// they succeed only when it has exactly one child and otherwise throw;
+// they delegate to the child. Sizeable nodes assoc the new size and
+// return a new node; everything else throws.
+
+export function setWidth(elem: Elem, newWidth: number): Elem {
+  if (elem == null || isGroup(elem)) throw new Error("can't set width");
+  switch (elem.type) {
+    case "rectangle":
+    case "rounded-rectangle":
+      return deepFreeze({ ...elem, width: newWidth });
+    case "spacer":
+      return deepFreeze({ ...elem, x: newWidth });
+    case "handler":
+      if (elem.drawables.length !== 1) throw new Error("can't set width");
+      return deepFreeze({
+        ...elem,
+        drawables: [setWidth(elem.drawables[0], newWidth)],
+      });
+    default:
+      throw new Error("can't set width");
+  }
+}
+
+export function setHeight(elem: Elem, newHeight: number): Elem {
+  if (elem == null || isGroup(elem)) throw new Error("can't set height");
+  switch (elem.type) {
+    case "rectangle":
+    case "rounded-rectangle":
+      return deepFreeze({ ...elem, height: newHeight });
+    case "spacer":
+      return deepFreeze({ ...elem, y: newHeight });
+    case "handler":
+      if (elem.drawables.length !== 1) throw new Error("can't set height");
+      return deepFreeze({
+        ...elem,
+        drawables: [setHeight(elem.drawables[0], newHeight)],
+      });
+    default:
+      throw new Error("can't set height");
+  }
 }
 
 // Rebuild a node with new children so generic traversal can rebuild
@@ -292,11 +426,16 @@ export function makeNode(elem: Elem, newChildren: readonly Elem[]): Elem {
       return withStyle(elem.style, ...newChildren);
     case "with-stroke-width":
       return withStrokeWidth(elem.strokeWidth, ...newChildren);
+    case "handler":
+      return on(elem.eventType, elem.handler, ...newChildren);
+    case "checkbox":
+      return checkbox(elem.checked);
     case "label":
     case "rectangle":
     case "rounded-rectangle":
     case "path":
     case "spacer":
+    case "button":
       if (newChildren.length !== 0) {
         throw new Error(`${elem.type} holds no children`);
       }

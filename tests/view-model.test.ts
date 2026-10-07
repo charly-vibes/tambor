@@ -323,7 +323,7 @@ const CHECK_PATH: readonly Vec2[] = [
 
 function hasCheckPath(elem: Elem): boolean {
   for (const e of walk(elem)) {
-    if (e !== null && !Array.isArray(e) && e.type === "path") {
+    if (e !== null && e !== undefined && "type" in e && e.type === "path") {
       if (JSON.stringify(e.points) === JSON.stringify(CHECK_PATH)) return true;
     }
   }
@@ -356,8 +356,10 @@ it("p_style: bounds equal the unwrapped bounds", () => {
     "stroke",
     "stroke-and-fill",
   );
+  // The generator varies colors and styles; the wrapped child is a
+  // non-offset node so the wrapper's bounds are directly comparable.
   fc.assert(
-    fc.property(colorArb, styleArb, fc.nat(5), nodeArb, (color, style, sw, child) => {
+    fc.property(colorArb, styleArb, fc.nat(5), nonOffsetArb, (color, style, sw, child) => {
       expect(bounds(withColor(color, child))).toEqual(bounds(child));
       expect(bounds(withStyle(style, child))).toEqual(bounds(child));
       expect(bounds(withStrokeWidth(sw, child))).toEqual(bounds(child));
