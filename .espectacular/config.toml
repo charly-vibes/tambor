@@ -5,3 +5,5 @@ specs = "openspec/specs"
 changes = "openspec/changes"
 
 [runners]
+# vitest adapter (detected via package.json) — explicit for clarity.
+vitest = ["npx", "vitest", "run"]
