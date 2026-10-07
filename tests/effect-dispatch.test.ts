@@ -73,15 +73,15 @@ it("p_update: value at path equals f(old, ...args)", () => {
       maxLength: 3,
     })
     .map((keys) => {
-      const build = (depth: number, leaf: unknown): Record<string, unknown> =>
+      const build = (depth: number, leaf: unknown): unknown =>
         depth >= keys.length ? leaf : { [keys[depth] as string]: build(depth + 1, leaf) };
       return { keys, state: build(0, 5) };
     });
-  const fns: fc.Arbitrary<[string, (old: unknown, ...args: unknown[]) => unknown, unknown[]]> =
+  const fns: fc.Arbitrary<readonly [string, (old: unknown, ...args: unknown[]) => unknown, readonly unknown[]]> =
     fc.oneof(
-      fc.tuple(fc.constant("add"), fc.constant((old: unknown, a: number) => (old as number) + a), fc.array(fc.integer(), { minLength: 1, maxLength: 1 })),
-      fc.tuple(fc.constant("double"), fc.constant((old: unknown) => (old as number) * 2), fc.constant([])),
-      fc.tuple(fc.constant("concat"), fc.constant((old: unknown, s: string) => String(old) + s), fc.array(fc.constantFrom("!", "?"), { minLength: 1, maxLength: 1 })),
+      fc.tuple(fc.constant("add"), fc.constant((old: unknown, ...a: unknown[]) => (old as number) + (a[0] as number)), fc.array(fc.integer(), { minLength: 1, maxLength: 1 })),
+      fc.tuple(fc.constant("double"), fc.constant((old: unknown) => (old as number) * 2), fc.constant([] as readonly unknown[])),
+      fc.tuple(fc.constant("concat"), fc.constant((old: unknown, ...a: unknown[]) => String(old) + (a[0] as string)), fc.array(fc.constantFrom("!", "?"), { minLength: 1, maxLength: 1 })),
     );
   fc.assert(
     fc.property(binding, fns, ({ keys, state }, [, f, args]) => {
@@ -89,7 +89,7 @@ it("p_update: value at path equals f(old, ...args)", () => {
       const app = makeApp({ view: noopView, state });
       const old = select(state, path);
       app.dispatch(["update", path, f, ...args]);
-      expect(select(app.getState(), path)).toBe(f(old, ...args));
+      expect(select(app.getState() as Record<string, unknown>, path)).toBe(f(old, ...args));
     }),
   );
 });
@@ -179,7 +179,10 @@ it("p_registry: it is both dispatchable by type and callable directly", () => {
 // generator: button click with next-todo-text hello — predicate: state
 // ends with a todo hello and next-todo-text empty
 it("p_captured: state ends with a todo hello and next-todo-text empty", () => {
-  defeffect("test/add-todo", (dispatch, todosPath: Path, nextPath: Path, text: string) => {
+  defeffect("test/add-todo", (dispatch, ...raw: unknown[]) => {
+    const todosPath = raw[0] as Path;
+    const nextPath = raw[1] as Path;
+    const text = raw[2] as string;
     dispatch(["update", todosPath, (todos: unknown[]) => [...todos, text]]);
     dispatch(["set", nextPath, ""]);
   });
