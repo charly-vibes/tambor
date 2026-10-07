@@ -9,3 +9,6 @@ superseded_by = ""
 
 [[tests.shell]]
 command = "tools/scaffold-check.sh event-model p-global-move"
+
+[[tests.vitest]]
+flags = "--testNamePattern=p_global_move"

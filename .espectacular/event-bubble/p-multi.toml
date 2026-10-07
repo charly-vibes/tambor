@@ -9,3 +9,6 @@ superseded_by = ""
 
 [[tests.shell]]
 command = "tools/scaffold-check.sh event-bubble p-multi"
+
+[[tests.vitest]]
+flags = "--testNamePattern=p_multi"
