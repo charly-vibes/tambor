@@ -50,6 +50,7 @@ import { type SimCanvas, type SimEvent } from "./domsim.ts";
 import { normalizeDOMEvent } from "./input.ts";
 import { accessibilityTree, type A11yNode } from "./a11y.ts";
 import type { AnyDraw } from "./primitives.ts";
+import { PAINTERS, type CanvasNode } from "./canvas-painters.ts";
 
 // The device pixel ratio default: the host's, or 1 headless.
 function hostDpr(): number {
@@ -236,211 +237,22 @@ export class CanvasBackend implements BackendContract {
   }
 
   // The drawing traversal over the primitive_set.
-  private paintTree(view: AnyDraw): void {
+  paintTree(view: AnyDraw): void {
     if (view == null) return;
     if (Array.isArray(view)) {
       for (const child of view as readonly AnyDraw[]) this.paintTree(child);
       return;
     }
-    const painter = this.painter;
-    const node = view as {
-      type: string;
-      drawable?: AnyDraw;
-      drawables?: readonly AnyDraw[];
-      text?: string;
-      color?: Color;
-      style?: string;
-      strokeWidth?: number;
-      width?: number;
-      height?: number;
-      radius?: number;
-      points?: readonly Vec2[];
-      x?: number;
-      y?: number;
-      cx?: number;
-      cy?: number;
-      theta?: number;
-      checked?: boolean;
-      data?: ImageBuffer;
-      start?: number;
-      end?: number;
-    };
-    switch (node.type) {
-      case "label":
-        painter.fillText(node.text ?? "", 0, 0);
-        return;
-      case "rectangle": {
-        const w = node.width ?? 0;
-        const h = node.height ?? 0;
-        this.paintBox(0, 0, w, h);
-        return;
-      }
-      case "rounded-rectangle": {
-        const w = node.width ?? 0;
-        const h = node.height ?? 0;
-        const r = node.radius ?? 0;
-        // fill is the box; stroke walks the rounded outline
-        if (painter.mode !== "stroke") {
-          const color = painter.fillStyle;
-          if (color) {
-            painter.fillStyle = color;
-            painter.fillRect(0, 0, w, h);
-          }
-        }
-        painter.strokeRoundedRect(0, 0, w, h, r);
-        return;
-      }
-      case "path": {
-        painter.beginPath();
-        const pts = node.points ?? [];
-        if (pts.length > 0) painter.moveTo(pts[0]![0], pts[0]![1]);
-        for (const p of pts.slice(1)) painter.lineTo(p[0], p[1]);
-        painter.stroke();
-        return;
-      }
-      case "arc": {
-        painter.beginPath();
-        painter.arc(node.cx ?? 0, node.cy ?? 0, node.radius ?? 0, node.start ?? 0, node.end ?? 0);
-        painter.stroke();
-        return;
-      }
-      case "spacer":
-        return;
-      case "translate": {
-        painter.save();
-        painter.translate(node.x ?? 0, node.y ?? 0);
-        this.paintTree(node.drawable ?? null);
-        painter.restore();
-        return;
-      }
-      case "rotate": {
-        painter.save();
-        painter.rotate(node.theta ?? 0);
-        for (const child of node.drawables ?? []) this.paintTree(child);
-        painter.restore();
-        return;
-      }
-      case "scale": {
-        painter.save();
-        painter.scale(node.x ?? 1, node.y ?? 1);
-        for (const child of node.drawables ?? []) this.paintTree(child);
-        painter.restore();
-        return;
-      }
-      case "scissor": {
-        painter.save();
-        painter.scissor(node.x ?? 0, node.y ?? 0, node.width ?? 0, node.height ?? 0);
-        for (const child of node.drawables ?? []) this.paintTree(child);
-        painter.restore();
-        return;
-      }
-      case "with-color": {
-        painter.save();
-        const color = node.color ?? [0, 0, 0];
-        painter.fillStyle = color;
-        painter.strokeStyle = color;
-        for (const child of node.drawables ?? []) this.paintTree(child);
-        painter.restore();
-        return;
-      }
-      case "with-style": {
-        painter.save();
-        painter.setStyle((node.style ?? "fill") as "fill" | "stroke" | "stroke-and-fill");
-        for (const child of node.drawables ?? []) this.paintTree(child);
-        painter.restore();
-        return;
-      }
-      case "with-stroke-width": {
-        painter.save();
-        painter.lineWidth = node.strokeWidth ?? 1;
-        for (const child of node.drawables ?? []) this.paintTree(child);
-        painter.restore();
-        return;
-      }
-      case "button": {
-        // the button draws its label, inset by the 6 px padding
-        painter.fillText(node.text ?? "", 6, 6);
-        return;
-      }
-      case "checkbox": {
-        // the ui checkbox draw: the 12 by 12 rounded square, stroked
-        // gray when unchecked; when checked, the blue fill, border and
-        // the white check path
-        const checked = node.checked === true;
-        painter.save();
-        if (checked) {
-          painter.fillStyle = [0.2, 0.5607843137254902, 0.9882352941176471];
-          painter.fillRect(0, 0, 12, 12);
-          painter.fillStyle = null;
-          painter.strokeStyle = [1, 1, 1];
-          painter.lineWidth = 1.5;
-          painter.beginPath();
-          painter.moveTo(2, 6);
-          painter.lineTo(5, 9);
-          painter.lineTo(10, 2);
-          painter.stroke();
-        } else {
-          painter.setStyle("stroke");
-          painter.strokeStyle = [0.6862745098039216, 0.6862745098039216, 0.6862745098039216];
-          painter.lineWidth = 1;
-          painter.strokeRoundedRect(0, 0, 12, 12, 2);
-        }
-        painter.restore();
-        return;
-      }
-      case "handler": {
-        for (const child of node.drawables ?? []) this.paintTree(child);
-        return;
-      }
-      case "text-selection": {
-        // the selected-text highlight behind text
-        const keep = painter.fillStyle;
-        painter.fillStyle = [0, 0, 1, 0.25];
-        painter.fillRect(0, 0, node.width ?? 0, node.height ?? 0);
-        painter.fillStyle = keep;
-        return;
-      }
-      case "text-cursor": {
-        // the caret: a one-cell-wide vertical bar
-        const keep = painter.fillStyle;
-        painter.fillStyle = [0, 0, 0];
-        painter.fillRect(0, 0, 1, node.height ?? 0);
-        painter.fillStyle = keep;
-        return;
-      }
-      case "image": {
-        painter.drawImage(node.data ?? checkerboard(node.width ?? 8, node.height ?? 8), 0, 0);
-        return;
-      }
-      default: {
-        // unknown node types fall back to drawing their children
-        // (primitive_set)
-        for (const child of node.drawables ?? []) this.paintTree(child);
-        return;
-      }
+    const node = view as CanvasNode;
+    const painter = PAINTERS[node.type];
+    if (painter === undefined) {
+      // unknown node types fall back to drawing their children
+      // (primitive_set)
+      for (const child of node.drawables ?? []) this.paintTree(child);
+      return;
     }
-  }
-
-  // Paint a box honouring the current style mode: fill, stroke, or both.
-  private paintBox(x: number, y: number, w: number, h: number): void {
-    const painter = this.painter;
-    if (painter.mode !== "stroke" && painter.fillStyle) {
-      painter.fillRect(x, y, w, h);
-    }
-    if (painter.mode !== "fill" && painter.strokeStyle) {
-      painter.strokeRect(x, y, w, h);
-    }
+    painter(this.paintTree.bind(this), this.painter, node);
   }
 }
 
-// The image pattern for an image primitive without pixel data.
-function checkerboard(width: number, height: number): ImageBuffer {
-  const buf = new ImageBuffer(width, height);
-  const white = toRGBA([1, 1, 1]);
-  for (let y = 0; y < buf.height; y++) {
-    for (let x = 0; x < buf.width; x++) {
-      if ((x + y) % 2 === 0) buf.set(x, y, white);
-    }
-  }
-  return buf;
-}
+
