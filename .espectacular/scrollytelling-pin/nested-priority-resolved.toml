@@ -9,3 +9,6 @@ superseded_by = ""
 
 [[tests.shell]]
 command = "tools/scaffold-check.sh scrollytelling-pin nested-priority-resolved"
+
+[[tests.vitest]]
+flags = "--testNamePattern=nested_priority_resolved"

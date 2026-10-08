@@ -9,3 +9,6 @@ superseded_by = ""
 
 [[tests.shell]]
 command = "tools/scaffold-check.sh scrollytelling-pin resize-recomputes-spacer"
+
+[[tests.vitest]]
+flags = "--testNamePattern=resize_recomputes_spacer"

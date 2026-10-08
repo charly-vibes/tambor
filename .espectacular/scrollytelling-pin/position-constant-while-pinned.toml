@@ -9,3 +9,6 @@ superseded_by = ""
 
 [[tests.shell]]
 command = "tools/scaffold-check.sh scrollytelling-pin position-constant-while-pinned"
+
+[[tests.vitest]]
+flags = "--testNamePattern=position_constant_while_pinned"

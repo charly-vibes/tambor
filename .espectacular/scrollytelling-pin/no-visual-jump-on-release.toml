@@ -9,3 +9,6 @@ superseded_by = ""
 
 [[tests.shell]]
 command = "tools/scaffold-check.sh scrollytelling-pin no-visual-jump-on-release"
+
+[[tests.vitest]]
+flags = "--testNamePattern=no_visual_jump_on_release"
