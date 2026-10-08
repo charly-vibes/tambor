@@ -9,3 +9,6 @@ superseded_by = ""
 
 [[tests.shell]]
 command = "tools/scaffold-check.sh example-todo p-toggle-render"
+
+[[tests.vitest]]
+flags = "--testNamePattern=p_toggle_render"
