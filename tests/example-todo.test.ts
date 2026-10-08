@@ -404,12 +404,12 @@ it("p_toggle_render: active is plain and the other two are gray and clickable", 
   expect(active.underHandler).toBe(false);
   // every other option is a clickable label in gray [0.8, 0.8, 0.8],
   // separated by 5 px spacers
+  const colorWrap = scan(t).find((g) => g.node.type === "with-color")!.node as WithColorNode;
+  expect(colorWrap.color).toEqual([0.8, 0.8, 0.8]);
   for (const text of ["all", "complete"]) {
     const f = byText(text);
     expect(f.underColor).toBe(true);
     expect(f.underHandler).toBe(true);
-    const colorWrap = findNode(t, (g) => g.node.type === "with-color" && scan(g.node as Elem).some((h) => h.node === f.node))?.node as WithColorNode;
-    expect(colorWrap.color).toEqual([0.8, 0.8, 0.8]);
   }
   const spacers = scan(t).filter((f) => f.node.type === "spacer");
   expect(spacers).toHaveLength(2);

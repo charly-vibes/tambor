@@ -40,7 +40,7 @@ import {
 import { horizontalLayout, verticalLayout } from "../../views/layout.ts";
 import type { Path, Pred } from "../../effects/paths.ts";
 import { defeffect } from "../../effects/dispatch.ts";
-import { wrapOn, type EventElem, type IntentList } from "../../events/bubble.ts";
+import { wrapOn, type IntentList } from "../../events/bubble.ts";
 import { textarea } from "../../components/textarea/textarea.ts";
 import { initialTextareaExtra } from "../../components/textarea/edit.ts";
 
@@ -227,25 +227,6 @@ function pathEqual(a: Path, b: Path): boolean {
   });
 }
 
-// The new-todo textarea with the Enter shortcut (enter_adds,
-// enter_unfocused_nothing, other_keys_default): wrap-on middleware — on
-// the enter key, when the focused textarea's default handler returns
-// its insert-newline intent, the same two effects as the Add Todo
-// button are returned instead; any other key passes through to the
-// textarea's default effects unchanged.
-function newTodoTextarea(state: TodoState, focus: unknown): Elem {
-  return textarea({
-    text: state["next-todo-text"],
-    textPath: NEXT_TEXT_PATH,
-    extraPath: NEW_TODO_EXTRA_PATH,
-    focus,
-    state: initialTextareaExtra(),
-    font: null,
-    indexForPosition: () => 0,
-    now: 0,
-  });
-}
-
 // The todo-app view (new_todo_layout, filter_default): the Add Todo
 // button and a new-todo textarea with an Enter shortcut — the textarea
 // translated by (10, 10) beside the button's right edge — then a 10 px
@@ -255,12 +236,23 @@ function newTodoTextarea(state: TodoState, focus: unknown): Elem {
 // whole app as its root wrap-on node (event.bubble wrap_on_middleware):
 // the laid-out body stays plain view nodes, and on the enter key the
 // focused new-todo textarea's insert-newline intent is replaced with
-// the Add Todo button's two effects.
+// the Add Todo button's two effects (enter_adds,
+// enter_unfocused_nothing, other_keys_default — any other key passes
+// through to the textarea's default effects unchanged).
 export function todoApp(state: TodoState, context: { focus?: unknown } = {}): Elem {
   const focus = context.focus ?? null;
   const btn = button("Add Todo", () => addTodoEffects(state));
   // the textarea is translated by (10, 10) beside the button's right edge
-  const ta = translate(bounds(btn)[0] + 10, 10, newTodoTextarea(state, focus));
+  const ta = translate(bounds(btn)[0] + 10, 10, textarea({
+    text: state["next-todo-text"],
+    textPath: NEXT_TEXT_PATH,
+    extraPath: NEW_TODO_EXTRA_PATH,
+    focus,
+    state: initialTextareaExtra(),
+    font: null,
+    indexForPosition: () => 0,
+    now: 0,
+  }));
   const top: Elem = [btn, ta];
   const toggleRow = toggle(FILTER_OPTIONS, state["selected-filter"] ?? "all", FILTER_PATH);
   const list: Elem = todoList(todoRows(state));
