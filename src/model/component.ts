@@ -93,6 +93,56 @@ const ROOT_CONTEXT_PATH: Path = [["keypath", ROOT_CONTEXT_KEY]];
 // (render_cached).
 const registry = new Map<string, Component>();
 
+// The render cache, keyed by component name plus an equal props map
+// (render_cached). A props map that cannot be serialised (it carries a
+// function) is never cached.
+const renderCache = new Map<string, Map<string, unknown>>();
+
+// A canonical serialisation of a props map for cache lookups: object
+// keys sorted, cycles replaced by a placeholder. Returns null when the
+// value carries a function and so cannot be keyed safely.
+function canonical(value: unknown, seen: Set<object>): string | null {
+  if (value === null) return "null";
+  switch (typeof value) {
+    case "string":
+      return JSON.stringify(value);
+    case "number":
+    case "boolean":
+      return JSON.stringify(value);
+    case "undefined":
+      return "undefined";
+    case "bigint":
+      return `${value.toString()}n`;
+    case "function":
+      return null;
+  }
+  const obj = value as object;
+  if (seen.has(obj)) return '"<cycle>"';
+  seen.add(obj);
+  let out: string | null;
+  if (Array.isArray(obj)) {
+    const parts = (obj as unknown[]).map((v) => canonical(v, seen));
+    out = parts.some((p) => p === null) ? null : `[${parts.join(",")}]`;
+  } else {
+    const entries = Object.entries(obj).sort(([a], [b]) => (a < b ? -1 : 1));
+    const parts: (string | null)[] = entries.map(([k, v]) => {
+      const cv = canonical(v, seen);
+      return cv === null ? null : `${JSON.stringify(k)}:${cv}`;
+    });
+    out = parts.some((p) => p === null) ? null : `{${parts.join(",")}}`;
+  }
+  seen.delete(obj);
+  return out;
+}
+
+// The cache key of a call: the component name plus its props map (the
+// as self-reference serialises to the cycle placeholder, which is
+// constant for every props map).
+function cacheKey(c: ComponentCall): string | null {
+  const key = canonical(c.props, new Set());
+  return key === null ? null : `${c.component.name}\u0000${key}`;
+}
+
 // The keypath step for k, as plain data (state.paths).
 function keypath(k: string | number): Path {
   return [["keypath", k]];
@@ -141,6 +191,7 @@ export function defineComponent(
   };
   // any component redefinition resets the cache (render_cached)
   registry.set(name, component);
+  renderCache.clear();
   return component;
 }
 
@@ -272,8 +323,23 @@ export function call(
 }
 
 // Rendering resolves a call's body output, replacing nested component
-// calls with their rendered trees (recursive_components).
+// calls with their rendered trees (recursive_components). An equal
+// props map yields a cached render keyed by component name plus props;
+// the cache is reset when any component is redefined (render_cached).
 export function render(c: ComponentCall): unknown {
+  const key = cacheKey(c);
+  if (key !== null) {
+    let byProps = renderCache.get(c.component.name);
+    if (byProps === undefined) {
+      byProps = new Map<string, unknown>();
+      renderCache.set(c.component.name, byProps);
+    }
+    const cached = byProps.get(key);
+    if (cached !== undefined) return cached;
+    const fresh = resolve(c.component.body(c.props), new Set());
+    byProps.set(key, fresh);
+    return fresh;
+  }
   return resolve(c.component.body(c.props), new Set());
 }
 
