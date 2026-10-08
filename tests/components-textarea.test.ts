@@ -383,3 +383,53 @@ it("p_double_click: the first pair selects a word and the second does not", () =
   d = send(d, mouseDown([17, 2]), { now: t0 + 200 }).state;
   expect(d["textarea-state"]["select-cursor"]).toBe(null);
 });
+
+// p_copy — derives_from: components.textarea.clipboard_copy_rule
+// generator: selected and unselected
+// predicate: text range or nothing
+it("p_copy: text range or nothing", () => {
+  // with focus and a selection: the clipboard-copy effect with
+  // text[min..max]
+  const selected = harnessState("hello", { cursor: 4, "select-cursor": 1 }, TEXT_PATH);
+  const res = send(selected, clipboard("copy"));
+  expect(res.external).toEqual([["clipboard-copy", "ell"]]);
+  expect(res.state.text).toBe("hello"); // copy edits nothing
+
+  // without a selection: nothing
+  const unselected = harnessState("hello", { cursor: 2 }, TEXT_PATH);
+  expect(send(unselected, clipboard("copy")).external).toEqual([]);
+
+  // without focus: nothing
+  const unfocused = harnessState("hello", { cursor: 4, "select-cursor": 1 });
+  expect(send(unfocused, clipboard("copy")).external).toEqual([]);
+});
+
+// p_cut — derives_from: components.textarea.clipboard_cut_rule
+// generator: selection 1 to 3 in hello
+// predicate: text becomes hlo and the clipboard gets el
+it("p_cut: text becomes hlo and the clipboard gets el", () => {
+  const state = harnessState("hello", { cursor: 3, "select-cursor": 1 }, TEXT_PATH);
+  const res = send(state, clipboard("cut"));
+  expect(res.state.text).toBe("hlo");
+  expect(res.state["textarea-state"].cursor).toBe(1);
+  expect(res.state["textarea-state"]["select-cursor"]).toBe(null);
+  // clipboard-cut carries the removed text and the range; the text
+  // edit is the new-text notification
+  expect(res.external).toEqual([["clipboard-cut", "el", [1, 3]]]);
+});
+
+// p_paste — derives_from: components.textarea.clipboard_paste_rule
+// generator: paste focused and unfocused
+// predicate: insert-text or nothing
+it("p_paste: insert-text or nothing", () => {
+  // paste with focus returns insert-text with the pasted string
+  const focused = harnessState("hello", { cursor: 2 }, TEXT_PATH);
+  const res = send(focused, clipboard("pasted"));
+  expect(res.intents).toEqual([["insert-text", "pasted", TEXT_PATH, EXTRA_PATH]]);
+  expect(res.state.text).toBe("hepastedllo");
+  expect(res.state["textarea-state"].cursor).toBe(8);
+
+  // unfocused: nothing
+  const unfocused = harnessState("hello", { cursor: 2 });
+  expect(send(unfocused, clipboard("pasted")).intents).toEqual([]);
+});
