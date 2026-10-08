@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_group@6bb099cbe9dd"
+derived_from = "p_group@b0b09c189dcc"
 description = "children are the elements and nil members measure [0, 0]"
 falsifiability_class = "safety"
 id = "p-group"

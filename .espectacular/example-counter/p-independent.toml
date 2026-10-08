@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_independent@793c2343130e"
+derived_from = "p_independent@cca5193af2c7"
 description = "nums becomes 0, 2, 2"
 falsifiability_class = "safety"
 id = "p-independent"

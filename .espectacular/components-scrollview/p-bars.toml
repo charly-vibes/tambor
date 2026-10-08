@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_bars@c690108ddb78"
+derived_from = "p_bars@5d34e80735ac"
 description = "exactly one bar is present at the right place"
 falsifiability_class = "safety"
 id = "p-bars"

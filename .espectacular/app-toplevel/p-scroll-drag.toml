@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_scroll_drag@d46cb382ee14"
+derived_from = "p_scroll_drag@d2c59c10ba32"
 description = "the function receives [3, 7]"
 falsifiability_class = "safety"
 id = "p-scroll-drag"

@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_generic@0eb9ae795548"
+derived_from = "p_generic@3cbb23262a5a"
 description = "both are compile errors"
 falsifiability_class = "safety"
 id = "p-generic"

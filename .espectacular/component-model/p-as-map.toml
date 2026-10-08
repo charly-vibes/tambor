@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_as_map@728526b65f12"
+derived_from = "p_as_map@7efdb3ac459f"
 description = "the as map contains a 42, b 42 and extra"
 falsifiability_class = "safety"
 id = "p-as-map"

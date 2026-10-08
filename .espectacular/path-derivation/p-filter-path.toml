@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_filter_path@1bf5dddb43a0"
+derived_from = "p_filter_path@911ca4032562"
 description = "the item path of the second visible todo selects second, set and delete change only the original index 1"
 falsifiability_class = "safety"
 id = "p-filter-path"

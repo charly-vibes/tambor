@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_swappable@696b834f1aae"
+derived_from = "p_swappable@8c380db6b7d7"
 description = "the same click yields the same effect list"
 falsifiability_class = "safety"
 id = "p-swappable"

@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_clipboard@eeedd14d63cb"
+derived_from = "p_clipboard@8567eeadbaf5"
 description = "the selected text effect is emitted"
 falsifiability_class = "safety"
 id = "p-clipboard"

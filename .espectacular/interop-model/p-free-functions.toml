@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_free_functions@6b89eb5e0a2f"
+derived_from = "p_free_functions@66bd1658f678"
 description = "every export is a function, a constant or a sentinel, and none uses this"
 falsifiability_class = "safety"
 id = "p-free-functions"

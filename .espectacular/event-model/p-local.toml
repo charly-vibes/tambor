@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_local@890b77b39cc9"
+derived_from = "p_local@3321bd96c8b6"
 description = "handler sees [5, 5] and README returns the intent [:say-hello]"
 falsifiability_class = "safety"
 id = "p-local"

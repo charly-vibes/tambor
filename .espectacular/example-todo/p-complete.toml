@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_complete@5f637d2ed34a"
+derived_from = "p_complete@6f4ddeb1c815"
 description = "only the second todo becomes complete"
 falsifiability_class = "safety"
 id = "p-complete"

@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_geometry@0a67bc8a4d77"
+derived_from = "p_geometry@27b7c9cbc259"
 description = "row width equals max plus 24"
 falsifiability_class = "safety"
 id = "p-geometry"

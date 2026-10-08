@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_result@47a9f129d541"
+derived_from = "p_result@b260b71f1f0d"
 description = "the returned set equals the state set"
 falsifiability_class = "safety"
 id = "p-result"

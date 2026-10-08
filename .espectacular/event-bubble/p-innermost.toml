@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_innermost@1d2eae713faf"
+derived_from = "p_innermost@2033643708fb"
 description = "the inner one rewrites it first and the outer never sees the original"
 falsifiability_class = "safety"
 id = "p-innermost"

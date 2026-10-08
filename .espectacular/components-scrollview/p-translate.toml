@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_translate@c1757c9dc0da"
+derived_from = "p_translate@3e2a783132ec"
 description = "body origin equals the negated offset"
 falsifiability_class = "safety"
 id = "p-translate"

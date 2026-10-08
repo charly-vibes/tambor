@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_item_bindings@ad4a9360d387"
+derived_from = "p_item_bindings@3ef4e0aff0f2"
 description = "checkbox is unchecked and textarea text is second, and the paths end in complete? and description"
 falsifiability_class = "safety"
 id = "p-item-bindings"

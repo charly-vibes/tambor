@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_esm@b3e8b6e7203a"
+derived_from = "p_esm@748bb01dfe71"
 description = "unused components are absent from the bundle"
 falsifiability_class = "safety"
 id = "p-esm"

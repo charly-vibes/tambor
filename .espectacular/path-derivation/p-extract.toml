@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_extract@57f769251138"
+derived_from = "p_extract@2b810a485998"
 description = "select by path equals the destructured value"
 falsifiability_class = "safety"
 id = "p-extract"

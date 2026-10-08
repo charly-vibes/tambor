@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_filter_select@220d105f0f51"
+derived_from = "p_filter_select@9f57d1ca93a8"
 description = "the active filter selects exactly the incomplete todos"
 falsifiability_class = "safety"
 id = "p-filter-select"

@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_outside@fe35d65d9c9f"
+derived_from = "p_outside@82d63e5c6872"
 description = "result is empty"
 falsifiability_class = "safety"
 id = "p-outside"

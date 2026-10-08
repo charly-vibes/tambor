@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_punctuated@1aec4a977013"
+derived_from = "p_punctuated@4796874a449e"
 description = "select, set and update work on each"
 falsifiability_class = "safety"
 id = "p-punctuated"

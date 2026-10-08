@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_theme@9b869deda822"
+derived_from = "p_theme@89feac94e0be"
 description = "tokens resolve in each"
 falsifiability_class = "safety"
 id = "p-theme"

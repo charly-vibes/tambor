@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_row_hover@657a4e43acf0"
+derived_from = "p_row_hover@36a1569ede67"
 description = "two distinct extra keys"
 falsifiability_class = "safety"
 id = "p-row-hover"

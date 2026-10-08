@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_core_dom@c98187b629b3"
+derived_from = "p_core_dom@a7af7a2ae70c"
 description = "tsc reports an error"
 falsifiability_class = "safety"
 id = "p-core-dom"

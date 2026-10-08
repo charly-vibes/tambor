@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_middleware@83220b9da67a"
+derived_from = "p_middleware@c53beab2fddf"
 description = "enter with non-empty default effects returns add-todo then set next-todo-text to empty, any other key returns the default effects"
 falsifiability_class = "safety"
 id = "p-middleware"

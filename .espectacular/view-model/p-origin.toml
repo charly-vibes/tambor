@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_origin@b6a5483151ea"
+derived_from = "p_origin@5e2a3a341d57"
 description = "origin equals [0, 0]"
 falsifiability_class = "safety"
 id = "p-origin"

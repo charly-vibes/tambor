@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_wheel_child@f8209cd6ca79"
+derived_from = "p_wheel_child@e8ba2d41db1c"
 description = "the child's intents are returned"
 falsifiability_class = "safety"
 id = "p-wheel-child"

@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_multi@ad45bd58f0c2"
+derived_from = "p_multi@047f58e8e550"
 description = "equals three nested single-pair nodes"
 falsifiability_class = "safety"
 id = "p-multi"

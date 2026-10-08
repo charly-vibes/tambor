@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_identity@60422727b852"
+derived_from = "p_identity@50a85e74b7cd"
 description = "todo 3 is reference-equal before and after and the input is unchanged"
 falsifiability_class = "safety"
 id = "p-identity"

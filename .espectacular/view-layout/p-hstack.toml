@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_hstack@5d4af3b188bb"
+derived_from = "p_hstack@d7f63620de02"
 description = "no horizontal overlap, and widths 10, 20 give offsets 0 and 11"
 falsifiability_class = "safety"
 id = "p-hstack"

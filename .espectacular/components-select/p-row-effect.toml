@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_row_effect@0d8bb4cb42a0"
+derived_from = "p_row_effect@70120e00ce26"
 description = "effect is select with the selected path and that"
 falsifiability_class = "safety"
 id = "p-row-effect"

@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_max_width@f1914589eaf7"
+derived_from = "p_max_width@3770bcdbab41"
 description = "100"
 falsifiability_class = "safety"
 id = "p-max-width"

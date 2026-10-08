@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_union@e581ceb33b89"
+derived_from = "p_union@60711c0e7038"
 description = "tsc reports an error on the never check"
 falsifiability_class = "safety"
 id = "p-union"

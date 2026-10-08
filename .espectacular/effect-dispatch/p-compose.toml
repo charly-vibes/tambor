@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_compose@9598d3bf1c0d"
+derived_from = "p_compose@83becfb0cd68"
 description = "dispatching it increments the number at the path"
 falsifiability_class = "safety"
 id = "p-compose"

@@ -1,6 +1,6 @@
-archetype = "SA"
+archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_down_cursor@b651f792b639"
+derived_from = "p_down_cursor@57461cd1f8f5"
 description = "cursor, mpos and down-pos are set and selection is nil"
 falsifiability_class = "safety"
 id = "p-down-cursor"

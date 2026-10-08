@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_haptics@26977fe523d3"
+derived_from = "p_haptics@57c0c4e77f25"
 description = "no error either way"
 falsifiability_class = "safety"
 id = "p-haptics"

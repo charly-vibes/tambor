@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_navigators@299b96533c35"
+derived_from = "p_navigators@615b08991537"
 description = "the inferred types match the documented table"
 falsifiability_class = "safety"
 id = "p-navigators"

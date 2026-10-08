@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_item_layout@b9e80bf10a94"
+derived_from = "p_item_layout@d099f6d7fd14"
 description = "x offsets are increasing in the stated order and the checkbox origin is [10, 4] relative to the row"
 falsifiability_class = "safety"
 id = "p-item-layout"

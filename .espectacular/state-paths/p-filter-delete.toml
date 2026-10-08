@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_filter_delete@bc446a21a250"
+derived_from = "p_filter_delete@4ae4e068b71f"
 description = "deleting the second visible active todo leaves first and third"
 falsifiability_class = "safety"
 id = "p-filter-delete"

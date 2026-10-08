@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_thumb@2f4a0a96fdaa"
+derived_from = "p_thumb@b4a614b35bf0"
 description = "y of each is in the bottom third"
 falsifiability_class = "safety"
 id = "p-thumb"

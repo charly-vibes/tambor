@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_string_tags@b23573fd6957"
+derived_from = "p_string_tags@553ec3f4110a"
 description = "both resolve to the same registered handler"
 falsifiability_class = "safety"
 id = "p-string-tags"

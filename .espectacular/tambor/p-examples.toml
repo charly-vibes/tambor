@@ -1,6 +1,6 @@
-archetype = "SA"
+archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_examples@aeee0b2b9340"
+derived_from = "p_examples@b1843c7dc786"
 description = "every scenario passes on each backend"
 falsifiability_class = "safety"
 id = "p-examples"

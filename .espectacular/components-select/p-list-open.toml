@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_list_open@e0f8e2206d66"
+derived_from = "p_list_open@cca7e81479c7"
 description = "list nodes exist only when open"
 falsifiability_class = "safety"
 id = "p-list-open"

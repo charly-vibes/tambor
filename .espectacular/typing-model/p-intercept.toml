@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_intercept@6673de41a987"
+derived_from = "p_intercept@b9ecede86b43"
 description = "tsc reports an error"
 falsifiability_class = "safety"
 id = "p-intercept"

@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_when_let@4f7f2bc9a01d"
+derived_from = "p_when_let@5715fa33d3d0"
 description = "the first selects 1 and sets to obj a 2, the second yields no intents"
 falsifiability_class = "safety"
 id = "p-when-let"

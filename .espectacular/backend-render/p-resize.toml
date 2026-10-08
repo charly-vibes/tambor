@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_resize@6dd9249ce89e"
+derived_from = "p_resize@8e306c66f3b4"
 description = "a redraw follows each resize with the new size in context"
 falsifiability_class = "safety"
 id = "p-resize"

@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_empty@74495343a82a"
+derived_from = "p_empty@19092e499422"
 description = "result is nil and nothing throws"
 falsifiability_class = "safety"
 id = "p-empty"

@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_pure@47a6cdc9b5b1"
+derived_from = "p_pure@695c37449f44"
 description = "state is deep-equal before and after calling a handler"
 falsifiability_class = "safety"
 id = "p-pure"

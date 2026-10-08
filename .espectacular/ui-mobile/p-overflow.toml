@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_overflow@af11c2269651"
+derived_from = "p_overflow@398edd9be0c8"
 description = "no node extends past the viewport"
 falsifiability_class = "safety"
 id = "p-overflow"

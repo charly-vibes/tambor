@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_unknown@1e428ac0d4e0"
+derived_from = "p_unknown@6d6cb0c29cb6"
 description = "later effects still apply and nothing throws"
 falsifiability_class = "safety"
 id = "p-unknown"

@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_filter_fns@0322d7212917"
+derived_from = "p_filter_fns@9796c33bd6ef"
 description = "unfiltered shows 3, active shows first and second, complete shows third"
 falsifiability_class = "safety"
 id = "p-filter-fns"

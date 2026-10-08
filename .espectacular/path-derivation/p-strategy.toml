@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_strategy@51a54064d11b"
+derived_from = "p_strategy@1250fa83a31b"
 description = "outputs are deep-equal"
 falsifiability_class = "safety"
 id = "p-strategy"

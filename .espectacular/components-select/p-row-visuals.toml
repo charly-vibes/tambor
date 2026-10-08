@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_row_visuals@04ac64481c3a"
+derived_from = "p_row_visuals@d290cbacd8c8"
 description = "fills and label colors match"
 falsifiability_class = "safety"
 id = "p-row-visuals"

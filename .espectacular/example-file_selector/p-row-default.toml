@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_row_default@6c60fcf3ffa1"
+derived_from = "p_row_default@dda234f71338"
 description = "the intent is update with the selected? path and not"
 falsifiability_class = "safety"
 id = "p-row-default"

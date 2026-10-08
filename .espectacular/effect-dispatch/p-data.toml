@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_data@38b77a258771"
+derived_from = "p_data@5d2f7a9f20e2"
 description = "JSON round-trip preserves effects with no function argument, and an update effect keeps its function by reference"
 falsifiability_class = "safety"
 id = "p-data"

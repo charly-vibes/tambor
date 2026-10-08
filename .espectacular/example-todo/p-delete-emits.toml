@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_delete_emits@1eec57590764"
+derived_from = "p_delete_emits@eba8930f6090"
 description = "the first returns delete with the todo path and the second does not"
 falsifiability_class = "safety"
 id = "p-delete-emits"

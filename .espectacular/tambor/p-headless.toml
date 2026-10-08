@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_headless@271cea1127e6"
+derived_from = "p_headless@ef5dd3a51a0d"
 description = "import succeeds and bounds of a label tree is computed"
 falsifiability_class = "safety"
 id = "p-headless"

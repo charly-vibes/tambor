@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_unbound@ec1f636ac6db"
+derived_from = "p_unbound@6e6ce59d75a7"
 description = "the symbol is left alone"
 falsifiability_class = "safety"
 id = "p-unbound"

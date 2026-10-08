@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_motion@633dc7063c1d"
+derived_from = "p_motion@f1f86daa260a"
 description = "no momentum frames are scheduled"
 falsifiability_class = "safety"
 id = "p-motion"

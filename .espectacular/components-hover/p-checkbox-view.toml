@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_checkbox_view@f46291d6f25d"
+derived_from = "p_checkbox_view@cb904cc0a7c3"
 description = "events return nothing"
 falsifiability_class = "safety"
 id = "p-checkbox-view"

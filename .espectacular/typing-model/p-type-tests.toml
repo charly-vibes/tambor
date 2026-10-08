@@ -1,6 +1,6 @@
-archetype = "SA"
+archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_type_tests@de7b943861a5"
+derived_from = "p_type_tests@af555af27dbe"
 description = "the CI type-test job fails"
 falsifiability_class = "safety"
 id = "p-type-tests"

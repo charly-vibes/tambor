@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_button_bounds@b43f17b61e20"
+derived_from = "p_button_bounds@4df5e4a034ef"
 description = "bounds equal label bounds plus [12, 12]"
 falsifiability_class = "safety"
 id = "p-button-bounds"

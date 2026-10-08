@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_esm@b24afbd76286"
+derived_from = "p_esm@db0571ce8fe5"
 description = "named imports resolve and no side effect runs at import"
 falsifiability_class = "safety"
 id = "p-esm"

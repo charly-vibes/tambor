@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_label_width@150d995b9f47"
+derived_from = "p_label_width@537773c2a4e1"
 description = "centred area is at least 20"
 falsifiability_class = "safety"
 id = "p-label-width"

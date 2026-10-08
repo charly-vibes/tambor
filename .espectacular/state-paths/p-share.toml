@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_share@28c629441571"
+derived_from = "p_share@ea72bc6db996"
 description = "sibling branches are reference-equal"
 falsifiability_class = "safety"
 id = "p-share"

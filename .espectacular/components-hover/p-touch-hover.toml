@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_touch_hover@fad3f6ffd761"
+derived_from = "p_touch_hover@baadca5d3f86"
 description = "hover? is never set"
 falsifiability_class = "safety"
 id = "p-touch-hover"

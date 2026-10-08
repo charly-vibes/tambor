@@ -1,6 +1,6 @@
-archetype = "SA"
+archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "no_visual_jump_on_release@adadaeec44f0"
+derived_from = "no_visual_jump_on_release@c39ddaa6764f"
 description = "`rendered_position(frame_before_release) == rendered_position(frame_after_release)`"
 falsifiability_class = "safety"
 id = "no-visual-jump-on-release"

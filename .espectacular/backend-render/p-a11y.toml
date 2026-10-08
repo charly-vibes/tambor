@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_a11y@c5619faad9e5"
+derived_from = "p_a11y@899137104850"
 description = "one accessible node per interactive node"
 falsifiability_class = "safety"
 id = "p-a11y"

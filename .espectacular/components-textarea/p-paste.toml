@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_paste@207f60e2885f"
+derived_from = "p_paste@82e7bfd03618"
 description = "insert-text or nothing"
 falsifiability_class = "safety"
 id = "p-paste"

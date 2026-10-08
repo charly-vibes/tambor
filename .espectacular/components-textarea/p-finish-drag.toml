@@ -1,6 +1,6 @@
-archetype = "SA"
+archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_finish_drag@208c3264cd42"
+derived_from = "p_finish_drag@bd0c7585845b"
 description = "selection and cursor follow the rule and down-pos is nil"
 falsifiability_class = "safety"
 id = "p-finish-drag"

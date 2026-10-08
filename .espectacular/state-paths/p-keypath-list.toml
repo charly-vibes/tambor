@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_keypath_list@1b2d1a64f95a"
+derived_from = "p_keypath_list@f868ade7169b"
 description = "equals nested keypath steps"
 falsifiability_class = "safety"
 id = "p-keypath-list"

@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_stale@a36b3f6031d7"
+derived_from = "p_stale@f3d4428b836b"
 description = "render keeps it, the update clamps it"
 falsifiability_class = "safety"
 id = "p-stale"

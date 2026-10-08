@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_button@d4926460f734"
+derived_from = "p_button@5e7d18417e8f"
 description = "only a down inside returns on-click"
 falsifiability_class = "safety"
 id = "p-button"

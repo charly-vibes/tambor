@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_filter@3134aa4e336e"
+derived_from = "p_filter@b0a0a0795b3c"
 description = "b shows B.md and a.txt does not match, t shows a.txt and notes"
 falsifiability_class = "safety"
 id = "p-filter"

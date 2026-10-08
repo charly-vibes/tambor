@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_no_callbacks@185c71f6cdb9"
+derived_from = "p_no_callbacks@a48745ed4e5f"
 description = "every state change appears as an effect in a returned list"
 falsifiability_class = "safety"
 id = "p-no-callbacks"

@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_spacer_constant@3c1223f4ae36"
+derived_from = "p_spacer_constant@3cd21c00ac2e"
 description = "total scrollview content height is unchanged by activation state"
 falsifiability_class = "safety"
 id = "p-spacer-constant"

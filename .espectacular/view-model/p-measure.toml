@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_measure@c366274c29fb"
+derived_from = "p_measure@2d36a33c0be5"
 description = "label bounds equal the stub output"
 falsifiability_class = "safety"
 id = "p-measure"

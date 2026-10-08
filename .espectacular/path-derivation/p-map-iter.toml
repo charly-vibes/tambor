@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_map_iter@45951bfca804"
+derived_from = "p_map_iter@cbab761c086b"
 description = "the three laws hold and selected values are the set 1 and 2"
 falsifiability_class = "safety"
 id = "p-map-iter"

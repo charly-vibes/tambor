@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_touch@8061967e7548"
+derived_from = "p_touch@aa33477c37e7"
 description = "every hit target is at least 44 by 44"
 falsifiability_class = "safety"
 id = "p-touch"

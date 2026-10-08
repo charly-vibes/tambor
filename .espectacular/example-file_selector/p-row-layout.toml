@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_row_layout@c0e013449e30"
+derived_from = "p_row_layout@840381ffda6c"
 description = "checkbox at origin [5, 5], then spacer, then label in order"
 falsifiability_class = "safety"
 id = "p-row-layout"

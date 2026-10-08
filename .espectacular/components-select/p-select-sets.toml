@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_select_sets@fced402ef4c4"
+derived_from = "p_select_sets@0ae908638db4"
 description = "the selected path holds the value"
 falsifiability_class = "safety"
 id = "p-select-sets"

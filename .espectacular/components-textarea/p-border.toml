@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_border@a781eed1330c"
+derived_from = "p_border@78d1d26e2427"
 description = "bordered view is larger by 10 by 4 than its body and light has no stroke"
 falsifiability_class = "safety"
 id = "p-border"

@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_nth@94c2aae6093a"
+derived_from = "p_nth@2ee6bef874f8"
 description = "map entries written back keep a map"
 falsifiability_class = "safety"
 id = "p-nth"

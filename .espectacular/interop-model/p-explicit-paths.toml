@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_explicit_paths@6233ed80c729"
+derived_from = "p_explicit_paths@fac569a2e2a7"
 description = "the each helper gives the second visible item the path todos, filter, 1"
 falsifiability_class = "safety"
 id = "p-explicit-paths"

@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_key_ro@7a1184332aac"
+derived_from = "p_key_ro@ddd9bc6f05e1"
 description = "writing is refused"
 falsifiability_class = "safety"
 id = "p-key-ro"

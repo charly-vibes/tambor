@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_macro_optional@1fb4c9ebd60d"
+derived_from = "p_macro_optional@05bf0e3723ee"
 description = "both produce deep-equal views and effects"
 falsifiability_class = "safety"
 id = "p-macro-optional"

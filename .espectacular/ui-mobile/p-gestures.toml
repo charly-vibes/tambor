@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_gestures@93194521699f"
+derived_from = "p_gestures@da54f837a6b8"
 description = "each gesture emits its named intent"
 falsifiability_class = "safety"
 id = "p-gestures"

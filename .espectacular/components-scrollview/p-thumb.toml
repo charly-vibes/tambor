@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_thumb@5d6bd0f069fa"
+derived_from = "p_thumb@7dd9a11e9b18"
 description = "thumb spans 0.2 to 0.6 of the track"
 falsifiability_class = "safety"
 id = "p-thumb"

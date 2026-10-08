@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_delete@dc0180ff792c"
+derived_from = "p_delete@21af31c8ef2d"
 description = "list becomes second, third"
 falsifiability_class = "safety"
 id = "p-delete"

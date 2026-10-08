@@ -1,6 +1,6 @@
-archetype = "CE"
+archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_focus_effect@c03f541cbc97"
+derived_from = "p_focus_effect@d33e821ab8ac"
 description = "the set focus nil effect is emitted"
 falsifiability_class = "safety"
 id = "p-focus-effect"

@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_delete_x@71770abf7a9e"
+derived_from = "p_delete_x@1c2e6634746e"
 description = "two path nodes with width 3, red, endpoints as stated, and bounds [10, 10]"
 falsifiability_class = "safety"
 id = "p-delete-x"

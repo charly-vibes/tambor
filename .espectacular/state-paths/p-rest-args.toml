@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_rest_args@61a6f5efcfeb"
+derived_from = "p_rest_args@3c3f80333951"
 description = "round-trip is lossless"
 falsifiability_class = "safety"
 id = "p-rest-args"

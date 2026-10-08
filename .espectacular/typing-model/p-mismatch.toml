@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_mismatch@1d286cee7d92"
+derived_from = "p_mismatch@24595406abd9"
 description = "tsc reports an error"
 falsifiability_class = "safety"
 id = "p-mismatch"

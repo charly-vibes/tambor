@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_clipboard@53e0e7dbc223"
+derived_from = "p_clipboard@cd6df48c4805"
 description = "the clipboard gets hello and the paste arrives as a string"
 falsifiability_class = "safety"
 id = "p-clipboard"

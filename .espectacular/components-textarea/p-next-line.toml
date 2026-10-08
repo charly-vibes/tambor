@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_next_line@e4ef9ffa201d"
+derived_from = "p_next_line@4f009bccad6d"
 description = "cursor becomes 3 then 5"
 falsifiability_class = "safety"
 id = "p-next-line"

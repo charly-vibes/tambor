@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_capture@a2708de41125"
+derived_from = "p_capture@634e103d6479"
 description = "updates continue until release"
 falsifiability_class = "safety"
 id = "p-capture"

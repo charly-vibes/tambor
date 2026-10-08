@@ -1,6 +1,6 @@
-archetype = "SA"
+archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_gesture@d5bbb5875973"
+derived_from = "p_gesture@0a2b5535ac0f"
 description = "only the second updates"
 falsifiability_class = "safety"
 id = "p-gesture"

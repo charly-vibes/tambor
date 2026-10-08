@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_start_replaced@d5ecd4ad6fb2"
+derived_from = "p_start_replaced@32aab6c61985"
 description = "order is kept and no start-scroll intent survives"
 falsifiability_class = "safety"
 id = "p-start-replaced"

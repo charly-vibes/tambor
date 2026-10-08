@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_nonliteral@25e562b4566d"
+derived_from = "p_nonliteral@2213e47996e0"
 description = "a has path m then a and b falls back to extra"
 falsifiability_class = "safety"
 id = "p-nonliteral"

@@ -1,6 +1,6 @@
-archetype = "SA"
+archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_tap@b783e0116b56"
+derived_from = "p_tap@3d66fa901403"
 description = "classification matches the slop and time thresholds"
 falsifiability_class = "safety"
 id = "p-tap"

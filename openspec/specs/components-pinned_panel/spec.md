@@ -1,5 +1,5 @@
 ---
-id: spec
+id: components.pinned_panel
 kind: intent
 checked_against_core: clear
 statement: "WHEN a pinned_panel's ambient scrollview offset lies within its
@@ -41,13 +41,13 @@ applied to this component specifically.
 
 | id                                  | kind      | expr                                                                                                              | traces_to                   |
 |--------------------------------------|-----------|---------------------------------------------------------------------------------------------------------------------|---------------------------------|
-| contextual_offset | invariant | the driving offset is read from `context.scroll`, never from a call-site prop, exactly as `focus` is contextual for textarea | [[spec]] |
-| activation_range_formula | invariant | the panel is active iff `activation-range.start ≤ offset.y ≤ activation-range.end` | [[spec]] |
-| body_drawn_untranslated_when_active | invariant | while active, the body draws at the fixed screen position it would occupy when `offset.y == activation-range.start`, ignoring the ambient scrollview translation | [[spec]] |
-| spacer_matches_body_extent | invariant | a spacer occupying the body's full authored extent (`activation-range.end − activation-range.start` content-space units) is present in untranslated content flow at all times, active or not, so the ambient scrollview's own range_formula total height is unaffected by activation state | [[spec]] |
-| release_continuous | invariant | at `offset.y == activation-range.end`, the screen position computed by the active branch equals the screen position computed by the inactive (normally-translated) branch — no discontinuity across the boundary | [[spec]] |
-| nested_panel_priority | invariant | when two pinned_panels are simultaneously active, the one later in the view tree paints on top, unless an explicit `z` prop overrides this | [[spec]] |
-| render_pure | invariant | activation, screen position and spacer height are all computed solely from `offset`, `activation-range` and `body` — no I/O, no imperative stored state, recomputed fresh every render | [[spec]] |
+| contextual_offset | invariant | the driving offset is read from `context.scroll`, never from a call-site prop, exactly as `focus` is contextual for textarea | [[components.pinned_panel]] |
+| activation_range_formula | invariant | the panel is active iff `activation-range.start ≤ offset.y ≤ activation-range.end` | [[components.pinned_panel]] |
+| body_drawn_untranslated_when_active | invariant | while active, the body draws at the fixed screen position it would occupy when `offset.y == activation-range.start`, ignoring the ambient scrollview translation | [[components.pinned_panel]] |
+| spacer_matches_body_extent | invariant | a spacer occupying the body's full authored extent (`activation-range.end − activation-range.start` content-space units) is present in untranslated content flow at all times, active or not, so the ambient scrollview's own range_formula total height is unaffected by activation state | [[components.pinned_panel]] |
+| release_continuous | invariant | at `offset.y == activation-range.end`, the screen position computed by the active branch equals the screen position computed by the inactive (normally-translated) branch — no discontinuity across the boundary | [[components.pinned_panel]] |
+| nested_panel_priority | invariant | when two pinned_panels are simultaneously active, the one later in the view tree paints on top, unless an explicit `z` prop overrides this | [[components.pinned_panel]] |
+| render_pure | invariant | activation, screen position and spacer height are all computed solely from `offset`, `activation-range` and `body` — no I/O, no imperative stored state, recomputed fresh every render | [[components.pinned_panel]] |
 
 ## Model
 
@@ -59,20 +59,20 @@ applied to this component specifically.
 
 | id            | from     | to       | guard                                                  |
 |---------------|----------|----------|--------------------------------------------------------------|
-| t_activate | inactive | active | [[spec.activation_range_formula]] |
-| t_deactivate | active | inactive | [[spec.activation_range_formula]] |
+| t_activate | inactive | active | [[components.pinned_panel.activation_range_formula]] |
+| t_deactivate | active | inactive | [[components.pinned_panel.activation_range_formula]] |
 
 ## Properties
 
 | id                     | kind | derives_from                                               | generator                                                | predicate                                                        |
 |---------------------------|------|--------------------------------------------------------------------|------------------------------------------------------------------|------------------------------------------------------------------------|
-| p_contextual_source | unit | [[spec.contextual_offset]] | `panel nested under a scrollview with context.scroll set` | offset value equals `context.scroll`, never a call-site literal |
-| p_activation | unit | [[spec.activation_range_formula]] | `offset swept across and beyond the range` | active exactly on `[start, end]`, inactive outside it |
-| p_fixed_position | unit | [[spec.body_drawn_untranslated_when_active]] | `offset swept while active` | body's screen position is constant across every sampled offset |
-| p_spacer_constant | unit | [[spec.spacer_matches_body_extent]] | `panel toggled active and inactive` | total scrollview content height is unchanged by activation state |
-| p_no_jump | unit | [[spec.release_continuous]] | `offset stepped across activation-range.end` | screen position immediately before and after the step are equal |
-| p_nested_priority | unit | [[spec.nested_panel_priority]] | `two overlapping panels, no z prop` | the later-in-tree panel paints on top |
-| p_pure | unit | [[spec.render_pure]] | `same offset supplied twice` | identical output view value both times |
+| p_contextual_source | unit | [[components.pinned_panel.contextual_offset]] | `panel nested under a scrollview with context.scroll set` | offset value equals `context.scroll`, never a call-site literal |
+| p_activation | unit | [[components.pinned_panel.activation_range_formula]] | `offset swept across and beyond the range` | active exactly on `[start, end]`, inactive outside it |
+| p_fixed_position | unit | [[components.pinned_panel.body_drawn_untranslated_when_active]] | `offset swept while active` | body's screen position is constant across every sampled offset |
+| p_spacer_constant | unit | [[components.pinned_panel.spacer_matches_body_extent]] | `panel toggled active and inactive` | total scrollview content height is unchanged by activation state |
+| p_no_jump | unit | [[components.pinned_panel.release_continuous]] | `offset stepped across activation-range.end` | screen position immediately before and after the step are equal |
+| p_nested_priority | unit | [[components.pinned_panel.nested_panel_priority]] | `two overlapping panels, no z prop` | the later-in-tree panel paints on top |
+| p_pure | unit | [[components.pinned_panel.render_pure]] | `same offset supplied twice` | identical output view value both times |
 
 ## Notes
 
@@ -97,41 +97,41 @@ Every property row is verified by exactly one dedicated scenario;
 
 - **WHEN** `panel nested under a scrollview with context.scroll set`
 - **THEN** offset value equals `context.scroll`, never a call-site literal
-- **VERIFIES** [[spec.p_contextual_source]]
+- **VERIFIES** [[components.pinned_panel.p_contextual_source]]
 
 #### Scenario: p_activation
 
 - **WHEN** `offset swept across and beyond the range`
 - **THEN** active exactly on `[start, end]`, inactive outside it
-- **VERIFIES** [[spec.p_activation]]
+- **VERIFIES** [[components.pinned_panel.p_activation]]
 
 #### Scenario: p_fixed_position
 
 - **WHEN** `offset swept while active`
 - **THEN** body's screen position is constant across every sampled offset
-- **VERIFIES** [[spec.p_fixed_position]]
+- **VERIFIES** [[components.pinned_panel.p_fixed_position]]
 
 #### Scenario: p_spacer_constant
 
 - **WHEN** `panel toggled active and inactive`
 - **THEN** total scrollview content height is unchanged by activation state
-- **VERIFIES** [[spec.p_spacer_constant]]
+- **VERIFIES** [[components.pinned_panel.p_spacer_constant]]
 
 #### Scenario: p_no_jump
 
 - **WHEN** `offset stepped across activation-range.end`
 - **THEN** screen position immediately before and after the step are equal
-- **VERIFIES** [[spec.p_no_jump]]
+- **VERIFIES** [[components.pinned_panel.p_no_jump]]
 
 #### Scenario: p_nested_priority
 
 - **WHEN** `two overlapping panels, no z prop`
 - **THEN** the later-in-tree panel paints on top
-- **VERIFIES** [[spec.p_nested_priority]]
+- **VERIFIES** [[components.pinned_panel.p_nested_priority]]
 
 #### Scenario: p_pure
 
 - **WHEN** `same offset supplied twice`
 - **THEN** identical output view value both times
-- **VERIFIES** [[spec.p_pure]]
+- **VERIFIES** [[components.pinned_panel.p_pure]]
 

@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_same_everywhere@575c106691fe"
+derived_from = "p_same_everywhere@9f341a5b5e66"
 description = "the resulting states are deep-equal"
 falsifiability_class = "safety"
 id = "p-same-everywhere"

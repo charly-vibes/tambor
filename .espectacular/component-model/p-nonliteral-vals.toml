@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_nonliteral_vals@31abed54b144"
+derived_from = "p_nonliteral_vals@da26aca8a1ac"
 description = "has-default is 42 when absent, is-context is 13, all from the right source"
 falsifiability_class = "safety"
 id = "p-nonliteral-vals"

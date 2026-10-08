@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_toggle_render@c0c72e2fae2d"
+derived_from = "p_toggle_render@115e389215f1"
 description = "active is plain and the other two are gray and clickable"
 falsifiability_class = "safety"
 id = "p-toggle-render"

@@ -1,6 +1,6 @@
-archetype = "SA"
+archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_strict@2fefbc72225d"
+derived_from = "p_strict@11a90d03477b"
 description = "zero diagnostics"
 falsifiability_class = "safety"
 id = "p-strict"

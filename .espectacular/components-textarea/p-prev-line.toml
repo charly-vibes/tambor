@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_prev_line@85368b783a76"
+derived_from = "p_prev_line@d561cb3f1ad4"
 description = "cursor becomes 2 and the selection is cleared"
 falsifiability_class = "safety"
 id = "p-prev-line"

@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_slop@183e11804ed9"
+derived_from = "p_slop@7538feffce94"
 description = "the delete effect fires while drawn bounds stay 10 by 10"
 falsifiability_class = "safety"
 id = "p-slop"

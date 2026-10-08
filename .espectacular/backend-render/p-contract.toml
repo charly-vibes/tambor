@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_contract@12c4db4e0e89"
+derived_from = "p_contract@9fc5d30fd4b6"
 description = "each exposes draw, measureText, indexForPosition, copyToClipboard and subscribe"
 falsifiability_class = "safety"
 id = "p-contract"

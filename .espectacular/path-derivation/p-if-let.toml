@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_if_let@c067f77b7985"
+derived_from = "p_if_let@ca9071897f10"
 description = "then path selects 1, nil yields no then handlers, else path selects 1 on not-obj and sets to not-obj 2"
 falsifiability_class = "safety"
 id = "p-if-let"

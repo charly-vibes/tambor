@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_path@f836bbe02aa0"
+derived_from = "p_path@db116f6e1e45"
 description = "the result has type Path<S, B> and select returns B"
 falsifiability_class = "safety"
 id = "p-path"

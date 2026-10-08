@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_add_button@b44c43086619"
+derived_from = "p_add_button@16bf2e26af6e"
 description = "effects are add-todo with todos path and hello, then set next-todo-text to the empty string"
 falsifiability_class = "safety"
 id = "p-add-button"

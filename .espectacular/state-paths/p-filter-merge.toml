@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_filter_merge@39ff577aae68"
+derived_from = "p_filter_merge@e4e3d9912c2a"
 description = "updating the second visible active todo changes original index 1"
 falsifiability_class = "safety"
 id = "p-filter-merge"

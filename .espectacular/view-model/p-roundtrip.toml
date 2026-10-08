@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_roundtrip@76ad327ea041"
+derived_from = "p_roundtrip@bfb4421592df"
 description = "makeNode(n, children(n)) deep-equals n"
 falsifiability_class = "safety"
 id = "p-roundtrip"

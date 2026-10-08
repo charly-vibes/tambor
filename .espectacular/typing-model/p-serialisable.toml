@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_serialisable@6dd4f1c07aed"
+derived_from = "p_serialisable@ea0e03570b2d"
 description = "add-todo round-trips through JSON and the update effect is marked function-bearing"
 falsifiability_class = "safety"
 id = "p-serialisable"

@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_primitives@f3015a8f13b9"
+derived_from = "p_primitives@6891607441a2"
 description = "each draws and the unknown node draws its children"
 falsifiability_class = "safety"
 id = "p-primitives"

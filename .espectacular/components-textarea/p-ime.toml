@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_ime@8850bb7551df"
+derived_from = "p_ime@b91811f5246a"
 description = "one insert-text at the end"
 falsifiability_class = "safety"
 id = "p-ime"

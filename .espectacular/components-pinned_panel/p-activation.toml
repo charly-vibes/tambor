@@ -1,6 +1,6 @@
-archetype = "SA"
+archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_activation@429d80d40228"
+derived_from = "p_activation@75784d8cd42a"
 description = "active exactly on `[start, end]`, inactive outside it"
 falsifiability_class = "safety"
 id = "p-activation"

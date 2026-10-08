@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_contextual_source@a0dc9dc3443d"
+derived_from = "p_contextual_source@f29f40d7066d"
 description = "offset value equals `context.scroll`, never a call-site literal"
 falsifiability_class = "safety"
 id = "p-contextual-source"

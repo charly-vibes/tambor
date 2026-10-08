@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_momentum@3b0baa372621"
+derived_from = "p_momentum@b9254dce1e44"
 description = "offset keeps changing then settles, and is static under reduced motion"
 falsifiability_class = "safety"
 id = "p-momentum"

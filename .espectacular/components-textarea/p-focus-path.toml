@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_focus_path@4d6a9712d847"
+derived_from = "p_focus_path@8ae35e0735d6"
 description = "requesting focus on one leaves the other unfocused"
 falsifiability_class = "safety"
 id = "p-focus-path"

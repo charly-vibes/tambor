@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_down_terminal@32a1c6cc7207"
+derived_from = "p_down_terminal@bbba174bc554"
 description = "only the outer handler fires"
 falsifiability_class = "safety"
 id = "p-down-terminal"

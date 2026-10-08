@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_dollar@855348a43412"
+derived_from = "p_dollar@bb2d5d9d66dc"
 description = "the props type has dollar-num as Path<Root, number> and dollar-nums as Path<Root, number[]>, and omitting one errors"
 falsifiability_class = "safety"
 id = "p-dollar"

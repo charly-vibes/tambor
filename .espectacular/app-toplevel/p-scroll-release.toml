@@ -1,6 +1,6 @@
-archetype = "SA"
+archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_scroll_release@c4de114bcdd7"
+derived_from = "p_scroll_release@ec9f4eb210e5"
 description = "the only effect is set scroll-state to nil"
 falsifiability_class = "safety"
 id = "p-scroll-release"

@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_pointer@1c686e3b7c1d"
+derived_from = "p_pointer@80d756e8786b"
 description = "all produce the same normalised shape"
 falsifiability_class = "safety"
 id = "p-pointer"

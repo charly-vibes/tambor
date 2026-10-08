@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_advanced@8c34c861d8ed"
+derived_from = "p_advanced@6c7cdf5d3462"
 description = "the click still produces the counter-increment effect"
 falsifiability_class = "safety"
 id = "p-advanced"

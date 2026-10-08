@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_identity@7f5f123371cb"
+derived_from = "p_identity@fadfa4a4e3ee"
 description = "extra keys differ and are stable across renders"
 falsifiability_class = "safety"
 id = "p-identity"

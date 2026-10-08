@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_cut@8c4b03d30eb6"
+derived_from = "p_cut@e595d94c1b2d"
 description = "text becomes hlo and the clipboard gets el"
 falsifiability_class = "safety"
 id = "p-cut"

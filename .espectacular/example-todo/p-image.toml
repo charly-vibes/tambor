@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_image@8984baf383d0"
+derived_from = "p_image@cd241dd34c0c"
 description = "an image buffer of non-zero size is produced"
 falsifiability_class = "safety"
 id = "p-image"

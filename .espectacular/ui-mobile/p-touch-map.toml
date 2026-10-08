@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_touch_map@61a6d7de3315"
+derived_from = "p_touch_map@6938a5dfc6a5"
 description = "the same effect as a mouse click is returned"
 falsifiability_class = "safety"
 id = "p-touch-map"

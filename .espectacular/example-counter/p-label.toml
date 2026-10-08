@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_label@7eba7621f93e"
+derived_from = "p_label@ce6a03c4096b"
 description = "label text is 10"
 falsifiability_class = "safety"
 id = "p-label"

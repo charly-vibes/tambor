@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_dpr@675e03f57c88"
+derived_from = "p_dpr@279eeedc3061"
 description = "backing size equals css size times dpr"
 falsifiability_class = "safety"
 id = "p-dpr"

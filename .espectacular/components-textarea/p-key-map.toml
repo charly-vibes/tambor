@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_key_map@87c9fbe46804"
+derived_from = "p_key_map@a31ca4e08352"
 description = "each yields its effect and others yield none"
 falsifiability_class = "safety"
 id = "p-key-map"

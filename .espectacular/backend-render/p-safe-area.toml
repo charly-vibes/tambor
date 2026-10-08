@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_safe_area@31d4e7a5b4eb"
+derived_from = "p_safe_area@fab12fa6f2a5"
 description = "content stays inside the insets"
 falsifiability_class = "safety"
 id = "p-safe-area"

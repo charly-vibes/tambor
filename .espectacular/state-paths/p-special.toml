@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_special@3d0a04205c1e"
+derived_from = "p_special@9cc8c39cafd7"
 description = "each addresses its documented location"
 falsifiability_class = "safety"
 id = "p-special"

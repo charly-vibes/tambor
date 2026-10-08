@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_overlap@022bd02f3012"
+derived_from = "p_overlap@a0b3963e1269"
 description = "a touch between them picks the nearer centre"
 falsifiability_class = "safety"
 id = "p-overlap"

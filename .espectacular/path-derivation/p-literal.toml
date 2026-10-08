@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_literal@c5c4642b0b57"
+derived_from = "p_literal@38cdcb16eebd"
 description = "path reads the literal and refuses writes"
 falsifiability_class = "safety"
 id = "p-literal"

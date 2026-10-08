@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_nested_priority@1cbc66f48a6d"
+derived_from = "p_nested_priority@e789c61edcb5"
 description = "the later-in-tree panel paints on top"
 falsifiability_class = "safety"
 id = "p-nested-priority"

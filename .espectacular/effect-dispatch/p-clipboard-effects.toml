@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_clipboard_effects@2bc6108e3bf4"
+derived_from = "p_clipboard_effects@a8d4c499b738"
 description = "the backend clipboard receives hello"
 falsifiability_class = "safety"
 id = "p-clipboard-effects"

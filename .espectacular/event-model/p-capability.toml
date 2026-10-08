@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_capability@3e0dd9ff09e3"
+derived_from = "p_capability@665ca84ed340"
 description = "the query matches whether any descendant handles the event"
 falsifiability_class = "safety"
 id = "p-capability"

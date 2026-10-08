@@ -1,5 +1,5 @@
 ---
-id: spec
+id: scrollytelling.pin
 kind: intent
 checked_against_core: clear
 statement: "WHILE a Pin's Boundary is active, THE Pin SHALL fix its target
@@ -25,12 +25,12 @@ Constraints (Reference Typing) and none of these targets are effects.
 
 | id                           | kind      | expr                                                                                                          | traces_to               |
 |---------------------------------|-----------|------------------------------------------------------------------------------------------------------------------|------------------------------|
-| fixed_during_active | invariant | `∀ position within the Boundary: the target element's viewport-relative position is constant` — realized by components.pinned_panel.body_drawn_untranslated_when_active (cross-file) | [[spec]] |
-| spacer_reserves_height | invariant | `ScrollSpacer height == the Pin's authored scroll duration, for the entire time the Pin is active` — realized by components.pinned_panel.spacer_matches_body_extent (cross-file) together with components.scrollview.range_formula (cross-file) | [[spec]] |
-| release_no_jump | invariant | `at Boundary end: the pin releases and control returns to native flow within the same frame, with no discontinuity in rendered position` — realized by components.pinned_panel.release_continuous (cross-file) | [[spec]] |
-| spacer_recomputed_on_resize | invariant | `target element size changes after initialization ⟹ ScrollSpacer height is recomputed on the next onRefresh` — realized for free by components.pinned_panel.render_pure (cross-file) together with backend.render.resize_redraws (cross-file), since nothing is cached in the first place | [[spec]] |
-| nested_pin_priority | invariant | `∀ nested Pins: stacking order resolves by explicit priority, defaulting to document order when priority is unset` — realized by components.pinned_panel.nested_panel_priority (cross-file) | [[spec]] |
-| focus_releases_pin | invariant | `keyboard focus would move past the last interactive element inside an active Pin ⟹ the Pin releases rather than trapping focus` — **open gap**, see Notes | [[spec]] |
+| fixed_during_active | invariant | `∀ position within the Boundary: the target element's viewport-relative position is constant` — realized by components.pinned_panel.body_drawn_untranslated_when_active (cross-file) | [[scrollytelling.pin]] |
+| spacer_reserves_height | invariant | `ScrollSpacer height == the Pin's authored scroll duration, for the entire time the Pin is active` — realized by components.pinned_panel.spacer_matches_body_extent (cross-file) together with components.scrollview.range_formula (cross-file) | [[scrollytelling.pin]] |
+| release_no_jump | invariant | `at Boundary end: the pin releases and control returns to native flow within the same frame, with no discontinuity in rendered position` — realized by components.pinned_panel.release_continuous (cross-file) | [[scrollytelling.pin]] |
+| spacer_recomputed_on_resize | invariant | `target element size changes after initialization ⟹ ScrollSpacer height is recomputed on the next onRefresh` — realized for free by components.pinned_panel.render_pure (cross-file) together with backend.render.resize_redraws (cross-file), since nothing is cached in the first place | [[scrollytelling.pin]] |
+| nested_pin_priority | invariant | `∀ nested Pins: stacking order resolves by explicit priority, defaulting to document order when priority is unset` — realized by components.pinned_panel.nested_panel_priority (cross-file) | [[scrollytelling.pin]] |
+| focus_releases_pin | invariant | `keyboard focus would move past the last interactive element inside an active Pin ⟹ the Pin releases rather than trapping focus` — **open gap**, see Notes | [[scrollytelling.pin]] |
 
 ## Model
 
@@ -43,21 +43,21 @@ Constraints (Reference Typing) and none of these targets are effects.
 
 | id                   | from     | to       | guard                                                          |
 |----------------------|----------|----------|---------------------------------------------------------------------|
-| pin | unpinned | pinned | [[spec.spacer_reserves_height]] |
-| release | pinned | released | [[spec.release_no_jump]] |
-| release_on_focus_out | pinned | released | [[spec.focus_releases_pin]] |
+| pin | unpinned | pinned | [[scrollytelling.pin.spacer_reserves_height]] |
+| release | pinned | released | [[scrollytelling.pin.release_no_jump]] |
+| release_on_focus_out | pinned | released | [[scrollytelling.pin.focus_releases_pin]] |
 | unpin | released | unpinned | `scroll returns above the Pin's start boundary` |
 
 ## Properties
 
 | id                        | kind | derives_from                                          | generator                                             | predicate                                                                    |
 |------------------------------|------|--------------------------------------------------------------|----------------------------------------------------------------|-------------------------------------------------------------------------------------|
-| position_constant_while_pinned | unit | [[spec.fixed_during_active]] | `scroll_sweep_within_pin_boundary()` | `viewport_position(target) is constant across every sampled frame` |
-| spacer_matches_duration | unit | [[spec.spacer_reserves_height]] | `pin_with(authored_duration: d)` | `spacer_height == d` |
-| no_visual_jump_on_release | unit | [[spec.release_no_jump]] | `scroll_past_pin_end_boundary()` | `rendered_position(frame_before_release) == rendered_position(frame_after_release)` |
-| resize_recomputes_spacer | unit | [[spec.spacer_recomputed_on_resize]] | `resize_pinned_target_then_refresh()` | `spacer_height == new authored duration` |
-| nested_priority_resolved | unit | [[spec.nested_pin_priority]] | `two_nested_pins(priority: unset)` | `stacking_order == document_order` |
-| tab_out_releases_focus | unit | [[spec.focus_releases_pin]] | `tab_past_last_interactive_element_in_pin()` | `check(pin_state) == released` |
+| position_constant_while_pinned | unit | [[scrollytelling.pin.fixed_during_active]] | `scroll_sweep_within_pin_boundary()` | `viewport_position(target) is constant across every sampled frame` |
+| spacer_matches_duration | unit | [[scrollytelling.pin.spacer_reserves_height]] | `pin_with(authored_duration: d)` | `spacer_height == d` |
+| no_visual_jump_on_release | unit | [[scrollytelling.pin.release_no_jump]] | `scroll_past_pin_end_boundary()` | `rendered_position(frame_before_release) == rendered_position(frame_after_release)` |
+| resize_recomputes_spacer | unit | [[scrollytelling.pin.spacer_recomputed_on_resize]] | `resize_pinned_target_then_refresh()` | `spacer_height == new authored duration` |
+| nested_priority_resolved | unit | [[scrollytelling.pin.nested_pin_priority]] | `two_nested_pins(priority: unset)` | `stacking_order == document_order` |
+| tab_out_releases_focus | unit | [[scrollytelling.pin.focus_releases_pin]] | `tab_past_last_interactive_element_in_pin()` | `check(pin_state) == released` |
 
 ## Notes
 
@@ -100,35 +100,35 @@ Every property row is verified by exactly one dedicated scenario;
 
 - **WHEN** `scroll_sweep_within_pin_boundary()`
 - **THEN** `viewport_position(target) is constant across every sampled frame`
-- **VERIFIES** [[spec.position_constant_while_pinned]]
+- **VERIFIES** [[scrollytelling.pin.position_constant_while_pinned]]
 
 #### Scenario: spacer_matches_duration
 
 - **WHEN** `pin_with(authored_duration: d)`
 - **THEN** `spacer_height == d`
-- **VERIFIES** [[spec.spacer_matches_duration]]
+- **VERIFIES** [[scrollytelling.pin.spacer_matches_duration]]
 
 #### Scenario: no_visual_jump_on_release
 
 - **WHEN** `scroll_past_pin_end_boundary()`
 - **THEN** `rendered_position(frame_before_release) == rendered_position(frame_after_release)`
-- **VERIFIES** [[spec.no_visual_jump_on_release]]
+- **VERIFIES** [[scrollytelling.pin.no_visual_jump_on_release]]
 
 #### Scenario: resize_recomputes_spacer
 
 - **WHEN** `resize_pinned_target_then_refresh()`
 - **THEN** `spacer_height == new authored duration`
-- **VERIFIES** [[spec.resize_recomputes_spacer]]
+- **VERIFIES** [[scrollytelling.pin.resize_recomputes_spacer]]
 
 #### Scenario: nested_priority_resolved
 
 - **WHEN** `two_nested_pins(priority: unset)`
 - **THEN** `stacking_order == document_order`
-- **VERIFIES** [[spec.nested_priority_resolved]]
+- **VERIFIES** [[scrollytelling.pin.nested_priority_resolved]]
 
 #### Scenario: tab_out_releases_focus
 
 - **WHEN** `tab_past_last_interactive_element_in_pin()`
 - **THEN** `check(pin_state) == released`
-- **VERIFIES** [[spec.tab_out_releases_focus]]
+- **VERIFIES** [[scrollytelling.pin.tab_out_releases_focus]]
 

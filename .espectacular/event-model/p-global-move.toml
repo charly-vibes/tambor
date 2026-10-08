@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_global_move@024f45038eda"
+derived_from = "p_global_move@2550bc3a4235"
 description = "each receives its own local position and all fire"
 falsifiability_class = "safety"
 id = "p-global-move"

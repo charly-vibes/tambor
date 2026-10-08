@@ -1,6 +1,6 @@
-archetype = "SA"
+archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_event_pure@bd6539921068"
+derived_from = "p_event_pure@ce436b39679b"
 description = "tree and state unchanged afterwards"
 falsifiability_class = "safety"
 id = "p-event-pure"

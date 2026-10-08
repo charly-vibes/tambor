@@ -1,6 +1,6 @@
 archetype = "PF"
 authored_with = "0.9.2"
-derived_from = "p_update@0dd1ea9b91e9"
+derived_from = "p_update@7b1e323aa388"
 description = "value at path equals f(old, ...args)"
 falsifiability_class = "safety"
 id = "p-update"
