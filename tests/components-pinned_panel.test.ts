@@ -93,23 +93,36 @@ function isTranslate(elem: Elem): boolean {
 }
 
 function isRectangleOf(elem: Elem, w: number): boolean {
-  return (
-    elem != null &&
-    !isGroup(elem) &&
-    (elem as Node).type === "rectangle" &&
-    (elem as { width: number }).width === w
-  );
+  if (elem == null || isGroup(elem)) return false;
+  return rectWidthOf(elem as Node) === w;
+}
+
+function rectWidthOf(node: Node): number | null {
+  if (node.type !== "rectangle") return null;
+  return (node as { width: number }).width;
 }
 
 // The spacer reserving the normal-flow slot: first element of the panel's
 // output, as its [width, height] extent.
 function reservedSpacer(out: Elem): Vec2 {
-  const parts: readonly Elem[] = isGroup(out) ? out : [out];
-  const first = parts[0] as Node;
-  if (first == null || isGroup(first) || first.type !== "spacer") {
-    throw new Error("expected the reserved slot spacer first in the output");
+  return spacerExtentOf(headOf(out));
+}
+
+function headOf(out: Elem): Node {
+  if (isGroup(out)) return (out as readonly Elem[])[0] as Node;
+  return out as Node;
+}
+
+function spacerExtentOf(first: Node): Vec2 {
+  if (isReserved(first)) {
+    const spacer = first as { x: number; y: number };
+    return [spacer.x, spacer.y];
   }
-  return [first.x, first.y];
+  throw new Error("expected the reserved slot spacer first in the output");
+}
+
+function isReserved(first: Node): boolean {
+  return first != null && !isGroup(first as unknown as Elem) && first.type === "spacer";
 }
 
 // Drawables of an elem tree in painting order (later paints on top).

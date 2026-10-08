@@ -82,13 +82,26 @@ function listView(
 // Every node in the tree satisfying pred, collected via children().
 function collect<T extends Node>(elem: Elem, pred: (n: Node) => n is T): T[] {
   const out: T[] = [];
-  const walk = (e: Elem): void => {
-    if (e == null) return;
-    if (!isGroup(e) && pred(e)) out.push(e);
-    for (const child of children(e)) walk(child);
-  };
-  walk(elem);
+  collectInto(elem, pred, out);
   return out;
+}
+
+function collectInto<T extends Node>(elem: Elem, pred: (n: Node) => n is T, out: T[]): void {
+  if (elem == null) return;
+  if (isGroup(elem)) {
+    collectAll(elem, pred, out);
+    return;
+  }
+  collectMatch(elem as Node, pred, out);
+}
+
+function collectAll<T extends Node>(group: readonly Elem[], pred: (n: Node) => n is T, out: T[]): void {
+  for (const child of group) collectInto(child, pred, out);
+}
+
+function collectMatch<T extends Node>(node: Node, pred: (n: Node) => n is T, out: T[]): void {
+  if (pred(node)) out.push(node as T);
+  collectAll(children(node), pred, out);
 }
 
 const isListNode = (n: Node): n is Node & { type: "rounded-rectangle" } =>

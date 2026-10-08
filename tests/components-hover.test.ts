@@ -88,9 +88,13 @@ function findAll(elem: EventElem | Elem, type: string): readonly Node[] {
   if (isGroup(elem as Elem)) {
     return (elem as readonly Elem[]).flatMap((child) => findAll(child, type));
   }
-  const node = elem as Node;
-  if (node.type === type) return [node];
-  return children(node).flatMap((child) => findAll(child, type));
+  return findAllNode(elem as Node, type);
+}
+
+function findAllNode(elem: Node, type: string): readonly Node[] {
+  const below = children(elem).flatMap((child) => findAll(child, type));
+  if (elem.type === type) return [elem, ...below];
+  return below;
 }
 
 // The group whose direct children include a node of the given type —
@@ -98,20 +102,32 @@ function findAll(elem: EventElem | Elem, type: string): readonly Node[] {
 // observable (button_hover_visual: the fill sits behind the border).
 function groupWithDirectChild(elem: EventElem | Elem, type: string): readonly Elem[] | undefined {
   if (elem == null) return undefined;
-  if (isGroup(elem as Elem)) {
-    const group = elem as readonly Elem[];
-    if (group.some((child) => !isGroup(child) && (child as Node).type === type)) return group;
-    for (const child of group) {
-      const found = groupWithDirectChild(child, type);
-      if (found) return found;
-    }
-    return undefined;
-  }
-  for (const child of children(elem as Node)) {
+  if (isGroup(elem as Elem)) return searchGroup(elem as readonly Elem[], type);
+  return searchNodeChildren(elem as Node, type);
+}
+
+// The group whose direct children include a node of the given type —
+// the wrapper's body group, so siblings and their draw order are
+// observable (button_hover_visual: the fill sits behind the border).
+function searchGroup(group: readonly Elem[], type: string): readonly Elem[] | undefined {
+  if (groupHasDirectChild(group, type)) return group;
+  return searchInChildren(group, type);
+}
+
+function groupHasDirectChild(group: readonly Elem[], type: string): boolean {
+  return group.some((child) => !isGroup(child) && (child as Node).type === type);
+}
+
+function searchInChildren(kids: readonly Elem[], type: string): readonly Elem[] | undefined {
+  for (const child of kids) {
     const found = groupWithDirectChild(child, type);
     if (found) return found;
   }
   return undefined;
+}
+
+function searchNodeChildren(node: Node, type: string): readonly Elem[] | undefined {
+  return searchInChildren(children(node), type);
 }
 
 // p_enter — derives_from: components.hover.hover_enter
