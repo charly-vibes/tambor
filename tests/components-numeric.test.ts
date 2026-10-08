@@ -17,11 +17,18 @@ import { dispatch as dispatchEvent } from "../src/events/dispatch.ts";
 import { mouseDown, mouseMoveGlobal, mouseUp } from "../src/events/event.ts";
 import { counter, decNum, incNum } from "../src/components/numeric/counter.ts";
 import {
+  slider,
+  fillWidth,
+  mapValue,
+  sliderLabel,
+} from "../src/components/numeric/slider.ts";
+import {
   bounds,
   isGroup,
   type Elem,
   type Label,
   type Node,
+  type Rectangle,
   type Vec2,
 } from "../src/views/model.ts";
 
@@ -30,7 +37,6 @@ import {
 // ---------------------------------------------------------------------------
 
 const $NUM: Path = [["keypath", "num"]];
-const $MDOWN: Path = [["keypath", "mdown?"]];
 
 // Render the counter component call as a view tree.
 function counterView(args: Record<string, unknown>): Elem {
@@ -72,6 +78,51 @@ const isLabel = (n: Node): n is Label => n.type === "label";
 function applyEffects(state: unknown, effects: readonly unknown[]): Record<string, unknown> {
   return defaultHandler(state, effects as readonly Effect[], {}) as Record<string, unknown>;
 }
+
+// ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// slider — the number-slider state machine
+// ---------------------------------------------------------------------------
+
+// The mapping scenario's limits (p_mapping generator).
+const SLIDER_MIN = 5;
+const SLIDER_MAX = 20;
+const SLIDER_WIDTH = 300;
+
+// Render the slider call against an app state: num is the current
+// value, the mdown? flag lives in the call-site scratch under ::extra
+// (component.model's per-call-site scratch), and extraArgs overrides
+// any prop (e.g. omitting max-width for the default-width scenario).
+function sliderView(
+  state: Record<string, unknown>,
+  extraArgs: Record<string, unknown> = {},
+): Elem {
+  return render(
+    call(
+      slider,
+      {
+        num: state["num"] as number,
+        min: SLIDER_MIN,
+        max: SLIDER_MAX,
+        "max-width": SLIDER_WIDTH,
+        "integer?": true,
+        $num: $NUM,
+        ...extraArgs,
+      },
+      { extra: state["::extra"] as Record<string, unknown> },
+    ),
+  ) as Elem;
+}
+
+// Dispatch event, apply the returned intents to the state, return the
+// new state — one step of the gesture loop (dispatch → apply → rerender).
+function step(state: Record<string, unknown>, elem: Elem, event: ReturnType<typeof mouseDown>): Record<string, unknown> {
+  return applyEffects(state, dispatchEvent(elem, event));
+}
+
+const isRect = (n: Node): n is Rectangle => n.type === "rectangle";
+const rectWidths = (elem: Elem): number[] =>
+  nodeOrigins(elem, isRect).map(([r]) => (r as Rectangle).width);
 
 // ---------------------------------------------------------------------------
 // counter — the "-" / centred label / "+" row
@@ -198,4 +249,131 @@ it("p_inc: stays 3 then becomes 4", () => {
       expect(incNum(num)).toBe(num + 1);
     }),
   );
+});
+
+// ---------------------------------------------------------------------------
+// slider — the number-slider state machine
+// ---------------------------------------------------------------------------
+
+// p_mapping — derives_from: components.numeric.slider_mapping
+// generator: min 5 max 20 width 300 integer at x 150, x -10, x 400
+// predicate: 12, 5 and 20
+it("p_mapping: 12, 5 and 20", () => {
+  let state: Record<string, unknown> = { num: 0, "::extra": {} };
+
+  // down at x 150: 5 + (150 / 300) * 15 = 12.5, truncated to 12
+  state = step(state, sliderView(state), mouseDown([150, 5]));
+  expect(state["num"]).toBe(12);
+
+  // move to x -10: 4.5 truncates to 4, clamped back to min 5
+  state = step(state, sliderView(state), mouseMoveGlobal([-10, 5]));
+  expect(state["num"]).toBe(5);
+
+  // move to x 400: 25, clamped to max 20
+  state = step(state, sliderView(state), mouseMoveGlobal([400, 5]));
+  expect(state["num"]).toBe(20);
+
+  // property: the mapped value always lands in [min, max], integral
+  // when integer? truncates toward zero
+  fc.assert(
+    fc.property(
+      fc.integer({ min: -50, max: 50 }),
+      fc.integer({ min: 1, max: 100 }),
+      fc.integer({ min: 1, max: 500 }),
+      fc.boolean(),
+      (min, span, width, integer) => {
+        const max = min + span;
+        for (const x of [-1000, -1, 0, 1, Math.floor(width / 2), width, width + 500]) {
+          const v = mapValue(x, min, max, width, integer);
+          expect(v).toBeGreaterThanOrEqual(min);
+          expect(v).toBeLessThanOrEqual(max);
+          if (integer) expect(Number.isInteger(v)).toBe(true);
+        }
+      },
+    ),
+  );
+});
+
+// p_gesture — derives_from: components.numeric.slider_gesture
+// generator: move before down and after down
+// predicate: only the second updates
+it("p_gesture: only the second updates", () => {
+  let state: Record<string, unknown> = { num: 5, "::extra": {} };
+
+  // a move before any pointer down: no intents, num unchanged
+  expect(dispatchEvent(sliderView(state), mouseMoveGlobal([160, 5]))).toEqual([]);
+  expect(state["num"]).toBe(5);
+
+  // the down updates (12, per the mapping) and arms the gesture
+  state = step(state, sliderView(state), mouseDown([150, 5]));
+  expect(state["num"]).toBe(12);
+
+  // after down: the move updates (5 + (160/300)*15 = 13)
+  state = step(state, sliderView(state), mouseMoveGlobal([160, 5]));
+  expect(state["num"]).toBe(13);
+});
+
+// p_capture — derives_from: components.numeric.slider_pointer_capture
+// generator: drag outside bounds on touch
+// predicate: updates continue until release
+it("p_capture: updates continue until release", () => {
+  let state: Record<string, unknown> = { num: 0, "::extra": {} };
+  state = step(state, sliderView(state), mouseDown([150, 5]));
+
+  // dragging outside the track bounds: the global touch moves keep
+  // updating while pressed, clamped by the mapping
+  state = step(state, sliderView(state), mouseMoveGlobal([-10, 5]));
+  expect(state["num"]).toBe(5);
+  state = step(state, sliderView(state), mouseMoveGlobal([400, 5]));
+  expect(state["num"]).toBe(20);
+
+  // release: the up updates (5 + (50/300)*15 = 7.5 → 7) and disarms
+  state = step(state, sliderView(state), mouseUp([50, 5]));
+  expect(state["num"]).toBe(7);
+
+  // ...and moves stop updating after release
+  const intents = dispatchEvent(sliderView(state), mouseMoveGlobal([150, 5]));
+  expect(intents).toEqual([]);
+  expect(state["num"]).toBe(7);
+});
+
+// p_label — derives_from: components.numeric.slider_label
+// generator: num 3 and 3.14159
+// predicate: 3 and 3.14
+it("p_label: 3 and 3.14", () => {
+  // integer?: the label shows num itself
+  const intView = render(
+    call(slider, { num: 3, min: 0, max: 100, "integer?": true, $num: $NUM }),
+  ) as Elem;
+  expect(nodeOrigins(intView, isLabel).map(([n]) => (n as Label).text)).toContain("3");
+  expect(sliderLabel(3, true)).toBe("3");
+
+  // otherwise: num with two decimals
+  const decView = render(call(slider, { num: 3.14159, min: 0, max: 100, $num: $NUM })) as Elem;
+  expect(nodeOrigins(decView, isLabel).map(([n]) => (n as Label).text)).toContain("3.14");
+  expect(sliderLabel(3.14159, false)).toBe("3.14");
+});
+
+// p_fill — derives_from: components.numeric.slider_fill
+// generator: num 3 min 0 max 20 width 100
+// predicate: width is 15
+it("p_fill: width is 15", () => {
+  const view = render(
+    call(slider, { num: 3, min: 0, max: 20, "max-width": 100, $num: $NUM }),
+  ) as Elem;
+  expect(rectWidths(view)).toContain(15);
+  expect(fillWidth(3, 0, 20, 100)).toBe(15);
+});
+
+// p_max_width — derives_from: components.numeric.slider_max_width_default
+// generator: no max-width
+// predicate: 100
+it("p_max_width: 100", () => {
+  // the track: the full mapping width, defaulted to 100 when absent
+  const view = render(call(slider, { num: 50, min: 0, max: 100, $num: $NUM })) as Elem;
+  expect(rectWidths(view)).toContain(100);
+
+  // behaviorally: x at the default width maps onto the max
+  expect(mapValue(100, 0, 100)).toBe(100);
+  expect(mapValue(50, 0, 100)).toBe(50);
 });
