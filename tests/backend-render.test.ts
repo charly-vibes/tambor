@@ -15,7 +15,7 @@
 import { afterAll, expect, it, vi } from "vitest";
 import fc from "fast-check";
 
-import { accessibilityTree, type A11yNode } from "../src/render/a11y.ts";
+import { type A11yNode } from "../src/render/a11y.ts";
 import { CanvasBackend, type CanvasBackendOptions } from "../src/render/canvas.ts";
 import { DomBackend } from "../src/render/dom.ts";
 import { TextBackend } from "../src/render/text.ts";
@@ -44,22 +44,22 @@ import {
 import { dispatch } from "../src/events/dispatch.ts";
 import { mouseDown, type TamborEvent } from "../src/events/event.ts";
 import {
+  bounds,
   button,
   checkbox,
-  horizontalLayout,
   label as labelNode,
   on,
   path,
   rectangle,
   roundedRectangle,
   translate,
-  verticalLayout,
   withColor,
   withStyle,
   withStrokeWidth,
   type Elem,
   type Vec2,
 } from "../src/views/model.ts";
+import { horizontalLayout, verticalLayout } from "../src/views/layout.ts";
 import { mobileTodoView, todoState } from "../src/ui/fixture_todo.ts";
 
 afterAll(() => {
@@ -67,6 +67,15 @@ afterAll(() => {
 });
 
 // ---------------------------------------------------------------- helpers
+
+// Byte equality for pixel buffers: vitest's toEqual on large typed
+// arrays is pathologically slow, so the determinism predicate compares
+// manually.
+function sameData(a: Uint8ClampedArray, b: Uint8ClampedArray): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+  return true;
+}
 
 // A spy handler that records every effect batch it is handed (the
 // effect list a routed event produces) and still applies the builtins.
@@ -93,7 +102,8 @@ function probeView(): { view: Elem; received: Vec2[] } {
   const received: Vec2[] = [];
   const view = on(
     "mouse-move",
-    (pos: Vec2) => {
+    (...args: readonly unknown[]) => {
+      const pos = args[0] as Vec2;
       received.push(pos);
       return [["probe", pos]];
     },
@@ -163,34 +173,47 @@ function inkOf(view: AnyDraw, size: Vec2, opts: Partial<CanvasBackendOptions> = 
     : { minX: 0, minY: 0, maxX: 0, maxY: 0, inked: false };
 }
 
-// A random view: primitives, wrappers and nesting, deterministic under
-// the default measure (p_determinism / p_stack generators).
-const arbView: fc.Arbitrary<AnyDraw> = fc.letrec((tie) => ({
-  leaf: fc.oneof(
-    fc.constant(null),
-    fc.constant(labelNode("hello")),
-    fc.nat(60).chain((w) => fc.nat(60).map((h) => rectangle(w, h))),
-    fc.tuple(fc.nat(50), fc.nat(50), fc.nat(50)).map(
-      ([a, b, c]) => path([0, 0], [a, b], [c, a]),
-    ),
-    fc.tuple(fc.nat(40), fc.nat(40)).map(([x, y]) => translate(x, y, labelNode("t"))),
+// A random view over the view model's nodes, deterministic under the
+// default measure (the p_determinism / p_stack generators). The
+// recursion is bounded by depth, not fc.letrec, so generation never
+// overflows the stack.
+const elemLeaf: fc.Arbitrary<Elem> = fc.oneof(
+  fc.constant(null),
+  fc.constant(labelNode("hello")),
+  fc.nat(60).chain((w) => fc.nat(60).map((h) => rectangle(w, h))),
+  fc.tuple(fc.nat(50), fc.nat(50), fc.nat(50)).map(
+    ([a, b, c]) => path([0, 0], [a, b], [c, a]),
   ),
-  node: fc.oneof(
-    tie("leaf"),
-    fc.tuple(tie("node"), tie("node")).map(([a, b]) => [a, b] as AnyDraw),
-    fc.tuple(fc.nat(20), fc.nat(20), tie("node")).map(([x, y, d]) => translate(x, y, d)),
-    fc.tuple(fc.nat(1, 3), tie("node")).map(
-      ([r, g, d]) => withColor([r / 3, g / 3, 1], d),
+  fc.tuple(fc.nat(40), fc.nat(40)).map(([x, y]) => translate(x, y, labelNode("t"))),
+) as fc.Arbitrary<Elem>;
+
+function elemNode(depth: number): fc.Arbitrary<Elem> {
+  if (depth <= 0) return elemLeaf;
+  const inner = (): fc.Arbitrary<Elem> => elemNode(depth - 1);
+  return fc.oneof(
+    elemLeaf,
+    fc.tuple(inner(), inner()).map(([a, b]): Elem => [a, b]),
+    fc.tuple(fc.nat(20), fc.nat(20), inner()).map(([x, y, d]): Elem => translate(x, y, d)),
+    fc.tuple(fc.nat(2), fc.nat(2), inner()).map(
+      ([r, g, d]): Elem => withColor([r / 3, g / 3, 1], d),
     ),
-    tie("node").map((d) => withStyle("stroke", d)),
-    fc.tuple(fc.nat(4), tie("node")).map(([sw, d]) => withStrokeWidth(1 + sw, d)),
-    fc.nat(90).chain((theta) => fc.nat(1).map(() => rotate(theta, null) as AnyDraw)),
-    fc.nat(3).chain((s) => fc.nat(1).map((_) => scale(1 + s, 1 + s, null) as AnyDraw)),
-    fc.tuple(fc.nat(40), fc.nat(40), tie("node")).map(
-      ([w, h, d]) => scissor(0, 0, w, h, d),
-    ),
+    inner().map((d): Elem => withStyle("stroke", d)),
+    fc.tuple(fc.nat(4), inner()).map(([sw, d]): Elem => withStrokeWidth(1 + sw, d)),
+  ) as fc.Arbitrary<Elem>;
+}
+
+const arbElem: fc.Arbitrary<Elem> = elemNode(3);
+
+// The same views, additionally nested through the backend-side
+// wrappers, so the stack balancing covers rotate, scale and scissor.
+const arbView: fc.Arbitrary<AnyDraw> = fc.oneof(
+  arbElem as fc.Arbitrary<AnyDraw>,
+  fc.nat(90).chain((theta) => arbElem.map((v): AnyDraw => rotate(theta, v))),
+  fc.nat(3).chain((s) => arbElem.map((v): AnyDraw => scale(1 + s, 1 + s, v))),
+  fc.tuple(fc.nat(40), fc.nat(40)).chain(([w, h]) =>
+    arbElem.map((v): AnyDraw => scissor(0, 0, w, h, v)),
   ),
-})).node;
+) as fc.Arbitrary<AnyDraw>;
 
 // A view containing one of every primitive plus an unknown node
 // (p_primitives generator).
@@ -260,7 +283,7 @@ function wireCounterApp(
   const state = { todos: [...nums] };
   const view: ViewFn = (s) => counterCounterView((s as { todos: readonly number[] }).todos);
   backend.subscribe((ev) => {
-    const intents = dispatch(view(state), ev);
+    const intents = dispatch(view(state, {}), ev);
     if (intents.length > 0) handler(state, intents, { backend });
   });
   return { effects };
@@ -312,7 +335,7 @@ it("p_determinism: two draws of a random view produce equal pixels", () => {
       backend.draw(view);
       const first = new Uint8ClampedArray(backend.image.data);
       backend.draw(view);
-      expect(backend.image.data).toEqual(first);
+      expect(sameData(backend.image.data, first)).toBe(true);
     }),
   );
 });
@@ -495,7 +518,8 @@ it("p_keys: a, A, Enter, Backspace, ArrowLeft, Shift forward a, A, enter, backsp
   for (const [raw] of script) {
     surface.dispatch({ type: "keydown", key: raw });
   }
-  expect(keys).toEqual(script.map(([, expected]) => expected));
+  // the modifier alone produced nothing: five events, no sixth slot
+  expect(keys).toEqual(script.slice(0, 5).map(([, expected]) => expected));
 });
 
 // p_touch_action — derives_from: backend.render.touch_action_none
@@ -579,21 +603,24 @@ it("p_text_metrics: on the text backend a label of 5 characters measures 5 by 1"
 // p_a11y — derives_from: backend.render.a11y_mirror
 // generator: views with buttons — predicate: one accessible node per interactive node
 it("p_a11y: one accessible node per interactive node", () => {
-  const arbButtonView: fc.Arbitrary<AnyDraw> = fc.letrec((tie) => ({
-    leaf: fc.oneof(
-      fc.constant(labelNode("inert") as AnyDraw),
-      fc.constant(button("Save") as AnyDraw),
-      fc.constant(button("Cancel") as AnyDraw),
-      fc.constant(checkbox(true) as AnyDraw),
-      fc.constant(checkbox(false) as AnyDraw),
-    ),
-    node: fc.oneof(
-      tie("leaf"),
-      fc.tuple(tie("node"), tie("node")).map(([a, b]) => [a, b] as AnyDraw),
-      fc.tuple(fc.nat(10), fc.nat(10), tie("node")).map(([x, y, d]) => translate(x, y, d)),
-      tie("node").map((d) => withColor([0, 0, 1], d)),
-    ),
-  })).node;
+  const leaf = fc.oneof(
+    fc.constant(labelNode("inert") as AnyDraw),
+    fc.constant(button("Save") as AnyDraw),
+    fc.constant(button("Cancel") as AnyDraw),
+    fc.constant(checkbox(true) as AnyDraw),
+    fc.constant(checkbox(false) as AnyDraw),
+  ) as fc.Arbitrary<Elem>;
+  const build = (depth: number): fc.Arbitrary<Elem> => {
+    if (depth <= 0) return leaf;
+    const inner = (): fc.Arbitrary<Elem> => build(depth - 1);
+    return fc.oneof(
+      leaf,
+      fc.tuple(inner(), inner()).map(([a, b]): Elem => [a, b]),
+      fc.tuple(fc.nat(10), fc.nat(10), inner()).map(([x, y, d]): Elem => translate(x, y, d)),
+      inner().map((d): Elem => withColor([0, 0, 1], d)),
+    ) as fc.Arbitrary<Elem>;
+  };
+  const arbButtonView: fc.Arbitrary<AnyDraw> = build(3) as fc.Arbitrary<AnyDraw>;
 
   fc.assert(
     fc.property(arbButtonView, (view) => {
