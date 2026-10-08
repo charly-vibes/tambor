@@ -14,7 +14,7 @@ import { call, render } from "../src/model/component.ts";
 import { defaultHandler, makeApp, type Effect } from "../src/effects/dispatch.ts";
 import { select, type Path } from "../src/effects/paths.ts";
 import { dispatch as dispatchEvent } from "../src/events/dispatch.ts";
-import { mouseDown, mouseMoveGlobal, mouseUp } from "../src/events/event.ts";
+import { mouseDown, mouseMoveGlobal, mouseUp, type TamborEvent } from "../src/events/event.ts";
 import { counter, decNum, incNum } from "../src/components/numeric/counter.ts";
 import {
   slider,
@@ -78,64 +78,6 @@ const isLabel = (n: Node): n is Label => n.type === "label";
 function applyEffects(state: unknown, effects: readonly unknown[]): Record<string, unknown> {
   return defaultHandler(state, effects as readonly Effect[], {}) as Record<string, unknown>;
 }
-
-// ---------------------------------------------------------------------------
-// slider — the number-slider state machine
-// ---------------------------------------------------------------------------
-
-// The mapping scenario's limits (p_mapping generator).
-const SLIDER_MIN = 5;
-const SLIDER_MAX = 20;
-const SLIDER_WIDTH = 300;
-
-// The slider's args map lives in the app state at "slider-args" and is
-// passed as a non-literal call (component.model nonliteral_call_fill):
-// the num updates write through the map's path, and the call-site
-// scratch (mdown?) is keyed by paths, so it survives the value
-// changing underneath the call — the realistic defui usage.
-const ARGS_PATH: Path = [["keypath", "slider-args"]];
-
-// The slider app state shape: the args map plus the scratch root.
-interface SliderState {
-  "slider-args": Record<string, unknown>;
-  "::extra": Record<string, unknown>;
-}
-
-// A fresh slider app state; prop overrides land in the args map.
-function sliderState(num: number, propOverrides: Record<string, unknown> = {}): SliderState {
-  return {
-    "slider-args": {
-      num,
-      min: SLIDER_MIN,
-      max: SLIDER_MAX,
-      "max-width": SLIDER_WIDTH,
-      "integer?": true,
-      $num: [["keypath", "slider-args"], ["keypath", "num"]],
-      ...propOverrides,
-    },
-    "::extra": {},
-  };
-}
-
-// Render the slider against the current state (rerender each step).
-function sliderView(state: SliderState): Elem {
-  return render(
-    call(slider, state["slider-args"], {
-      extra: state["::extra"],
-      $m: ARGS_PATH,
-    }),
-  ) as Elem;
-}
-
-// Dispatch event, apply the returned intents to the state, return the
-// new state — one step of the gesture loop (dispatch → apply → rerender).
-function step(state: SliderState, elem: Elem, event: ReturnType<typeof mouseDown>): SliderState {
-  return applyEffects(state, dispatchEvent(elem, event)) as unknown as SliderState;
-}
-
-const isRect = (n: Node): n is Rectangle => n.type === "rectangle";
-const rectWidths = (elem: Elem): number[] =>
-  nodeOrigins(elem, isRect).map(([r]) => (r as Rectangle).width);
 
 // ---------------------------------------------------------------------------
 // counter — the "-" / centred label / "+" row
@@ -267,6 +209,60 @@ it("p_inc: stays 3 then becomes 4", () => {
 // ---------------------------------------------------------------------------
 // slider — the number-slider state machine
 // ---------------------------------------------------------------------------
+
+// The mapping scenario's limits (p_mapping generator).
+const SLIDER_MIN = 5;
+const SLIDER_MAX = 20;
+const SLIDER_WIDTH = 300;
+
+// The slider's args map lives in the app state at "slider-args" and is
+// passed as a non-literal call (component.model nonliteral_call_fill):
+// the num updates write through the map's path, and the call-site
+// scratch (mdown?) is keyed by paths, so it survives the value
+// changing underneath the call — the realistic defui usage.
+const ARGS_PATH: Path = [["keypath", "slider-args"]];
+
+// The slider app state shape: the args map plus the scratch root.
+interface SliderState {
+  "slider-args": Record<string, unknown>;
+  "::extra": Record<string, unknown>;
+}
+
+// A fresh slider app state; prop overrides land in the args map.
+function sliderState(num: number, propOverrides: Record<string, unknown> = {}): SliderState {
+  return {
+    "slider-args": {
+      num,
+      min: SLIDER_MIN,
+      max: SLIDER_MAX,
+      "max-width": SLIDER_WIDTH,
+      "integer?": true,
+      $num: [["keypath", "slider-args"], ["keypath", "num"]],
+      ...propOverrides,
+    },
+    "::extra": {},
+  };
+}
+
+// Render the slider against the current state (rerender each step).
+function sliderView(state: SliderState): Elem {
+  return render(
+    call(slider, state["slider-args"], {
+      extra: state["::extra"],
+      $m: ARGS_PATH,
+    }),
+  ) as Elem;
+}
+
+// Dispatch event, apply the returned intents to the state, return the
+// new state — one step of the gesture loop (dispatch → apply → rerender).
+function step(state: SliderState, elem: Elem, event: TamborEvent): SliderState {
+  return applyEffects(state, dispatchEvent(elem, event)) as unknown as SliderState;
+}
+
+const isRect = (n: Node): n is Rectangle => n.type === "rectangle";
+const rectWidths = (elem: Elem): number[] =>
+  nodeOrigins(elem, isRect).map(([r]) => (r as Rectangle).width);
 
 // p_mapping — derives_from: components.numeric.slider_mapping
 // generator: min 5 max 20 width 300 integer at x 150, x -10, x 400
