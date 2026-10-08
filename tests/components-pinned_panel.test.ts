@@ -133,7 +133,7 @@ it("p_contextual_source: offset equals context.scroll, never a call-site literal
       fc.nat(200),
       (start, len, body, slot, ox, k) => {
         const end = start + len;
-        const oy = start + k <= end ? start + k : end; // inside the range
+        const oy = Math.min(start + k, end); // inside the range
         const range: Vec2 = [start, end];
         const scroll: Vec2 = [ox, oy];
         // the driving offset is the contextual value: the call's scroll prop
