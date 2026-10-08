@@ -80,7 +80,6 @@ function applyEffects(state: unknown, effects: readonly unknown[]): Record<strin
 }
 
 // ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
 // slider — the number-slider state machine
 // ---------------------------------------------------------------------------
 
@@ -89,35 +88,49 @@ const SLIDER_MIN = 5;
 const SLIDER_MAX = 20;
 const SLIDER_WIDTH = 300;
 
-// Render the slider call against an app state: num is the current
-// value, the mdown? flag lives in the call-site scratch under ::extra
-// (component.model's per-call-site scratch), and extraArgs overrides
-// any prop (e.g. omitting max-width for the default-width scenario).
-function sliderView(
-  state: Record<string, unknown>,
-  extraArgs: Record<string, unknown> = {},
-): Elem {
+// The slider's args map lives in the app state at "slider-args" and is
+// passed as a non-literal call (component.model nonliteral_call_fill):
+// the num updates write through the map's path, and the call-site
+// scratch (mdown?) is keyed by paths, so it survives the value
+// changing underneath the call — the realistic defui usage.
+const ARGS_PATH: Path = [["keypath", "slider-args"]];
+
+// The slider app state shape: the args map plus the scratch root.
+interface SliderState {
+  "slider-args": Record<string, unknown>;
+  "::extra": Record<string, unknown>;
+}
+
+// A fresh slider app state; prop overrides land in the args map.
+function sliderState(num: number, propOverrides: Record<string, unknown> = {}): SliderState {
+  return {
+    "slider-args": {
+      num,
+      min: SLIDER_MIN,
+      max: SLIDER_MAX,
+      "max-width": SLIDER_WIDTH,
+      "integer?": true,
+      $num: [["keypath", "slider-args"], ["keypath", "num"]],
+      ...propOverrides,
+    },
+    "::extra": {},
+  };
+}
+
+// Render the slider against the current state (rerender each step).
+function sliderView(state: SliderState): Elem {
   return render(
-    call(
-      slider,
-      {
-        num: state["num"] as number,
-        min: SLIDER_MIN,
-        max: SLIDER_MAX,
-        "max-width": SLIDER_WIDTH,
-        "integer?": true,
-        $num: $NUM,
-        ...extraArgs,
-      },
-      { extra: state["::extra"] as Record<string, unknown> },
-    ),
+    call(slider, state["slider-args"], {
+      extra: state["::extra"],
+      $m: ARGS_PATH,
+    }),
   ) as Elem;
 }
 
 // Dispatch event, apply the returned intents to the state, return the
 // new state — one step of the gesture loop (dispatch → apply → rerender).
-function step(state: Record<string, unknown>, elem: Elem, event: ReturnType<typeof mouseDown>): Record<string, unknown> {
-  return applyEffects(state, dispatchEvent(elem, event));
+function step(state: SliderState, elem: Elem, event: ReturnType<typeof mouseDown>): SliderState {
+  return applyEffects(state, dispatchEvent(elem, event)) as unknown as SliderState;
 }
 
 const isRect = (n: Node): n is Rectangle => n.type === "rectangle";
@@ -259,19 +272,19 @@ it("p_inc: stays 3 then becomes 4", () => {
 // generator: min 5 max 20 width 300 integer at x 150, x -10, x 400
 // predicate: 12, 5 and 20
 it("p_mapping: 12, 5 and 20", () => {
-  let state: Record<string, unknown> = { num: 0, "::extra": {} };
+  let state = sliderState(0);
 
   // down at x 150: 5 + (150 / 300) * 15 = 12.5, truncated to 12
   state = step(state, sliderView(state), mouseDown([150, 5]));
-  expect(state["num"]).toBe(12);
+  expect(state["slider-args"]["num"]).toBe(12);
 
   // move to x -10: 4.5 truncates to 4, clamped back to min 5
   state = step(state, sliderView(state), mouseMoveGlobal([-10, 5]));
-  expect(state["num"]).toBe(5);
+  expect(state["slider-args"]["num"]).toBe(5);
 
   // move to x 400: 25, clamped to max 20
   state = step(state, sliderView(state), mouseMoveGlobal([400, 5]));
-  expect(state["num"]).toBe(20);
+  expect(state["slider-args"]["num"]).toBe(20);
 
   // property: the mapped value always lands in [min, max], integral
   // when integer? truncates toward zero
@@ -298,43 +311,43 @@ it("p_mapping: 12, 5 and 20", () => {
 // generator: move before down and after down
 // predicate: only the second updates
 it("p_gesture: only the second updates", () => {
-  let state: Record<string, unknown> = { num: 5, "::extra": {} };
+  let state = sliderState(5);
 
   // a move before any pointer down: no intents, num unchanged
   expect(dispatchEvent(sliderView(state), mouseMoveGlobal([160, 5]))).toEqual([]);
-  expect(state["num"]).toBe(5);
+  expect(state["slider-args"]["num"]).toBe(5);
 
   // the down updates (12, per the mapping) and arms the gesture
   state = step(state, sliderView(state), mouseDown([150, 5]));
-  expect(state["num"]).toBe(12);
+  expect(state["slider-args"]["num"]).toBe(12);
 
   // after down: the move updates (5 + (160/300)*15 = 13)
   state = step(state, sliderView(state), mouseMoveGlobal([160, 5]));
-  expect(state["num"]).toBe(13);
+  expect(state["slider-args"]["num"]).toBe(13);
 });
 
 // p_capture — derives_from: components.numeric.slider_pointer_capture
 // generator: drag outside bounds on touch
 // predicate: updates continue until release
 it("p_capture: updates continue until release", () => {
-  let state: Record<string, unknown> = { num: 0, "::extra": {} };
+  let state = sliderState(0);
   state = step(state, sliderView(state), mouseDown([150, 5]));
 
   // dragging outside the track bounds: the global touch moves keep
   // updating while pressed, clamped by the mapping
   state = step(state, sliderView(state), mouseMoveGlobal([-10, 5]));
-  expect(state["num"]).toBe(5);
+  expect(state["slider-args"]["num"]).toBe(5);
   state = step(state, sliderView(state), mouseMoveGlobal([400, 5]));
-  expect(state["num"]).toBe(20);
+  expect(state["slider-args"]["num"]).toBe(20);
 
   // release: the up updates (5 + (50/300)*15 = 7.5 → 7) and disarms
   state = step(state, sliderView(state), mouseUp([50, 5]));
-  expect(state["num"]).toBe(7);
+  expect(state["slider-args"]["num"]).toBe(7);
 
   // ...and moves stop updating after release
   const intents = dispatchEvent(sliderView(state), mouseMoveGlobal([150, 5]));
   expect(intents).toEqual([]);
-  expect(state["num"]).toBe(7);
+  expect(state["slider-args"]["num"]).toBe(7);
 });
 
 // p_label — derives_from: components.numeric.slider_label
