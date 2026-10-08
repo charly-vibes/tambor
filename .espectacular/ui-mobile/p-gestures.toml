@@ -9,3 +9,6 @@ superseded_by = ""
 
 [[tests.shell]]
 command = "tools/scaffold-check.sh ui-mobile p-gestures"
+
+[[tests.vitest]]
+flags = "--testNamePattern=p_gestures"
