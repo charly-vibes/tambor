@@ -9,3 +9,6 @@ superseded_by = ""
 
 [[tests.shell]]
 command = "tools/scaffold-check.sh component-model p-path-get"
+
+[[tests.vitest]]
+flags = "--testNamePattern=p_path_get"

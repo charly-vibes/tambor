@@ -9,3 +9,6 @@ superseded_by = ""
 
 [[tests.shell]]
 command = "tools/scaffold-check.sh component-model p-as-map"
+
+[[tests.vitest]]
+flags = "--testNamePattern=p_as_map"
