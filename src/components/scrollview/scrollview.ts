@@ -47,11 +47,26 @@ import {
 import { clampScalar, scrollMax } from "./geometry.ts";
 import { horizontalScrollbar, verticalScrollbar } from "./scrollbar.ts";
 
+// The update both the wheel and the drag share: it reads the stored
+// offset and adds the delta within the range, so a stale stored value
+// snaps back (stale_offset_snaps).
+function clampedStep(
+  max: Vec2,
+  delta: Vec2,
+): (old: unknown) => Vec2 {
+  return (old) => {
+    const o = old as Vec2;
+    return [
+      clampScalar(o[0] + delta[0], max[0]),
+      clampScalar(o[1] + delta[1], max[1]),
+    ];
+  };
+}
+
 // Wheel scrolling: when the clamped new offset differs from the current
 // one on either axis, an update is returned setting both axes to
 // clamp(old + delta); when both are unchanged, nothing is returned
-// (wheel_updates_offset). The update reads the stored offset so a stale
-// value snaps back at the next scroll update (stale_offset_snaps).
+// (wheel_updates_offset).
 export function wheelIntents(
   offset: Vec2,
   delta: Vec2,
@@ -64,14 +79,7 @@ export function wheelIntents(
     clampScalar(offset[0] + delta[0], max[0]) !== offset[0] ||
     clampScalar(offset[1] + delta[1], max[1]) !== offset[1];
   if (!changed) return [];
-  const apply = (old: unknown): Vec2 => {
-    const o = old as Vec2;
-    return [
-      clampScalar(o[0] + delta[0], max[0]),
-      clampScalar(o[1] + delta[1], max[1]),
-    ];
-  };
-  return [["update", $offset, apply]];
+  return [["update", $offset, clampedStep(max, delta)]];
 }
 
 // Touch dragging: a one-finger drag over content that has no handler
@@ -85,19 +93,7 @@ export function dragScrollf(
   $offset: Path,
 ): (delta: Vec2) => IntentList {
   const max = scrollMax(total, viewport);
-  return (delta) => [
-    [
-      "update",
-      $offset,
-      (old: unknown) => {
-        const o = old as Vec2;
-        return [
-          clampScalar(o[0] + delta[0], max[0]),
-          clampScalar(o[1] + delta[1], max[1]),
-        ];
-      },
-    ],
-  ];
+  return (delta) => [["update", $offset, clampedStep(max, delta)]];
 }
 
 // Momentum: a flick continues with decaying velocity and stops at the

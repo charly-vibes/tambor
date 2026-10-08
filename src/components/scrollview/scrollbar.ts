@@ -62,20 +62,18 @@ interface ScrollfSpec {
 // The bar drag function (bar_drag): the pointer position along the
 // track is the press position plus the accumulated delta, and the
 // offset becomes clamp(div0(position, viewport) * max offset)
-// (div0_safe covers the zero viewport).
+// (div0_safe covers the zero viewport). The untouched axis keeps the
+// offset it had at press time.
 export function barScrollf(
   spec: ScrollfSpec,
 ): (delta: Vec2) => IntentList {
   const { axis, press, viewport, max, offset, $offset } = spec;
+  const i: 0 | 1 = axis === "y" ? 1 : 0;
   return (delta) => {
-    if (axis === "y") {
-      const y = press[1] + delta[1];
-      const ny = clampScalar(div0(y, viewport[1]) * max[1], max[1]);
-      return [["set", $offset, [offset[0], ny]]];
-    }
-    const x = press[0] + delta[0];
-    const nx = clampScalar(div0(x, viewport[0]) * max[0], max[0]);
-    return [["set", $offset, [nx, offset[1]]]];
+    const position = press[i] + delta[i];
+    const ni = clampScalar(div0(position, viewport[i]) * max[i], max[i]);
+    const next: Vec2 = i === 1 ? [offset[0], ni] : [ni, offset[1]];
+    return [["set", $offset, next]];
   };
 }
 
