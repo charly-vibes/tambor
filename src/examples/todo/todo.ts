@@ -23,8 +23,11 @@
 //   No behavior beyond the corpus.
 
 import {
+  bounds,
+  button,
   checkbox,
   height,
+  label as labelNode,
   on,
   path,
   spacer,
@@ -34,7 +37,10 @@ import {
   type Color,
   type Elem,
 } from "../../views/model.ts";
+import { horizontalLayout, verticalLayout } from "../../views/layout.ts";
 import type { Path, Pred } from "../../effects/paths.ts";
+import { defeffect } from "../../effects/dispatch.ts";
+import { wrapOn, type EventElem, type IntentList } from "../../events/bubble.ts";
 import { textarea } from "../../components/textarea/textarea.ts";
 import { initialTextareaExtra } from "../../components/textarea/edit.ts";
 
@@ -65,6 +71,22 @@ export function todoState(): TodoState {
     "selected-filter": "all",
   };
 }
+
+// add-todo (add_appends): appends a todo with the carried description
+// and complete? false to the end of the underlying list. Registered
+// like any other effect, so app.dispatch applies it.
+defeffect("add-todo", (dispatch, ...raw: unknown[]) => {
+  const target = raw[0] as Path;
+  const text = raw[1] as string;
+  dispatch([
+    "update",
+    target,
+    (todos: unknown) => [
+      ...(todos as readonly TodoItem[]),
+      { description: text, "complete?": false },
+    ],
+  ]);
+});
 
 // The state paths the app edits.
 export const TODOS_PATH: Path = [["keypath", "todos"]];
@@ -152,6 +174,125 @@ export function todoItem(todo: TodoItem, $todo: Path, extraPath: Path = ROW_EXTR
   ];
 }
 
+// The gray of the unselected toggle options (toggle_render).
+const GRAY: Color = [0.8, 0.8, 0.8];
+
+// The toggle (toggle_render, toggle_sets_filter): the option labels,
+// the selected one plain and the others gray and clickable, separated
+// by 5 px spacers; clicking a non-selected option returns set with the
+// selected path and that option, and the selected option itself handles
+// nothing.
+export function toggle(
+  options: readonly string[],
+  selected: string,
+  $selected: Path,
+): Elem {
+  const out: Elem[] = [];
+  options.forEach((opt, i) => {
+    if (i > 0) out.push(spacer(5, 0));
+    if (opt === selected) {
+      out.push(labelNode(opt));
+    } else {
+      out.push(
+        on("mouse-down", () => [["set", $selected, opt]], withColor(GRAY, labelNode(opt))),
+      );
+    }
+  });
+  return horizontalLayout(out);
+}
+
+// The scratch of the new-todo textarea.
+export const NEW_TODO_EXTRA_PATH: Path = [
+  ["keypath", "::extra"],
+  ["keypath", "textarea-new-todo"],
+];
+
+// The two effects the Add Todo button and the Enter shortcut both
+// return (add_button, enter_adds).
+function addTodoEffects(state: TodoState): IntentList {
+  return [
+    ["add-todo", TODOS_PATH, state["next-todo-text"]],
+    ["set", NEXT_TEXT_PATH, ""],
+  ];
+}
+
+// Deep equality for paths (the focus rule's comparison, reused to pin
+// the Enter middleware to the new-todo textarea only).
+function pathEqual(a: Path, b: Path): boolean {
+  if (a.length !== b.length) return false;
+  return a.every((step, i) => {
+    const other = b[i] as readonly unknown[];
+    if (!Array.isArray(step) || !Array.isArray(other)) return false;
+    return step.length === other.length && step.every((v, j) => v === other[j]);
+  });
+}
+
+// The new-todo textarea with the Enter shortcut (enter_adds,
+// enter_unfocused_nothing, other_keys_default): wrap-on middleware — on
+// the enter key, when the focused textarea's default handler returns
+// its insert-newline intent, the same two effects as the Add Todo
+// button are returned instead; any other key passes through to the
+// textarea's default effects unchanged.
+function newTodoTextarea(state: TodoState, focus: unknown): Elem {
+  return textarea({
+    text: state["next-todo-text"],
+    textPath: NEXT_TEXT_PATH,
+    extraPath: NEW_TODO_EXTRA_PATH,
+    focus,
+    state: initialTextareaExtra(),
+    font: null,
+    indexForPosition: () => 0,
+    now: 0,
+  });
+}
+
+// The todo-app view (new_todo_layout, filter_default): the Add Todo
+// button and a new-todo textarea with an Enter shortcut — the textarea
+// translated by (10, 10) beside the button's right edge — then a 10 px
+// spacer, the toggle, a 10 px spacer, and the filtered list. The
+// context focus flows to the textareas; a missing selected-filter
+// defaults to the unfiltered option. The Enter middleware wraps the
+// whole app as its root wrap-on node (event.bubble wrap_on_middleware):
+// the laid-out body stays plain view nodes, and on the enter key the
+// focused new-todo textarea's insert-newline intent is replaced with
+// the Add Todo button's two effects.
+export function todoApp(state: TodoState, context: { focus?: unknown } = {}): Elem {
+  const focus = context.focus ?? null;
+  const btn = button("Add Todo", () => addTodoEffects(state));
+  // the textarea is translated by (10, 10) beside the button's right edge
+  const ta = translate(bounds(btn)[0] + 10, 10, newTodoTextarea(state, focus));
+  const top: Elem = [btn, ta];
+  const toggleRow = toggle(FILTER_OPTIONS, state["selected-filter"] ?? "all", FILTER_PATH);
+  const list: Elem = todoList(todoRows(state));
+  const body: Elem = verticalLayout([top, spacer(0, 10), toggleRow, spacer(0, 10), list]) ?? top;
+  // the wrap-on root is an event-layer node: dispatch walks it, while
+  // the laid-out body beneath stays plain view nodes — never sized by
+  // views/model bounds
+  return wrapOn(
+    [
+      [
+        "key-press",
+        (defaultHandler, key) => {
+          if (key !== "enter") return defaultHandler();
+          const inner = defaultHandler();
+          const intent = inner.find(
+            (candidate) =>
+              Array.isArray(candidate) &&
+              candidate[0] === "insert-newline" &&
+              pathEqual(candidate[1] as Path, NEXT_TEXT_PATH),
+          );
+          if (intent === undefined) return inner;
+          // enter_adds: the button's two effects replace the newline
+          return [
+            ...inner.filter((candidate) => candidate !== intent),
+            ...addTodoEffects(state),
+          ];
+        },
+      ],
+    ],
+    body,
+  ) as unknown as Elem;
+}
 // The todo-list: a vertical layout with a spacer of height 5
 // interposed between rows, so row offsets differ by row height plus 5
 // plus the gap (list_spacing). Zero rows lay out to nothing
@@ -179,6 +320,10 @@ export function todoRows(state: TodoState, $todos: Path = TODOS_PATH): readonly 
     .map((todo, i) => ({ todo, i }))
     .filter(({ todo }) => pred(todo))
     .map(({ todo, i }, visible) =>
-      todoItem(todo, [...$todos, ["filter", pred], ["seq-nth", i]], rowExtraPath(visible)),
+      // the item shown at visible index j has the path todos then
+      // filter then seq-nth(j): the filter navigator's sub-sequence is
+      // the matching elements, so seq-nth(j) reaches the j-th visible
+      // item at its original position
+      todoItem(todo, [...$todos, ["filter", pred], ["seq-nth", visible]], rowExtraPath(visible)),
     );
 }

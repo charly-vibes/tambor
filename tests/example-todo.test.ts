@@ -26,16 +26,31 @@ import {
   type WithStrokeWidthNode,
 } from "../src/views/model.ts";
 import { dispatch } from "../src/events/dispatch.ts";
-import { mouseDown } from "../src/events/event.ts";
+import { keyPress, mouseDown } from "../src/events/event.ts";
 import type { Path } from "../src/effects/paths.ts";
+import { select, updatePath } from "../src/effects/paths.ts";
+import { makeApp } from "../src/effects/dispatch.ts";
 import {
   deleteX,
+  FILTER_OPTIONS,
+  FILTER_PATH,
   filterFn,
+  NEW_TODO_EXTRA_PATH,
+  NEXT_TEXT_PATH,
+  todoApp,
   todoItem,
   todoList,
+  todoRows,
+  todoState,
+  toggle,
   TODOS_PATH,
   type TodoItem,
+  type TodoState,
 } from "../src/examples/todo/todo.ts";
+import type {
+  ButtonNode,
+  HandlerNode,
+} from "../src/views/model.ts";
 
 // ---------------------------------------------------------------------------
 // Test helpers.
@@ -53,6 +68,12 @@ interface Found {
 
 function scan(root: Elem): readonly Found[] {
   const out: Found[] = [];
+  // event-layer nodes (wrap/bubble) carry drawables that views/model
+  // children() does not know about; their type tag is outside the Node
+  // union, so it is read through a cast
+  const kindOf = (node: Node): string => (node as unknown as { type?: string }).type ?? "";
+  const drawablesOf = (node: Node): readonly Elem[] =>
+    (node as unknown as { drawables?: readonly Elem[] }).drawables ?? [];
   const walk = (elem: Elem, ox: number, oy: number, color: boolean, handler: boolean): void => {
     if (elem == null) return;
     if (isGroup(elem)) {
@@ -60,8 +81,13 @@ function scan(root: Elem): readonly Found[] {
       return;
     }
     const node = elem as Node;
+    const kind = kindOf(node);
     let underColor = color;
     let underHandler = handler;
+    if (kind === "wrap" || kind === "bubble") {
+      for (const child of drawablesOf(node)) walk(child, ox, oy, color, handler);
+      return;
+    }
     if (node.type === "with-color") underColor = true;
     if (node.type === "handler") underHandler = true;
     out.push({ node, x: ox, y: oy, underColor, underHandler });
@@ -305,4 +331,427 @@ it("p_spacing: row offsets differ by row height plus 5 plus the gap", () => {
       },
     ),
   );
+});
+// ---------------------------------------------------------------------------
+// C2 — the toggle, the filters, the app view, and the effects that keep
+// every edit on the underlying list.
+// ---------------------------------------------------------------------------
+
+// The descriptions rendered in the app's list, in row order: each row's
+// textarea draws exactly one label with the item's description.
+// The laid-out body under an app view: the Enter middleware wraps the
+// whole app as its root wrap-on node, and the body is its drawable.
+function viewBody(appView: Elem): Elem {
+  const w = appView as unknown as { type?: string; drawables?: readonly Elem[] };
+  return w.type === "wrap" ? (w.drawables as readonly Elem[])[0]! : appView;
+}
+
+function listGroupOf(appView: Elem): Elem {
+  // the app body is a vertical layout; the list is its last translated child
+  const kids = viewBody(appView) as readonly Elem[];
+  const last = kids[kids.length - 1] as TranslateNode;
+  return last.drawable;
+}
+
+function rowDescriptionsOf(appView: Elem): readonly string[] {
+  const list = listGroupOf(appView);
+  if (list == null) return [];
+  return scan(list)
+    .filter((f) => f.node.type === "label")
+    .map((f) => (f.node as Label).text);
+}
+
+function rowCountOf(appView: Elem): number {
+  const list = listGroupOf(appView);
+  if (list == null) return 0;
+  // every list child is a row group or a translate wrapping the 5 px
+  // interposed spacer
+  return (list as readonly Elem[]).filter(
+    (el) =>
+      !(
+        !Array.isArray(el) &&
+        (el as TranslateNode).type === "translate" &&
+        ((el as TranslateNode).drawable as Node | null) !== null &&
+        !Array.isArray((el as TranslateNode).drawable) &&
+        ((el as TranslateNode).drawable as Node).type === "spacer"
+      ),
+  ).length;
+}
+
+// The state without a selected-filter (filter_default's generator).
+function stateWithoutFilter(): TodoState {
+  const s = todoState();
+  const rest: TodoState = { todos: s.todos, "next-todo-text": s["next-todo-text"] };
+  return rest;
+}
+
+// p_toggle_render — derives_from: example.todo.toggle_render
+// generator: options all, active, complete with selected active —
+// predicate: active is plain and the other two are gray and clickable
+it("p_toggle_render: active is plain and the other two are gray and clickable", () => {
+  // The spec's example value must hold verbatim.
+  const t = toggle(FILTER_OPTIONS, "active", FILTER_PATH);
+  const labels = scan(t).filter((f) => f.node.type === "label");
+  expect(labels.map((f) => (f.node as Label).text)).toEqual(["all", "active", "complete"]);
+  const byText = (text: string) => labels.find((f) => (f.node as Label).text === text)!;
+  // the selected option is a plain label
+  const active = byText("active");
+  expect(active.underColor).toBe(false);
+  expect(active.underHandler).toBe(false);
+  // every other option is a clickable label in gray [0.8, 0.8, 0.8],
+  // separated by 5 px spacers
+  for (const text of ["all", "complete"]) {
+    const f = byText(text);
+    expect(f.underColor).toBe(true);
+    expect(f.underHandler).toBe(true);
+    const colorWrap = findNode(t, (g) => g.node.type === "with-color" && scan(g.node as Elem).some((h) => h.node === f.node))?.node as WithColorNode;
+    expect(colorWrap.color).toEqual([0.8, 0.8, 0.8]);
+  }
+  const spacers = scan(t).filter((f) => f.node.type === "spacer");
+  expect(spacers).toHaveLength(2);
+  for (const s of spacers) expect((s.node as SpacerNode).x).toBe(5);
+
+  // Generalized property: for every choice of selected option, exactly
+  // one label is plain and the rest are gray and clickable.
+  fc.assert(
+    fc.property(fc.constantFrom(...FILTER_OPTIONS), (selected) => {
+      const tg = toggle(FILTER_OPTIONS, selected, FILTER_PATH);
+      const ls = scan(tg).filter((f) => f.node.type === "label");
+      const plain = ls.filter((f) => !f.underColor && !f.underHandler);
+      expect(plain).toHaveLength(1);
+      expect((plain[0]!.node as Label).text).toBe(selected);
+      expect(ls.filter((f) => f.underColor && f.underHandler)).toHaveLength(2);
+    }),
+  );
+});
+
+// p_toggle — derives_from: example.todo.toggle_sets_filter
+// generator: click on the active label — predicate: effect is set
+// selected-filter to active, and a click on the selected label returns
+// nothing
+it("p_toggle: effect is set selected-filter to active, and a click on the selected label returns nothing", () => {
+  // The spec's example value must hold verbatim.
+  const t = toggle(FILTER_OPTIONS, "all", FILTER_PATH);
+  const found = scan(t).find(
+    (f) => f.node.type === "handler" && scan(f.node as Elem).some((g) => g.node.type === "label" && (g.node as Label).text === "active"),
+  )!;
+  const activeHandler = found.node as HandlerNode;
+  const [w, h] = bounds(activeHandler);
+  expect(dispatch(t, mouseDown([found.x + w / 2, found.y + h / 2]))).toEqual([
+    ["set", FILTER_PATH, "active"],
+  ]);
+  // a click on the selected option's plain label returns nothing
+  const allPlain = findNode(t, (f) => f.node.type === "label" && (f.node as Label).text === "all")!;
+  const [aw, ah] = bounds(allPlain.node);
+  expect(dispatch(t, mouseDown([allPlain.x + aw / 2, allPlain.y + ah / 2]))).toEqual([]);
+
+  // Generalized property: clicking any non-selected option returns set
+  // with the selected path and that option; clicking the selected
+  // option returns nothing.
+  fc.assert(
+    fc.property(fc.constantFrom(...FILTER_OPTIONS), fc.constantFrom(...FILTER_OPTIONS), (selected, clicked) => {
+      const tg = toggle(FILTER_OPTIONS, selected, FILTER_PATH);
+      const found = scan(tg).find(
+        (f) => f.node.type === "handler" && scan(f.node as Elem).some((g) => g.node.type === "label" && (g.node as Label).text === clicked),
+      );
+      if (found !== undefined) {
+        // a non-selected option is gray and clickable
+        const [cw, ch] = bounds(found.node as Node);
+        expect(dispatch(tg, mouseDown([found.x + cw / 2, found.y + ch / 2]))).toEqual([
+          ["set", FILTER_PATH, clicked],
+        ]);
+      } else {
+        // the selected option is plain and handles nothing
+        const plain = scan(tg).find(
+          (f) => f.node.type === "label" && (f.node as Label).text === clicked && !f.underColor && !f.underHandler,
+        );
+        expect(plain).toBeDefined();
+        const [pw, ph] = bounds(plain!.node);
+        expect(dispatch(tg, mouseDown([plain!.x + pw / 2, plain!.y + ph / 2]))).toEqual([]);
+      }
+    }),
+  );
+});
+
+// p_filter_default — derives_from: example.todo.filter_default
+// generator: no selected-filter — predicate: the unfiltered option is
+// selected and three rows render
+it("p_filter_default: the unfiltered option is selected and three rows render", () => {
+  // The spec's example value must hold verbatim.
+  const app = todoApp(stateWithoutFilter(), {});
+  expect(rowCountOf(app)).toBe(3);
+  expect(rowDescriptionsOf(app)).toEqual(["first", "second", "third"]);
+  // the toggle shows "all" as the plain (selected) option
+  const all = scan(app).find((f) => f.node.type === "label" && (f.node as Label).text === "all")!;
+  expect(all.underColor).toBe(false);
+  expect(all.underHandler).toBe(false);
+
+  // Generalized property: whatever the todos, a missing selected-filter
+  // shows every row.
+  fc.assert(
+    fc.property(fc.array(arbTodoItem, { minLength: 0, maxLength: 5 }), (items) => {
+      const view = todoApp({ todos: items, "next-todo-text": "" }, {});
+      expect(rowDescriptionsOf(view)).toEqual(items.map((t) => t.description));
+    }),
+  );
+});
+
+// p_filter_fns — derives_from: example.todo.filter_fns
+// generator: todos first, second, third with third complete —
+// predicate: unfiltered shows 3, active shows first and second,
+// complete shows third
+it("p_filter_fns: unfiltered shows 3, active shows first and second, complete shows third", () => {
+  // The spec's example value must hold verbatim.
+  for (const [sel, expected] of [
+    ["all", ["first", "second", "third"]],
+    ["active", ["first", "second"]],
+    ["complete", ["third"]],
+  ] as const) {
+    const view = todoApp({ ...todoState(), "selected-filter": sel }, {});
+    expect(rowDescriptionsOf(view)).toEqual(expected);
+  }
+  // the complete view really renders only the third row
+  expect(rowCountOf(todoApp({ ...todoState(), "selected-filter": "complete" }, {}))).toBe(1);
+
+  // Generalized property: the filter fns partition the todos — active
+  // shows exactly those with complete? false, complete exactly those
+  // with complete? true, unfiltered everything.
+  fc.assert(
+    fc.property(fc.array(arbTodoItem, { minLength: 0, maxLength: 8 }), (items) => {
+      const shown = (name: string) => items.filter(filterFn(name)).map((t) => t.description);
+      expect(shown("all")).toEqual(items.map((t) => t.description));
+      expect(shown("active")).toEqual(items.filter((t) => t["complete?"] !== true).map((t) => t.description));
+      expect(shown("complete")).toEqual(items.filter((t) => t["complete?"] === true).map((t) => t.description));
+    }),
+  );
+});
+
+// p_unknown_filter — derives_from: example.todo.unknown_filter_all (the
+// advisory: the port shows all, the original hid everything)
+// generator: selected-filter bogus — predicate: three rows render
+it("p_unknown_filter: three rows render", () => {
+  // The spec's example value must hold verbatim.
+  const view = todoApp({ ...todoState(), "selected-filter": "bogus" }, {});
+  expect(rowCountOf(view)).toBe(3);
+  expect(rowDescriptionsOf(view)).toEqual(["first", "second", "third"]);
+
+  // Generalized property: any unknown filter name shows all todos.
+  fc.assert(
+    fc.property(
+      fc.string({ minLength: 1, maxLength: 10 }).filter((s) => !["all", "active", "complete"].includes(s)),
+      fc.array(arbTodoItem, { minLength: 1, maxLength: 4 }),
+      (bogus, items) => {
+        const view2 = todoApp({ todos: items, "next-todo-text": "", "selected-filter": bogus }, {});
+        expect(rowDescriptionsOf(view2)).toEqual(items.map((t) => t.description));
+      },
+    ),
+  );
+});
+
+// p_add_button — derives_from: example.todo.add_button
+// generator: next-todo-text hello — predicate: effects are add-todo
+// with todos path and hello, then set next-todo-text to the empty string
+it("p_add_button: effects are add-todo with todos path and hello, then set next-todo-text to the empty string", () => {
+  // The spec's example value must hold verbatim.
+  const view = todoApp({ ...todoState(), "next-todo-text": "hello" }, {});
+  const btn = findNode(view, (f) => f.node.type === "button")!.node as ButtonNode;
+  expect(btn.onClick?.()).toEqual([
+    ["add-todo", TODOS_PATH, "hello"],
+    ["set", NEXT_TEXT_PATH, ""],
+  ]);
+
+  // Generalized property: for every drafted text, the button returns
+  // add-todo with the todos path and that text, then set next-todo-text
+  // to the empty string.
+  fc.assert(
+    fc.property(fc.string({ minLength: 1, maxLength: 20 }), (text) => {
+      const v = todoApp({ ...todoState(), "next-todo-text": text }, {});
+      const b = findNode(v, (f) => f.node.type === "button")!.node as ButtonNode;
+      expect(b.onClick?.()).toEqual([
+        ["add-todo", TODOS_PATH, text],
+        ["set", NEXT_TEXT_PATH, ""],
+      ]);
+    }),
+  );
+});
+
+// p_add — derives_from: example.todo.add_appends
+// generator: apply add-todo hello — predicate: list ends with
+// description hello and complete? false
+it("p_add: list ends with description hello and complete? false", () => {
+  // The spec's example value must hold verbatim.
+  const app = makeApp({ view: () => null, state: todoState() });
+  app.dispatch([["add-todo", TODOS_PATH, "hello"]]);
+  const todos = (app.getState() as TodoState).todos;
+  expect(todos).toHaveLength(4);
+  expect(todos[todos.length - 1]).toEqual({ description: "hello", "complete?": false });
+
+  // Generalized property: applying add-todo appends a todo with that
+  // description and complete? false to the end, keeping the rest.
+  fc.assert(
+    fc.property(fc.string({ minLength: 1, maxLength: 20 }), fc.array(arbTodoItem, { maxLength: 4 }), (text, items) => {
+      const app2 = makeApp({ view: () => null, state: { todos: items, "next-todo-text": "" } });
+      app2.dispatch([["add-todo", TODOS_PATH, text]]);
+      const out = (app2.getState() as TodoState).todos;
+      expect(out).toHaveLength(items.length + 1);
+      expect(out[out.length - 1]).toEqual({ description: text, "complete?": false });
+      expect(out.slice(0, -1)).toEqual(items);
+    }),
+  );
+});
+
+// p_delete — derives_from: example.todo.delete_removes_item
+// generator: todos first, second, third and delete the first —
+// predicate: list becomes second, third
+it("p_delete: list becomes second, third", () => {
+  // The spec's example value must hold verbatim.
+  const app = makeApp({ view: () => null, state: todoState() });
+  app.dispatch([["delete", $todo0]]);
+  expect((app.getState() as TodoState).todos.map((t) => t.description)).toEqual(["second", "third"]);
+
+  // Generalized property: deleting the visible index i removes exactly
+  // that todo from the underlying list, keeping the order of the rest.
+  fc.assert(
+    fc.property(
+      fc.array(arbTodoItem, { minLength: 1, maxLength: 6 }),
+      fc.nat(5),
+      (items, picked) => {
+        const i = picked % items.length;
+        const app2 = makeApp({ view: () => null, state: { todos: items, "next-todo-text": "" } });
+        app2.dispatch([["delete", todoPathOf(i)]]);
+        const out = (app2.getState() as TodoState).todos;
+        expect(out.map((t) => t.description)).toEqual(
+          items.filter((_, j) => j !== i).map((t) => t.description),
+        );
+      },
+    ),
+  );
+});
+
+// p_complete — derives_from: example.todo.complete_toggles
+// generator: click the second checkbox — predicate: only the second
+// todo becomes complete
+it("p_complete: only the second todo becomes complete", () => {
+  // The spec's example value must hold verbatim.
+  const row = todoItem({ description: "second", "complete?": false }, $todo1);
+  const app = makeApp({ view: () => null, state: todoState() });
+  app.dispatch(dispatch(row, mouseDown([11, 5])));
+  expect((app.getState() as TodoState).todos).toEqual([
+    { description: "first", "complete?": false },
+    { description: "second", "complete?": true },
+    { description: "third", "complete?": true },
+  ]);
+
+  // Generalized property: toggling the checkbox of the visible index i
+  // flips exactly that todo's complete flag in the underlying list.
+  fc.assert(
+    fc.property(
+      fc.array(arbTodoItem, { minLength: 1, maxLength: 6 }),
+      fc.nat(5),
+      (items, picked) => {
+        const i = picked % items.length;
+        const r = todoItem(items[i]!, todoPathOf(i));
+        const app2 = makeApp({ view: () => null, state: { todos: items, "next-todo-text": "" } });
+        app2.dispatch(dispatch(r, mouseDown([11, 5])));
+        const out = (app2.getState() as TodoState).todos;
+        expect(out).toEqual(
+          items.map((t, j) => (j === i ? { description: t.description, "complete?": t["complete?"] !== true } : t)),
+        );
+      },
+    ),
+  );
+});
+
+// p_filtered_paths — derives_from: example.todo.filtered_paths_original
+// generator: active filter and a delete click on visible index 1 —
+// predicate: original list becomes first, third
+it("p_filtered_paths: original list becomes first, third", () => {
+  // The spec's example value must hold verbatim.
+  const state: TodoState = { ...todoState(), "selected-filter": "active" };
+  const rows = todoRows(state);
+  expect(rows).toHaveLength(2);
+  const intents = dispatch(rows[1] as Elem, mouseDown([8, 8]));
+  // the delete path is todos then filter then seq-nth(1)
+  expect(intents).toHaveLength(1);
+  expect(intents[0]![0]).toBe("delete");
+  const p = intents[0]![1] as Path;
+  expect(p[0]).toEqual(["keypath", "todos"]);
+  expect((p[1] as readonly unknown[])[0]).toBe("filter");
+  expect(p[2]).toEqual(["seq-nth", 1]);
+  const app = makeApp({ view: () => null, state });
+  app.dispatch(intents);
+  expect((app.getState() as TodoState).todos.map((t) => t.description)).toEqual(["first", "third"]);
+
+  // Generalized property: for every todos array (unique descriptions)
+  // and visible index j, the path todos then filter then seq-nth(j)
+  // reaches the matching original element — select reads it, update
+  // changes only it with the order of the rest kept, and delete removes
+  // exactly it from the underlying list.
+  fc.assert(
+    fc.property(
+      fc.uniqueArray(fc.string({ minLength: 1, maxLength: 5 }), { minLength: 1, maxLength: 5 }),
+      fc.nat(5),
+      (rest, picked) => {
+        // "zz" guarantees at least one visible (even-length) item
+        const descriptions = ["zz", ...rest];
+        const items: TodoItem[] = descriptions.map((d) => ({
+          description: d,
+          "complete?": d.length % 2 === 1,
+        }));
+        const visible = items.filter((t) => t["complete?"] !== true);
+        const j = picked % visible.length;
+        const target = visible[j]!;
+        const pred = filterFn("active");
+        const path: Path = [TODOS_PATH[0] as Path[0], ["filter", pred], ["seq-nth", j]];
+        const st: TodoState = { todos: items, "next-todo-text": "", "selected-filter": "active" };
+        // select reaches the matching original element
+        expect(select(st, path)).toEqual(target);
+        // update changes only that element, order of the rest kept
+        const updated = updatePath(st, path, (t) => ({ ...(t as TodoItem), description: "z" }));
+        expect((updated as TodoState).todos).toEqual(
+          items.map((t) =>
+            t === target ? { description: "z", "complete?": t["complete?"] } : t,
+          ),
+        );
+        // the row's own delete intent carries that path
+        const rows2 = todoRows(st);
+        const intents2 = dispatch(rows2[visible.indexOf(target)] as Elem, mouseDown([8, 8]));
+        expect(intents2).toHaveLength(1);
+        expect(intents2[0]![0]).toBe("delete");
+        expect((intents2[0]![1] as Path)[2]).toEqual(["seq-nth", visible.indexOf(target)]);
+        // applying it removes exactly that element
+        const app2 = makeApp({ view: () => null, state: st });
+        app2.dispatch(intents2);
+        const out = (app2.getState() as TodoState).todos;
+        expect(out).toHaveLength(items.length - 1);
+        expect(out.map((t) => t.description).sort()).toEqual(
+          items.filter((t) => t !== target).map((t) => t.description).sort(),
+        );
+      },
+    ),
+  );
+});
+
+// p_filtered_toggle — derives_from: example.todo.filtered_paths_original
+// generator: complete filter and unchecking the only visible todo —
+// predicate: third becomes open and the next render under complete
+// shows no rows
+it("p_filtered_toggle: third becomes open and the next render under complete shows no rows", () => {
+  // The spec's example value must hold verbatim.
+  const state: TodoState = { ...todoState(), "selected-filter": "complete" };
+  const rows = todoRows(state);
+  expect(rows).toHaveLength(1);
+  const intents = dispatch(rows[0] as Elem, mouseDown([11, 5]));
+  expect(intents[0]![0]).toBe("update");
+  const p = intents[0]![1] as Path;
+  expect(p[0]).toEqual(["keypath", "todos"]);
+  expect((p[1] as readonly unknown[])[0]).toBe("filter");
+  expect(p[2]).toEqual(["seq-nth", 0]);
+  const app = makeApp({ view: () => null, state });
+  app.dispatch(intents);
+  expect((app.getState() as TodoState).todos[2]).toEqual({ description: "third", "complete?": false });
+  // the next render under complete shows no rows
+  const next = todoRows(app.getState() as TodoState);
+  expect(next).toHaveLength(0);
+  expect(rowDescriptionsOf(todoApp(app.getState() as TodoState, {}))).toEqual([]);
 });
