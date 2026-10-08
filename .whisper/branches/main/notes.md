@@ -13,3 +13,8 @@
   - Configured testaruda as the test runner: doctor all green, TypeScript adapter on PATH, exec loop verified (0 tests selected — expected, corpus is still todo_predicate! scaffolds); config already valid + gates in lefthook
   - Set up wai autonomous orchestrator: scaffarded tdd-ro5 pipeline (9 steps) at .wai/resources/pipelines/tdd-ro5.toml — to edit prompts, then run 'wai pipeline start tdd-ro5 --topic=<topic>'
   - **Next:** edit tdd-ro5 pipeline prompts for tambor specifics, then replace todo_predicate! scaffolds with real vitest/fast-check contract tests
+- 2026-10-07T21:38:30Z [id:a961c8a60ab6124a8c9b8ea8a3df7a5a5f209eb5e07b4b60cbc0a097b5fcdd0c] ### 2026-10-07 18:38 — snap
+  - Orchestrated implementation via pi sub-agents (pi -p print mode): S2 CI workflow clean in one run (c777dbd); S1 test stack needed a recovery run after bash-timeout kill — recovered state, root-caused the real bug in testaruda itself (runner lost junit on ingest) and fixed it there (run_output_for_ingest + 4 TDD tests)
+  - testaruda fix committed @ 4a51638 on fix/production-readiness referencing feedback ticket testaruda-2xn1 (fix↔issue linked); push BLOCKED by testaruda's own pre-push gate being environmentally broken (julia MbedTLS precompile + python fixture mismatches) — filed testaruda-srqu; rebuilt ~/.cargo/bin/testaruda already live so tambor gates work
+  - tambor: S1+S2 committed (c3540e8, c777dbd) + pushed, tickets closed; ah check --run-tests 330 passed, debt 353 unchanged; bd ready → only T1 (tambor-yj9) unblocked
+  - **Next:** fresh session — resolve testaruda-srqu (or julia toolchain) to unblock the testaruda push, then orchestrate round 2: T1 agent, then T2 ∥ T3 parallel, then T4 tracer e2e
