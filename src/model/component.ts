@@ -381,3 +381,34 @@ function resolve(value: unknown, seen: Set<unknown>): unknown {
   }
   return out;
 }
+
+// setWidth/setHeight (sizing_props): a component declaring width or
+// height as props supports setWidth and setHeight by assoc — the call
+// is rebuilt with the new prop, the paths untouched.
+export function setWidth(c: ComponentCall, newWidth: number): ComponentCall {
+  if (!c.component.keys.includes("width")) {
+    throw new Error("can't set width — the component does not declare width");
+  }
+  return assocProp(c, "width", newWidth);
+}
+
+export function setHeight(c: ComponentCall, newHeight: number): ComponentCall {
+  if (!c.component.keys.includes("height")) {
+    throw new Error("can't set height — the component does not declare height");
+  }
+  return assocProp(c, "height", newHeight);
+}
+
+function assocProp(c: ComponentCall, key: string, value: number): ComponentCall {
+  return { type: "tambor/component", component: c.component, props: { ...c.props, [key]: value } };
+}
+
+// The stretch flags are read from the component's stretch props
+// (sizing_props).
+export function stretchWidth(c: ComponentCall): boolean {
+  return c.props["stretch-width"] === true;
+}
+
+export function stretchHeight(c: ComponentCall): boolean {
+  return c.props["stretch-height"] === true;
+}
