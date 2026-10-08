@@ -53,11 +53,10 @@ export interface Ref<T = unknown> {
   each(): readonly Ref[];
 }
 
-function makeRef(root: unknown, path: RefPath, value: unknown): Ref {
-  const ref: Ref = {
-    value,
-    path,
-    root,
+// The pure navigation methods: each appends exactly its known-call
+// table navigator to the ref's path.
+function navMethods(root: unknown, path: RefPath): Pick<Ref, "get" | "getIn" | "nth" | "seqNth" | "filter" | "take" | "drop" | "or"> {
+  return {
     get(key: string, defaultValue?: unknown): Ref {
       const steps: readonly unknown[] = defaultValue === undefined
         ? [["keypath", key]]
@@ -85,6 +84,13 @@ function makeRef(root: unknown, path: RefPath, value: unknown): Ref {
     or(defaultValue: unknown): Ref {
       return derive(root, [...path, ["nil-to-val", defaultValue] as const]);
     },
+  };
+}
+
+// The value-forming and iteration methods: assoc replaces the value at
+// the same path; rest/restMap/raw/each navigate the remaining forms.
+function valueMethods(root: unknown, path: RefPath, value: unknown): Pick<Ref, "assoc" | "selectOne" | "rest" | "restMap" | "raw" | "each"> {
+  return {
     assoc(key: string, v: unknown): Ref {
       // assoc is transparent: same path, updated value
       return makeRef(root, path, { ...((value as Record<string, unknown>) ?? {}), [key]: v });
@@ -110,7 +116,16 @@ function makeRef(root: unknown, path: RefPath, value: unknown): Ref {
       );
     },
   };
-  return ref;
+}
+
+function makeRef(root: unknown, path: RefPath, value: unknown): Ref {
+  return {
+    value,
+    path,
+    root,
+    ...navMethods(root, path),
+    ...valueMethods(root, path, value),
+  } as Ref;
 }
 
 // what does iterating this value yield? sequences yield their

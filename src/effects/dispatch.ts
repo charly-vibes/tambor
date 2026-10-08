@@ -154,6 +154,39 @@ export interface App {
 // make-app accepts an initial state or an atom and an optional handler,
 // wraps the handler to skip empty or nil batches, and returns a view
 // function.
+// exactly one repaint, scheduled on the next animation frame
+function scheduleRepaint(repaint: () => void): void {
+  if (typeof globalThis.requestAnimationFrame === "function") {
+    globalThis.requestAnimationFrame(repaint);
+  }
+}
+
+// The view entry: builds the render context — when the backend gives a
+// container size it is placed in the context under the stretch
+// container-size key before render — and renders.
+function appView(options: AppOptions, getState: () => unknown): Elem {
+  const context: ViewContext = {};
+  const size = options.backend?.containerSize;
+  if (size !== undefined && size !== null) context[CONTAINER_SIZE_KEY] = size;
+  return options.view(getState(), context);
+}
+
+// Internal dispatch: effects composed from inside a registered effect
+// still apply immediately, but never schedule their own repaint.
+function makeInternalDispatch(applyOne: (effect: Effect) => void): DispatchFn {
+  return (input, ...rest) => {
+    for (const effect of normalizeBatch(input, rest)) applyOne(effect);
+  };
+}
+
+function makeAppObject(options: AppOptions, getState: () => unknown, dispatch: DispatchFn): App {
+  return {
+    view: () => appView(options, getState),
+    dispatch,
+    getState,
+  };
+}
+
 export function makeApp(options: AppOptions): App {
   const useCell = options.cell !== undefined;
   let state = useCell ? options.cell!.value : options.state;
@@ -185,33 +218,10 @@ export function makeApp(options: AppOptions): App {
     }
 
     // exactly one repaint, scheduled on the next animation frame
-    if (typeof globalThis.requestAnimationFrame === "function") {
-      globalThis.requestAnimationFrame(() => {
-        app.view();
-      });
-    }
+    scheduleRepaint(() => appView(options, () => state));
     return;
   };
 
-  // effects composed from inside a registered effect still apply
-  // immediately, but never schedule their own repaint
-  const internalDispatch: DispatchFn = (input, ...rest) => {
-    for (const effect of normalizeBatch(input, rest)) applyOne(effect);
-    return;
-  };
-
-  const app: App = {
-    view(): Elem {
-      const context: ViewContext = {};
-      const size = options.backend?.containerSize;
-      // when the backend gives a container size it is placed in the
-      // context under the stretch container-size key before render
-      if (size !== undefined && size !== null) context[CONTAINER_SIZE_KEY] = size;
-      return options.view(state, context);
-    },
-    dispatch,
-    getState: () => state,
-  };
-
-  return app;
+  const internalDispatch = makeInternalDispatch(applyOne);
+  return makeAppObject(options, () => state, dispatch);
 }
