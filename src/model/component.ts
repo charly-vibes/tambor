@@ -89,10 +89,6 @@ export const ROOT_CONTEXT_KEY = "::context";
 const ROOT_EXTRA_PATH: Path = [["keypath", ROOT_EXTRA_KEY]];
 const ROOT_CONTEXT_PATH: Path = [["keypath", ROOT_CONTEXT_KEY]];
 
-// The components registry: redefinition resets the render cache
-// (render_cached).
-const registry = new Map<string, Component>();
-
 // The render cache, keyed by component name plus an equal props map
 // (render_cached). A props map that cannot be serialised (it carries a
 // function) is never cached.
@@ -189,8 +185,8 @@ export function defineComponent(
     as: mapDecl.as,
     body,
   };
-  // any component redefinition resets the cache (render_cached)
-  registry.set(name, component);
+  // any component redefinition resets the cache (render_cached: the
+  // cache is reset when any component is redefined)
   renderCache.clear();
   return component;
 }
@@ -336,11 +332,11 @@ export function render(c: ComponentCall): unknown {
     }
     const cached = byProps.get(key);
     if (cached !== undefined) return cached;
-    const fresh = resolve(c.component.body(c.props), new Set());
+    const fresh = resolve(c.component.body(c.props), new Set()).value;
     byProps.set(key, fresh);
     return fresh;
   }
-  return resolve(c.component.body(c.props), new Set());
+  return resolve(c.component.body(c.props), new Set()).value;
 }
 
 function isCall(value: unknown): value is ComponentCall {
@@ -352,34 +348,38 @@ function isCall(value: unknown): value is ComponentCall {
   );
 }
 
-// Does the value contain a component call anywhere? The fast path lets
-// unchanged frozen subtrees keep their identity.
-function hasCall(value: unknown, seen: Set<unknown>): boolean {
-  if (isCall(value)) return true;
-  if (Array.isArray(value)) {
-    if (seen.has(value)) return false;
-    seen.add(value);
-    return (value as unknown[]).some((v) => hasCall(v, seen));
+// Resolve a body output in a single pass: nested component calls render
+// (recursive_components), containers rebuild only when something inside
+// changed, and the seen set backtracks so shared subtrees resolve in
+// every branch while self-referencing values (the as-binding) do not
+// loop.
+function resolve(
+  value: unknown,
+  seen: Set<object>,
+): { value: unknown; changed: boolean } {
+  if (isCall(value)) return { value: render(value), changed: true };
+  const isContainer = Array.isArray(value) || isPlainObject(value);
+  if (!isContainer) return { value, changed: false };
+  const obj = value as object;
+  if (seen.has(obj)) return { value, changed: false };
+  seen.add(obj);
+  let changed = false;
+  let out: unknown;
+  if (Array.isArray(obj)) {
+    const mapped = (obj as unknown[]).map((v) => resolve(v, seen));
+    changed = mapped.some((r) => r.changed);
+    out = changed ? mapped.map((r) => r.value) : obj;
+  } else {
+    const outObj: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(obj)) {
+      const r = resolve(v, seen);
+      changed = changed || r.changed;
+      outObj[k] = r.value;
+    }
+    out = changed ? outObj : obj;
   }
-  if (isPlainObject(value)) {
-    if (seen.has(value)) return false;
-    seen.add(value);
-    return Object.values(value).some((v) => hasCall(v, seen));
-  }
-  return false;
-}
-
-function resolve(value: unknown, seen: Set<unknown>): unknown {
-  if (!hasCall(value, seen)) return value;
-  if (isCall(value)) return render(value);
-  if (Array.isArray(value)) {
-    return (value as unknown[]).map((v) => resolve(v, seen));
-  }
-  const out: Record<string, unknown> = { ...(value as Record<string, unknown>) };
-  for (const k of Object.keys(out)) {
-    out[k] = resolve(out[k], seen);
-  }
-  return out;
+  seen.delete(obj);
+  return { value: out, changed };
 }
 
 // setWidth/setHeight (sizing_props): a component declaring width or
