@@ -9,12 +9,18 @@
 //   wraps the default handler (wrap_on_middleware), so its typed first
 //   parameter is that default handler.
 
+import type { TamborEvent } from "../events/event.ts";
 import type { Vec2 } from "../views/model.ts";
 import type { Effect } from "./effects.ts";
 
 /** A mouse-down handler: the pointer position in, the effect batch
- * out. */
-export type MouseDownHandler = (pos: Vec2) => readonly Effect[];
+ * out. The delivery also passes the event object as a second, optional
+ * argument (components.hover touch_no_hover reads its pointerType
+ * there); the position is unchanged first (local_pos_passed). */
+export type MouseDownHandler = (
+  pos: Vec2,
+  event?: TamborEvent,
+) => readonly Effect[];
 
 /** The typed default handler a wrap-on handler receives first. */
 export type DefaultHandler = (

@@ -42,7 +42,7 @@ import {
   type Vec2,
 } from "../../views/model.ts";
 import { dispatch } from "../../events/dispatch.ts";
-import { mouseMove } from "../../events/event.ts";
+import { mouseMove, type TamborEvent } from "../../events/event.ts";
 import type { IntentList } from "../../events/bubble.ts";
 import { defeffect } from "../../effects/dispatch.ts";
 import type { Path } from "../../effects/paths.ts";
@@ -102,10 +102,11 @@ function hoverNodes(
   // entering: a mouse-move over the body — when hover? is false the
   // effect sets hover? to true, followed by the child intents
   // (hover_enter, mouse_out_callback)
-  const enter = on("mouse-move", (pos: unknown) => {
+  const enter = on("mouse-move", (pos: unknown, event: unknown) => {
     // the child intents under the same move, preceded by the set-true
     // effect while not yet hovered
     const child = dispatch(bodyElem, mouseMove(pos as Vec2));
+    if (!isMousePointer(event)) return child;
     return hovered ? child : ([["set", $hover, true]] as IntentList).concat(child);
   }, bodyElem);
 
@@ -113,15 +114,24 @@ function hoverNodes(
   // y < 0 or y > h, inclusive at the upper edge (x > w, not >=)
   // (hover_leave). Inside the box only the child intents flow
   // (hover_stays_inside); when hover? is false nothing is added.
-  return on("mouse-move-global", (pos: unknown) => {
+  return on("mouse-move-global", (pos: unknown, event: unknown) => {
     const p = pos as Vec2;
     const outside = p[0] < 0 || p[0] > w || p[1] < 0 || p[1] > h;
-    if (!hovered || !outside) return [];
+    if (!hovered || !outside || !isMousePointer(event)) return [];
     const intents: IntentList = ([["set", $hover, false]] as IntentList).concat(
       onMouseOut ? onMouseOut() : [],
     );
     return intents;
   }, enter);
+}
+
+// Hover effects are produced only for pointerType mouse
+// (touch_no_hover): a non-mouse pointer event drives neither enter nor
+// leave. No event argument at all (a legacy 1-arg caller) counts as
+// mouse — the delivery rule is additive.
+function isMousePointer(event: unknown): boolean {
+  const ev = event as TamborEvent | undefined;
+  return ev === undefined || ev.pointerType === "mouse";
 }
 
 // The light gray of the hovered button fill (button_hover_visual) —

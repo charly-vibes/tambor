@@ -164,11 +164,19 @@ function dispatchHandler(node: HandlerNode, event: TamborEvent): IntentList {
     if (isPointerKind(kind)) {
       const pos = event.pos ?? [0, 0];
       if (!insideBounds(node, pos)) return [];
-      return asIntents(node.handler(pos));
+      // pointer handlers receive the local position first and the event
+      // object second (local_pos_passed; the second argument extends T2
+      // delivery additively per orchestrator ruling — hover's
+      // touch_no_hover needs the pointerType at the handler)
+      return asIntents(node.handler(pos, event));
     }
-    // concat and global kinds: children first, then the node's handler
+    // concat and global kinds: children first, then the node's handler;
+    // the global move handler also receives the event object (same
+    // additive extension)
     const res: Intent[] = [...dispatchGroup(node.drawables, event)];
-    res.push(...asIntents(node.handler(...handlerArgs(event))));
+    const args =
+      kind === GLOBAL_MOVE_KIND ? [...handlerArgs(event), event] : handlerArgs(event);
+    res.push(...asIntents(node.handler(...args)));
     return res;
   }
   if (isPointerKind(event.type)) {
