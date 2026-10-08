@@ -1,0 +1,45 @@
+# Prove the devenv environment builds and its tools resolve on a clean runner.
+# Host is Bluefin (atomic — Nix unsupported by maintainers, see
+# ublue-os/bluefin#3606), so CI is where the devenv files get executed.
+# See DDL-irv / tambor-6tf.
+name: devenv
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - devenv.nix
+      - devenv.yaml
+      - .github/workflows/devenv.yml
+  pull_request:
+    paths:
+      - devenv.nix
+      - devenv.yaml
+      - .github/workflows/devenv.yml
+  workflow_dispatch:
+
+jobs:
+  devenv-shell:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+            access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
+
+      - uses: cachix/cachix-action@v16
+        with:
+          name: devenv
+          useGhToken: true
+
+      - name: Install devenv
+        run: nix profile install nixpkgs#devenv --accept-flake-config
+
+      - name: Build the dev shell and verify tools resolve
+        run: |
+          devenv shell -- node --version
+          devenv shell -- npm --version
+          devenv shell -- devenv --version
