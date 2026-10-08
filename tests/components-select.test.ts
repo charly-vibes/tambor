@@ -15,7 +15,15 @@ import { defaultHandler, type Effect } from "../src/effects/dispatch.ts";
 import { select as selectPath, type Path } from "../src/effects/paths.ts";
 import { dispatch as dispatchEvent } from "../src/events/dispatch.ts";
 import { mouseDown } from "../src/events/event.ts";
-import { children, isGroup, type Color, type Elem, type Label, type Node } from "../src/views/model.ts";
+import {
+  children,
+  isGroup,
+  type Color,
+  type Elem,
+  type Label,
+  type Node,
+  type WithColorNode,
+} from "../src/views/model.ts";
 import { dropdown } from "../src/components/select/dropdown.ts";
 
 // ---------------------------------------------------------------------------
@@ -57,8 +65,8 @@ function applyEffects(state: unknown, effects: readonly unknown[]): unknown {
 }
 
 // Every node in the tree satisfying pred, collected via children().
-function collect(elem: Elem, pred: (n: Node) => boolean): Node[] {
-  const out: Node[] = [];
+function collect<T extends Node>(elem: Elem, pred: (n: Node) => n is T): T[] {
+  const out: T[] = [];
   const walk = (e: Elem): void => {
     if (e == null) return;
     if (!isGroup(e) && pred(e)) out.push(e);
@@ -70,7 +78,7 @@ function collect(elem: Elem, pred: (n: Node) => boolean): Node[] {
 
 const isListNode = (n: Node): boolean => n.type === "rounded-rectangle";
 const isLabel = (n: Node): n is Label => n.type === "label";
-const isWithColor = (n: Node): boolean => n.type === "with-color";
+const isWithColor = (n: Node): n is WithColorNode => n.type === "with-color";
 
 function colorsEqual(a: Color, b: Color): boolean {
   return a.length === b.length && a.every((v, i) => v === b[i]);
@@ -115,7 +123,6 @@ it("p_header_label: label is That, and with nil it is no selection", () => {
   expect(nilLabels).toContain("no selection");
   expect(nilLabels).not.toContain("That");
   const grays = collect(nil, isWithColor)
-    .map((n) => n as { color: Color; drawables: readonly Elem[] })
     .filter((w) => w.color.length === 3 && w.color[0] === w.color[1] && w.color[1] === w.color[2]);
   expect(grays.length).toBeGreaterThan(0);
   expect(
