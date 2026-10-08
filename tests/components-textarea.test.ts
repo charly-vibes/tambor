@@ -37,6 +37,33 @@ import {
   type TamborEvent,
 } from "../src/events/event.ts";
 import { dispatch } from "../src/events/dispatch.ts";
+import {
+  BORDER_COLOR,
+  CURSOR_COLOR,
+  LIGHT_FILL,
+  SELECTION_HIGHLIGHT,
+  textareaBody,
+} from "../src/components/textarea/textarea.ts";
+import { bounds, isGroup, type Color, type Elem } from "../src/views/model.ts";
+
+// Walk a view tree and count the withColor nodes carrying a color.
+function countColor(elem: Elem, color: Color): number {
+  if (elem == null) return 0;
+  if (isGroup(elem)) return elem.reduce((n, e) => n + countColor(e, color), 0);
+  let n = 0;
+  if (elem.type === "with-color" && JSON.stringify(elem.color) === JSON.stringify(color)) n = 1;
+  const kids = isGroup(elem) ? [] : ("drawables" in elem ? elem.drawables : "drawable" in elem ? [elem.drawable] : []);
+  return n + kids.reduce((k, e) => k + countColor(e, color), 0);
+}
+
+// True when the tree contains a withStyle node asking for a stroke.
+function hasStroke(elem: Elem): boolean {
+  if (elem == null) return false;
+  if (isGroup(elem)) return elem.some(hasStroke);
+  if (elem.type === "with-style" && elem.style === "stroke") return true;
+  const kids = "drawables" in elem ? elem.drawables : "drawable" in elem ? [elem.drawable] : [];
+  return kids.some(hasStroke);
+}
 
 // text and focus are app state (text_state_split); textarea-state is
 // the extra map.
@@ -67,8 +94,8 @@ function harnessState(
 
 type PropsOverrides = Partial<TextareaProps>;
 
-function render(state: HarnessState, overrides: PropsOverrides = {}) {
-  return textarea({
+function propsOf(state: HarnessState, overrides: PropsOverrides = {}): TextareaProps {
+  return {
     text: state.text,
     textPath: TEXT_PATH,
     extraPath: EXTRA_PATH,
@@ -77,7 +104,11 @@ function render(state: HarnessState, overrides: PropsOverrides = {}) {
     font: FONT,
     indexForPosition: stubIndex,
     ...overrides,
-  });
+  };
+}
+
+function render(state: HarnessState, overrides: PropsOverrides = {}) {
+  return textarea(propsOf(state, overrides));
 }
 
 // One routed event: dispatch into the rendered tree, then apply the
@@ -432,4 +463,79 @@ it("p_paste: insert-text or nothing", () => {
   // unfocused: nothing
   const unfocused = harnessState("hello", { cursor: 2 });
   expect(send(unfocused, clipboard("pasted")).intents).toEqual([]);
+});
+
+// p_state_split — derives_from: components.textarea.text_state_split
+// generator: editing and moving
+// predicate: text paths point into app state and cursor paths into extra
+it("p_state_split: text paths point into app state and cursor paths into extra", () => {
+  // editing: the insert effect carries the text path (app state) and
+  // the extra path; the applied edit lands in each respectively
+  const s = harnessState("hello", { cursor: 2 }, TEXT_PATH);
+  const res = send(s, keyPress("XY"));
+  expect(res.intents[0]).toEqual(["insert-text", "XY", TEXT_PATH, EXTRA_PATH]);
+  expect(res.state.text).toBe("heXYllo"); // app state
+  expect(res.state["textarea-state"].cursor).toBe(4); // extra map
+
+  // moving: every pointer-down update targets the extra map (only the
+  // leading request-focus is not an update, and none of the updates
+  // touch the text)
+  const m = harnessState("hello", {}, TEXT_PATH);
+  const resM = send(m, mouseDown([7, 2]));
+  const updates = resM.intents.filter((i) => i[0] === "update");
+  expect(updates.length).toBeGreaterThan(0);
+  for (const intent of updates) {
+    expect(intent[1]![0]).toEqual(["keypath", "textarea-state"]);
+    expect(intent[1]!.length).toBe(2);
+  }
+  expect(resM.state.text).toBe("hello");
+
+  // the cut's text edit is the new-text notification against the
+  // app-state text path
+  const c = harnessState("hello", { cursor: 3, "select-cursor": 1 }, TEXT_PATH);
+  const resC = send(c, clipboard("cut"));
+  expect(resC.intents[0]).toEqual(["update", TEXT_PATH, expect.any(Function)]);
+});
+
+// p_border — derives_from: components.textarea.border_default
+// generator: both variants
+// predicate: bordered view is larger by 10 by 4 than its body and light has no stroke
+it("p_border: bordered view is larger by 10 by 4 than its body and light has no stroke", () => {
+  const state = harnessState("hello", { cursor: 2 }, TEXT_PATH);
+  const body = textareaBody(propsOf(state));
+  const [bw, bh] = bounds(body);
+  expect([bw, bh]).toEqual([5, 1]);
+
+  // the bordered variant is the default, with padding 5 on x and 2 on
+  // y and a 0.65 gray stroke
+  const bordered = textarea(propsOf(state));
+  expect(bounds(bordered)).toEqual([bw + 10, bh + 4]);
+  expect(countColor(bordered, BORDER_COLOR)).toBeGreaterThan(0);
+
+  // the light variant has no border and a 0.97 gray fill
+  const light = textarea(propsOf(state, { variant: "light" }));
+  expect(hasStroke(light)).toBe(false);
+  expect(countColor(light, LIGHT_FILL)).toBeGreaterThan(0);
+});
+
+// p_selection_drawn — derives_from: components.textarea.selection_drawn
+// generator: selection present and focused
+// predicate: highlight and cursor nodes exist
+it("p_selection_drawn: highlight and cursor nodes exist", () => {
+  // a selection draws a highlight over its range; a focused textarea
+  // draws a translucent gray cursor
+  const selected = textareaBody(propsOf(harnessState("hello", { cursor: 4, "select-cursor": 1 }, TEXT_PATH)));
+  expect(countColor(selected, SELECTION_HIGHLIGHT)).toBeGreaterThan(0);
+  expect(countColor(selected, CURSOR_COLOR)).toBeGreaterThan(0);
+
+  // focused without a selection: only the cursor
+  const noSelection = textareaBody(propsOf(harnessState("hello", {}, TEXT_PATH)));
+  expect(countColor(noSelection, SELECTION_HIGHLIGHT)).toBe(0);
+  expect(countColor(noSelection, CURSOR_COLOR)).toBeGreaterThan(0);
+
+  // unfocused: no cursor (the corpus gates only the cursor on focus;
+  // a selection draws its highlight regardless)
+  const unfocused = textareaBody(propsOf(harnessState("hello", { cursor: 4, "select-cursor": 1 })));
+  expect(countColor(unfocused, SELECTION_HIGHLIGHT)).toBeGreaterThan(0);
+  expect(countColor(unfocused, CURSOR_COLOR)).toBe(0);
 });
