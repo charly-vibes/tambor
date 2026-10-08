@@ -82,18 +82,14 @@ export function seamDelete(state: unknown, path: readonly unknown[], options: Se
 /** Apply one effect vector: registry first, then the builtins. An
  * unknown tag is reported and skipped; the batch still runs. */
 function applyEffect(state: unknown, effect: readonly unknown[], options: SeamOptions): unknown {
-  const ops = options.ops ?? jsOps;
-  const tag = ops.tag(effect[0]);
+  const tag = (options.ops ?? jsOps).tag(effect[0]);
   const registered = options.registry?.get(tag as string);
   if (registered) return registered(state, ...effect.slice(1));
   switch (tag) {
     case "set":
       return seamSet(state, effect[1] as readonly unknown[], effect[2], options);
-    case "update": {
-      const f = effect[2];
-      if (typeof f !== "function") return state;
-      return seamSet(state, effect[1] as readonly unknown[], f(seamSelect(state, effect[1] as readonly unknown[], options)), options);
-    }
+    case "update":
+      return updateAt(state, effect[1] as readonly unknown[], effect[2], options);
     case "get":
       // a pure read: the value at the path, state unchanged
       seamSelect(state, effect[1] as readonly unknown[], options);
@@ -105,6 +101,12 @@ function applyEffect(state: unknown, effect: readonly unknown[], options: SeamOp
       console.log(`unknown effect type: ${String(tag)}`);
       return state;
   }
+}
+
+/** The update builtin: set with f(old) when the carried f is callable. */
+function updateAt(state: unknown, path: readonly unknown[], f: unknown, options: SeamOptions): unknown {
+  if (typeof f !== "function") return state;
+  return seamSet(state, path, (f as (old: unknown) => unknown)(seamSelect(state, path, options)), options);
 }
 
 /** Dispatch a batch of effect vectors through the seam, strictly in
