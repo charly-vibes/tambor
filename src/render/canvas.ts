@@ -26,7 +26,6 @@
 
 import type { Vec2 } from "../views/model.ts";
 import type { TamborEvent } from "../events/event.ts";
-import type { Handler, ViewFn } from "../effects/dispatch.ts";
 import {
   type BackendContract,
   type Clipboard,
@@ -273,7 +272,7 @@ export class CanvasBackend implements BackendContract {
       case "rectangle": {
         const w = node.width ?? 0;
         const h = node.height ?? 0;
-        this.paintBox(0, 0, w, h, undefined);
+        this.paintBox(0, 0, w, h);
         return;
       }
       case "rounded-rectangle": {
@@ -422,25 +421,14 @@ export class CanvasBackend implements BackendContract {
     }
   }
 
-  private paintBox(x: number, y: number, w: number, h: number, color?: Color): void {
+  // Paint a box honouring the current style mode: fill, stroke, or both.
+  private paintBox(x: number, y: number, w: number, h: number): void {
     const painter = this.painter;
-    if (painter.mode !== "stroke") {
-      const fill = color ?? painter.fillStyle;
-      if (fill) {
-        const keep = painter.fillStyle;
-        painter.fillStyle = fill;
-        painter.fillRect(x, y, w, h);
-        painter.fillStyle = keep;
-      }
+    if (painter.mode !== "stroke" && painter.fillStyle) {
+      painter.fillRect(x, y, w, h);
     }
-    if (painter.mode !== "fill") {
-      const stroke = color ?? painter.strokeStyle;
-      if (stroke) {
-        const keep = painter.strokeStyle;
-        painter.strokeStyle = stroke;
-        painter.strokeRect(x, y, w, h);
-        painter.strokeStyle = keep;
-      }
+    if (painter.mode !== "fill" && painter.strokeStyle) {
+      painter.strokeRect(x, y, w, h);
     }
   }
 }

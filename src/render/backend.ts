@@ -35,8 +35,6 @@ export interface Font {
   readonly size: number;
 }
 
-export const UNIT_FONT: Font = { size: 1 };
-
 // Safe-area insets (safe_area_respected): root content is inset by
 // these on notched devices.
 export interface Insets {

@@ -79,14 +79,6 @@ export class ImageBuffer {
     if (maxX < 0) return null;
     return { x: minX, y: minY, width: maxX - minX + 1, height: maxY - minY + 1 };
   }
-
-  equals(other: ImageBuffer): boolean {
-    return (
-      this.width === other.width &&
-      this.height === other.height &&
-      this.data.every((v, i) => v === other.data[i])
-    );
-  }
 }
 
 // 2D affine matrix, canvas convention: x' = a x + c y + e, y' = b x + d y + f.
@@ -422,7 +414,7 @@ export class Painter {
   }
 }
 
-export function intersect(a: Rect, b: Rect): Rect {
+function intersect(a: Rect, b: Rect): Rect {
   const x = Math.max(a.x, b.x);
   const y = Math.max(a.y, b.y);
   const w = Math.min(a.x + a.width, b.x + b.width) - x;

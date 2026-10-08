@@ -148,9 +148,3 @@ export function scissor(
 ): ScissorNode {
   return freeze({ type: "scissor", x, y, width, height, drawables });
 }
-
-// The children a draw target contributes when its type is unknown:
-// the drawables field, empty when absent (primitive_set fallback).
-export function unknownChildren(node: UnknownNode): readonly AnyDraw[] {
-  return node.drawables ?? [];
-}

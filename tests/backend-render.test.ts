@@ -656,6 +656,3 @@ it("p_safe_area: content stays inside the insets", () => {
     }),
   );
 });
-
-// re-exported types keep the annotation-only imports meaningful
-export type { Font, Insets };

@@ -15,7 +15,7 @@
 //   normalizeDOMEvent (input_forwarded). No behavior beyond the corpus.
 
 import type { Vec2 } from "../views/model.ts";
-import type { Handler, ViewFn } from "../effects/dispatch.ts";
+import type { TamborEvent } from "../events/event.ts";
 import {
   type BackendContract,
   type Clipboard,
@@ -119,7 +119,7 @@ export class DomBackend implements BackendContract {
   }
 
   // One forwarded event: subscribers see it, the runtime routes it.
-  deliver(event: Parameters<SubFn>[0]): void {
+  deliver(event: TamborEvent): void {
     this.subs.emit(event);
     this.runtime?.send(event);
     if (this.runtime) this.drawView();
