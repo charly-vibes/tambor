@@ -289,6 +289,36 @@ it("p_checkbox: the effect is toggle with the checked path and applying it flips
   }
 });
 
+// p_touch_hover — derives_from: components.hover.touch_no_hover
+// generator: touch pointer moves
+// predicate: hover? is never set
+it("p_touch_hover: hover? is never set", () => {
+  const body = () => on("mouse-move-global", () => [["child-saw-move"]], spacer(40, 20));
+  const make = (callsite: CallSite): ComponentCall => onHover(body, { callsite });
+  fc.assert(
+    fc.property(fc.nat(39), fc.nat(19), (x, y) => {
+      const { app, $hover } = hoverWired(make, false);
+      // a touch move over the body returns nothing and hover? is never
+      // set — the scratch entry stays absent
+      expect(dispatch(viewOf(app), mouseMove([x, y], { pointerType: "touch" }))).toEqual([]);
+      app.send(mouseMove([x, y], { pointerType: "touch" }));
+      expect(select(app.getState(), $hover)).toBeUndefined();
+    }),
+  );
+  // hovered: a touch global move outside the box returns only the
+  // child intents and hover? stays true
+  const { app, $hover } = hoverWired(make, true);
+  expect(dispatch(viewOf(app), mouseMoveGlobal([41, 10], { pointerType: "touch" }))).toEqual([
+    ["child-saw-move"],
+  ]);
+  app.send(mouseMoveGlobal([41, 10], { pointerType: "touch" }));
+  expect(select(app.getState(), $hover)).toBe(true);
+  // pen is not mouse either (touch_no_hover names pointerType mouse)
+  expect(dispatch(viewOf(app), mouseMoveGlobal([41, 10], { pointerType: "pen" }))).toEqual([
+    ["child-saw-move"],
+  ]);
+});
+
 // p_checkbox_view — derives_from: components.hover.checkbox_view_only
 // generator: ui checkbox
 // predicate: events return nothing
