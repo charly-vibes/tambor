@@ -20,9 +20,20 @@ import {
   translate,
   type ButtonNode,
   type Elem,
+  type HandlerNode,
   type Node,
   type Vec2,
 } from "../src/views/model.ts";
+
+// Descendants of a node across the view and event layers: the event
+// layer's bubble/wrap nodes carry drawables that views/model children()
+// does not know about.
+function descendantsOf(node: Node): readonly unknown[] {
+  const d = (node as { drawables?: readonly unknown[] }).drawables;
+  if (Array.isArray(d)) return d;
+  if (node.type === "translate") return [(node as { drawable: unknown }).drawable];
+  return children(node);
+}
 import type { EventElem, IntentList } from "../src/events/bubble.ts";
 import { dispatch } from "../src/events/dispatch.ts";
 import {
@@ -36,13 +47,14 @@ import {
 import { render, type ComponentCall } from "../src/model/component.ts";
 import { CONTAINER_SIZE_KEY, makeApp } from "../src/effects/dispatch.ts";
 import { makeHeadlessApp, type HeadlessApp } from "../src/app/app.ts";
-import { setPath, type Path } from "../src/effects/paths.ts";
+import { select, setPath, type Path } from "../src/effects/paths.ts";
 import {
   applyTextareaIntents,
   initialTextareaExtra,
+  type TextareaExtra,
 } from "../src/components/textarea/edit.ts";
 import { textarea } from "../src/components/textarea/textarea.ts";
-import { hoverButton } from "../src/components/hover/hover.ts";
+import { button as hoverButton } from "../src/components/hover/hover.ts";
 import { counter } from "../src/views/counter.ts";
 
 // The ui-mobile layer under test (src/ui/).
@@ -91,7 +103,7 @@ function findAll(elem: unknown, type: string): readonly Node[] {
   if (Array.isArray(elem)) return elem.flatMap((child) => findAll(child, type));
   const node = elem as Node;
   if (node.type === type) return [node];
-  return children(node).flatMap((child) => findAll(child, type));
+  return descendantsOf(node).flatMap((child) => findAll(child, type));
 }
 
 // Absolute origin of a node inside a tree: walk accumulating translates.
@@ -114,7 +126,7 @@ function absoluteOrigin(root: unknown, target: Node): Vec2 {
       dx = node.x;
       dy = node.y;
     }
-    for (const child of children(node)) walk(child, ox + dx, oy + dy);
+    for (const child of descendantsOf(node)) walk(child, ox + dx, oy + dy);
   };
   walk(root, 0, 0);
   if (found === null) throw new Error("target node not found in tree");
@@ -143,6 +155,10 @@ function hoverWired(text: string): { app: HeadlessApp; $hover: Path } {
   return { app, $hover };
 }
 
+function viewOf(app: HeadlessApp): EventElem {
+  return app.render() as EventElem;
+}
+
 // ---------------------------------------------------------------------------
 // p_touch_map — touch_maps_to_pointer
 // ---------------------------------------------------------------------------
@@ -158,7 +174,7 @@ it("p_touch_map: the same effect as a mouse click is returned", () => {
     return [button(btn.text, () => [["counter-increment", NUM_PATH]]), rows[1]];
   };
   // The spec's example: a tap on the more button.
-  const btn = (view()[0]) as ButtonNode;
+  const btn = (view() as readonly unknown[])[0] as ButtonNode;
   const [w, h] = bounds(btn);
   const at: Vec2 = [Math.floor(w / 2), Math.floor(h / 2)];
   const down: PointerMoment = { pos: at, time: 0 };
@@ -198,14 +214,14 @@ it("p_slop: the delete effect fires while drawn bounds stay 10 by 10", () => {
   const targets = touchTargets(row).filter((t) => t.node.type === "handler");
   expect(targets.length).toBeGreaterThan(0);
   const x = targets.reduce((a, b) => (b.origin[0] < a.origin[0] ? b : a));
-  const [xw, xh] = bounds(x.node.drawables[0] as Node);
+  const [xw, xh] = bounds((x.node as HandlerNode).drawables[0] as Node);
   const cx = x.origin[0] + xw / 2;
   const cy = x.origin[1] + xh / 2;
   // 15 px right of the centre: outside the 10 by 10 drawn bounds.
   const touch = mapTouchDown([cx + 15, cy]);
   expect(slopDispatch(row, touch)).toEqual([["delete", TODO_PATH]]);
   // The drawn bounds stay 10 by 10 — no padded node entered the view.
-  expect(bounds(x.node.drawables[0] as Node)).toEqual([10, 10]);
+  expect(bounds((x.node as HandlerNode).drawables[0] as Node)).toEqual([10, 10]);
   expect(xw).toBe(10);
   expect(xh).toBe(10);
 
@@ -377,7 +393,8 @@ it("p_gestures: each gesture emits its named intent", () => {
   // flick: beyond the tap slop and at or above the flick threshold.
   fc.assert(
     fc.property(fc.integer({ min: 50, max: 300 }), fc.integer({ min: 10, max: 400 }), (dist, dt) => {
-      fc.pre(dt <= (dist * 2) / FLICK_MIN_VELOCITY - 1);
+      // speed = dist/dt must reach the flick threshold.
+      fc.pre(dt <= dist / FLICK_MIN_VELOCITY - 1);
       const intent = recognize({
         down: { pos: [0, 0], time: 0 },
         up: { pos: [dist, 0], time: dt },
@@ -428,7 +445,7 @@ it("p_keyboard_bridge: insert, backspace and enter effects are emitted", () => {
     textPath: TEXT_PATH,
     extraPath: EXTRA_PATH,
     focus: state["focus"],
-    state: state["extra"],
+    state: state["extra"] as TextareaExtra,
     font: null,
     indexForPosition: () => 0,
   });
@@ -437,7 +454,7 @@ it("p_keyboard_bridge: insert, backspace and enter effects are emitted", () => {
   // Focusing a textarea focuses the hidden input so the OS keyboard opens.
   const bridge = makeKeyboardBridge();
   expect(bridge.hiddenFocused()).toBe(false);
-  state = setPath(state, [["keypath", "focus"]], TEXT_PATH);
+  state = setPath(state, [["keypath", "focus"]], TEXT_PATH) as Record<string, unknown>;
   bridge.focus(TEXT_PATH);
   expect(bridge.hiddenFocused()).toBe(true);
   bridge.focus(null);
@@ -458,7 +475,7 @@ it("p_keyboard_bridge: insert, backspace and enter effects are emitted", () => {
   // Applying them edits the text: insert, then backspace removes the
   // character, then enter leaves a newline.
   for (const intents of [inserts, backspaces, enters]) {
-    state = applyTextareaIntents(state, intents, (s) => s).state as Record<string, unknown>;
+    state = applyTextareaIntents(state, intents).state as Record<string, unknown>;
   }
   expect(state["text"]).toBe("\n");
 
@@ -717,7 +734,7 @@ it("p_haptics: no error either way", () => {
 // generator: touch moves over a button
 // predicate: hover? is never set
 it("p_no_hover: hover? is never set", () => {
-  const { app } = hoverWired("tap me");
+  const { app, $hover } = hoverWired("tap me");
   const btn = findAll(viewOf(app), "button")[0] as ButtonNode;
   const [w, h] = bounds(btn);
   // Touch moves over the button never set hover?.
@@ -727,18 +744,14 @@ it("p_no_hover: hover? is never set", () => {
       fc.nat(Math.max(0, h + 2)),
       (x, y) => {
         app.send(mapTouchMove([x, y]));
-        const root = (app.getState() ?? {}) as Record<string, unknown>;
-        const extra = (root["::extra"] ?? {}) as Record<string, unknown>;
-        expect(extra["hover?"]).not.toBe(true);
+        expect(select(app.getState(), $hover)).not.toBe(true);
       },
     ),
   );
   // Contrasting case: a mouse move does set it — the assertion above
   // is not vacuous.
   app.send(mouseMove([0, 0]));
-  const root = (app.getState() ?? {}) as Record<string, unknown>;
-  const extra = (root["::extra"] ?? {}) as Record<string, unknown>;
-  expect(extra["hover?"]).toBe(true);
+  expect(select(app.getState(), $hover)).toBe(true);
   // And the mapped touch event carries the touch pointer type, which
   // is what keeps the hover machinery off.
   expect(mapTouchMove([0, 0]).pointerType).toBe("touch");
