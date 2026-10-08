@@ -27,10 +27,11 @@
 //   string is a paste carrying its string (interim convention flagged
 //   to the corpus owner).
 
-import { onPairs, type Intent, type IntentList } from "../../events/bubble.ts";
+import { onPairs, type Intent } from "../../events/bubble.ts";
 import { bounds, label, rectangle, translate, withColor, withStyle, type Color, type Elem, type Vec2 } from "../../views/model.ts";
 import type { Path } from "../../effects/paths.ts";
 import type { TextareaExtra } from "./edit.ts";
+import { onClipboard, onKeyPress, onMouseDown, onMouseMove, onMouseUp, selectionRange, type TextareaCtx } from "./handlers.ts";
 
 // The variants of border_default: bordered is the default.
 export type TextareaVariant = "bordered" | "light";
@@ -44,26 +45,8 @@ export const LIGHT_FILL: Color = [0.97, 0.97, 0.97];
 export const SELECTION_HIGHLIGHT: Color = [0.68, 0.85, 0.99, 0.5];
 export const CURSOR_COLOR: Color = [0, 0, 0, 0.3];
 
-// double_click_word thresholds: a second click within 500 ms and with
-// squared distance under 100 from the last click is a double click.
-export const DOUBLE_CLICK_MS = 500;
-export const DOUBLE_CLICK_DIST2 = 100;
-
-const isSpace = (ch: string): boolean => /\s/.test(ch);
-
-function dist2(a: Vec2, b: Vec2): number {
-  return (a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2;
-}
-
-// The whitespace-bounded word around the clicked index: from the word
-// start to the next whitespace or the end of text (double_click_word).
-function wordBounds(text: string, idx: number): readonly [number, number] {
-  let start = Math.min(idx, text.length);
-  while (start > 0 && !isSpace(text[start - 1]!)) start--;
-  let end = start;
-  while (end < text.length && !isSpace(text[end]!)) end++;
-  return [start, end];
-}
+// double_click_word thresholds and the double-click detector live in
+// ./handlers.ts (exported from there since tambor-272).
 
 export interface TextareaProps {
   /** the text being edited; nil before the first insert */
@@ -107,14 +90,6 @@ export function isFocused(focus: unknown, textPath: Path): boolean {
   return deepEqual(focus, textPath);
 }
 
-// A selection exists when select-cursor is set and differs from the
-// cursor; its range runs from the smaller to the larger index.
-export function selectionRange(extra: TextareaExtra): readonly [number, number] | null {
-  const sc = extra["select-cursor"];
-  if (sc === null || sc === extra.cursor) return null;
-  return [Math.min(sc, extra.cursor), Math.max(sc, extra.cursor)];
-}
-
 // The drawn content: highlight (when a selection is present), the text
 // label, and the cursor (when focused). Geometry uses the default
 // one-cell-per-character measure, so glyph positions are character
@@ -136,161 +111,53 @@ export function textareaBody(props: TextareaProps): Elem {
   return nodes;
 }
 
+// border_default: the bordered variant strokes the body's bounds with
+// border padding; the light variant fills the bounds with no padding.
+function textareaFrame(
+  variant: TextareaVariant | undefined,
+  body: Elem,
+  bw: number,
+  bh: number,
+  padX: number,
+  padY: number,
+): Elem {
+  return variant === "light"
+    ? [withStyle("fill", withColor(LIGHT_FILL, rectangle(bw, bh))), body]
+    : [withStyle("stroke", withColor(BORDER_COLOR, rectangle(bw + 10, bh + 4))), translate(padX, padY, body)];
+}
+
 // The textarea component: the framed, handler-wrapped view.
 export function textarea(props: TextareaProps): Elem {
   const focused = isFocused(props.focus, props.textPath);
-  const extra = props.state;
   const t = props.text ?? "";
   const padX = props.variant === "light" ? 0 : 5;
   const padY = props.variant === "light" ? 0 : 2;
 
   const body = textareaBody(props);
   const [bw, bh] = bounds(body);
-  const frame: Elem =
-    props.variant === "light"
-      ? [
-          withStyle("fill", withColor(LIGHT_FILL, rectangle(bw, bh))),
-          body,
-        ]
-      : [
-          withStyle("stroke", withColor(BORDER_COLOR, rectangle(bw + 10, bh + 4))),
-          translate(padX, padY, body),
-        ];
+  const frame = textareaFrame(props.variant, body, bw, bh, padX, padY);
 
-  // an update intent against one key of the extra map
-  const u = (key: string, value: unknown): Intent => [
-    "update",
-    [...props.extraPath, ["keypath", key]],
-    () => value,
-  ];
-  const toTextPos = (pos: Vec2): Vec2 => [pos[0] - padX, pos[1] - padY];
-  const indexAt = (pos: Vec2): number =>
-    props.indexForPosition(props.font, t, pos[0], pos[1]);
-
-  // request_focus_on_hit: a pointer down inside that yields intents
-  // returns request-focus followed by those intents; one that yields
-  // none returns nothing. pointer_down_cursor: the cursor moves to
-  // indexForPosition at the position, mpos and down-pos store the
-  // position, and the selection is cleared.
-  const onMouseDown = (...args: readonly unknown[]): IntentList => {
-    const pos = args[0] as Vec2;
-    const local = toTextPos(pos);
-    const idx = indexAt(local);
-    const now = props.now ?? Date.now();
-    const lc = extra["last-click"];
-    // double_click_word: every click records the time and position; a
-    // second click within 500 ms and with squared distance under 100
-    // from the last click selects from the whitespace-bounded word
-    // start to the next whitespace or the end of text
-    const record = u("last-click", { pos: local, time: now });
-    if (
-      lc !== null &&
-      now - lc.time < DOUBLE_CLICK_MS &&
-      dist2(local, lc.pos) < DOUBLE_CLICK_DIST2
-    ) {
-      const [wordStart, wordEnd] = wordBounds(t, idx);
-      return [
-        ["request-focus", props.textPath],
-        u("cursor", wordStart),
-        u("select-cursor", wordEnd),
-        record,
-      ];
-    }
-    return [
-      ["request-focus", props.textPath],
-      u("cursor", idx),
-      u("mpos", local),
-      u("down-pos", local),
-      u("select-cursor", null),
-      record,
-    ];
-  };
-
-  // drag_tracks: a pointer move while down-pos is set stores mpos;
-  // with no down-pos it returns nothing.
-  const onMouseMove = (...args: readonly unknown[]): IntentList => {
-    if (extra["down-pos"] === null) return [];
-    return [u("mpos", toTextPos(args[0] as Vec2))];
-  };
-
-  // finish_drag_rule: on pointer up the end index is indexForPosition
-  // at the position; the selection start is the index at down-pos when
-  // it differs from the end index, plus one when it lies after the end
-  // index; down-pos is cleared.
-  const onMouseUp = (...args: readonly unknown[]): IntentList => {
-    const down = extra["down-pos"];
-    if (down === null) return [];
-    const local = toTextPos(args[0] as Vec2);
-    const end = indexAt(local);
-    const start = indexAt(down);
-    const out: Intent[] = [];
-    if (start !== end) {
-      out.push(u("cursor", start > end ? start + 1 : start), u("select-cursor", end));
-    }
-    out.push(u("down-pos", null));
-    return out;
-  };
-
-  // keys_need_focus: an unfocused textarea returns no effects for
-  // key-press or clipboard events. key_map: the named keys map to
-  // their effects, any string inserts text, any other key is ignored.
-  const onKeyPress = (key: unknown): IntentList => {
-    if (!focused) return [];
-    const tp = props.textPath;
-    const ep = props.extraPath;
-    switch (key) {
-      case "up":
-        return [["previous-line", tp, ep]];
-      case "down":
-        return [["next-line", tp, ep]];
-      case "left":
-        return [["backward-char", tp, ep]];
-      case "right":
-        return [["forward-char", tp, ep]];
-      case "enter":
-        return [["insert-newline", tp, ep]];
-      case "backspace":
-        return [["delete-backward", tp, ep]];
-      default:
-        if (typeof key === "string") return [["insert-text", key, tp, ep]];
-        return [];
-    }
-  };
-
-  // clipboard_copy_rule / clipboard_cut_rule / clipboard_paste_rule:
-  // all clipboard ops need focus; copy returns the clipboard-copy
-  // effect with the selected text range, cut edits the text and
-  // returns clipboard-cut with the range, paste returns insert-text
-  // with the pasted string.
-  const onClipboard = (...args: readonly unknown[]): IntentList => {
-    const data = args[0] as string;
-    if (!focused) return [];
-    if (data === "copy") {
-      const range = selectionRange(extra);
-      return range ? [["clipboard-copy", t.slice(range[0], range[1])]] : [];
-    }
-    if (data === "cut") {
-      const range = selectionRange(extra);
-      if (!range) return [];
-      const [start, end] = range;
-      return [
-        ["update", props.textPath, () => t.slice(0, start) + t.slice(end)],
-        u("cursor", start),
-        u("select-cursor", null),
-        ["clipboard-cut", t.slice(start, end), range],
-      ];
-    }
-    // paste: the data is the pasted string
-    return [["insert-text", data, props.textPath, props.extraPath]];
+  const c: TextareaCtx = {
+    props,
+    extra: props.state,
+    t,
+    focused,
+    u: (key, value): Intent => [
+      "update",
+      [...props.extraPath, ["keypath", key]],
+      () => value,
+    ],
+    toTextPos: (pos): Vec2 => [pos[0] - padX, pos[1] - padY],
+    indexAt: (pos): number => props.indexForPosition(props.font, t, pos[0], pos[1]),
   };
 
   // onPairs over handler-only pairs returns a handler node — an Elem
   // (EventElem only widens when wrap/bubble pairs are used).
   return onPairs([
-    ["mouse-down", onMouseDown],
-    ["mouse-move", onMouseMove],
-    ["mouse-up", onMouseUp],
-    ["key-press", onKeyPress],
-    ["clipboard", onClipboard],
+    ["mouse-down", (...args) => onMouseDown(c, args)],
+    ["mouse-move", (...args) => onMouseMove(c, args)],
+    ["mouse-up", (...args) => onMouseUp(c, args)],
+    ["key-press", (key) => onKeyPress(c, key)],
+    ["clipboard", (...args) => onClipboard(c, args)],
   ], frame) as Elem;
 }

@@ -47,6 +47,33 @@ export function initialTextareaExtra(over: Partial<TextareaExtra> = {}): Textare
   };
 }
 
+// The editing-intent interpreter table: one applier per editing effect
+// (the intents the textarea handlers return that applyTextareaIntents
+// applies itself). External intents (request-focus, the clipboard
+// effects — applied by the top-level handler and the effect
+// dispatcher's backend service respectively) and unknown intents pass
+// through unchanged.
+type EditApplier = (state: unknown, intent: Intent) => unknown;
+
+const rest = (intent: Intent): readonly unknown[] => intent.slice(1) as readonly unknown[];
+
+const EDIT_OPS: Readonly<Record<string, EditApplier>> = {
+  "update": (s, it) => updatePath(s, rest(it)[0] as Path, rest(it)[1] as (old: unknown) => unknown),
+  "insert-text": (s, it) => withPaths(s, rest(it)[1] as Path, rest(it)[2] as Path, (t, c, sc) =>
+    insertOp(t, c, sc, rest(it)[0] as string)),
+  "insert-newline": (s, it) => withPaths(s, rest(it)[0] as Path, rest(it)[1] as Path, (t, c, sc) =>
+    insertOp(t, c, sc, "\n")),
+  "delete-backward": (s, it) => withPaths(s, rest(it)[0] as Path, rest(it)[1] as Path, deleteOp),
+  "backward-char": (s, it) => withPaths(s, rest(it)[0] as Path, rest(it)[1] as Path, (t, c, sc) =>
+    charOp(t, c, sc, "backward")),
+  "forward-char": (s, it) => withPaths(s, rest(it)[0] as Path, rest(it)[1] as Path, (t, c, sc) =>
+    charOp(t, c, sc, "forward")),
+  "previous-line": (s, it) => withPaths(s, rest(it)[0] as Path, rest(it)[1] as Path, (t, c, sc) =>
+    lineOp(t, c, sc, "prev")),
+  "next-line": (s, it) => withPaths(s, rest(it)[0] as Path, rest(it)[1] as Path, (t, c, sc) =>
+    lineOp(t, c, sc, "next")),
+};
+
 // Apply the textarea's intents against the state, in order. Editing
 // effects read and write through their carried paths; the external
 // intents (request-focus, the clipboard effects — applied by the
@@ -59,44 +86,14 @@ export function applyTextareaIntents<S>(
   let out: unknown = state;
   const external: Intent[] = [];
   for (const intent of intents) {
-    const type = intent[0] as string;
-    const rest = intent.slice(1) as readonly unknown[];
-    switch (type) {
-      case "update":
-        out = updatePath(out, rest[0] as Path, rest[1] as (old: unknown) => unknown);
-        break;
-      case "insert-text":
-        out = withPaths(out, rest[1] as Path, rest[2] as Path, (t, c, sc) =>
-          insertOp(t, c, sc, rest[0] as string));
-        break;
-      case "insert-newline":
-        out = withPaths(out, rest[0] as Path, rest[1] as Path, (t, c, sc) =>
-          insertOp(t, c, sc, "\n"));
-        break;
-      case "delete-backward":
-        out = withPaths(out, rest[0] as Path, rest[1] as Path, deleteOp);
-        break;
-      case "backward-char":
-      case "forward-char":
-        out = withPaths(out, rest[0] as Path, rest[1] as Path, (t, c, sc) =>
-          charOp(t, c, sc, type === "forward-char" ? "forward" : "backward"));
-        break;
-      case "previous-line":
-      case "next-line":
-        out = withPaths(out, rest[0] as Path, rest[1] as Path, (t, c, sc) =>
-          lineOp(t, c, sc, type === "previous-line" ? "prev" : "next"));
-        break;
-      case "request-focus":
-      case "clipboard-copy":
-      case "clipboard-cut":
-        external.push(intent);
-        break;
-      default:
-        // an intent this interpreter does not know is not ours to
-        // apply — pass it through for the app-level dispatcher
-        external.push(intent);
-        break;
+    const edit = EDIT_OPS[intent[0] as string];
+    if (edit !== undefined) {
+      out = edit(out, intent);
+      continue;
     }
+    // an intent this interpreter does not know is not ours to
+    // apply — pass it through for the app-level dispatcher
+    external.push(intent);
   }
   return { state: out as S, external };
 }
