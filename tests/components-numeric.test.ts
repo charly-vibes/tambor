@@ -12,10 +12,10 @@ import fc from "fast-check";
 
 import { call, render } from "../src/model/component.ts";
 import { defaultHandler, makeApp, type Effect } from "../src/effects/dispatch.ts";
-import type { Path } from "../src/effects/paths.ts";
+import { select, type Path } from "../src/effects/paths.ts";
 import { dispatch as dispatchEvent } from "../src/events/dispatch.ts";
 import { mouseDown, mouseMoveGlobal, mouseUp } from "../src/events/event.ts";
-import { counter } from "../src/components/numeric/counter.ts";
+import { counter, decNum, incNum } from "../src/components/numeric/counter.ts";
 import {
   bounds,
   isGroup,
@@ -44,8 +44,8 @@ function nodeOrigins(
   pred: (n: Node) => boolean,
   ox = 0,
   oy = 0,
-  out: readonly [Node, Vec2][] = [],
-): readonly [Node, Vec2][] {
+  out: [Node, Vec2][] = [],
+): [Node, Vec2][] {
   if (elem == null) return out;
   if (isGroup(elem)) {
     for (const child of elem) nodeOrigins(child, pred, ox, oy, out);
@@ -82,7 +82,7 @@ function applyEffects(state: unknown, effects: readonly unknown[]): Record<strin
 // predicate: num is 0
 it("p_default: num is 0", () => {
   const view = counterView({});
-  const texts = nodeOrigins(view, isLabel).map(([n]) => n.text);
+  const texts = nodeOrigins(view, isLabel).map(([n]) => (n as Label).text);
   expect(texts).toHaveLength(1);
   expect(texts[0]!.trim()).toBe("0");
 });
@@ -94,9 +94,9 @@ it("p_label_width: centred area is at least 20", () => {
   fc.assert(
     fc.property(fc.constantFrom(1, 12345) as fc.Arbitrary<number>, (num) => {
       const view = counterView({ num });
-      const labels = nodeOrigins(view, isLabel);
+      const labels = nodeOrigins(view, isLabel).map(([n]) => n as Label);
       expect(labels).toHaveLength(1);
-      const [label] = labels[0]!;
+      const label = labels[0]!;
       // the label is padded on both sides: its own measured width is
       // the centred area, and it is at least 20
       const [w] = label.measure(label.text);
@@ -113,9 +113,14 @@ it("p_label_width: centred area is at least 20", () => {
 it("p_buttons: dec and inc effects carry path and limit", () => {
   const view = counterView({ num: 10, min: 3, max: 30, $num: $NUM });
 
-  // the minus button: the first child, at the origin
-  const minus = dispatchEvent(view, mouseDown([6, 6]));
-  expect(minus).toEqual([["dec", $NUM, 3]]);
+  // the minus button: the first child, at the origin; its effect is
+  // dec with the num path (resolving against the state to the binding)
+  // and the min limit
+  const minus = dispatchEvent(view, mouseDown([6, 6])) as unknown as unknown[][];
+  expect(minus).toHaveLength(1);
+  expect(minus[0]![0]).toBe("dec");
+  expect(select({ num: 10 }, minus[0]![1] as Path)).toBe(10);
+  expect(minus[0]![2]).toBe(3);
 
   // the plus button: find its absolute origin by walking the layout
   const pluses = nodeOrigins(
@@ -123,19 +128,28 @@ it("p_buttons: dec and inc effects carry path and limit", () => {
     (n): n is Node & { type: "button" } => n.type === "button" && n.text === "+",
   );
   expect(pluses).toHaveLength(1);
-  const [plusX, plusY] = pluses[0]![1];
-  const [pw, ph] = bounds(
-    pluses
-      .map(([n]) => n)
-      .find((n): n is Node & { type: "button" } => n.type === "button")!,
-  );
-  const plus = dispatchEvent(view, mouseDown([plusX + pw - 1, plusY + ph - 1]));
-  expect(plus).toEqual([["inc", $NUM, 30]]);
+  const [plusNode, plusOrigin] = pluses[0]!;
+  const [pw, ph] = bounds(plusNode);
+  const plus = dispatchEvent(
+    view,
+    mouseDown([plusOrigin[0] + pw - 1, plusOrigin[1] + ph - 1]),
+  ) as unknown as unknown[][];
+  expect(plus).toHaveLength(1);
+  expect(plus[0]![0]).toBe("inc");
+  expect(select({ num: 10 }, plus[0]![1] as Path)).toBe(10);
+  expect(plus[0]![2]).toBe(30);
 
   // no limits declared: the effects carry just the path
   const bare = counterView({ num: 10, $num: $NUM });
-  expect(dispatchEvent(bare, mouseDown([6, 6]))).toEqual([["dec", $NUM]]);
-  expect(dispatchEvent(bare, mouseDown([plusX + pw - 1, plusY + ph - 1]))).toEqual([["inc", $NUM]]);
+  const bareMinus = dispatchEvent(bare, mouseDown([6, 6])) as unknown as unknown[][];
+  expect(bareMinus[0]![0]).toBe("dec");
+  expect(bareMinus[0]).toHaveLength(2);
+  const barePlus = dispatchEvent(
+    bare,
+    mouseDown([plusOrigin[0] + pw - 1, plusOrigin[1] + ph - 1]),
+  ) as unknown as unknown[][];
+  expect(barePlus[0]![0]).toBe("inc");
+  expect(barePlus[0]).toHaveLength(2);
 });
 
 // p_dec — derives_from: components.numeric.counter_dec_rule
@@ -152,11 +166,12 @@ it("p_dec: stays 3 then becomes 2", () => {
   free.dispatch(["dec", $NUM]);
   expect((free.getState() as Record<string, unknown>)["num"]).toBe(2);
 
-  // property: a limited decrement is max(min, num - 1)
+  // property: a limited decrement is max(min, num - 1), an unlimited
+  // one num - 1
   fc.assert(
     fc.property(fc.integer({ min: -100, max: 100 }), fc.integer({ min: -100, max: 100 }), (num, min) => {
-      const state = applyEffects({ num }, [["dec", $NUM, min]]);
-      expect(state["num"]).toBe(Math.max(min, num - 1));
+      expect(decNum(num, min)).toBe(Math.max(min, num - 1));
+      expect(decNum(num)).toBe(num - 1);
     }),
   );
 });
@@ -175,11 +190,12 @@ it("p_inc: stays 3 then becomes 4", () => {
   free.dispatch(["inc", $NUM]);
   expect((free.getState() as Record<string, unknown>)["num"]).toBe(4);
 
-  // property: a limited increment is min(max, num + 1)
+  // property: a limited increment is min(max, num + 1), an unlimited
+  // one num + 1
   fc.assert(
     fc.property(fc.integer({ min: -100, max: 100 }), fc.integer({ min: -100, max: 100 }), (num, max) => {
-      const state = applyEffects({ num }, [["inc", $NUM, max]]);
-      expect(state["num"]).toBe(Math.min(max, num + 1));
+      expect(incNum(num, max)).toBe(Math.min(max, num + 1));
+      expect(incNum(num)).toBe(num + 1);
     }),
   );
 });
