@@ -119,9 +119,12 @@ function groupWithDirectChild(elem: EventElem | Elem, type: string): readonly El
 // predicate: the effect sets hover? to true
 it("p_enter: the effect sets hover? to true", () => {
   const body = () => spacer(40, 20);
-  const { app, $hover } = hoverWired((callsite) => onHover(body, { callsite }));
+  const { $hover } = hoverWired((callsite) => onHover(body, { callsite }));
   fc.assert(
     fc.property(fc.nat(39), fc.nat(19), (x, y) => {
+      // a fresh app per case: the enter sets the scratch through the
+      // app state, and each case starts unhovered
+      const { app } = hoverWired((callsite) => onHover(body, { callsite }));
       // a mouse-move over the body: the effect sets hover? to true
       expect(dispatch(viewOf(app), mouseMove([x, y]))).toEqual([["set", $hover, true]]);
       // routed through the app it edits the hover? scratch through the
@@ -132,6 +135,7 @@ it("p_enter: the effect sets hover? to true", () => {
   );
   // leaving is detected by a global mouse-move, which is why the root
   // must always report has-mouse-move-global
+  const { app } = hoverWired((callsite) => onHover(body, { callsite }));
   expect(hasMouseMoveGlobal(viewOf(app))).toBe(true);
 });
 
@@ -142,11 +146,9 @@ it("p_leave: each adds set hover? false to the child intents", () => {
   // the body carries a global-move handler so the child intents are
   // observable ahead of the hover effect
   const body = () => on("mouse-move-global", () => [["child-saw-move"]], spacer(40, 20));
-  const { app, $hover } = hoverWired((callsite) => onHover(body, { callsite }), true);
-  // hover? is true: enter first (the body handles no plain moves, so
-  // entering returns the set effect alone)
-  app.send(mouseMove([10, 10]));
-  expect(select(app.getState(), $hover)).toBe(true);
+  const make = (callsite: CallSite): ComponentCall => onHover(body, { callsite });
+  // hover? is true from the scratch
+  const { app, $hover } = hoverWired(make, true);
   // global moves at -1 (x < 0), 41 (x > w = 40) and 21 (y > h = 20):
   // each adds set hover? false to the child intents
   for (const pos of [[-1, 10], [41, 10], [10, 21]] as const) {
@@ -157,11 +159,10 @@ it("p_leave: each adds set hover? false to the child intents", () => {
   }
   // the guard: when hover? is false a global move outside returns only
   // the child intents — no hover effect
-  expect(dispatch(viewOf(app), mouseMoveGlobal([-1, 10]))).toEqual([["child-saw-move"]]);
+  const { app: plain } = hoverWired(make, false);
+  expect(dispatch(viewOf(plain), mouseMoveGlobal([-1, 10]))).toEqual([["child-saw-move"]]);
   // the leave bound check is inclusive at the upper edge (x > w, not
   // >=): x == w and y == h are inside, so they stay
-  app.send(mouseMove([10, 10]));
-  expect(select(app.getState(), $hover)).toBe(true);
   expect(dispatch(viewOf(app), mouseMoveGlobal([40, 10]))).toEqual([["child-saw-move"]]);
   expect(dispatch(viewOf(app), mouseMoveGlobal([10, 20]))).toEqual([["child-saw-move"]]);
 });
@@ -189,17 +190,19 @@ it("p_mouse_out: callback intents follow the set false", () => {
     on("mouse-move", () => [["child-move"]], spacer(40, 20)),
     on("mouse-move-global", () => [["child-saw-move"]], spacer(40, 20)),
   ];
-  const { app, $hover } = hoverWired((callsite) =>
-    onMouseOut(body, () => [["mouse-out", "left"]], { callsite }),
-  );
-  // on enter: set hover? true followed by the child intents
+  const make = (callsite: CallSite): ComponentCall =>
+    onMouseOut(body, () => [["mouse-out", "left"]], { callsite });
+  // on enter (hover? still false): set hover? true followed by the
+  // child intents
+  const { app, $hover } = hoverWired(make, false);
   expect(dispatch(viewOf(app), mouseMove([10, 10]))).toEqual([
     ["set", $hover, true],
     ["child-move"],
   ]);
-  // on leave: the child intents, then set hover? false, then the
-  // mouse-out callback intents
-  expect(dispatch(viewOf(app), mouseMoveGlobal([-1, 10]))).toEqual([
+  // on leave (hover? true from the scratch): the child intents, then
+  // set hover? false, then the mouse-out callback intents
+  const { app: hovered } = hoverWired(make, true);
+  expect(dispatch(viewOf(hovered), mouseMoveGlobal([-1, 10]))).toEqual([
     ["child-saw-move"],
     ["set", $hover, false],
     ["mouse-out", "left"],
@@ -245,10 +248,10 @@ it("p_button: pointer down inside returns the on-click result and up returns not
 it("p_button_visual: only the hovered view contains the fill", () => {
   const onClick = () => [] as IntentList;
   // not hovered: no fill
-  const plain = hoverWired((callsite) => button("Add Todo", onClick, { callsite }));
+  const plain = hoverWired((callsite) => button("Add Todo", onClick, callsite));
   expect(findAll(viewOf(plain.app), "rounded-rectangle")).toEqual([]);
   // hovered: a light gray rounded fill behind the button's border
-  const hovered = hoverWired((callsite) => button("Add Todo", onClick, { callsite }), true);
+  const hovered = hoverWired((callsite) => button("Add Todo", onClick, callsite), true);
   const hoveredView = viewOf(hovered.app);
   const fills = findAll(hoveredView, "rounded-rectangle");
   expect(fills).toHaveLength(1);
