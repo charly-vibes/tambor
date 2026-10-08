@@ -9,15 +9,14 @@
 # .git/hooks/pre-commit. pretender doctor will report the shim as missing;
 # that is expected here.
 #
-# NOTE (tambor-8nt): the full-repo pretender scan runs in tiered mode with a
-# dated advisory lease instead of gate mode. Root cause: while the hook was
-# silently bypassed (--no-verify during the 8nt SIGPIPE failure), complexity
-# debt accumulated in src/ hotspots (worst: effects/paths.ts::walk,
-# cyclomatic 116) that no defensible threshold admits — rubber-stamping
-# thresholds would gut the gate. Tiered keeps every finding visible and
-# colored, but fails CLOSED when the lease expires: renewal is a deliberate,
-# dated re-decision, not drift. Restore --mode gate as hotspots are refactored
-# down (tracked in the follow-up bead).
+# NOTE (tambor-8nt → tambor-272): the full-repo pretender scan briefly ran
+# in tiered mode under a dated advisory lease while the hook was silently
+# bypassed (--no-verify during the 8nt SIGPIPE failure) and complexity debt
+# accumulated in src/ hotspots (worst: effects/paths.ts::walk, cyclomatic
+# 116). tambor-272 refactored every hotspot down — walk became a
+# per-navigator handler dispatch, the red-band paint/build/draw traversals
+# became dispatch tables, the oversized files split — and gate mode is
+# restored here and in ci.yml.
 
 pre-commit:
   parallel: true
@@ -52,9 +51,8 @@ pre-push:
       run: ah check --run-tests
 
     - name: pretender-gate-full
-      # Tiered + dated advisory lease (see NOTE tambor-8nt above). Fails closed
-      # after 2026-11-08 — renew or restore gate mode by refactoring hotspots.
-      run: pretender check --mode tiered --advisory-until 2026-11-08
+      # Full-repo scan, gate mode (see NOTE above).
+      run: pretender check --mode gate
 
     - name: testaruda-exec
       # exec loop: select → run → ingest → calibrate.
