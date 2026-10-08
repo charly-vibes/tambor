@@ -12,14 +12,12 @@ import { expect, it } from "vitest";
 import fc from "fast-check";
 
 import {
-  clampScalar,
-  div0,
   dragScrollf,
   momentumFrames,
-  scrollMax,
   scrollview,
   wheelIntents,
 } from "../src/components/scrollview/scrollview.ts";
+import { clampScalar, div0, scrollMax } from "../src/components/scrollview/geometry.ts";
 import { barScrollf, thumbRange } from "../src/components/scrollview/scrollbar.ts";
 import { call, render, type ComponentCall } from "../src/model/component.ts";
 import {
@@ -43,27 +41,34 @@ import { setPath, updatePath, type Path } from "../src/effects/paths.ts";
 const OFFSET_PATH: Path = [["keypath", "offset"]];
 
 // A scrollview call rendered to its view tree.
+// An explicit $offset keeps the intents addressable at the plain
+// offset path of the test state; the defaulted call's own scratch path
+// is the component model's concern (component.model, C0).
 function svView(opts: { offset?: Vec2; viewport: Vec2; body: Elem }): EventElem {
-  const c = call(scrollview, {
-    "scroll-bounds": opts.viewport,
-    body: opts.body,
-    ...(opts.offset !== undefined ? { offset: opts.offset } : {}),
-  });
-  return render(c) as EventElem;
+  return render(svCall(opts)) as EventElem;
 }
 
 function svCall(opts: { offset?: Vec2; viewport: Vec2; body: Elem }): ComponentCall {
   return call(scrollview, {
     "scroll-bounds": opts.viewport,
     body: opts.body,
+    $offset: OFFSET_PATH,
     ...(opts.offset !== undefined ? { offset: opts.offset } : {}),
   });
+}
+
+// Array.isArray does not narrow readonly arrays over the event-layer
+// union (same shape as dispatch.ts's local helper).
+function isGroupElem(
+  e: EventElem | readonly EventElem[],
+): e is readonly EventElem[] {
+  return Array.isArray(e);
 }
 
 // Every node of an event-layer tree, depth first.
 function walk(e: EventElem): readonly EventElem[] {
   if (e == null) return [];
-  if (Array.isArray(e)) return e.flatMap(walk);
+  if (isGroupElem(e)) return e.flatMap(walk);
   const kids: readonly EventElem[] =
     "drawable" in e
       ? [e.drawable as EventElem]
@@ -76,7 +81,7 @@ function walk(e: EventElem): readonly EventElem[] {
 // The translate node that carries the body (content_translated).
 function findTranslate(view: EventElem, body: Elem): TranslateNode | undefined {
   return walk(view).find(
-    (n) => "drawable" in n && n.drawable === body,
+    (n) => n != null && "drawable" in n && n.drawable === body,
   ) as TranslateNode | undefined;
 }
 
@@ -93,14 +98,14 @@ interface FoundBar {
 function barsOf(view: EventElem): readonly FoundBar[] {
   const out: FoundBar[] = [];
   for (const n of walk(view)) {
-    if (!("drawable" in n)) continue;
+    if (n == null || !("drawable" in n)) continue;
     const t = n as TranslateNode;
     const inner = t.drawable as EventElem;
-    if (inner == null || Array.isArray(inner) || inner.type !== "handler") continue;
+    if (inner == null || isGroupElem(inner) || inner.type !== "handler") continue;
     const handler = inner as HandlerNode;
     if (handler.eventType !== "mouse-down") continue;
     const track = handler.drawables[0] as EventElem;
-    if (track == null || Array.isArray(track) || track.type !== "rectangle") continue;
+    if (track == null || isGroupElem(track) || track.type !== "rectangle") continue;
     const rect = track as { width: number; height: number };
     out.push({
       axis: rect.width <= rect.height ? "y" : "x",
@@ -127,7 +132,7 @@ function applyUpdate(
 
 const viewportArb = fc.tuple(fc.nat(400), fc.nat(400));
 const bodyArb = fc.tuple(fc.nat(400), fc.nat(400)).map(([w, h]) => rectangle(w, h));
-const offsetArb = fc.tuple(fc.integer(-200, 200), fc.integer(-200, 200));
+const offsetArb = fc.tuple(fc.integer({ min: -200, max: 200 }), fc.integer({ min: -200, max: 200 }));
 
 // p_default — derives_from: components.scrollview.default_offset
 // generator: no offset prop
@@ -175,7 +180,7 @@ it("p_range: viewport 200 over content 500 and 100 → max offset is 300 and 0",
   );
   // clamp(v) is max(0, min(max, v))
   fc.assert(
-    fc.property(fc.integer(-10, 500), fc.nat(500), (v, max) => {
+    fc.property(fc.integer({ min: -10, max: 500 }), fc.nat(500), (v, max) => {
       expect(clampScalar(v, max)).toBe(Math.max(0, Math.min(max, v)));
     }),
   );
@@ -204,8 +209,8 @@ it("p_wheel: offset 0 and delta 50 updates to 50, offset at max and delta 50 ret
   // generalized: the update always sets both axes to clamp(old + delta)
   fc.assert(
     fc.property(
-      fc.tuple(fc.integer(0, 300), fc.integer(0, 100)),
-      fc.tuple(fc.integer(-100, 100), fc.integer(-100, 100)),
+      fc.tuple(fc.integer({ min: 0, max: 300 }), fc.integer({ min: 0, max: 100 })),
+      fc.tuple(fc.integer({ min: -100, max: 100 }), fc.integer({ min: -100, max: 100 })),
       (offset, delta) => {
         const intents = wheelIntents(offset, delta, total, viewport, OFFSET_PATH);
         const next: Vec2 = [
@@ -235,7 +240,9 @@ it("p_stale: stored offset above max → render keeps it, the update clamps it",
   expect(t!.y).toBe(-5);
   const intents = wheelIntents([1000, 5], [0, 10], [500, 500], viewport, OFFSET_PATH);
   expect(intents.length).toBe(1);
-  expect(applyUpdate(intents, { offset: [1000, 5] })).toEqual({ offset: [300, 10] });
+  // the update clamps against the stored value: x snaps back to max,
+  // y moves by the delta
+  expect(applyUpdate(intents, { offset: [1000, 5] })).toEqual({ offset: [300, 15] });
 });
 
 // p_bars — derives_from: components.scrollview.bars_conditional
@@ -246,24 +253,24 @@ it("p_bars: content larger on one axis only → exactly one bar at the right pla
   // taller than the viewport: the vertical bar, at x = width
   const tall = barsOf(svView({ viewport, body: rectangle(50, 500) }));
   expect(tall.length).toBe(1);
-  expect(tall[0].axis).toBe("y");
-  expect(tall[0].x).toBe(200);
-  expect(tall[0].y).toBe(0);
+  expect(tall[0]!.axis).toBe("y");
+  expect(tall[0]!.x).toBe(200);
+  expect(tall[0]!.y).toBe(0);
   // wider than the viewport: the horizontal bar, at y = height
   const wide = barsOf(svView({ viewport, body: rectangle(500, 50) }));
   expect(wide.length).toBe(1);
-  expect(wide[0].axis).toBe("x");
-  expect(wide[0].x).toBe(0);
-  expect(wide[0].y).toBe(200);
+  expect(wide[0]!.axis).toBe("x");
+  expect(wide[0]!.x).toBe(0);
+  expect(wide[0]!.y).toBe(200);
   // content fits both axes: no bars
   expect(barsOf(svView({ viewport, body: rectangle(150, 150) }))).toEqual([]);
   // generalized: every tall-only shape keeps exactly the vertical bar
   fc.assert(
-    fc.property(fc.nat(200), fc.integer(201, 600), (cw, ch) => {
+    fc.property(fc.nat(200), fc.integer({ min: 201, max: 600 }), (cw, ch) => {
       const found = barsOf(svView({ viewport, body: rectangle(cw, ch) }));
       expect(found.length).toBe(1);
-      expect(found[0].axis).toBe("y");
-      expect(found[0].x).toBe(200);
+      expect(found[0]!.axis).toBe("y");
+      expect(found[0]!.x).toBe(200);
     }),
   );
 });
@@ -274,15 +281,15 @@ it("p_bars: content larger on one axis only → exactly one bar at the right pla
 it("p_thumb: total 500 view 200 offset 100 → thumb spans 0.2 to 0.6 of the track", () => {
   expect(thumbRange(100, 200, 500)).toEqual([0.2, 0.6]);
   fc.assert(
-    fc.property(fc.integer(0, 299), (offset) => {
+    fc.property(fc.integer({ min: 0, max: 299 }), (offset) => {
       const [s, e] = thumbRange(offset, 200, 500);
       expect(s).toBeCloseTo(offset / 500, 12);
       expect(e).toBeCloseTo((offset + 200) / 500, 12);
     }),
   );
   // the drawn thumb: thickness 7, rounded ends, at its track fraction
-  const view = svView({ offset: [100, 0], viewport: [200, 200], body: rectangle(50, 500) });
-  const bar = barsOf(view)[0];
+  const view = svView({ offset: [0, 100], viewport: [200, 200], body: rectangle(50, 500) });
+  const bar = barsOf(view)[0]!;
   const thumbWrap = bar.handler.drawables[1] as TranslateNode;
   expect(thumbWrap.y).toBeCloseTo(0.2 * 200, 9);
   const thumb = thumbWrap.drawable as RoundedRectangle;
@@ -302,19 +309,19 @@ it("p_bar_drag: press then delta → the function returns the set offset effect"
   // press on the vertical bar (x = 200..207): local track y = 100
   const intents = dispatch(view, mouseDown([203, 100]));
   expect(intents.length).toBe(1);
-  expect(intents[0][0]).toBe("start-scroll");
-  const scrollf = intents[0][1] as (delta: Vec2) => readonly unknown[];
+  expect(intents[0]![0]).toBe("start-scroll");
+  const scrollf = intents[0]![1] as (delta: Vec2) => readonly unknown[];
   // the drag maps the pointer delta to the set offset effect:
   // offset = clamp(div0(position, viewport) * max)
   const expectedPath = svCall({ viewport, body }).props.$offset;
   expect(scrollf([0, 100])).toEqual([["set", expectedPath, [0, 300]]]);
   expect(scrollf([0, 0])).toEqual([["set", expectedPath, [0, 150]]]);
   // the set effect applies to the state as the dispatcher would
-  const eff = scrollf([0, 100])[0] as readonly unknown[];
+  const eff = scrollf([0, 100])[0]! as readonly unknown[];
   expect(setPath({ offset: [0, 0] }, eff[1] as Path, eff[2])).toEqual({ offset: [0, 300] });
   // generalized: the mapped offset is clamp(div0(position, viewport) * max)
   fc.assert(
-    fc.property(fc.nat(300), fc.integer(-300, 300), (pressY, dy) => {
+    fc.property(fc.nat(300), fc.integer({ min: -300, max: 300 }), (pressY, dy) => {
       const f = barScrollf({
         axis: "y",
         press: [3, pressY],
@@ -352,7 +359,7 @@ it("p_div0: viewport 0 → offset is 0 and finite", () => {
   expect(Number.isFinite(value[0]) && Number.isFinite(value[1])).toBe(true);
   expect(value[1]).toBe(0);
   fc.assert(
-    fc.property(fc.nat(500), fc.integer(-100, 100), (pressY, dy) => {
+    fc.property(fc.nat(500), fc.integer({ min: -100, max: 100 }), (pressY, dy) => {
       const g = barScrollf({
         axis: "y",
         press: [3, pressY],
@@ -384,7 +391,7 @@ it("p_clip: pointer outside the viewport over clipped content → no intents", (
   fc.assert(
     fc.property(
       fc
-        .tuple(fc.integer(-100, 400), fc.integer(-100, 400))
+        .tuple(fc.integer({ min: -100, max: 400 }), fc.integer({ min: -100, max: 400 }))
         // the vertical bar sits outside the viewport too; the row is
         // about clipped *content*, so the bar region is excluded
         .filter(
@@ -410,8 +417,8 @@ it("p_touch_scroll: touch drag of 30 px → offset changes by 30 within range", 
   // generalized: the drag delta is applied within the range
   fc.assert(
     fc.property(
-      fc.tuple(fc.integer(0, 300), fc.integer(0, 300)),
-      fc.tuple(fc.integer(-60, 60), fc.integer(-60, 60)),
+      fc.tuple(fc.integer({ min: 0, max: 300 }), fc.integer({ min: 0, max: 300 })),
+      fc.tuple(fc.integer({ min: -60, max: 60 }), fc.integer({ min: -60, max: 60 })),
       (offset, delta) => {
         const g = dragScrollf(offset, [500, 500], [200, 200], OFFSET_PATH);
         const applied = applyUpdate(g(delta), { offset });
@@ -452,11 +459,11 @@ it("p_momentum: flick then rest → offset keeps changing then settles, static u
   expect(decayed.length).toBeLessThan(600);
   fc.assert(
     fc.property(
-      fc.tuple(fc.integer(0, 300), fc.integer(0, 300)),
-      fc.tuple(fc.integer(-100, 100), fc.integer(-100, 100)),
+      fc.tuple(fc.integer({ min: 0, max: 300 }), fc.integer({ min: 0, max: 300 })),
+      fc.tuple(fc.integer({ min: -100, max: 100 }), fc.integer({ min: -100, max: 100 })),
       (start, velocity) => {
         const fs = momentumFrames(start, velocity, [500, 500], [200, 200], false);
-        let p = start;
+        let p: Vec2 = start;
         for (const f of fs) {
           expect(f[0]).toBeGreaterThanOrEqual(0);
           expect(f[0]).toBeLessThanOrEqual(300);
