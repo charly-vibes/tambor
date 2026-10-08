@@ -23,3 +23,8 @@ dist/
 .beads/proxieddb/
 *.gate.lock*
 .worktrees/
+
+# devenv.sh state (see devenv.nix)
+.devenv/
+.devenv.flake.nix
+.direnv/

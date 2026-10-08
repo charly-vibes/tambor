@@ -20,15 +20,19 @@ import { fixture, runTsc, STRICT_FLAGS } from "./helpers/tsc.ts";
 // p_strict — derives_from: typing.model.strict_compiler
 // generator: tsc over the library with the listed flags — predicate:
 // zero diagnostics
+// 30s: a full tsc strict run is a subprocess (~3s warm, well over 5s on
+// cold hosted CI runners — run 37831173691); the vitest default is 5s
 it("p_strict: tsc strict flags over the library give zero diagnostics", () => {
   const { code, out } = runTsc("-p tsconfig.json --noEmit");
   expect(out, out).toBe("");
   expect(code).toBe(0);
-});
+}, 30000);
 
 // p_no_any — derives_from: typing.model.no_any_public
 // generator: scan the emitted declaration files — predicate: no
 // exported symbol mentions any
+// 30s: declaration emit runs tsc as a subprocess (same cold-CI headroom as
+// p_strict)
 it("p_no_any: no exported symbol in the emitted declarations mentions any", () => {
   // the declarations of the library (src/ only — the tests import test
   // tooling whose own types are out of scope)
@@ -44,7 +48,7 @@ it("p_no_any: no exported symbol in the emitted declarations mentions any", () =
   for (const file of listing) {
     expectDeclarationMentionsNoAny(file);
   }
-});
+}, 30000);
 
 // One declaration file's stripped signatures mention no any.
 function expectDeclarationMentionsNoAny(file: string): void {
@@ -118,6 +122,7 @@ expectTypeOf<number>().toEqualTypeOf<string>();`,
 // p_esm — derives_from: typing.model.esm_with_declarations
 // generator: import one component into a bundler — predicate: unused
 // components are absent from the bundle
+// 30s: tsc declaration emit plus esbuild bundling, both subprocesses
 it("p_esm: importing one component into a bundler tree-shakes the unused ones", () => {
   // the package is ESM and ships declaration files
   const pkg = JSON.parse(execSync("cat package.json").toString()) as {
@@ -145,4 +150,4 @@ export const app = counter(1);`,
   expect(bundle).toContain("more!");
   // the unused one is absent (tree-shaken, side-effect-free modules)
   expect(bundle).not.toContain("Add Counter");
-});
+}, 30000);

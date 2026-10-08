@@ -1,0 +1,5 @@
+# devenv.sh — pin the dev-environment inputs (see DDL-irv: Nix/devenv as fleet install path).
+# Usage (requires Nix): `devenv shell` drops into the repo toolchain.
+inputs:
+  nixpkgs:
+    url: github:cachix/devenv-nixpkgs/rolling

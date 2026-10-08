@@ -92,10 +92,16 @@ it("p_values: JSON round-trip of a view deep-equals the original, and its type i
     // the recursive ref, hoisted: every wrapper takes one Elem child
     const node = tie("node") as fc.Arbitrary<Elem>;
     return {
-      node: fc.oneof(tie("leaf"), tie("wrap"), tie("group")) as fc.Arbitrary<Elem>,
+      node: fc.oneof(
+        tie("leaf"),
+        tie("wrap"),
+        tie("group"),
+      ) as fc.Arbitrary<Elem>,
       leaf: fc.oneof(
         fc.tuple(size, size).map(([w, h]) => rectangle(w, h)),
-        fc.tuple(size, size, size).map(([w, h, r]) => roundedRectangle(w, h, r)),
+        fc
+          .tuple(size, size, size)
+          .map(([w, h, r]) => roundedRectangle(w, h, r)),
         fc
           .array(fc.tuple(coord, coord), { maxLength: 4 })
           .map((points) => pathNode(...(points as readonly Vec2[]))),
@@ -104,7 +110,9 @@ it("p_values: JSON round-trip of a view deep-equals the original, and its type i
       wrap: fc.oneof(
         fc.tuple(coord, coord, node).map(([x, y, d]) => translate(x, y, d)),
         fc.tuple(color, node).map(([c, d]) => withColor(c, d)),
-        fc.tuple(color, node).map(([c, d]) => withStyle("fill", withColor(c, d))),
+        fc
+          .tuple(color, node)
+          .map(([c, d]) => withStyle("fill", withColor(c, d))),
         fc
           .tuple(fc.integer({ min: 0, max: 8 }), node)
           .map(([sw, d]) => withStrokeWidth(sw, d)),
@@ -130,7 +138,10 @@ it("p_pure: state is deep-equal before and after calling a handler", () => {
     fc.property(
       fc.array(fc.integer({ min: 0, max: 999 }), { maxLength: 8 }),
       fc.integer({ min: 0, max: 999 }),
-      fc.tuple(fc.integer({ min: -10, max: 110 }), fc.integer({ min: -10, max: 110 })),
+      fc.tuple(
+        fc.integer({ min: -10, max: 110 }),
+        fc.integer({ min: -10, max: 110 }),
+      ),
       (nums, num, pos) => {
         const state = { nums, num };
         const before = JSON.parse(JSON.stringify(state));
@@ -139,7 +150,10 @@ it("p_pure: state is deep-equal before and after calling a handler", () => {
         // state changes only flow back as effects (paths_not_callbacks)
         const tree = [
           ...(counterView(num, rootRef(state).get("num") as Ref<number>) ?? []),
-          ...(counterCounterView(nums, rootRef(state).get("nums") as Ref<readonly number[]>) ?? []),
+          ...(counterCounterView(
+            nums,
+            rootRef(state).get("nums") as Ref<readonly number[]>,
+          ) ?? []),
         ] as readonly Elem[];
         for (const node of interactiveNodes(tree)) {
           (node as ButtonNode).onClick?.(pos as Vec2);
@@ -156,7 +170,10 @@ it("p_pure: state is deep-equal before and after calling a handler", () => {
 it("p_headless: import succeeds and bounds of a label tree is computed", async () => {
   // this environment has no DOM: the core (view, layout, events, paths,
   // effects) must import and run without document or window
-  const globals = globalThis as unknown as { document?: unknown; window?: unknown };
+  const globals = globalThis as unknown as {
+    document?: unknown;
+    window?: unknown;
+  };
   expect(globals.document).toBeUndefined();
   expect(globals.window).toBeUndefined();
   const model = await import("../src/views/model.ts");
@@ -173,7 +190,9 @@ it("p_headless: import succeeds and bounds of a label tree is computed", async (
 // generator: scan component handlers — predicate: every state change
 // appears as an effect in a returned list
 it("p_no_callbacks: every state change appears as an effect in a returned list", () => {
-  const $nums = rootRef({ nums: [0, 1, 2] }).get("nums") as Ref<readonly number[]>;
+  const $nums = rootRef({ nums: [0, 1, 2] }).get("nums") as Ref<
+    readonly number[]
+  >;
   const tree = counterCounterView([0, 1, 2], $nums) as readonly Elem[];
   const targets = interactiveNodes(tree) as readonly ButtonNode[];
   // the Add Counter button plus one more! button per entry
@@ -197,6 +216,8 @@ it("p_no_callbacks: every state change appears as an effect in a returned list",
 // p_typescript — derives_from: tambor.typescript_strict
 // generator: build the package — predicate: tsc strict passes and
 // declarations are emitted
+// 30s: a full tsc build with declaration emit is a subprocess (same
+// cold-CI headroom as p_strict in typing-strict — run 37831173691)
 it("p_typescript: tsc strict passes and declarations are emitted", () => {
   // the project's strict flags (strict, noUncheckedIndexedAccess,
   // exactOptionalPropertyTypes, noImplicitOverride) run via the project
@@ -205,17 +226,19 @@ it("p_typescript: tsc strict passes and declarations are emitted", () => {
     "npx tsc -p tsconfig.json --noEmit false --declaration --emitDeclarationOnly --outDir target/tsc-out",
     { stdio: "pipe" },
   );
-  const decls = (readdirSync("target/tsc-out", { recursive: true }) as string[]).filter((f: string) =>
-    f.endsWith(".d.ts"),
-  );
+  const decls = (
+    readdirSync("target/tsc-out", { recursive: true }) as string[]
+  ).filter((f: string) => f.endsWith(".d.ts"));
   expect(decls.length).toBeGreaterThan(0);
-});
+}, 30000);
 
 // p_touch — derives_from: tambor.mobile_first
 // generator: all interactive nodes — predicate: every hit target is at
 // least 44 by 44
 it("p_touch: every hit target is at least 44 by 44", () => {
-  const $nums = rootRef({ nums: [0, 1, 2] }).get("nums") as Ref<readonly number[]>;
+  const $nums = rootRef({ nums: [0, 1, 2] }).get("nums") as Ref<
+    readonly number[]
+  >;
   const tree = counterCounterView([0, 1, 2], $nums) as readonly Elem[];
   const targets = interactiveNodes(tree);
   expect(targets.length).toBeGreaterThan(0);
