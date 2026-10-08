@@ -25,7 +25,9 @@ export interface OverflowNode {
 // Descendants of a node across the view and event layers: the event
 // layer's bubble/wrap nodes carry drawables that views/model
 // children() does not know about (and that bounds() cannot size).
-function descendantsOf(node: Node): readonly unknown[] {
+// Exported for the test corpus's scans (tambor-272), which must reuse
+// this walk rather than re-implement it.
+export function descendantsOf(node: Node): readonly unknown[] {
   const d = (node as { drawables?: readonly unknown[] }).drawables;
   if (Array.isArray(d)) return d;
   if (node.type === "translate") return [(node as { drawable: unknown }).drawable];
