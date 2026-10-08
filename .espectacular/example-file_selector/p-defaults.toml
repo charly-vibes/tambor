@@ -9,3 +9,6 @@ superseded_by = ""
 
 [[tests.shell]]
 command = "tools/scaffold-check.sh example-file_selector p-defaults"
+
+[[tests.vitest]]
+flags = "--testNamePattern=p_defaults"
