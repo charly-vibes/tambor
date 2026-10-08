@@ -1,11 +1,14 @@
 #!/bin/sh
 # Scaffold-debt report — non-blocking.
 #
-# Counts todo_predicate! stubs across the specodelic proptest scaffolds.
-# Every occurrence is a property whose predicate is not yet translated to
-# an executable assertion (specodelic 0.4.0: verify unimplemented). The
-# contract-test gate currently verifies traceability, not behavior; this
-# number is the measurable gap that shrinks as the tambor port lands.
+# TS-port metric (ruling 2026-10-08): the progress unit is a *contract
+# binding*, not a specodelic proptest scaffold. The *_props.rs files are
+# spk compile artifacts of the corpus — their todo_predicate! stubs can
+# only disappear via the corpus loop's **rust:** markers, which a
+# TypeScript port never produces. So debt is now counted where
+# executability actually lives: .espectacular/*/*.toml contracts that
+# lack a [[tests.vitest]] binding. The number shrinks as predicates
+# become executable vitest/fast-check tests.
 #
 # Always exits 0 — reporting, not gating.
 
@@ -13,14 +16,18 @@ set -eu
 
 total=0
 files=0
-for f in specodelic/*_props.rs; do
-    [ -f "$f" ] || continue
-    n=$(grep -c "todo_predicate!" "$f" || true)
-    if [ "$n" -gt 0 ]; then
-        printf '  %-45s %s\n' "$f" "$n"
+for d in .espectacular/*/; do
+    spec=$(basename "$d")
+    unbound=0
+    for f in "$d"*.toml; do
+        [ -f "$f" ] || continue
+        grep -q '\[\[tests.vitest\]\]' "$f" || unbound=$((unbound + 1))
+    done
+    if [ "$unbound" -gt 0 ]; then
+        printf '  %-45s %s\n' "$spec" "$unbound"
         files=$((files + 1))
-        total=$((total + n))
+        total=$((total + unbound))
     fi
 done
 
-echo "scaffold debt: $total todo predicates across $files scaffold files (0 = fully executable)"
+echo "scaffold debt: $total unbound contracts across $files specs (0 = fully executable)"
