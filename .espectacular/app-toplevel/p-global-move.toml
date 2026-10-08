@@ -9,3 +9,6 @@ superseded_by = ""
 
 [[tests.shell]]
 command = "tools/scaffold-check.sh app-toplevel p-global-move"
+
+[[tests.vitest]]
+flags = "--testNamePattern=p_global_move"

@@ -9,3 +9,6 @@ superseded_by = ""
 
 [[tests.shell]]
 command = "tools/scaffold-check.sh app-toplevel p-focus-effect"
+
+[[tests.vitest]]
+flags = "--testNamePattern=p_focus_effect"
