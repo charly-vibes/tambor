@@ -109,7 +109,7 @@ export class TextBackend implements BackendContract {
     if (this.runtime) this.drawView();
   }
 
-  private put(state: CellState, x: number, y: number, ch: string): void {
+  put(state: CellState, x: number, y: number, ch: string): void {
     const p = matApply(state.matrix, x, y);
     const dx = Math.round(p[0]);
     const dy = Math.round(p[1]);
@@ -123,115 +123,135 @@ export class TextBackend implements BackendContract {
     row[dx] = ch;
   }
 
-  private paint(view: AnyDraw, state: CellState): void {
+  paint(view: AnyDraw, state: CellState): void {
     if (view == null) return;
     if (Array.isArray(view)) {
-      for (const child of view as readonly AnyDraw[]) this.paint(child, state);
+      this.paintChildren(view as readonly AnyDraw[], state);
       return;
     }
-    const node = view as {
-      type: string;
-      drawable?: AnyDraw;
-      drawables?: readonly AnyDraw[];
-      text?: string;
-      width?: number;
-      height?: number;
-      x?: number;
-      y?: number;
-      radius?: number;
-      theta?: number;
-      checked?: boolean;
-      points?: readonly Vec2[];
-    };
-    switch (node.type) {
-      case "label": {
-        const text = node.text ?? "";
-        for (let i = 0; i < text.length; i++) {
-          this.put(state, i, 0, text[i]!);
-        }
-        return;
-      }
-      case "rectangle":
-      case "rounded-rectangle": {
-        const w = Math.round(node.width ?? 0);
-        const h = Math.round(node.height ?? 0);
-        for (let dy = 0; dy < h; dy++) {
-          for (let dx = 0; dx < w; dx++) this.put(state, dx, dy, "#");
-        }
-        return;
-      }
-      case "path": {
-        for (const p of (node as { points?: readonly Vec2[] }).points ?? []) {
-          this.put(state, p[0], p[1], "#");
-        }
-        return;
-      }
-      case "spacer":
-        return;
-      case "translate": {
-        this.paint(node.drawable ?? null, {
-          matrix: matTranslate(state.matrix, node.x ?? 0, node.y ?? 0),
-          clip: state.clip,
-        });
-        return;
-      }
-      case "rotate": {
-        this.paintChildren(node.drawables ?? [], {
-          matrix: matRotate(state.matrix, node.theta ?? 0),
-          clip: state.clip,
-        });
-        return;
-      }
-      case "scale": {
-        this.paintChildren(node.drawables ?? [], {
-          matrix: matScale(state.matrix, node.x ?? 1, node.y ?? 1),
-          clip: state.clip,
-        });
-        return;
-      }
-      case "scissor": {
-        const [x, y] = matApply(state.matrix, node.x ?? 0, node.y ?? 0);
-        this.paintChildren(node.drawables ?? [], {
-          matrix: state.matrix,
-          clip: {
-            x: Math.round(x),
-            y: Math.round(y),
-            w: Math.round(node.width ?? 0),
-            h: Math.round(node.height ?? 0),
-          },
-        });
-        return;
-      }
-      case "button": {
-        const text = node.text ?? "";
-        for (let i = 0; i < text.length; i++) this.put(state, 6 + i, 6, text[i]!);
-        return;
-      }
-      case "checkbox":
-        this.put(state, 0, 0, node.checked === true ? "x" : "o");
-        return;
-      case "text-selection":
-      case "text-cursor":
-      case "image":
-      case "arc":
-      case "with-color":
-      case "with-style":
-      case "with-stroke-width":
-      case "handler":
-        this.paintChildren(node.drawables ?? [], state);
-        return;
-      default: {
-        // unknown node types fall back to drawing their children
-        this.paintChildren(node.drawables ?? [], state);
-        return;
-      }
+    const node = view as PaintNode;
+    const painter = PAINTERS[node.type];
+    if (painter === undefined) {
+      // unknown node types fall back to drawing their children
+      this.paintChildren(node.drawables ?? [], state);
+      return;
     }
+    painter(this, node, state);
   }
 
-  private paintChildren(
+  paintChildren(
     kids: readonly AnyDraw[],
     state: CellState,
   ): void {
     for (const child of kids) this.paint(child, state);
   }
 }
+
+// A drawable node, as the draw tree actually carries it.
+interface PaintNode {
+  type: string;
+  drawable?: AnyDraw;
+  drawables?: readonly AnyDraw[];
+  text?: string;
+  width?: number;
+  height?: number;
+  x?: number;
+  y?: number;
+  radius?: number;
+  theta?: number;
+  checked?: boolean;
+  points?: readonly Vec2[];
+}
+
+function paintLabel(b: TextBackend, node: PaintNode, state: CellState): void {
+  const text = node.text ?? "";
+  for (let i = 0; i < text.length; i++) {
+    b.put(state, i, 0, text[i]!);
+  }
+}
+
+function paintRectangle(b: TextBackend, node: PaintNode, state: CellState): void {
+  const w = Math.round(node.width ?? 0);
+  const h = Math.round(node.height ?? 0);
+  for (let dy = 0; dy < h; dy++) {
+    for (let dx = 0; dx < w; dx++) b.put(state, dx, dy, "#");
+  }
+}
+
+function paintPath(b: TextBackend, node: PaintNode, state: CellState): void {
+  for (const p of node.points ?? []) {
+    b.put(state, p[0], p[1], "#");
+  }
+}
+
+function paintTranslate(b: TextBackend, node: PaintNode, state: CellState): void {
+  b.paint(node.drawable ?? null, {
+    matrix: matTranslate(state.matrix, node.x ?? 0, node.y ?? 0),
+    clip: state.clip,
+  });
+}
+
+function paintRotate(b: TextBackend, node: PaintNode, state: CellState): void {
+  b.paintChildren(node.drawables ?? [], {
+    matrix: matRotate(state.matrix, node.theta ?? 0),
+    clip: state.clip,
+  });
+}
+
+function paintScale(b: TextBackend, node: PaintNode, state: CellState): void {
+  b.paintChildren(node.drawables ?? [], {
+    matrix: matScale(state.matrix, node.x ?? 1, node.y ?? 1),
+    clip: state.clip,
+  });
+}
+
+function paintScissor(b: TextBackend, node: PaintNode, state: CellState): void {
+  const [x, y] = matApply(state.matrix, node.x ?? 0, node.y ?? 0);
+  b.paintChildren(node.drawables ?? [], {
+    matrix: state.matrix,
+    clip: {
+      x: Math.round(x),
+      y: Math.round(y),
+      w: Math.round(node.width ?? 0),
+      h: Math.round(node.height ?? 0),
+    },
+  });
+}
+
+function paintButton(b: TextBackend, node: PaintNode, state: CellState): void {
+  const text = node.text ?? "";
+  for (let i = 0; i < text.length; i++) b.put(state, 6 + i, 6, text[i]!);
+}
+
+function paintCheckbox(b: TextBackend, node: PaintNode, state: CellState): void {
+  b.put(state, 0, 0, node.checked === true ? "x" : "o");
+}
+
+function paintChildrenOf(b: TextBackend, node: PaintNode, state: CellState): void {
+  b.paintChildren(node.drawables ?? [], state);
+}
+
+// One painter per drawable type; the pass-through types (selection,
+// cursor, image, arc, the with-* wrappers, handler) just paint their
+// children.
+const PAINTERS: Readonly<Record<string, (b: TextBackend, node: PaintNode, state: CellState) => void>> = {
+  "label": paintLabel,
+  "rectangle": paintRectangle,
+  "rounded-rectangle": paintRectangle,
+  "path": paintPath,
+  "spacer": () => {},
+  "translate": paintTranslate,
+  "rotate": paintRotate,
+  "scale": paintScale,
+  "scissor": paintScissor,
+  "button": paintButton,
+  "checkbox": paintCheckbox,
+  "text-selection": paintChildrenOf,
+  "text-cursor": paintChildrenOf,
+  "image": paintChildrenOf,
+  "arc": paintChildrenOf,
+  "with-color": paintChildrenOf,
+  "with-style": paintChildrenOf,
+  "with-stroke-width": paintChildrenOf,
+  "handler": paintChildrenOf,
+};
