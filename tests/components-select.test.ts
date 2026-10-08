@@ -89,7 +89,8 @@ function collect<T extends Node>(elem: Elem, pred: (n: Node) => n is T): T[] {
   return out;
 }
 
-const isListNode = (n: Node): boolean => n.type === "rounded-rectangle";
+const isListNode = (n: Node): n is Node & { type: "rounded-rectangle" } =>
+  n.type === "rounded-rectangle";
 const isLabel = (n: Node): n is Label => n.type === "label";
 const isWithColor = (n: Node): n is WithColorNode => n.type === "with-color";
 
