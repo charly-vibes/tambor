@@ -35,11 +35,9 @@ import {
   withStrokeWidth,
   type Color,
   type Elem,
-  type Node,
   type Vec2,
 } from "../views/model.ts";
 import { horizontalLayout } from "../views/layout.ts";
-import type { EventElem } from "../events/bubble.ts";
 import type { Path } from "../effects/paths.ts";
 import { call, render } from "../model/component.ts";
 import { scrollview } from "../components/scrollview/scrollview.ts";
@@ -238,7 +236,3 @@ export function mobileTodoView(state: TodoState, size: Vec2): MobileTodoView {
     textareaRects: rects,
   };
 }
-
-// The event-element re-export keeps the fixture's row type usable from
-// tests that dispatch against it.
-export type { EventElem };
