@@ -107,6 +107,13 @@ export function collectOne<S, T>(target: Path<S, T>): CollectPath<S, T, T> {
   return { steps: [["collect-one", target.steps] as const], __collect: true };
 }
 
+/** The runtime payload every collect path carries: the marker is what
+ * keeps a collect path out of plain-path positions. */
+interface CollectMarker {
+  readonly steps: RawPath;
+  readonly __collect: true;
+}
+
 /** Composing a collect path with a continuation keeps the collected
  * type and moves the final focus. */
 export function compose<S, C, F, B>(
@@ -116,7 +123,7 @@ export function compose<S, C, F, B>(
 /** Composing Path<S, A> with Path<A, B> yields Path<S, B>. */
 export function compose<S, A, B>(p1: Path<S, A>, p2: Path<A, B>): Path<S, B>;
 export function compose<S, A, B>(
-  p1: Path<S, A> | { readonly steps: RawPath; readonly __collect: true },
+  p1: Path<S, A> | CollectMarker,
   p2: Path<A, B> | Path<S, B>,
 ): Path<S, B> | CollectPath<S, A, B> {
   const steps: RawPath = [...p1.steps, ...p2.steps];
