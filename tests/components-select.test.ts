@@ -15,6 +15,7 @@ import { defaultHandler, type Effect } from "../src/effects/dispatch.ts";
 import { select as selectPath, type Path } from "../src/effects/paths.ts";
 import { dispatch as dispatchEvent } from "../src/events/dispatch.ts";
 import { mouseDown } from "../src/events/event.ts";
+import { dropdownList } from "../src/components/select/list.ts";
 import {
   children,
   isGroup,
@@ -62,6 +63,18 @@ function dropdownView(
 // builtin handler).
 function applyEffects(state: unknown, effects: readonly unknown[]): unknown {
   return defaultHandler(state, effects as readonly Effect[], {});
+}
+
+// Render the dropdown-list on its own (the raw row effects are visible
+// before the dropdown's interception).
+function listView(
+  selected: unknown,
+  extra: Record<string, unknown> = {},
+  touch = false,
+): Elem {
+  return render(
+    call(dropdownList, { selected, options: OPTIONS, $selected: $SELECTED, touch, extra, $extra: EXTRA_ROOT }),
+  ) as Elem;
 }
 
 // Every node in the tree satisfying pred, collected via children().
@@ -144,4 +157,48 @@ it("p_header_label: label is That, and with nil it is no selection", () => {
       expect(collect(view, isLabel).map((l) => l.text)).not.toContain(second);
     }),
   );
+});
+
+// ---------------------------------------------------------------------------
+// cycle 2 — open, choose, close
+// ---------------------------------------------------------------------------
+
+// p_list_open — derives_from: components.select.list_when_open
+// generator: open? both values
+// predicate: list nodes exist only when open
+it("p_list_open: list nodes exist only when open", () => {
+  fc.assert(
+    fc.property(fc.boolean(), (open) => {
+      const view = dropdownView({ "::extra": {} }, null, open ? { "open?": true } : {});
+      const listNodes = collect(view, isListNode);
+      // the box and the option rows exist only when open
+      expect(listNodes.length > 0).toBe(open);
+      expect(collect(view, isLabel).map((l) => l.text).includes("The Other")).toBe(open);
+    }),
+  );
+});
+
+// p_row_effect — derives_from: components.select.row_select_effect
+// generator: click second row
+// predicate: effect is select with the selected path and that
+it("p_row_effect: effect is select with the selected path and that", () => {
+  // default measure: labels are 1 tall, rows 5 tall; the second row
+  // spans y = 8 + 5 .. 8 + 10 (box has 8 padding on y)
+  const intents = dispatchEvent(listView(null), mouseDown([5, 8 + 5 + 2]));
+  expect(intents).toEqual([["select", $SELECTED, "that"]]);
+});
+
+// p_select_closes — derives_from: components.select.select_closes
+// generator: a select intent
+// predicate: output is select then set open? false
+it("p_select_closes: output is select then set open? false", () => {
+  const view = dropdownView({ "::extra": {} }, null, { "open?": true });
+  // the dropdown's open? scratch is wherever the header toggle writes
+  const $open = (dispatchEvent(view, mouseDown([0, 0]))[0] as unknown[])[1] as Path;
+  // a select intent through the open dropdown comes out expanded
+  const intents = dispatchEvent(view, mouseDown([5, 8 + 5 + 2]));
+  expect(intents).toEqual([
+    ["select", $SELECTED, "that"],
+    ["set", $open, false],
+  ]);
 });
