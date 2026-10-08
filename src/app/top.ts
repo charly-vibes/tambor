@@ -96,49 +96,76 @@ export function topEventHandler(
 ): IntentList {
   const scrollState = select(state, SCROLL_STATE_PATH) as ScrollState | null | undefined;
   if (scrollState) {
-    if (event.type === "mouse-move") {
-      const pos = event.pos ?? ([0, 0] as Vec2);
-      return scrollState.scrollf([
-        pos[0] - scrollState.mpos[0],
-        pos[1] - scrollState.mpos[1],
-      ]);
-    }
-    if (event.type === "mouse-up") {
-      return [["set", SCROLL_STATE_PATH, null]];
-    }
+    const wired = scrollWire(scrollState, event);
+    if (wired !== undefined) return wired;
   }
   const intents = dispatch(view, event);
   if (event.type === "mouse-down") {
-    const chosen = lastStartScroll(intents);
-    if (chosen !== undefined) {
-      const scrollf = chosen.scrollf;
-      const out: Intent[] = [];
-      for (let i = 0; i < intents.length; i++) {
-        if (isStartScroll(intents[i])) {
-          // the chosen intent is replaced in place by the result of
-          // calling its function with [0, 0]; every other start-scroll
-          // intent is removed
-          if (i === chosen.index) out.push(...scrollf([0, 0]));
-          continue;
-        }
-        const kept = intents[i];
-        if (kept) out.push(kept);
-      }
-      // on drag start the root emits a set of scroll-state to function
-      // and position (drag_effect)
-      out.push(["set", SCROLL_STATE_PATH, { scrollf, mpos: event.pos ?? ([0, 0] as Vec2) }]);
-      return out;
-    }
-    if (intents.length === 0) {
-      const focus = select(state, FOCUS_PATH);
-      if (focus !== undefined && focus !== null) {
-        // a mouse-down with no intents and a non-nil focus returns the
-        // effect that sets focus to nil (click_away_blurs, focus_effect)
-        return [["set", FOCUS_PATH, null]];
-      }
+    return mouseDownWire(state, intents, event);
+  }
+  return intents;
+}
+
+// While scroll-state is set a mouse-move calls the stored function with
+// the position minus the stored start position and returns its intents
+// instead of routing the move (scroll_drag_delta), and a mouse-up
+// returns only the effect that clears scroll-state (scroll_release);
+// other events fall through to the view wire (undefined).
+function scrollWire(scrollState: ScrollState, event: TamborEvent): IntentList | undefined {
+  if (event.type === "mouse-move") {
+    const pos = event.pos ?? ([0, 0] as Vec2);
+    return scrollState.scrollf([
+      pos[0] - scrollState.mpos[0],
+      pos[1] - scrollState.mpos[1],
+    ]);
+  }
+  if (event.type === "mouse-up") {
+    return [["set", SCROLL_STATE_PATH, null]];
+  }
+  return undefined;
+}
+
+// A mouse-down that yields start-scroll intents stores the deepest one
+// and its position (start_scroll_intercept), replaces the chosen intent
+// by its [0, 0] call result and keeps the other intents' order with
+// every start-scroll intent removed (start_scroll_replaced); one with
+// no intents and a non-nil focus returns the effect that sets focus to
+// nil (click_away_blurs).
+function mouseDownWire(state: unknown, intents: IntentList, event: TamborEvent): IntentList {
+  const chosen = lastStartScroll(intents);
+  if (chosen !== undefined) return replaceStartScroll(intents, chosen, event);
+  if (intents.length === 0) {
+    const focus = select(state, FOCUS_PATH);
+    if (focus !== undefined && focus !== null) {
+      // a mouse-down with no intents and a non-nil focus returns the
+      // effect that sets focus to nil (click_away_blurs, focus_effect)
+      return [["set", FOCUS_PATH, null]];
     }
   }
   return intents;
+}
+
+// The chosen intent is replaced in place by the result of calling its
+// function with [0, 0]; every other start-scroll intent is removed. On
+// drag start the root emits a set of scroll-state to function and
+// position (drag_effect).
+function replaceStartScroll(
+  intents: IntentList,
+  chosen: { readonly index: number; readonly scrollf: Scrollf },
+  event: TamborEvent,
+): IntentList {
+  const scrollf = chosen.scrollf;
+  const out: Intent[] = [];
+  for (let i = 0; i < intents.length; i++) {
+    if (isStartScroll(intents[i])) {
+      if (i === chosen.index) out.push(...scrollf([0, 0]));
+      continue;
+    }
+    const kept = intents[i];
+    if (kept) out.push(kept);
+  }
+  out.push(["set", SCROLL_STATE_PATH, { scrollf, mpos: event.pos ?? ([0, 0] as Vec2) }]);
+  return out;
 }
 
 // The root view always reports has-mouse-move-global as true so
