@@ -224,7 +224,10 @@ it("p_fixed_position: body's screen position is constant across every sampled of
 // predicate: total scrollview content height is unchanged by activation state
 it("p_spacer_constant: total scrollview content height is unchanged by activation state", () => {
   fc.assert(
-    fc.property(startArb, lenArb, bodyArb, slotArb, oxArb, (start, len, body, slot, ox) => {
+    fc.property(startArb, lenArb, fc.nat(60), slotArb, oxArb, (start, len, w, slot, ox) => {
+      // spacer_matches_body_extent equates the body's full authored extent
+      // with end − start, so the body is authored at that height
+      const body = rectangle(w, len);
       const end = start + len;
       const activeObs = observe({
         range: [start, end],
@@ -242,7 +245,7 @@ it("p_spacer_constant: total scrollview content height is unchanged by activatio
       // the spacer reserving the slot is present, with its full extent,
       // in both states
       for (const obs of [activeObs, inactiveObs]) {
-        expect(reservedSpacer(obs.output)).toEqual([elemWidth(body), end - start]);
+        expect(reservedSpacer(obs.output)).toEqual([w, end - start]);
       }
     }),
   );
