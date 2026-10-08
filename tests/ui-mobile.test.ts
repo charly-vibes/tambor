@@ -756,3 +756,440 @@ it("p_no_hover: hover? is never set", () => {
   // is what keeps the hover machinery off.
   expect(mapTouchMove([0, 0]).pointerType).toBe("touch");
 });
+
+// ---------------------------------------------------------------------------
+// scrollytelling-pin — the Pin (specs/scrollytelling-pin.md)
+// ---------------------------------------------------------------------------
+
+// The Pin under test: the scrollytelling.pin intent realized by
+//   composing the ambient scrollview (the offset source) with
+//   components.pinned_panel — no native document scroll, no position:
+//   fixed.
+import { call } from "../src/model/component.ts";
+import { keyPress } from "../src/events/event.ts";
+import { scrollview } from "../src/components/scrollview/scrollview.ts";
+import { isGroup, spacer, type SpacerNode } from "../src/views/model.ts";
+import { pin } from "../src/scrollytelling/pin.ts";
+
+// A leaf node with its accumulated screen position: every translate on
+// the way down applied — the ambient scrollview frame's [-ox, -oy]
+// (components.scrollview.content_translated) plus the document's own
+// translates.
+interface Positioned {
+  readonly node: Node;
+  readonly pos: Vec2;
+}
+
+function walkScreen(elem: unknown, acc: Vec2, out: Positioned[]): void {
+  if (elem == null) return;
+  if (Array.isArray(elem)) {
+    for (const e of elem as readonly unknown[]) walkScreen(e, acc, out);
+    return;
+  }
+  const n = elem as {
+    type?: string;
+    drawables?: readonly unknown[];
+    drawable?: unknown;
+    x?: number;
+    y?: number;
+  };
+  switch (n.type) {
+    case "translate":
+      walkScreen(n.drawable, [acc[0] + (n.x ?? 0), acc[1] + (n.y ?? 0)], out);
+      return;
+    case "handler":
+    case "wrap":
+    case "bubble":
+    case "with-color":
+    case "with-style":
+    case "with-stroke-width":
+      for (const d of n.drawables ?? []) walkScreen(d, acc, out);
+      return;
+    default:
+      out.push({ node: elem as Node, pos: acc });
+  }
+}
+
+// The painted leaves of a rendered frame, in painting order (later
+// paints on top).
+function screenPos(elem: unknown): readonly Positioned[] {
+  const out: Positioned[] = [];
+  walkScreen(elem, [0, 0], out);
+  return out;
+}
+
+// The pin's target element in a rendered frame, by its authored width
+// marker.
+function findTarget(frame: unknown, marker: number): Vec2 {
+  const hit = screenPos(frame).find(
+    ({ node }) =>
+      !isGroup(node) &&
+      (node as Node).type === "rectangle" &&
+      (node as { width: number }).width === marker,
+  );
+  if (hit === undefined) throw new Error("target not found in rendered frame");
+  return hit.pos;
+}
+
+// The pin's reserved slot spacer: the first drawable of the pin's output
+// (unwrapping the key-press boundary wrapper), as its height.
+function pinSpacerHeight(pinTree: unknown): number {
+  const wrapped = pinTree as HandlerNode;
+  const content = wrapped.drawables[0];
+  const parts: readonly unknown[] = isGroup(content) ? content : [content];
+  const first = parts[0] as SpacerNode | undefined;
+  if (first == null || Array.isArray(first) || first.type !== "spacer") {
+    throw new Error("expected the reserved spacer first in the pin's output");
+  }
+  return first.y;
+}
+
+// One composed frame: the pin at its document slot inside a real
+// scrollview with the ambient offset. context.scroll is the offset
+// source — the scrollview's own stored offset, wired at the view layer
+// (the scrollview component itself does not publish context).
+function pinFrame(opts: {
+  readonly start: number;
+  readonly duration: number;
+  readonly body: Elem;
+  readonly slot: Vec2;
+  readonly offset: Vec2;
+  readonly viewport: Vec2;
+  readonly pinState?: string;
+}): Elem {
+  const { start, duration, body, slot, offset, viewport } = opts;
+  const args: Record<string, unknown> = { duration, body, start };
+  if (opts.pinState !== undefined) args["pin-state"] = opts.pinState;
+  const pinTree = render(
+    call(pin, args, { context: { scroll: offset } }),
+  ) as Elem;
+  return render(
+    call(
+      scrollview,
+      {
+        offset,
+        "scroll-bounds": viewport,
+        body: [translate(slot[0], slot[1], pinTree)],
+      },
+    ),
+  ) as Elem;
+}
+
+// A headless app with a pinned document: the scrollview's stored offset
+// in state, the pin's lifecycle state beside it, and the pin's target
+// carrying a width marker inside its body (after a button — the last
+// interactive element inside the pin).
+function pinApp(spec: {
+  readonly start: number;
+  readonly duration: number;
+  readonly oy: number;
+  readonly ox: number;
+  readonly vw: number;
+  readonly vh: number;
+  readonly slot: Vec2;
+  readonly w: number;
+}): { app: HeadlessApp; $pin: Path; marker: number } {
+  const marker = spec.w + 1000;
+  const $pin: Path = [["keypath", "pin_state"]];
+  const body: Elem = [button("next"), rectangle(marker, 30)];
+  const app = makeHeadlessApp({
+    state: { pin_state: "unpinned", offset: [spec.ox, spec.oy] as Vec2 },
+    view: (s) => {
+      const st = s as { pin_state: string; offset: Vec2 };
+      const pinTree = render(
+        call(
+          pin,
+          {
+            duration: spec.duration,
+            body,
+            start: spec.start,
+            "pin-state": st.pin_state,
+            "state-path": $pin,
+          },
+          { context: { scroll: st.offset } },
+        ),
+      ) as Elem;
+      return render(
+        call(scrollview, {
+          offset: st.offset,
+          "scroll-bounds": [spec.vw, spec.vh],
+          body: [translate(spec.slot[0], spec.slot[1], pinTree)],
+        }),
+      ) as Elem;
+    },
+  });
+  return { app, $pin, marker };
+}
+
+// position_constant_while_pinned — derives_from: scrollytelling.pin.fixed_during_active
+// generator: `scroll_sweep_within_pin_boundary()`
+// predicate: `viewport_position(target) is constant across every sampled frame`
+it("position_constant_while_pinned: viewport_position(target) is constant across every sampled frame", () => {
+  fc.assert(
+    fc.property(
+      fc.nat(200), // the Boundary start (content-space y)
+      fc.nat(199).map((n) => n + 1), // the authored scroll duration d
+      fc.nat(80), // ambient offset.x
+      fc.nat(60), fc.nat(80), // target width/height
+      fc.nat(90), fc.nat(140), // viewport
+      (start, duration, ox, w, h, vw, vh) => {
+        const marker = w + 1000;
+        const target = rectangle(marker, h);
+        // the pin's document slot is the Boundary start: the pin
+        // activates as its slot reaches the viewport top
+        let first: Vec2 | undefined;
+        for (let i = 0; i <= 4; i++) {
+          const oy = start + (duration * i) / 4; // every sampled frame inside the Boundary
+          const frame = pinFrame({
+            start,
+            duration,
+            body: target,
+            slot: [0, start],
+            offset: [ox, oy],
+            viewport: [vw, vh],
+          });
+          const pos = findTarget(frame, marker);
+          if (first === undefined) {
+            first = pos;
+          } else {
+            expect(pos).toEqual(first);
+          }
+        }
+      },
+    ),
+  );
+});
+
+// spacer_matches_duration — derives_from: scrollytelling.pin.spacer_reserves_height
+// generator: `pin_with(authored_duration: d)`
+// predicate: `spacer_height == d`
+it("spacer_matches_duration: spacer_height == d", () => {
+  fc.assert(
+    fc.property(
+      fc.nat(300), // the authored duration d
+      fc.nat(60), // target width
+      fc.nat(100), // the Boundary start
+      (d, w, start) => {
+        const body = rectangle(w, 40);
+        // the spacer reserves the authored height in every frame — active
+        // (including both Boundary ends) and inactive alike
+        for (const oy of [start, start + Math.floor(d / 2), start + d, start + d + 3]) {
+          const tree = render(
+            call(pin, { duration: d, body, start }, { context: { scroll: [0, oy] } }),
+          ) as Elem;
+          expect(pinSpacerHeight(tree)).toBe(d);
+        }
+        // and in the released lifecycle too — the Pin back in native flow
+        // still reserves its slot with the same authored height
+        const released = render(
+          call(
+            pin,
+            { duration: d, body, start, "pin-state": "released" },
+            { context: { scroll: [0, start] } },
+          ),
+        ) as Elem;
+        expect(pinSpacerHeight(released)).toBe(d);
+      },
+    ),
+  );
+});
+
+// no_visual_jump_on_release — derives_from: scrollytelling.pin.release_no_jump
+// generator: `scroll_past_pin_end_boundary()`
+// predicate: `rendered_position(frame_before_release) == rendered_position(frame_after_release)`
+it("no_visual_jump_on_release: rendered_position(frame_before_release) == rendered_position(frame_after_release)", () => {
+  fc.assert(
+    fc.property(
+      fc.nat(200),
+      fc.nat(199).map((n) => n + 1),
+      fc.nat(80),
+      fc.nat(60),
+      fc.nat(90), fc.nat(140),
+      (start, duration, ox, w, vw, vh) => {
+        const end = start + duration;
+        const marker = w + 1000;
+        const target = rectangle(marker, 40);
+        const slot: Vec2 = [0, start];
+        // the last pinned frame before the boundary: the body fixed at the
+        // release-boundary screen position
+        const before = findTarget(
+          pinFrame({ start, duration, body: target, slot, offset: [ox, end - 1], viewport: [vw, vh] }),
+          marker,
+        );
+        // the release frame: at the Boundary end the pin releases and
+        // control returns to native flow within the same frame — the
+        // released lifecycle draws the body in its native document slot
+        const after = findTarget(
+          pinFrame({ start, duration, body: target, slot, offset: [ox, end], viewport: [vw, vh], pinState: "released" }),
+          marker,
+        );
+        expect(after).toEqual(before);
+        // past the Boundary the body scrolls with the content again —
+        // native flow resumed, the pin no longer fixes the position
+        const later = findTarget(
+          pinFrame({ start, duration, body: target, slot, offset: [ox, end + 2], viewport: [vw, vh], pinState: "released" }),
+          marker,
+        );
+        expect(later).toEqual([before[0], before[1] - 2]);
+      },
+    ),
+  );
+});
+
+// resize_recomputes_spacer — derives_from: scrollytelling.pin.spacer_recomputed_on_resize
+// generator: `resize_pinned_target_then_refresh()`
+// predicate: `spacer_height == new authored duration`
+it("resize_recomputes_spacer: spacer_height == new authored duration", () => {
+  fc.assert(
+    fc.property(
+      fc.nat(150), // the authored duration before the resize
+      fc.nat(60), fc.nat(60), // target widths before/after
+      fc.nat(100), // the Boundary start
+      fc.nat(80), // ambient offset.x
+      (d1, w1, w2, start, ox) => {
+        // the target is resized: the duration is re-authored (d2 ≠ d1)
+        const d2 = 300 - d1;
+        const oy = start; // the refresh happens while the Pin is active
+        // before: the spacer reserves the originally authored duration
+        const beforeTree = render(
+          call(pin, { duration: d1, body: rectangle(w1, 40), start }, { context: { scroll: [ox, oy] } }),
+        ) as Elem;
+        expect(pinSpacerHeight(beforeTree)).toBe(d1);
+        // after the resize the next refresh is a plain re-render — nothing
+        // is cached (render_pure) — so the spacer is recomputed to the new
+        // authored duration, not the stale one
+        const afterTree = render(
+          call(pin, { duration: d2, body: rectangle(w2, 90), start }, { context: { scroll: [ox, oy] } }),
+        ) as Elem;
+        expect(pinSpacerHeight(afterTree)).toBe(d2);
+      },
+    ),
+  );
+});
+
+// nested_priority_resolved — derives_from: scrollytelling.pin.nested_pin_priority
+// generator: `two_nested_pins(priority: unset)`
+// predicate: `stacking_order == document_order`
+it("nested_priority_resolved: stacking_order == document_order", () => {
+  fc.assert(
+    fc.property(
+      fc.nat(199).map((n) => n + 1), // outer pin's authored duration
+      fc.nat(199).map((n) => n + 1), // inner pin's authored duration
+      fc.nat(60), fc.nat(40), // marker widths
+      fc.nat(80), fc.nat(90), fc.nat(140),
+      (outerD, innerD, wOuter, wInner, ox, vw, vh) => {
+        const outerMarker = wOuter + 2000;
+        const innerMarker = wInner + 3000;
+        // both pins simultaneously active: the shared Boundary encloses
+        // the sampled offset for both
+        const oy = Math.max(outerD, innerD);
+        // the inner pin is nested inside the outer pin's body, after the
+        // outer's own target; priority is unset on both (no z prop)
+        const inner = call(
+          pin,
+          { duration: innerD, body: rectangle(innerMarker, 25), start: 0 },
+          { context: { scroll: [ox, oy] } },
+        );
+        const innerTree = render(inner) as Elem;
+        const outerTree = render(
+          call(
+            pin,
+            { duration: outerD, body: [rectangle(outerMarker, 40), innerTree], start: 0 },
+            { context: { scroll: [ox, oy] } },
+          ),
+        ) as Elem;
+        const frame = render(
+          call(scrollview, {
+            offset: [ox, oy],
+            "scroll-bounds": [vw, vh],
+            body: [outerTree],
+          }),
+        ) as Elem;
+        const flat = screenPos(frame);
+        const index = (marker: number): number => {
+          const i = flat.findIndex(
+            ({ node }) =>
+              !isGroup(node) &&
+              (node as Node).type === "rectangle" &&
+              (node as { width: number }).width === marker,
+          );
+          if (i < 0) throw new Error(`marker ${marker} not painted`);
+          return i;
+        };
+        // priority unset: painting order is document order — the nested
+        // (later in the document) pin paints on top of the outer's target
+        expect(index(innerMarker)).toBeGreaterThan(index(outerMarker));
+      },
+    ),
+  );
+});
+
+// tab_out_releases_focus — derives_from: scrollytelling.pin.focus_releases_pin
+// generator: `tab_past_last_interactive_element_in_pin()`
+// predicate: `check(pin_state) == released`
+it("tab_out_releases_focus: check(pin_state) == released", () => {
+  fc.assert(
+    fc.property(
+      fc.nat(150),
+      fc.nat(199).map((n) => n + 1),
+      fc.nat(60),
+      fc.nat(90), fc.nat(140),
+      (start, duration, w, vw, vh) => {
+        const oy = start; // inside the Boundary: the Pin is active
+        const { app, $pin, marker } = pinApp({
+          start,
+          duration,
+          oy,
+          ox: 0,
+          vw,
+          vh,
+          slot: [0, start],
+          w,
+        });
+        // before: the target is pinned at the boundary screen position
+        const pinnedPos = findTarget(app.render(), marker);
+        // focus would move past the last interactive element inside the
+        // active Pin: the tab key-press reaches the pin's boundary
+        app.send(keyPress("tab"));
+        // check(pin_state) == released
+        expect(select(app.getState(), $pin)).toBe("released");
+        // and the release is real: the body is back in native flow at its
+        // own document slot (not trapped at the pinned position)
+        expect(findTarget(app.render(), marker)).toEqual([
+          pinnedPos[0],
+          pinnedPos[1] + duration,
+        ]);
+        // the release is sticky while the scroll stays inside the Boundary
+        app.send(keyPress("tab"));
+        expect(select(app.getState(), $pin)).toBe("released");
+      },
+    ),
+  );
+  // a non-tab key does not release the pin
+  const steady = pinApp({
+    start: 5,
+    duration: 10,
+    oy: 5,
+    ox: 0,
+    vw: 90,
+    vh: 140,
+    slot: [0, 5],
+    w: 20,
+  });
+  steady.app.send(keyPress("q"));
+  expect(select(steady.app.getState(), steady.$pin)).toBe("unpinned");
+  // and a tab on an inactive Pin (offset past the Boundary end) neither
+  // releases nor pins
+  const inactive = pinApp({
+    start: 5,
+    duration: 10,
+    oy: 16,
+    ox: 0,
+    vw: 90,
+    vh: 140,
+    slot: [0, 5],
+    w: 20,
+  });
+  inactive.app.send(keyPress("tab"));
+  expect(select(inactive.app.getState(), inactive.$pin)).toBe("unpinned");
+});
