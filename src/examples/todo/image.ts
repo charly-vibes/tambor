@@ -84,50 +84,102 @@ function draw(elem: Elem, ox: number, oy: number, pen: Pen, surface: Surface): v
     for (const child of drawablesOf(elem)) draw(child, ox, oy, pen, surface);
     return;
   }
-  const node = elem as Exclude<Elem, readonly Elem[] | null | undefined> & { type: string };
-  switch (node.type) {
-    case "translate":
-      draw(node.drawable, ox + node.x, oy + node.y, pen, surface);
-      return;
-    case "with-color":
-      for (const child of node.drawables) draw(child, ox, oy, { ...pen, color: node.color }, surface);
-      return;
-    case "with-style":
-      for (const child of node.drawables) draw(child, ox, oy, { ...pen, mode: node.style }, surface);
-      return;
-    case "with-stroke-width":
-      for (const child of node.drawables) draw(child, ox, oy, { ...pen, width: node.strokeWidth }, surface);
-      return;
-    case "label":
-      surface.chars(ox, oy, node.text, pen.color);
-      return;
-    case "rectangle":
-    case "rounded-rectangle": {
-      if (pen.mode === "fill" || pen.mode === "stroke-and-fill") {
-        fillRect(surface, ox, oy, node.width, node.height, pen.color);
-      }
-      if (pen.mode === "stroke" || pen.mode === "stroke-and-fill") {
-        strokeRect(surface, ox, oy, node.width, node.height, pen.width, pen.color);
-      }
-      return;
-    }
-    case "path": {
-      for (let i = 1; i < node.points.length; i++) {
-        segment(surface, ox + node.points[i - 1]![0], oy + node.points[i - 1]![1], ox + node.points[i]![0], oy + node.points[i]![1], pen);
-      }
-      return;
-    }
-    case "button": {
-      // a button draws its label 6 px in from its top-left (the button
-      // bounds are the label plus 12 on each axis)
-      surface.chars(ox + 6, oy + 6, node.text, pen.color);
-      return;
-    }
-    default: {
-      for (const child of children(node)) draw(child, ox, oy, pen, surface);
-    }
+  const node = elem as PainterNode;
+  const painter = PAINTERS[node.type];
+  if (painter === undefined) {
+    for (const child of children(node as unknown as Elem)) draw(child, ox, oy, pen, surface);
+    return;
+  }
+  painter(node, ox, oy, pen, surface);
+}
+
+// A drawable node, as the draw tree actually carries it.
+interface PainterNode {
+  type: string;
+  drawable?: Elem;
+  drawables?: readonly Elem[];
+  text?: string;
+  color?: Color;
+  style?: string;
+  strokeWidth?: number;
+  width?: number;
+  height?: number;
+  x?: number;
+  y?: number;
+  points?: readonly Vec2[];
+}
+
+// One painter per primitive the example's tree contains; the with-*
+// wrappers adjust the pen and recurse. The traversal convention:
+// draw(elem, ox, oy) treats the element's own origin as (0, 0); only
+// translate offsets the position.
+type NodePainter = (
+  node: PainterNode,
+  ox: number,
+  oy: number,
+  pen: Pen,
+  surface: Surface,
+) => void;
+
+function paintTranslate(node: PainterNode, ox: number, oy: number, pen: Pen, surface: Surface): void {
+  draw(node.drawable, ox + (node.x ?? 0), oy + (node.y ?? 0), pen, surface);
+}
+
+function paintWithColor(node: PainterNode, ox: number, oy: number, pen: Pen, surface: Surface): void {
+  for (const child of node.drawables ?? []) {
+    draw(child, ox, oy, { ...pen, color: node.color as Color }, surface);
   }
 }
+
+function paintWithStyle(node: PainterNode, ox: number, oy: number, pen: Pen, surface: Surface): void {
+  for (const child of node.drawables ?? []) {
+    draw(child, ox, oy, { ...pen, mode: node.style as Pen["mode"] }, surface);
+  }
+}
+
+function paintWithStrokeWidth(node: PainterNode, ox: number, oy: number, pen: Pen, surface: Surface): void {
+  for (const child of node.drawables ?? []) {
+    draw(child, ox, oy, { ...pen, width: node.strokeWidth as number }, surface);
+  }
+}
+
+function paintLabel(node: PainterNode, ox: number, oy: number, pen: Pen, surface: Surface): void {
+  surface.chars(ox, oy, node.text ?? "", pen.color);
+}
+
+function paintRect(node: PainterNode, ox: number, oy: number, pen: Pen, surface: Surface): void {
+  if (pen.mode === "fill" || pen.mode === "stroke-and-fill") {
+    fillRect(surface, ox, oy, node.width ?? 0, node.height ?? 0, pen.color);
+  }
+  if (pen.mode === "stroke" || pen.mode === "stroke-and-fill") {
+    strokeRect(surface, ox, oy, node.width ?? 0, node.height ?? 0, pen.width, pen.color);
+  }
+}
+
+function paintPath(node: PainterNode, ox: number, oy: number, pen: Pen, surface: Surface): void {
+  const points = node.points ?? [];
+  for (let i = 1; i < points.length; i++) {
+    segment(surface, ox + points[i - 1]![0], oy + points[i - 1]![1], ox + points[i]![0], oy + points[i]![1], pen);
+  }
+}
+
+function paintButton(node: PainterNode, ox: number, oy: number, pen: Pen, surface: Surface): void {
+  // a button draws its label 6 px in from its top-left (the button
+  // bounds are the label plus 12 on each axis)
+  surface.chars(ox + 6, oy + 6, node.text ?? "", pen.color);
+}
+
+const PAINTERS: Readonly<Record<string, NodePainter>> = {
+  "translate": paintTranslate,
+  "with-color": paintWithColor,
+  "with-style": paintWithStyle,
+  "with-stroke-width": paintWithStrokeWidth,
+  "label": paintLabel,
+  "rectangle": paintRect,
+  "rounded-rectangle": paintRect,
+  "path": paintPath,
+  "button": paintButton,
+};
 
 function fillRect(surface: Surface, x: number, y: number, w: number, h: number, color: Color): void {
   for (let j = 0; j < Math.ceil(h); j++) {
