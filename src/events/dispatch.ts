@@ -82,37 +82,56 @@ function isInputKind(type: string): boolean {
 export function dispatch(elem: EventElem, event: TamborEvent): IntentList {
   if (elem == null) return [];
   if (isGroupElem(elem)) return dispatchGroup(elem, event);
-  switch (elem.type) {
-    case "translate": {
-      // Descending through Translate subtracts x and y from the event
-      // position (coords_translated).
-      const shifted = event.pos
-        ? { ...event, pos: [event.pos[0] - elem.x, event.pos[1] - elem.y] as Vec2 }
-        : event;
-      return dispatch(elem.drawable, shifted);
-    }
-    case "with-color":
-    case "with-style":
-    case "with-stroke-width":
-      return dispatchGroup(elem.drawables, event);
-    case "checkbox":
-      // the checkbox draw (its only child) is traversed like any group
-      return dispatchGroup(children(elem), event);
-    case "handler":
-      return dispatchHandler(elem, event);
-    case "button":
-      return dispatchButton(elem, event);
-    case "bubble":
-      // after the child results are collected the node applies its
-      // bubble function once (bubble_after_children, on_bubble_raw)
-      return elem.bubble(dispatchGroup(elem.drawables, event));
-    case "wrap":
-      return dispatchWrap(elem, event);
-    default:
-      // leaves (label, rectangle, path, spacer, ...) produce no intents
-      return [];
+  const wire = WIRES[(elem as { type: string }).type];
+  if (wire === undefined) {
+    // leaves (label, rectangle, path, spacer, ...) produce no intents
+    return [];
   }
+  return wire((elem2, event2) => dispatch(elem2, event2), elem, event);
 }
+
+// A wire receives the recursive dispatch so the wire table stays a
+// flat record over the node vocabulary.
+type DispatchFn2 = (elem: EventElem, event: TamborEvent) => IntentList;
+type Wire = (dispatch: DispatchFn2, elem: EventElem, event: TamborEvent) => IntentList;
+
+function wireTranslate(dispatch: DispatchFn2, elem: EventElem, event: TamborEvent): IntentList {
+  // Descending through Translate subtracts x and y from the event
+  // position (coords_translated).
+  const node = elem as { x: number; y: number; drawable: EventElem };
+  const shifted = event.pos
+    ? { ...event, pos: [event.pos[0] - node.x, event.pos[1] - node.y] as Vec2 }
+    : event;
+  return dispatch(node.drawable, shifted);
+}
+
+function wireDrawables(dispatch: DispatchFn2, elem: EventElem, event: TamborEvent): IntentList {
+  return dispatchGroup((elem as { drawables: readonly EventElem[] }).drawables, event);
+}
+
+function wireCheckbox(dispatch: DispatchFn2, elem: EventElem, event: TamborEvent): IntentList {
+  // the checkbox draw (its only child) is traversed like any group
+  return dispatchGroup(children(elem as never), event);
+}
+
+function wireBubble(dispatch: DispatchFn2, elem: EventElem, event: TamborEvent): IntentList {
+  // after the child results are collected the node applies its
+  // bubble function once (bubble_after_children, on_bubble_raw)
+  const node = elem as { bubble: (intents: IntentList) => IntentList; drawables: readonly EventElem[] };
+  return node.bubble(dispatchGroup(node.drawables, event));
+}
+
+const WIRES: Readonly<Record<string, Wire>> = {
+  "translate": wireTranslate,
+  "with-color": wireDrawables,
+  "with-style": wireDrawables,
+  "with-stroke-width": wireDrawables,
+  "checkbox": wireCheckbox,
+  "handler": (dispatch, elem, event) => dispatchHandler(elem as never, event),
+  "button": (dispatch, elem, event) => dispatchButton(elem as never, event),
+  "bubble": wireBubble,
+  "wrap": (dispatch, elem, event) => dispatchWrap(elem as never, event),
+};
 
 // Group delivery under the rule of the event type: pointer kinds try
 // children last to first and stop at the first non-empty list
@@ -264,24 +283,31 @@ function asIntents(result: unknown): IntentList {
 function hasHandler(elem: EventElem, kind: string): boolean {
   if (elem == null) return false;
   if (isGroupElem(elem)) return elem.some((child) => hasHandler(child, kind));
-  switch (elem.type) {
-    case "handler":
-      return elem.eventType === kind || elem.drawables.some((child) => hasHandler(child, kind));
-    case "translate":
-      return hasHandler(elem.drawable, kind);
-    case "with-color":
-    case "with-style":
-    case "with-stroke-width":
-    case "bubble":
-      return elem.drawables.some((child) => hasHandler(child, kind));
-    case "checkbox":
-      return children(elem).some((child) => hasHandler(child, kind));
-    case "button":
-      return false;
-    default:
-      return false;
-  }
+  const search = HANDLER_SEARCH[(elem as { type: string }).type];
+  return search !== undefined && search(elem, kind);
 }
+
+// Where a node kind can carry a handler of the event kind: the handler
+// node itself (matching eventType), the wrappers that pass through, and
+// the checkbox draw traversed like a group. Buttons and leaves hold
+// none.
+const HANDLER_SEARCH: Readonly<Record<string, (elem: EventElem, kind: string) => boolean>> = {
+  "handler": (elem, kind) => {
+    const node = elem as { eventType: string; drawables: readonly EventElem[] };
+    return node.eventType === kind || node.drawables.some((child) => hasHandler(child, kind));
+  },
+  "translate": (elem, kind) => hasHandler((elem as { drawable: EventElem }).drawable, kind),
+  "with-color": (elem, kind) =>
+    (elem as { drawables: readonly EventElem[] }).drawables.some((child) => hasHandler(child, kind)),
+  "with-style": (elem, kind) =>
+    (elem as { drawables: readonly EventElem[] }).drawables.some((child) => hasHandler(child, kind)),
+  "with-stroke-width": (elem, kind) =>
+    (elem as { drawables: readonly EventElem[] }).drawables.some((child) => hasHandler(child, kind)),
+  "bubble": (elem, kind) =>
+    (elem as { drawables: readonly EventElem[] }).drawables.some((child) => hasHandler(child, kind)),
+  "checkbox": (elem, kind) =>
+    children(elem as never).some((child) => hasHandler(child, kind)),
+};
 
 export function hasKeyPress(elem: EventElem): boolean {
   return hasHandler(elem, "key-press");
