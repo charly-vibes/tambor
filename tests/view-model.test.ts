@@ -317,11 +317,20 @@ const CHECK_PATH: readonly Vec2[] = [
 
 function hasCheckPath(elem: Elem): boolean {
   for (const e of walk(elem)) {
-    if (e !== null && e !== undefined && "type" in e && e.type === "path") {
-      if (JSON.stringify(e.points) === JSON.stringify(CHECK_PATH)) return true;
-    }
+    if (isCheckPath(e)) return true;
   }
   return false;
+}
+
+// A path node or not — nil and groups are not.
+function isCheckPath(e: Elem): boolean {
+  if (e == null || Array.isArray(e)) return false;
+  return isPathWithCheckPoints(e as Node);
+}
+
+function isPathWithCheckPoints(node: Node): boolean {
+  if (node.type !== "path") return false;
+  return JSON.stringify(node.points) === JSON.stringify(CHECK_PATH);
 }
 
 // p_checkbox_geometry — derives_from: view.model.checkbox_geometry

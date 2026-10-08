@@ -39,15 +39,28 @@ function offsets(rows: readonly Elem[] | null, axis: 0 | 1): number[] {
 // Count nodes that still report a stretch flag after resolution.
 function stretchCount(elem: Elem): number {
   if (elem == null) return 0;
+  return stretchCountOf(elem);
+}
+
+function stretchCountOf(elem: Elem): number {
   if (Array.isArray(elem)) {
     return elem.reduce((sum: number, child) => sum + stretchCount(child), 0);
   }
-  const flags =
-    ("stretchWidth" in elem && elem.stretchWidth === true ? 1 : 0) +
-    ("stretchHeight" in elem && elem.stretchHeight === true ? 1 : 0);
-  let total: number = flags;
+  let total: number = flagsOf(elem as Node);
   for (const child of children(elem)) total += stretchCount(child);
   return total;
+}
+
+// The node's two stretch flags as a 0..2 count.
+function flagsOf(node: Node): number {
+  return (
+    (stretchFlagOf(node, "stretchWidth") ? 1 : 0) +
+    (stretchFlagOf(node, "stretchHeight") ? 1 : 0)
+  );
+}
+
+function stretchFlagOf(node: Node, key: "stretchWidth" | "stretchHeight"): boolean {
+  return key in node && (node as unknown as Record<string, unknown>)[key] === true;
 }
 
 // p_vstack — derives_from: view.layout.vstack_offsets

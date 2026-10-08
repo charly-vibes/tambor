@@ -15,6 +15,7 @@ import {
   SELECTED_PATH,
   STR_FILTER_PATH,
 } from "../src/examples/file_selector/fileSelector.ts";
+import { type Node } from "../src/views/model.ts";
 import { dispatch } from "../src/events/dispatch.ts";
 import { mouseDown } from "../src/events/event.ts";
 import {
@@ -45,31 +46,93 @@ function rowLayout(row: HandlerNode): readonly Elem[] {
 // the row handler's bounds).
 function findPoint(elem: Elem, name: string, acc: readonly [number, number] = [0, 0]): readonly [number, number] {
   if (elem == null) throw new Error(`no row labelled ${name}`);
-  if (isGroup(elem)) {
-    for (const child of elem) {
-      try {
-        return findPoint(child, name, acc);
-      } catch {
-        continue;
-      }
-    }
-    throw new Error(`no row labelled ${name}`);
-  }
+  if (isGroup(elem)) return findInChildren(elem, name, acc);
+  return findPointNode(elem as Node, name, acc);
+}
+
+function findPointNode(elem: Node, name: string, acc: readonly [number, number]): readonly [number, number] {
   if (elem.type === "translate") {
-    return findPoint(elem.drawable, name, [acc[0] + elem.x, acc[1] + elem.y]);
+    return findPoint((elem as { drawable: Elem }).drawable, name, [acc[0] + (elem as { x: number }).x, acc[1] + (elem as { y: number }).y]);
   }
-  if (elem.type === "handler" || elem.type === "with-color" || elem.type === "with-style" || elem.type === "with-stroke-width") {
-    for (const child of elem.drawables) {
-      try {
-        return findPoint(child, name, acc);
-      } catch {
-        continue;
-      }
-    }
-    throw new Error(`no row labelled ${name}`);
-  }
+  return findPointWrapper(elem, name, acc);
+}
+
+function findPointWrapper(elem: Node, name: string, acc: readonly [number, number]): readonly [number, number] {
+  const wrapped = drawablesOfWrapper(elem);
+  if (wrapped) return findInChildren(wrapped, name, acc);
+  return findLabelPoint(elem, name, acc);
+}
+
+function findLabelPoint(elem: Node, name: string, acc: readonly [number, number]): readonly [number, number] {
   if (elem.type === "label" && elem.text === name) return acc;
   throw new Error(`no row labelled ${name}`);
+}
+
+// The wrapper node kinds whose drawables the point search descends into.
+const WRAPPER_KINDS: ReadonlySet<string> = new Set([
+  "handler",
+  "with-color",
+  "with-style",
+  "with-stroke-width",
+]);
+
+// The wrapper node kinds' drawables, or null when the node is not a
+// wrapper the point search descends into.
+function drawablesOfWrapper(elem: Node): readonly Elem[] | null {
+  if (!WRAPPER_KINDS.has(elem.type)) return null;
+  return (elem as { drawables: readonly Elem[] }).drawables;
+}
+
+// The children are searched in order; the first child that yields a
+// point wins, a child with no such row falls through.
+function findInChildren(children: readonly Elem[], name: string, acc: readonly [number, number]): readonly [number, number] {
+  for (const child of children) {
+    try {
+      return findPoint(child, name, acc);
+    } catch {
+      continue;
+    }
+  }
+  throw new Error(`no row labelled ${name}`);
+}
+
+// One node's contribution to a row's (name, checked): the checkbox
+// reports its checked flag, the first label the row's name.
+function recordLeaf(node: Node, info: { name: string | null; checked: boolean }): void {
+  if ((node as { type: string }).type === "checkbox") {
+    info.checked = (node as { checked: boolean }).checked;
+    return;
+  }
+  recordLabel(node, info);
+}
+
+function recordLabel(node: Node, info: { name: string | null; checked: boolean }): void {
+  if (node.type !== "label" || info.name !== null) return;
+  info.name = node.text;
+}
+
+// Descend into translate/wrapper nodes; record leaf contributions.
+function walkNodeRow(e: Node, info: { name: string | null; checked: boolean }): void {
+  if (e.type === "translate") {
+    walkRow((e as { drawable: Elem }).drawable, info);
+    return;
+  }
+  const wrapped = drawablesOfWrapper(e);
+  if (wrapped) {
+    wrapped.forEach((child) => walkRow(child, info));
+    return;
+  }
+  recordLeaf(e, info);
+}
+
+// One element of the row tree: null, group, or drawable node.
+function walkRow(e: Elem, info: { name: string | null; checked: boolean }): void {
+  if (e == null) return;
+  if (isGroup(e)) {
+    e.forEach((child) => walkRow(child, info));
+    return;
+  }
+  walkNodeRow(e as Node, info);
 }
 
 // The visible rows of a rendered selector, in order: each row's name
@@ -77,23 +140,9 @@ function findPoint(elem: Elem, name: string, acc: readonly [number, number] = [0
 // textarea, not a row.
 function visibleRows(view: readonly Elem[]): readonly { name: string; checked: boolean }[] {
   const info = (elem: Elem): { name: string; checked: boolean } | null => {
-    let checked = false;
-    let name: string | null = null;
-    const walk = (e: Elem): void => {
-      if (e == null) return;
-      if (isGroup(e)) {
-        e.forEach(walk);
-        return;
-      }
-      if (e.type === "checkbox") checked = e.checked;
-      if (e.type === "label" && name === null) name = e.text;
-      if (e.type === "translate") walk(e.drawable);
-      if (e.type === "handler" || e.type === "with-color" || e.type === "with-style" || e.type === "with-stroke-width") {
-        e.drawables.forEach(walk);
-      }
-    };
-    walk(elem);
-    return name === null ? null : { name, checked };
+    const acc: { name: string | null; checked: boolean } = { name: null, checked: false };
+    walkRow(elem, acc);
+    return acc.name === null ? null : { name: acc.name, checked: acc.checked };
   };
   const rows: { name: string; checked: boolean }[] = [];
   for (const child of view.slice(1)) {
