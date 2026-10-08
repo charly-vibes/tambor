@@ -63,7 +63,7 @@ jobs:
         run: |
           curl -fsSL "https://github.com/charly-vibes/specodelic/releases/download/v0.7.0/specodelic_0.7.0_linux_amd64.tar.gz" -o /tmp/spk.tgz
           curl -fsSL "https://github.com/charly-vibes/specodelic/releases/download/v0.7.0/checksums.txt" -o /tmp/spk-checksums.txt
-          grep "specodelic_0.7.0_linux_amd64.tar.gz" /tmp/spk-checksums.txt | (cd /tmp && sha256sum -c -)
+          grep -- specodelic_0.7.0_linux_amd64.tar.gz /tmp/spk-checksums.txt | (cd /tmp && sha256sum -c -)
           tar -xzf /tmp/spk.tgz -C "$CARGO_HOME/bin" spk
           spk --version
 
