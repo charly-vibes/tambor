@@ -1,7 +1,18 @@
 [pretender]
 mode = "gate"
 languages = ["auto"]
-exclude = ["vendor/**", "node_modules/**", "**/*_generated.*"]
+# NOTE: generated/build trees must be excluded with a leading ** glob — bare
+# "node_modules/**" does not match the "./node_modules/..." paths the scanner
+# walks. That omission made the full gate scan 32k+ vendor findings through
+# lefthook's pipe (SIGPIPE 141 on push — tambor-8nt).
+exclude = [
+  "vendor/**",
+  "node_modules/**",
+  "**/node_modules/**",
+  "target/**",
+  "**/target/**",
+  "**/*_generated.*",
+]
 
 [roles.test]
 paths = ["tests/**", "**/*_test.*", "spec/**"]
