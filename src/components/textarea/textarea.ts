@@ -49,6 +49,22 @@ export const CURSOR_COLOR: Color = [0, 0, 0, 0.3];
 export const DOUBLE_CLICK_MS = 500;
 export const DOUBLE_CLICK_DIST2 = 100;
 
+const isSpace = (ch: string): boolean => /\s/.test(ch);
+
+function dist2(a: Vec2, b: Vec2): number {
+  return (a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2;
+}
+
+// The whitespace-bounded word around the clicked index: from the word
+// start to the next whitespace or the end of text (double_click_word).
+function wordBounds(text: string, idx: number): readonly [number, number] {
+  let start = Math.min(idx, text.length);
+  while (start > 0 && !isSpace(text[start - 1]!)) start--;
+  let end = start;
+  while (end < text.length && !isSpace(text[end]!)) end++;
+  return [start, end];
+}
+
 export interface TextareaProps {
   /** the text being edited; nil before the first insert */
   readonly text: string | null;
@@ -159,12 +175,33 @@ export function textarea(props: TextareaProps): Elem {
   const onMouseDown = (pos: Vec2): IntentList => {
     const local = toTextPos(pos);
     const idx = indexAt(local);
+    const now = props.now ?? Date.now();
+    const lc = extra["last-click"];
+    // double_click_word: every click records the time and position; a
+    // second click within 500 ms and with squared distance under 100
+    // from the last click selects from the whitespace-bounded word
+    // start to the next whitespace or the end of text
+    const record = u("last-click", { pos: local, time: now });
+    if (
+      lc !== null &&
+      now - lc.time < DOUBLE_CLICK_MS &&
+      dist2(local, lc.pos) < DOUBLE_CLICK_DIST2
+    ) {
+      const [wordStart, wordEnd] = wordBounds(t, idx);
+      return [
+        ["request-focus", props.textPath],
+        u("cursor", wordStart),
+        u("select-cursor", wordEnd),
+        record,
+      ];
+    }
     return [
       ["request-focus", props.textPath],
       u("cursor", idx),
       u("mpos", local),
       u("down-pos", local),
       u("select-cursor", null),
+      record,
     ];
   };
 
