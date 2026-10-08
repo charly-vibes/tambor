@@ -62,10 +62,6 @@ export interface ScrollState {
   mpos: Vec2;
 }
 
-// The start-scroll intent of the corpus: an intent holding a function
-// from offset delta to intents.
-type StartScrollIntent = readonly ["start-scroll", Scrollf];
-
 function isStartScroll(intent: Intent | undefined): boolean {
   return Array.isArray(intent) && intent[0] === "start-scroll";
 }
