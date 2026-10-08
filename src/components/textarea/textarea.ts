@@ -172,7 +172,8 @@ export function textarea(props: TextareaProps): Elem {
   // none returns nothing. pointer_down_cursor: the cursor moves to
   // indexForPosition at the position, mpos and down-pos store the
   // position, and the selection is cleared.
-  const onMouseDown = (pos: Vec2): IntentList => {
+  const onMouseDown = (...args: readonly unknown[]): IntentList => {
+    const pos = args[0] as Vec2;
     const local = toTextPos(pos);
     const idx = indexAt(local);
     const now = props.now ?? Date.now();
@@ -207,19 +208,19 @@ export function textarea(props: TextareaProps): Elem {
 
   // drag_tracks: a pointer move while down-pos is set stores mpos;
   // with no down-pos it returns nothing.
-  const onMouseMove = (pos: Vec2): IntentList => {
+  const onMouseMove = (...args: readonly unknown[]): IntentList => {
     if (extra["down-pos"] === null) return [];
-    return [u("mpos", toTextPos(pos))];
+    return [u("mpos", toTextPos(args[0] as Vec2))];
   };
 
   // finish_drag_rule: on pointer up the end index is indexForPosition
   // at the position; the selection start is the index at down-pos when
   // it differs from the end index, plus one when it lies after the end
   // index; down-pos is cleared.
-  const onMouseUp = (pos: Vec2): IntentList => {
+  const onMouseUp = (...args: readonly unknown[]): IntentList => {
     const down = extra["down-pos"];
     if (down === null) return [];
-    const local = toTextPos(pos);
+    const local = toTextPos(args[0] as Vec2);
     const end = indexAt(local);
     const start = indexAt(down);
     const out: Intent[] = [];
@@ -261,7 +262,8 @@ export function textarea(props: TextareaProps): Elem {
   // effect with the selected text range, cut edits the text and
   // returns clipboard-cut with the range, paste returns insert-text
   // with the pasted string.
-  const onClipboard = (data: string): IntentList => {
+  const onClipboard = (...args: readonly unknown[]): IntentList => {
+    const data = args[0] as string;
     if (!focused) return [];
     if (data === "copy") {
       const range = selectionRange(extra);
@@ -282,11 +284,13 @@ export function textarea(props: TextareaProps): Elem {
     return [["insert-text", data, props.textPath, props.extraPath]];
   };
 
+  // onPairs over handler-only pairs returns a handler node — an Elem
+  // (EventElem only widens when wrap/bubble pairs are used).
   return onPairs([
     ["mouse-down", onMouseDown],
     ["mouse-move", onMouseMove],
     ["mouse-up", onMouseUp],
     ["key-press", onKeyPress],
     ["clipboard", onClipboard],
-  ], frame);
+  ], frame) as Elem;
 }

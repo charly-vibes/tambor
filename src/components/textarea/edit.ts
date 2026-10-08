@@ -17,9 +17,7 @@
 
 import { select, setPath, updatePath, type Path } from "../../effects/paths.ts";
 import type { Intent, IntentList } from "../../events/bubble.ts";
-
-// One end of the pointer gesture state, in view coordinates.
-export type Vec2 = readonly [number, number];
+import type { Vec2 } from "../../views/model.ts";
 
 // The last click, for the double-click detector (double_click_word:
 // within 500 ms and squared distance under 100 of the previous click).
@@ -49,23 +47,16 @@ export function initialTextareaExtra(over: Partial<TextareaExtra> = {}): Textare
   };
 }
 
-// External intents: returned to the caller untouched. request-focus is
-// applied by the top-level handler (app.toplevel), the clipboard
-// effects by the effect dispatcher's backend service.
-const EXTERNAL_TYPES: ReadonlySet<string> = new Set([
-  "request-focus",
-  "clipboard-copy",
-  "clipboard-cut",
-]);
-
 // Apply the textarea's intents against the state, in order. Editing
 // effects read and write through their carried paths; the external
-// intents pass through unchanged.
+// intents (request-focus, the clipboard effects — applied by the
+// top-level handler and the effect dispatcher's backend service
+// respectively) pass through unchanged.
 export function applyTextareaIntents<S>(
   state: S,
   intents: IntentList,
 ): { state: S; external: IntentList } {
-  let out = state;
+  let out: unknown = state;
   const external: Intent[] = [];
   for (const intent of intents) {
     const type = intent[0] as string;
@@ -75,31 +66,25 @@ export function applyTextareaIntents<S>(
         out = updatePath(out, rest[0] as Path, rest[1] as (old: unknown) => unknown);
         break;
       case "insert-text":
-        out = writeEdit(
-          out,
-          rest[1] as Path,
-          rest[2] as Path,
-          insertOp(readText(out, rest[1] as Path), readCursor(out, rest[2] as Path), readSelect(out, rest[2] as Path), rest[0] as string),
-        );
+        out = withPaths(out, rest[1] as Path, rest[2] as Path, (t, c, sc) =>
+          insertOp(t, c, sc, rest[0] as string));
         break;
       case "insert-newline":
-        out = writeEdit(
-          out,
-          rest[0] as Path,
-          rest[1] as Path,
-          insertOp(readText(out, rest[0] as Path), readCursor(out, rest[1] as Path), readSelect(out, rest[1] as Path), "\n"),
-        );
+        out = withPaths(out, rest[0] as Path, rest[1] as Path, (t, c, sc) =>
+          insertOp(t, c, sc, "\n"));
         break;
       case "delete-backward":
-        out = writeEdit(out, rest[0] as Path, rest[1] as Path, deleteOp(readText(out, rest[0] as Path), readCursor(out, rest[1] as Path), readSelect(out, rest[1] as Path)));
+        out = withPaths(out, rest[0] as Path, rest[1] as Path, deleteOp);
         break;
       case "backward-char":
       case "forward-char":
-        out = writeEdit(out, rest[0] as Path, rest[1] as Path, charOp(readText(out, rest[0] as Path), readCursor(out, rest[1] as Path), readSelect(out, rest[1] as Path), type === "forward-char" ? "forward" : "backward"));
+        out = withPaths(out, rest[0] as Path, rest[1] as Path, (t, c, sc) =>
+          charOp(t, c, sc, type === "forward-char" ? "forward" : "backward"));
         break;
       case "previous-line":
       case "next-line":
-        out = writeEdit(out, rest[0] as Path, rest[1] as Path, lineOp(readText(out, rest[0] as Path), readCursor(out, rest[1] as Path), readSelect(out, rest[1] as Path), type === "previous-line" ? "prev" : "next"));
+        out = withPaths(out, rest[0] as Path, rest[1] as Path, (t, c, sc) =>
+          lineOp(t, c, sc, type === "previous-line" ? "prev" : "next"));
         break;
       case "request-focus":
       case "clipboard-copy":
@@ -113,7 +98,7 @@ export function applyTextareaIntents<S>(
         break;
     }
   }
-  return { state: out, external };
+  return { state: out as S, external };
 }
 
 // The result of one editing op over (text, extra): the new text and the
@@ -126,26 +111,21 @@ interface EditResult {
 
 const textLen = (text: string | null): number => text?.length ?? 0;
 
-function readText(state: unknown, textPath: Path): string | null {
-  return select(state, textPath) as string | null;
-}
-
-function readCursor(state: unknown, extraPath: Path): number {
-  return select(state, [...extraPath, ["keypath", "cursor"]]) as number;
-}
-
-function readSelect(state: unknown, extraPath: Path): number | null {
-  return select(state, [...extraPath, ["keypath", "select-cursor"]]) as number | null;
-}
-
-// Write an op's result back: the text through its app-state path, the
-// cursor and selection through the extra map's paths (text_state_split).
-function writeEdit(
+// Read the (text, cursor, selection) an editing op works on through
+// its carried paths, apply the op, and write the result back: the text
+// through its app-state path, the cursor and selection through the
+// extra map's paths (text_state_split).
+function withPaths(
   state: unknown,
   textPath: Path,
   extraPath: Path,
-  r: EditResult,
+  op: (text: string | null, cursor: number, selectCursor: number | null) => EditResult,
 ): unknown {
+  const r = op(
+    select(state, textPath) as string | null,
+    select(state, [...extraPath, ["keypath", "cursor"]]) as number,
+    select(state, [...extraPath, ["keypath", "select-cursor"]]) as number | null,
+  );
   let out = setPath(state, textPath, r.text);
   out = setPath(out, [...extraPath, ["keypath", "cursor"]], r.cursor);
   out = setPath(out, [...extraPath, ["keypath", "select-cursor"]], r["select-cursor"]);

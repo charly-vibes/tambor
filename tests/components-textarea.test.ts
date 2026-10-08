@@ -136,7 +136,7 @@ it("p_focus_path: requesting focus on one leaves the other unfocused", () => {
 
   // the top-level applies it: focus becomes A's path (focus_by_path:
   // request-focus sets focus to that path)
-  const focus = res.external[0][1];
+  const focus = res.external[0]![1];
 
   // focused exactly when context focus deep-equals the text path
   expect(isFocused(focus, pathA)).toBe(true);
@@ -148,8 +148,8 @@ it("p_focus_path: requesting focus on one leaves the other unfocused", () => {
   // and the reverse: focusing B leaves A unfocused
   const resB = send(b, mouseDown([7, 2]), { textPath: pathB });
   expect(resB.external[0]).toEqual(["request-focus", pathB]);
-  expect(isFocused(resB.external[0][1], pathA)).toBe(false);
-  expect(isFocused(resB.external[0][1], pathB)).toBe(true);
+  expect(isFocused(resB.external[0]![1], pathA)).toBe(false);
+  expect(isFocused(resB.external[0]![1], pathB)).toBe(true);
 });
 
 // p_request_focus — derives_from: components.textarea.request_focus_on_hit
@@ -160,7 +160,7 @@ it("p_request_focus: inside returns request-focus first, empty returns nothing",
 
   // a click inside yields intents, and request-focus comes first
   const inside = send(state, mouseDown([7, 2]));
-  expect(inside.external[0][0]).toBe("request-focus");
+  expect(inside.external[0]![0]).toBe("request-focus");
   expect(inside.intents.length).toBeGreaterThan(1);
 
   // a pointer down on empty space yields nothing at all
@@ -292,7 +292,7 @@ it("p_cursor: 0 <= cursor <= len(text) after random moves", () => {
     fc.property(
       fc.string({ minLength: 0, maxLength: 12 }),
       fc.integer({ min: 0, max: 15 }),
-      fc.option(fc.integer({ min: 0, max: 12 }), { nilChance: 0.5 }),
+      fc.option(fc.integer({ min: 0, max: 12 }), { freq: 2 }),
       fc.constantFrom("left", "right"),
       (text, cursor, selectCursor, key) => {
         const state = harnessState(text, { cursor, "select-cursor": selectCursor }, TEXT_PATH);
@@ -485,8 +485,9 @@ it("p_state_split: text paths point into app state and cursor paths into extra",
   const updates = resM.intents.filter((i) => i[0] === "update");
   expect(updates.length).toBeGreaterThan(0);
   for (const intent of updates) {
-    expect(intent[1]![0]).toEqual(["keypath", "textarea-state"]);
-    expect(intent[1]!.length).toBe(2);
+    const path = intent[1] as Path;
+    expect(path[0]).toEqual(["keypath", "textarea-state"]);
+    expect(path.length).toBe(2);
   }
   expect(resM.state.text).toBe("hello");
 
