@@ -93,6 +93,7 @@ function collect<T extends Node>(elem: Elem, pred: (n: Node) => n is T): T[] {
 
 const isListNode = (n: Node): n is Node & { type: "rounded-rectangle" } =>
   n.type === "rounded-rectangle";
+const isRect = (n: Node): n is Node & { type: "rectangle" } => n.type === "rectangle";
 const isLabel = (n: Node): n is Label => n.type === "label";
 const isWithColor = (n: Node): n is WithColorNode => n.type === "with-color";
 
@@ -236,7 +237,7 @@ it("p_row_visuals: fills and label colors match", () => {
   // the selected row: a blue fill and a white label
   const blues = collect(view, isWithColor).filter((w) => colorsEqual(w.color, SELECTED_FILL));
   expect(blues.length).toBe(1);
-  expect(collect(blues[0]!.drawables as Elem, (n): n is Node & { type: "rectangle" } => n.type === "rectangle").length).toBe(1);
+  expect(collect(blues[0]!.drawables as Elem, isRect).length).toBe(1);
   const whites = collect(view, isWithColor).filter((w) => colorsEqual(w.color, WHITE));
   expect(whites.length).toBe(1);
   expect(collect(whites[0]!.drawables as Elem, isLabel).map((l) => l.text)).toEqual(["That"]);
@@ -244,12 +245,7 @@ it("p_row_visuals: fills and label colors match", () => {
   // the hovered row: a light gray fill over its row rectangle
   const grays = collect(view, isWithColor).filter((w) => colorsEqual(w.color, HOVER_FILL));
   expect(grays.length).toBe(1);
-  expect(
-    collect(
-      grays[0]!.drawables as Elem,
-      (n): n is Node & { type: "rectangle" } => n.type === "rectangle",
-    ).length,
-  ).toBe(1);
+  expect(collect(grays[0]!.drawables as Elem, isRect).length).toBe(1);
 
   // plain rows: no fill at all around their label
   const coloredLabels = collect(view, isWithColor)
@@ -332,8 +328,10 @@ it("p_touch_rows: row height is at least 44", () => {
     fc.property(fc.boolean(), (touch) => {
       const view = listView(null, {}, touch);
       // a row's hit extent is the handler node wrapping its visuals
-      const rowNodes = collect(view, (n): n is Node & { type: "handler" } => n.type === "handler")
-        .filter((n) => n.eventType === "mouse-down");
+      const rowNodes = collect(
+        view,
+        (n): n is Node & { type: "handler"; eventType: string } => n.type === "handler",
+      ).filter((n) => n.eventType === "mouse-down");
       expect(rowNodes.length).toBe(3);
       for (const row of rowNodes) {
         // the row's extent is its hit area: the handler's bounds

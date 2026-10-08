@@ -62,9 +62,10 @@ export const dropdownList = defineComponent(
     const $extra = props["$extra"] as Path;
 
     // list_geometry: row width is the widest label plus 24; a row is
-    // label height plus 4 tall — at least 44 px on touch (touch_rows)
-    const rowWidth =
-      Math.max(0, ...options.map(([, text]) => labelNode(text).measure(text)[0])) + ROW_PAD_X;
+    // label height plus 4 tall — at least 44 px on touch (touch_rows).
+    // Measure each label once.
+    const measures = options.map(([, text]) => labelNode(text).measure(text));
+    const rowWidth = Math.max(0, ...measures.map(([w]) => w)) + ROW_PAD_X;
 
     // one row per option, in order: a pointer down returns select with
     // the selected path and the row value (row_select_effect); the
@@ -73,10 +74,13 @@ export const dropdownList = defineComponent(
     const rows: Elem[] = [];
     let y = BOX_PAD_Y;
     let rowsHeight = 0;
-    for (const [value, text] of options) {
+    options.forEach(([value, text], i) => {
       // list_geometry: a row is label height plus 4 tall — at least
       // 44 px on touch (touch_rows)
-      const rowHeight = Math.max(labelNode(text).measure(text)[1] + ROW_PAD_Y, touch ? MIN_TARGET : 0);
+      const rowHeight = Math.max(
+        measures[i]![1] + ROW_PAD_Y,
+        touch ? MIN_TARGET : 0,
+      );
       const hovered = hoverFlag(extra, value);
       const isSelected = value === selected;
       const hoverPath: Path = [...$extra, ["keypath", hoverKey(value)]];
@@ -121,7 +125,7 @@ export const dropdownList = defineComponent(
       );
       y += rowHeight;
       rowsHeight += rowHeight;
-    }
+    });
 
     // the box: rounded corners of 4 and 8 padding on y (list_geometry)
     const box = roundedRectangle(rowWidth, 2 * BOX_PAD_Y + rowsHeight, BOX_RADIUS);
