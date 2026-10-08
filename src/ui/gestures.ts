@@ -46,36 +46,46 @@ function dist2(a: Vec2, b: Vec2): number {
   return (a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2;
 }
 
-// Classify one scripted gesture.
+// Classify one scripted gesture: two pointers are a pinch; a held
+// press is a long-press; a quick close release is a tap; a fast one is
+// a flick; anything else is a drag.
 export function recognize(script: GestureScript): GestureIntent {
-  // A second pointer makes the gesture a pinch: the scale is the ratio
-  // of the pointers' separation, the centre their midpoint.
-  if (script.second) {
-    const a = script.down.pos;
-    const d0 = Math.sqrt(dist2(a, script.second.down.pos));
-    const d1 = Math.sqrt(dist2(a, script.second.up.pos));
-    const scale = d0 === 0 ? 1 : d1 / d0;
-    const centre: Vec2 = [
-      (a[0] + script.second.up.pos[0]) / 2,
-      (a[1] + script.second.up.pos[1]) / 2,
-    ];
-    return ["pinch", scale, centre];
-  }
+  if (script.second) return pinch(script);
   const up = script.up ?? null;
-  if (up === null) {
-    // A still-held press: a long-press once it has been held past the
-    // threshold without moving beyond the tap slop; otherwise nothing
-    // is decided yet.
-    const held = (script.now ?? 0) - script.down.time;
-    const moved = (script.moves ?? []).reduce(
-      (max, m) => Math.max(max, Math.sqrt(dist2(script.down.pos, m.pos))),
-      0,
-    );
-    if (held >= LONG_PRESS_MS && moved <= TAP_SLOP_PX) {
-      return ["long-press", script.down.pos];
-    }
-    return [];
+  if (up === null) return heldGesture(script);
+  return releasedGesture(script, up);
+}
+
+// A second pointer makes the gesture a pinch: the scale is the ratio
+// of the pointers' separation, the centre their midpoint.
+function pinch(script: GestureScript): GestureIntent {
+  const a = script.down.pos;
+  const d0 = Math.sqrt(dist2(a, script.second!.down.pos));
+  const d1 = Math.sqrt(dist2(a, script.second!.up.pos));
+  const scale = d0 === 0 ? 1 : d1 / d0;
+  const centre: Vec2 = [
+    (a[0] + script.second!.up.pos[0]) / 2,
+    (a[1] + script.second!.up.pos[1]) / 2,
+  ];
+  return ["pinch", scale, centre];
+}
+
+// A still-held press: a long-press once it has been held past the
+// threshold without moving beyond the tap slop; otherwise nothing
+// is decided yet.
+function heldGesture(script: GestureScript): GestureIntent {
+  const held = (script.now ?? 0) - script.down.time;
+  const moved = (script.moves ?? []).reduce(
+    (max, m) => Math.max(max, Math.sqrt(dist2(script.down.pos, m.pos))),
+    0,
+  );
+  if (held >= LONG_PRESS_MS && moved <= TAP_SLOP_PX) {
+    return ["long-press", script.down.pos];
   }
+  return [];
+}
+
+function releasedGesture(script: GestureScript, up: { pos: Vec2; time: number }): GestureIntent {
   const d = Math.sqrt(dist2(script.down.pos, up.pos));
   const dt = up.time - script.down.time;
   if (d <= TAP_SLOP_PX && dt <= TAP_TIMEOUT_MS) {

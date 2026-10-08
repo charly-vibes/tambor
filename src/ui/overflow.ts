@@ -32,6 +32,28 @@ function descendantsOf(node: Node): readonly unknown[] {
   return children(node);
 }
 
+// Event-layer nodes (bubble/wrap) carry drawables but no drawn bounds
+// of their own; their children pass through unchanged. A tree whose
+// bounds cannot be computed through event-layer children contributes
+// no extent of its own — its boundable descendants are recorded as the
+// walk descends.
+function extentOf(node: Node): number | null {
+  const kind = (node as { type: string }).type;
+  if (kind === "bubble" || kind === "wrap") return null;
+  try {
+    return bounds(node)[0];
+  } catch {
+    return null;
+  }
+}
+
+// The child offset a node contributes to its descendants.
+function offsetOf(node: Node): Vec2 {
+  if ((node as { type: string }).type !== "translate") return [0, 0];
+  const t = node as { x: number; y: number };
+  return [t.x, t.y];
+}
+
 // Every node whose absolute right edge extends past width, excluding
 // subtrees under an exempted node (the horizontal scroll regions).
 export function overflowNodes(
@@ -48,27 +70,9 @@ export function overflowNodes(
     }
     if (exempt !== undefined && exempt(elem)) return;
     const node = elem as Node;
-    const kind = (node as { type: string }).type;
-    // Event-layer nodes (bubble/wrap) carry drawables but no drawn
-    // bounds of their own; their children pass through unchanged. A
-    // tree whose bounds cannot be computed through event-layer
-    // children contributes no extent of its own — its boundable
-    // descendants are recorded as the walk descends.
-    if (kind !== "bubble" && kind !== "wrap") {
-      let w: number | null = null;
-      try {
-        w = bounds(node)[0];
-      } catch {
-        w = null;
-      }
-      if (w !== null && ox + w > width) out.push({ node, right: ox + w });
-    }
-    let dx = 0;
-    let dy = 0;
-    if (node.type === "translate") {
-      dx = node.x;
-      dy = node.y;
-    }
+    const w = extentOf(node);
+    if (w !== null && ox + w > width) out.push({ node, right: ox + w });
+    const [dx, dy] = offsetOf(node);
     for (const child of descendantsOf(node)) walk(child, ox + dx, oy + dy);
   };
   walk(root, 0, 0);
@@ -89,12 +93,7 @@ export function locate(root: unknown, target: unknown): Vec2 | null {
       found = [ox, oy];
       return;
     }
-    let dx = 0;
-    let dy = 0;
-    if (node.type === "translate") {
-      dx = node.x;
-      dy = node.y;
-    }
+    const [dx, dy] = offsetOf(node);
     for (const child of descendantsOf(node)) walk(child, ox + dx, oy + dy);
   };
   walk(root, 0, 0);

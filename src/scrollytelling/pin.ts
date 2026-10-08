@@ -59,9 +59,19 @@ function isVec2(value: unknown): value is Vec2 {
   );
 }
 
-// The component body: pure over (offset, duration, start, body,
-// pin-state) — recomputed fresh on every render, nothing cached.
-function pinBody(props: Props): Elem {
+// Validated inputs of one pin body render.
+interface PinInputs {
+  readonly offset: Vec2;
+  readonly duration: number;
+  readonly start: number;
+  readonly end: number;
+  readonly oy: number;
+  readonly active: boolean;
+  readonly released: boolean;
+  readonly body: Elem;
+}
+
+function pinInputs(props: Props): PinInputs {
   const offset = props["scroll"];
   if (!isVec2(offset)) {
     throw new Error("pin needs an ambient scrollview offset (context.scroll)");
@@ -78,23 +88,39 @@ function pinBody(props: Props): Elem {
   const end = start + duration;
   const oy = offset[1];
   const active = start <= oy && oy <= end;
-
   // the stored lifecycle: released stays released until the scroll
   // returns above the start boundary (unpin)
   const stored = props["pin-state"] === "released";
   const released = stored && oy >= start;
+  return { offset, duration, start, end, oy, active, released, body };
+}
+
+// focus_releases_pin: a tab key-press reaching the pin's boundary while
+// the Boundary is active releases the Pin rather than trapping focus;
+// the release stores through the app-state path (release_on_focus_out)
+function pinTabRelease(props: Props, active: boolean, released: boolean, key: unknown): IntentList {
+  if (key !== "tab" || !active || released) return [];
+  const $state = props["state-path"] as Path | undefined;
+  if ($state === undefined) return [];
+  return [["update", $state, () => "released" as const]];
+}
+
+// The component body: pure over (offset, duration, start, body,
+// pin-state) — recomputed fresh on every render, nothing cached.
+function pinBody(props: Props): Elem {
+  const p = pinInputs(props);
 
   // native flow: the spacer reserving the authored scroll duration
   // (spacer_reserves_height: height == d) followed by the target body
-  const flow: Elem = [spacer(width(body), duration), body];
+  const flow: Elem = [spacer(width(p.body), p.duration), p.body];
 
   // not yet released: the pinned_panel composition — the body fixed at
   // the release-boundary screen position while the Boundary is active
   // (fixed_during_active) and continuous with native flow exactly at the
   // Boundary's end (release_continuous)
   const panelArgs: Record<string, unknown> = {
-    "activation-range": [start, end],
-    body,
+    "activation-range": [p.start, p.end],
+    body: p.body,
   };
   if (props["z"] !== undefined) panelArgs["z"] = props["z"];
   const pinned: ComponentCall = call(pinnedPanel, panelArgs, {
@@ -103,18 +129,8 @@ function pinBody(props: Props): Elem {
   });
   // the body may carry the nested component call: render resolves it
   // before any dispatch walks the tree (recursive_components)
-  const content: EventElem | ComponentCall = released ? flow : pinned;
-
-  // focus_releases_pin: a tab key-press reaching the pin's boundary while
-  // the Boundary is active releases the Pin rather than trapping focus;
-  // the release stores through the app-state path (release_on_focus_out)
-  const onTab = (key: unknown): IntentList => {
-    if (key !== "tab" || !active || released) return [];
-    const $state = props["state-path"] as Path | undefined;
-    if ($state === undefined) return [];
-    return [["update", $state, () => "released" as const]];
-  };
-  return on("key-press", onTab, content as Elem);
+  const content: EventElem | ComponentCall = p.released ? flow : pinned;
+  return on("key-press", (key) => pinTabRelease(props, p.active, p.released, key), content as Elem);
 }
 
 export const pin: Component = defineComponent(

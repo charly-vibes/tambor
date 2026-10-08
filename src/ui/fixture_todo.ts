@@ -137,78 +137,82 @@ export interface MobileTodoView {
 // third (thumb_zone_actions). A description wider than the remaining
 // row width is placed inside a horizontal scrollview
 // (no_horizontal_overflow).
-export function mobileTodoView(state: TodoState, size: Vec2): MobileTodoView {
-  const [vw, vh] = size;
-  const margin = 10;
-  const exemptSet = new Set<unknown>();
-
-  // toggle: selected plain, others gray, 5 px spacers (toggle_render).
+// The filter toggle row: selected plain, others gray, 5 px spacers
+// (toggle_render).
+function toggleRow(state: TodoState): Elem {
   const options = ["all", "active", "complete"] as const;
   const gray: Color = [0.8, 0.8, 0.8];
-  const toggleChildren: Elem[] = [];
+  const children: Elem[] = [];
   options.forEach((opt, i) => {
-    if (i > 0) toggleChildren.push(spacer(5, 0));
-    toggleChildren.push(
+    if (i > 0) children.push(spacer(5, 0));
+    children.push(
       opt === state["selected-filter"] ? labelNode(opt) : withColor(gray, labelNode(opt)),
     );
   });
-  const toggleRow = horizontalLayout(toggleChildren)!;
+  return horizontalLayout(children)!;
+}
 
-  // the list: one mobile row per todo, 5 px between rows
-  // (list_spacing). The rows are placed manually: a scroll region's
-  // layout bounds are its content's, not its viewport's, so the mobile
-  // layer owns the row heights instead of reading them through the
-  // event-layer region.
-  const taNodes: Elem[] = [];
-  const rows: { elem: Elem; height: number }[] = [];
-  state.todos.forEach((todo, i) => {
-    const todoPath: Path = [...TODOS_PATH, ["keypath", String(i)]];
-    const ta = fixtureTextarea(todo.description, [...todoPath, ["keypath", "description"]]);
-    taNodes.push(ta);
-    const x = on("mouse-down", () => [["delete", todoPath]], deleteX());
-    const prefix = horizontalLayout([
-      translate(5, 5, x),
-      translate(10, 4, checkbox(todo["complete?"] === true)),
-      spacer(10, 0),
-    ])!;
-    const prefixW = bounds(prefix)[0];
-    const [taW, taH] = bounds(ta);
-    const regionX = prefixW + 1;
-    const avail = Math.max(0, vw - 2 * margin - regionX);
-    let region: Elem;
-    if (taW > avail) {
-      // unbounded content inside a horizontal scrollview
-      const sv = render(
-        call(scrollview, {
-          "scroll-bounds": [avail, taH],
-          body: ta,
-          $offset: HS_OFFSET,
-          offset: [0, 0],
-        }),
-      ) as Elem;
-      region = translate(regionX, 0, sv);
-      exemptSet.add(region);
-    } else {
-      region = translate(regionX, 0, ta);
-    }
-    rows.push({
-      elem: [prefix, region],
-      height: Math.max(bounds(prefix)[1], taH),
-    });
-  });
-  const toggleH = bounds(toggleRow)[1];
-  const placed: Elem[] = [translate(0, 0, toggleRow)];
-  let y = toggleH + 1 + 5 + 1;
-  for (const row of rows) {
-    placed.push(translate(0, y, row.elem));
-    y += row.height + 5 + 1;
-  }
+// Unbounded content goes inside a horizontal scrollview; otherwise the
+// textarea is placed directly.
+function rowRegion(
+  ta: Elem,
+  taW: number,
+  taH: number,
+  regionX: number,
+  avail: number,
+  exemptSet: Set<unknown>,
+): Elem {
+  if (taW <= avail) return translate(regionX, 0, ta);
+  const sv = render(
+    call(scrollview, {
+      "scroll-bounds": [avail, taH],
+      body: ta,
+      $offset: HS_OFFSET,
+      offset: [0, 0],
+    }),
+  ) as Elem;
+  const region = translate(regionX, 0, sv);
+  exemptSet.add(region);
+  return region;
+}
 
-  const content = translate(margin, margin, placed);
+// One mobile row: the delete/checkbox prefix and the description
+// textarea, wrapped in a horizontal scrollview when the content
+// overflows the viewport. The rows are placed manually: a scroll
+// region's layout bounds are its content's, not its viewport's, so the
+// mobile layer owns the row heights instead of reading them through the
+// event-layer region (list_spacing).
+function todoRow(
+  state: TodoState,
+  i: number,
+  vw: number,
+  margin: number,
+  exemptSet: Set<unknown>,
+): { elem: Elem; height: number; ta: Elem } {
+  const todo = state.todos[i] as TodoState["todos"][number];
+  const todoPath: Path = [...TODOS_PATH, ["keypath", String(i)]];
+  const ta = fixtureTextarea(todo.description, [...todoPath, ["keypath", "description"]]);
+  const x = on("mouse-down", () => [["delete", todoPath]], deleteX());
+  const prefix = horizontalLayout([
+    translate(5, 5, x),
+    translate(10, 4, checkbox(todo["complete?"] === true)),
+    spacer(10, 0),
+  ])!;
+  const prefixW = bounds(prefix)[0];
+  const [taW, taH] = bounds(ta);
+  const regionX = prefixW + 1;
+  const avail = Math.max(0, vw - 2 * margin - regionX);
+  const region = rowRegion(ta, taW, taH, regionX, avail, exemptSet);
+  return {
+    elem: [prefix, region],
+    height: Math.max(bounds(prefix)[1], taH),
+    ta,
+  };
+}
 
-  // the bottom bar: the primary action in the thumb zone
-  // (thumb_zone_actions); its effects are the example's own
-  // (add_button).
+// The bottom bar: the primary action in the thumb zone
+// (thumb_zone_actions); its effects are the example's own (add_button).
+function addTodoBar(state: TodoState, vh: number, margin: number): Elem {
   const barTextarea = fixtureTextarea(state["next-todo-text"], NEXT_TEXT_PATH);
   const barInner = horizontalLayout([
     button("Add Todo", () => [
@@ -219,8 +223,27 @@ export function mobileTodoView(state: TodoState, size: Vec2): MobileTodoView {
     barTextarea,
   ])!;
   const barH = bounds(barInner)[1];
-  const bar = translate(margin, vh - margin - barH, barInner);
+  return translate(margin, vh - margin - barH, barInner);
+}
 
+export function mobileTodoView(state: TodoState, size: Vec2): MobileTodoView {
+  const [vw, vh] = size;
+  const margin = 10;
+  const exemptSet = new Set<unknown>();
+
+  const toggle = toggleRow(state);
+  const rows = state.todos.map((_, i) => todoRow(state, i, vw, margin, exemptSet));
+  const taNodes = rows.map((r) => r.ta);
+  const toggleH = bounds(toggle)[1];
+  const placed: Elem[] = [translate(0, 0, toggle)];
+  let y = toggleH + 1 + 5 + 1;
+  for (const row of rows) {
+    placed.push(translate(0, y, row.elem));
+    y += row.height + 5 + 1;
+  }
+
+  const content = translate(margin, margin, placed);
+  const bar = addTodoBar(state, vh, margin);
   const view: Elem = [content, bar];
 
   // every textarea's absolute rect, for the avoidance property
