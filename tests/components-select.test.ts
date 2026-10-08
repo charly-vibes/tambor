@@ -18,6 +18,7 @@ import { mouseDown, mouseMove, mouseMoveGlobal } from "../src/events/event.ts";
 import { dropdownList, HOVER_FILL, SELECTED_FILL, WHITE } from "../src/components/select/list.ts";
 import { hoverKey } from "../src/components/select/hover.ts";
 import {
+  bounds,
   children,
   isGroup,
   type Color,
@@ -291,4 +292,55 @@ it("p_row_hover: two distinct extra keys", () => {
   const leave = dispatchEvent(hoveredView, mouseMoveGlobal([-1, -1])) as readonly unknown[];
   expect(leave.length).toBe(1);
   expect((leave[0] as unknown[])[0]).toBe("set");
+});
+
+// ---------------------------------------------------------------------------
+// cycle 4 — geometry, touch
+// ---------------------------------------------------------------------------
+
+// p_geometry — derives_from: components.select.list_geometry
+// generator: labels of three widths
+// predicate: row width equals max plus 24
+it("p_geometry: row width equals max plus 24", () => {
+  fc.assert(
+    fc.property(
+      fc.string({ minLength: 1, maxLength: 12 }),
+      fc.string({ minLength: 1, maxLength: 12 }),
+      fc.string({ minLength: 1, maxLength: 12 }),
+      (a, b, c) => {
+        const options: readonly Option[] = [["a", a], ["b", b], ["c", c]];
+        const view = render(
+          call(dropdownList, { selected: null, options, $selected: $SELECTED }, {}),
+        ) as Elem;
+        // the box carries the row width; rows are label height plus 4
+        // tall and the box has 8 padding on y (default measure: labels
+        // are 1 tall, rows 5)
+        const box = collect(view, isListNode)[0]!;
+        expect(box.width).toBe(Math.max(a.length, b.length, c.length) + 24);
+        expect(box.height).toBe(2 * 8 + 3 * 5);
+        expect(box.radius).toBe(4);
+      },
+    ),
+  );
+});
+
+// p_touch_rows — derives_from: components.select.touch_rows
+// generator: touch device
+// predicate: row height is at least 44
+it("p_touch_rows: row height is at least 44", () => {
+  fc.assert(
+    fc.property(fc.boolean(), (touch) => {
+      const view = listView(null, {}, touch);
+      // a row's hit extent is the handler node wrapping its visuals
+      const rowNodes = collect(view, (n): n is Node & { type: "handler" } => n.type === "handler")
+        .filter((n) => n.eventType === "mouse-down");
+      expect(rowNodes.length).toBe(3);
+      for (const row of rowNodes) {
+        // the row's extent is its hit area: the handler's bounds
+        const [, h] = bounds(row);
+        if (touch) expect(h).toBeGreaterThanOrEqual(44);
+        else expect(h).toBe(5);
+      }
+    }),
+  );
 });
