@@ -86,60 +86,17 @@ export interface ComponentCall {
 // top-level-ui reads the extra and context of the state itself.
 export const ROOT_EXTRA_KEY = "::extra";
 export const ROOT_CONTEXT_KEY = "::context";
+import { cachedRender, clearRenderCache } from "./component-cache.ts";
+
 const ROOT_EXTRA_PATH: Path = [["keypath", ROOT_EXTRA_KEY]];
 const ROOT_CONTEXT_PATH: Path = [["keypath", ROOT_CONTEXT_KEY]];
 
 // The render cache, keyed by component name plus an equal props map
 // (render_cached). A props map that cannot be serialised (it carries a
 // function) is never cached.
-const renderCache = new Map<string, Map<string, unknown>>();
-
 // A canonical serialisation of a props map for cache lookups: object
 // keys sorted, cycles replaced by a placeholder. Returns null when the
 // value carries a function and so cannot be keyed safely.
-function canonical(value: unknown, seen: Set<object>): string | null {
-  if (value === null) return "null";
-  switch (typeof value) {
-    case "string":
-      return JSON.stringify(value);
-    case "number":
-    case "boolean":
-      return JSON.stringify(value);
-    case "undefined":
-      return "undefined";
-    case "bigint":
-      return `${value.toString()}n`;
-    case "function":
-      return null;
-  }
-  const obj = value as object;
-  if (seen.has(obj)) return '"<cycle>"';
-  seen.add(obj);
-  let out: string | null;
-  if (Array.isArray(obj)) {
-    const parts = (obj as unknown[]).map((v) => canonical(v, seen));
-    out = parts.some((p) => p === null) ? null : `[${parts.join(",")}]`;
-  } else {
-    const entries = Object.entries(obj).sort(([a], [b]) => (a < b ? -1 : 1));
-    const parts: (string | null)[] = entries.map(([k, v]) => {
-      const cv = canonical(v, seen);
-      return cv === null ? null : `${JSON.stringify(k)}:${cv}`;
-    });
-    out = parts.some((p) => p === null) ? null : `{${parts.join(",")}}`;
-  }
-  seen.delete(obj);
-  return out;
-}
-
-// The cache key of a call: the component name plus its props map (the
-// as self-reference serialises to the cycle placeholder, which is
-// constant for every props map).
-function cacheKey(c: ComponentCall): string | null {
-  const key = canonical(c.props, new Set());
-  return key === null ? null : `${c.component.name}\u0000${key}`;
-}
-
-// The keypath step for k, as plain data (state.paths).
 function keypath(k: string | number): Path {
   return [["keypath", k]];
 }
@@ -187,7 +144,7 @@ export function defineComponent(
   };
   // any component redefinition resets the cache (render_cached: the
   // cache is reset when any component is redefined)
-  renderCache.clear();
+  clearRenderCache();
   return component;
 }
 
@@ -238,74 +195,12 @@ export function call(
   const nonliteral = callsite.$m !== undefined;
   const $m = callsite.$m;
 
-  // the call site's scratch trees; a top-level call falls back to the
-  // root ::extra / ::context entries
-  const parentExtra = (callsite.extra ?? {}) as Record<string, unknown>;
-  const parent$extra = callsite.$extra ?? ROOT_EXTRA_PATH;
-  const context = (callsite.context ?? {}) as Record<string, unknown>;
-  const $context = callsite.$context ?? ROOT_CONTEXT_PATH;
-
-  // the child's context: the call site's context is shared down the
-  // whole tree; explicit context keys in the map win
-  const childContext = (args.context !== undefined ? args.context : context) as Record<
-    string,
-    unknown
-  >;
-  const child$context = (args.$context as Path | undefined) ?? $context;
-
-  // the child's extra scratch: the call site's extra addressed by the
-  // call-site key (call_site_identity)
-  const extraKey = extraKeyOf(component, args, nonliteral, $m);
-  const extra = (args.extra !== undefined ? args.extra : (parentExtra[extraKey] ?? {})) as Record<
-    string,
-    unknown
-  >;
-  const $extra = (args.$extra as Path | undefined) ?? [...parent$extra, ...keypath(extraKey)];
+  const ctx = callContext(component, args, callsite, nonliteral, $m);
 
   const props: Record<string, unknown> = {};
   for (const k of allKeys) {
     const $k = "$" + k;
-    let value: unknown;
-    let path: Path;
-    if (k === "extra") {
-      value = extra;
-      path = $extra;
-    } else if (k === "context") {
-      value = childContext;
-      path = child$context;
-    } else if (component.contextual.has(k)) {
-      // a contextual prop reads its value from context[k] and its path
-      // is the context path plus keypath k; the call site cannot
-      // override it (contextual_source)
-      value = childContext[k];
-      path = [...child$context, ...keypath(k)];
-    } else {
-      // the value: the call site's entry; missing values are filled
-      // from the scratch, then from the default (nonliteral_missing_vals)
-      value = hasKey(args, k) ? args[k] : extra[k];
-      const def = component.defaults[k];
-      // when a prop is absent or nil and a default is declared the
-      // default is the value (defaults_applied)
-      if ((value === undefined || value === null) && def !== undefined) {
-        value = def;
-      }
-      // the path: an explicit dollar key in the map wins
-      // (literal_call_paths); for a non-literal call a missing dollar
-      // key is filled from the map value when the map contains the key
-      // and from the call-site scratch otherwise (nonliteral_call_fill)
-      if (args[$k] !== undefined) {
-        path = args[$k] as Path;
-      } else if (nonliteral && hasKey(args, k)) {
-        path = [...($m as Path), ...keypath(k)];
-      } else {
-        path = [...$extra, ...keypath(k)];
-      }
-      // a defaulted prop's path carries a nil-to-val step
-      // (defaults_applied)
-      if (def !== undefined) {
-        path = [...path, ["nil-to-val", def]];
-      }
-    }
+    const { value, path } = propFor(k, component, args, ctx);
     props[k] = value;
     props[$k] = path;
   }
@@ -318,25 +213,105 @@ export function call(
   return { type: "tambor/component", component, props };
 }
 
-// Rendering resolves a call's body output, replacing nested component
-// calls with their rendered trees (recursive_components). An equal
-// props map yields a cached render keyed by component name plus props;
-// the cache is reset when any component is redefined (render_cached).
-export function render(c: ComponentCall): unknown {
-  const key = cacheKey(c);
-  if (key !== null) {
-    let byProps = renderCache.get(c.component.name);
-    if (byProps === undefined) {
-      byProps = new Map<string, unknown>();
-      renderCache.set(c.component.name, byProps);
-    }
-    const cached = byProps.get(key);
-    if (cached !== undefined) return cached;
-    const fresh = resolve(c.component.body(c.props), new Set()).value;
-    byProps.set(key, fresh);
-    return fresh;
+// Resolve the call-site and inherited context of one call: the call
+// site's scratch trees (a top-level call falls back to the root
+// ::extra / ::context entries), the child context (shared down the
+// whole tree; explicit context keys in the map win), and the child's
+// extra scratch addressed by the call-site key (call_site_identity).
+function callContext(
+  component: Component,
+  args: Record<string, unknown>,
+  callsite: CallSite,
+  nonliteral: boolean,
+  $m: Path | undefined,
+): CallCtx {
+  const parentExtra = (callsite.extra ?? {}) as Record<string, unknown>;
+  const parent$extra = callsite.$extra ?? ROOT_EXTRA_PATH;
+  const context = (callsite.context ?? {}) as Record<string, unknown>;
+  const $context = callsite.$context ?? ROOT_CONTEXT_PATH;
+  const childContext = (args.context !== undefined ? args.context : context) as Record<
+    string,
+    unknown
+  >;
+  const child$context = (args.$context as Path | undefined) ?? $context;
+  const extraKey = extraKeyOf(component, args, nonliteral, $m);
+  const extra = (args.extra !== undefined ? args.extra : (parentExtra[extraKey] ?? {})) as Record<
+    string,
+    unknown
+  >;
+  const $extra = (args.$extra as Path | undefined) ?? [...parent$extra, ...keypath(extraKey)];
+  return { nonliteral, $m, extra, $extra, childContext, child$context };
+}
+
+// What one prop resolution needs: the resolved extra/context of the
+// call plus the literal/nonliteral discriminator.
+interface CallCtx {
+  readonly nonliteral: boolean;
+  readonly $m: Path | undefined;
+  readonly extra: Record<string, unknown>;
+  readonly $extra: Path;
+  readonly childContext: Record<string, unknown>;
+  readonly child$context: Path;
+}
+
+function propFor(
+  k: string,
+  component: Component,
+  args: Record<string, unknown>,
+  ctx: CallCtx,
+): { value: unknown; path: Path } {
+  if (k === "extra") return { value: ctx.extra, path: ctx.$extra };
+  if (k === "context") return { value: ctx.childContext, path: ctx.child$context };
+  if (component.contextual.has(k)) {
+    // a contextual prop reads its value from context[k] and its path
+    // is the context path plus keypath k; the call site cannot
+    // override it (contextual_source)
+    return { value: ctx.childContext[k], path: [...ctx.child$context, ...keypath(k)] };
   }
-  return resolve(c.component.body(c.props), new Set()).value;
+  return plainPropFor(k, component, args, ctx);
+}
+
+// The value: the call site's entry; missing values are filled from the
+// scratch, then from the default (nonliteral_missing_vals).
+function plainPropFor(
+  k: string,
+  component: Component,
+  args: Record<string, unknown>,
+  ctx: CallCtx,
+): { value: unknown; path: Path } {
+  let value = hasKey(args, k) ? args[k] : ctx.extra[k];
+  const def = component.defaults[k];
+  // when a prop is absent or nil and a default is declared the
+  // default is the value (defaults_applied)
+  if ((value === undefined || value === null) && def !== undefined) {
+    value = def;
+  }
+  let path = plainPathFor(k, args, ctx);
+  // a defaulted prop's path carries a nil-to-val step
+  // (defaults_applied)
+  if (def !== undefined) {
+    path = [...path, ["nil-to-val", def]];
+  }
+  return { value, path };
+}
+
+// The path: an explicit dollar key in the map wins (literal_call_paths);
+// for a non-literal call a missing dollar key is filled from the map
+// value when the map contains the key and from the call-site scratch
+// otherwise (nonliteral_call_fill).
+function plainPathFor(k: string, args: Record<string, unknown>, ctx: CallCtx): Path {
+  if (args["$" + k] !== undefined) return args["$" + k] as Path;
+  if (ctx.nonliteral && hasKey(args, k)) {
+    return [...(ctx.$m as Path), ...keypath(k)];
+  }
+  return [...ctx.$extra, ...keypath(k)];
+}
+
+// Rendering resolves a call's body output, replacing nested component
+// calls with their rendered trees (recursive_components); equal props
+// maps hit the render cache (render_cached).
+export function render(c: ComponentCall): unknown {
+  return cachedRender(c, () => resolve(c.component.body(c.props), new Set()).value);
 }
 
 function isCall(value: unknown): value is ComponentCall {
@@ -363,23 +338,28 @@ function resolve(
   const obj = value as object;
   if (seen.has(obj)) return { value, changed: false };
   seen.add(obj);
-  let changed = false;
-  let out: unknown;
-  if (Array.isArray(obj)) {
-    const mapped = (obj as unknown[]).map((v) => resolve(v, seen));
-    changed = mapped.some((r) => r.changed);
-    out = changed ? mapped.map((r) => r.value) : obj;
-  } else {
-    const outObj: Record<string, unknown> = {};
-    for (const [k, v] of Object.entries(obj)) {
-      const r = resolve(v, seen);
-      changed = changed || r.changed;
-      outObj[k] = r.value;
-    }
-    out = changed ? outObj : obj;
-  }
+  const resolved = Array.isArray(obj)
+    ? resolveArray(obj as unknown[], seen)
+    : resolveObject(obj as Record<string, unknown>, seen);
   seen.delete(obj);
-  return { value: out, changed };
+  return resolved;
+}
+
+function resolveArray(obj: readonly unknown[], seen: Set<object>): { value: unknown; changed: boolean } {
+  const mapped = obj.map((v) => resolve(v, seen));
+  const changed = mapped.some((r) => r.changed);
+  return { value: changed ? mapped.map((r) => r.value) : obj, changed };
+}
+
+function resolveObject(obj: Record<string, unknown>, seen: Set<object>): { value: unknown; changed: boolean } {
+  let changed = false;
+  const outObj: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(obj)) {
+    const r = resolve(v, seen);
+    changed = changed || r.changed;
+    outObj[k] = r.value;
+  }
+  return { value: changed ? outObj : obj, changed };
 }
 
 // setWidth/setHeight (sizing_props): a component declaring width or
