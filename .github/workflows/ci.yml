@@ -61,10 +61,13 @@ jobs:
         # --check` degrades to spk-unavailable and the contract-drift gate
         # silently stops checking (tambor-41q).
         run: |
-          curl -fsSL "https://github.com/charly-vibes/specodelic/releases/download/v0.7.0/specodelic_0.7.0_linux_amd64.tar.gz" -o /tmp/spk.tgz
+          # Download under the canonical asset name — checksums.txt references
+          # the asset by that name, so sha256sum -c can locate it.
+          spk_tgz="/tmp/specodelic_0.7.0_linux_amd64.tar.gz"
+          curl -fsSL "https://github.com/charly-vibes/specodelic/releases/download/v0.7.0/specodelic_0.7.0_linux_amd64.tar.gz" -o "$spk_tgz"
           curl -fsSL "https://github.com/charly-vibes/specodelic/releases/download/v0.7.0/checksums.txt" -o /tmp/spk-checksums.txt
           grep -- specodelic_0.7.0_linux_amd64.tar.gz /tmp/spk-checksums.txt | (cd /tmp && sha256sum -c -)
-          tar -xzf /tmp/spk.tgz -C "$CARGO_HOME/bin" spk
+          tar -xzf "$spk_tgz" -C "$CARGO_HOME/bin" spk
           spk --version
 
       - name: Set up Python
