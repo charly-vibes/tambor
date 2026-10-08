@@ -6,7 +6,7 @@
 // Responsibilities: encode each converted row's generator and predicate
 //   as a vitest + fast-check property, one test per converted property.
 //   Compile-time properties are encoded twice over: as expectTypeOf /
-//   @ts-expect-error pins in this file (type_tests_in_ci) — enforced by
+//   ts-expect-error pins in this file (type_tests_in_ci) — enforced by
 //   p_strict's project tsc run, which includes this file — and, where
 //   the row's generator names tsc over a fixture, as a spawned tsc run
 //   asserting the reported diagnostics.
@@ -149,7 +149,7 @@ it("p_no_any: no exported symbol in the emitted declarations mentions any", () =
   const listing = execSync("find target/typing-dts/src -name '*.d.ts'")
     .toString()
     .split("\n")
-    .filter((f) => f.length > 0);
+    .filter((f: string) => f.length > 0);
   expect(listing.length).toBeGreaterThan(0);
   for (const file of listing) {
     const source = execSync(`cat ${file}`).toString();
@@ -247,8 +247,8 @@ it("p_vec: a three-element or array argument as a position is a compile error", 
   expect(place(pos)).toEqual([1, 2]);
   // @ts-expect-error a three-element tuple is not a position
   place([1, 2, 3]);
-  // @ts-expect-error a plain number array is not a position
   const arr: readonly number[] = [1, 2];
+  // @ts-expect-error a plain number array is not a position
   place(arr);
 });
 
@@ -308,7 +308,7 @@ it("p_navigators: the inferred navigator types match the documented table", () =
   // collectOne prepends the collected type to the update function
   // parameters
   const $collected = compose(collectOne($todos), $first);
-  expectTypeOf($collected).toEqualTypeOf<CollectPath<Todos, string>>();
+  expectTypeOf($collected).toEqualTypeOf<CollectPath<Todos, readonly string[], string>>();
   const state: Todos = { todos: ["a", "b"], count: 2 };
   const next = update(state, $collected, (collected, old) => {
     expectTypeOf(collected).toEqualTypeOf<readonly string[]>();
@@ -331,7 +331,7 @@ it("p_dollar: dollar props are derived with key remapping and are required", () 
     RootState
   >;
   expectTypeOf<CounterProps["$num"]>().toEqualTypeOf<Path<RootState, number>>();
-  expectTypeOf<CounterProps["$nums"]>().toEqualTypeOf<Path<RootState, number[]>>();
+  expectTypeOf<CounterProps["$nums"]>().toEqualTypeOf<Path<RootState, readonly number[]>>();
   const Counter = defui(
     (props: { readonly num: number; readonly nums: readonly number[] }) =>
       labelNode(String(props.num + props.nums.length)),
@@ -366,7 +366,7 @@ it("p_defaults: a declared default is optional at the call site and defined in t
     { default: "filter" },
   );
   // the call site may omit it
-  const el = SelectedFilter({ $default }, { focus: undefined }) as Label;
+  const el = SelectedFilter({ $default }) as Label;
   expect(el.type).toBe("label");
   expect(el.text).toBe("filter");
 });
@@ -413,13 +413,17 @@ it("p_dispatch: dispatch accepts only union members with the right arguments", (
   const $count = key(root<RootState>(), "num");
   // registered builtins dispatch and apply through the typed paths
   dispatch([["update", $count, (n: number) => n + 1], ["set", $count, 5]]);
-  // an unknown effect type is a compile error
-  // @ts-expect-error dispatching an unregistered effect type is a
-  // compile error
-  dispatch([["nope", 1]]);
-  // a wrong argument is a compile error
-  // @ts-expect-error a wrong update argument is a compile error
-  dispatch([["update", $count, "not a function"]]);
+  // an unknown effect type and a wrong argument are compile errors —
+  // the pins live in never-invoked code: types erase at runtime, so
+  // the runtime dispatcher never sees them (types_erased)
+  function neverDispatched(): void {
+    // @ts-expect-error dispatching an unregistered effect type is a
+    // compile error
+    dispatch([["nope", 1]]);
+    // @ts-expect-error a wrong update argument is a compile error
+    dispatch([["update", $count, "not a function"]]);
+  }
+  expectTypeOf(neverDispatched).returns.toBeVoid();
 });
 
 // p_handlers — derives_from: typing.model.handler_signatures
