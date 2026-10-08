@@ -11,11 +11,12 @@ import { expect, it } from "vitest";
 import fc from "fast-check";
 
 import { call, render } from "../src/model/component.ts";
-import { defaultHandler, type Effect } from "../src/effects/dispatch.ts";
+import { defaultHandler, makeApp, type Effect } from "../src/effects/dispatch.ts";
 import { select as selectPath, type Path } from "../src/effects/paths.ts";
 import { dispatch as dispatchEvent } from "../src/events/dispatch.ts";
-import { mouseDown } from "../src/events/event.ts";
-import { dropdownList } from "../src/components/select/list.ts";
+import { mouseDown, mouseMove, mouseMoveGlobal } from "../src/events/event.ts";
+import { dropdownList, HOVER_FILL, SELECTED_FILL, WHITE } from "../src/components/select/list.ts";
+import { hoverKey } from "../src/components/select/hover.ts";
 import {
   children,
   isGroup,
@@ -202,4 +203,92 @@ it("p_select_closes: output is select then set open? false", () => {
     ["select", $SELECTED, "that"],
     ["set", $open, false],
   ]);
+});
+
+// p_select_sets — derives_from: components.select.select_sets_value
+// generator: select then read
+// predicate: the selected path holds the value
+it("p_select_sets: the selected path holds the value", () => {
+  // the this/that scenario: the select effect sets the path, a read
+  // through the same path returns the value
+  fc.assert(
+    fc.property(fc.string({ minLength: 1 }), fc.jsonValue(), (key, value) => {
+      const path: Path = [["keypath", key]];
+      const app = makeApp({ view: () => null, state: {} });
+      app.dispatch(["select", path, value]);
+      expect(selectPath(app.getState() as Record<string, unknown>, path)).toEqual(value);
+    }),
+  );
+  // and the corpus scenario reads back "that" at the selected path
+  const app = makeApp({ view: () => null, state: { selected: null } });
+  app.dispatch(["select", $SELECTED, "that"]);
+  expect(app.getState()).toEqual({ selected: "that" });
+});
+
+// p_row_visuals — derives_from: components.select.row_visuals
+// generator: selected and hovered rows
+// predicate: fills and label colors match
+it("p_row_visuals: fills and label colors match", () => {
+  // "this" is hovered (its extra flag set), "that" is selected
+  const view = listView("that", { [hoverKey("this")]: true });
+
+  // the selected row: a blue fill and a white label
+  const blues = collect(view, isWithColor).filter((w) => colorsEqual(w.color, SELECTED_FILL));
+  expect(blues.length).toBe(1);
+  expect(collect(blues[0]!.drawables as Elem, (n): n is Node & { type: "rectangle" } => n.type === "rectangle").length).toBe(1);
+  const whites = collect(view, isWithColor).filter((w) => colorsEqual(w.color, WHITE));
+  expect(whites.length).toBe(1);
+  expect(collect(whites[0]!.drawables as Elem, isLabel).map((l) => l.text)).toEqual(["That"]);
+
+  // the hovered row: a light gray fill over its row rectangle
+  const grays = collect(view, isWithColor).filter((w) => colorsEqual(w.color, HOVER_FILL));
+  expect(grays.length).toBe(1);
+  expect(
+    collect(
+      grays[0]!.drawables as Elem,
+      (n): n is Node & { type: "rectangle" } => n.type === "rectangle",
+    ).length,
+  ).toBe(1);
+
+  // plain rows: no fill at all around their label
+  const coloredLabels = collect(view, isWithColor)
+    .flatMap((w) => collect(w.drawables as Elem, isLabel))
+    .map((l) => l.text);
+  expect(coloredLabels).not.toContain("The Other");
+});
+
+// p_row_hover — derives_from: components.select.row_hover_keyed
+// generator: hover two different rows
+// predicate: two distinct extra keys
+it("p_row_hover: two distinct extra keys", () => {
+  const view = listView(null);
+  // hover the first row, then the second: each row's flag is a set of
+  // its own extra key to true
+  const first = dispatchEvent(view, mouseMove([5, 8 + 2])) as readonly unknown[];
+  const second = dispatchEvent(view, mouseMove([5, 8 + 5 + 2])) as readonly unknown[];
+  expect(first.length).toBe(1);
+  expect(second.length).toBe(1);
+  const [pathA, pathB] = [
+    (first[0] as unknown[])[1],
+    (second[0] as unknown[])[1],
+  ] as [Path, Path];
+  // the keys are made of the hover marker and the row value, so two
+  // different rows carry two distinct extra keys
+  const keyA = (pathA[pathA.length - 1] as readonly unknown[])[1] as string;
+  const keyB = (pathB[pathB.length - 1] as readonly unknown[])[1] as string;
+  expect(keyA).toBe(hoverKey("this"));
+  expect(keyB).toBe(hoverKey("that"));
+  expect(keyA).not.toBe(keyB);
+  // the effects are sets of the flags to true, and applying them
+  // leaves both rows hovered at their own keys
+  let state: Record<string, unknown> = { "::extra": {} };
+  state = applyEffects(state, first) as Record<string, unknown>;
+  state = applyEffects(state, second) as Record<string, unknown>;
+  expect(selectPath(state, pathA)).toBe(true);
+  expect(selectPath(state, pathB)).toBe(true);
+  // leaving: a global move outside a hovered row clears its flag
+  const hoveredView = listView(null, { [hoverKey("this")]: true });
+  const leave = dispatchEvent(hoveredView, mouseMoveGlobal([-1, -1])) as readonly unknown[];
+  expect(leave.length).toBe(1);
+  expect((leave[0] as unknown[])[0]).toBe("set");
 });
