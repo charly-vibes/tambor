@@ -9,3 +9,6 @@ superseded_by = ""
 
 [[tests.shell]]
 command = "tools/scaffold-check.sh interop-model p-plain-data"
+
+[[tests.vitest]]
+flags = "--testNamePattern=p_plain_data"
