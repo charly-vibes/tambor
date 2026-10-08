@@ -49,10 +49,23 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock', 'specodelic/**/*.rs') }}
           restore-keys: ${{ runner.os }}-cargo-
 
-      - name: Install gate tools (ah/espectacular, pretender, testaruda)
+      - name: Install gate tools (DDL §4 pins — versions.ddl.toml is the source
+        # of truth for these versions; never `latest`)
         uses: taiki-e/install-action@v2
         with:
-          tool: espectacular@0.9.2,pretender@0.7.0,testaruda@0.5.1
+          tool: espectacular@0.9.3,pretender@0.7.0,testaruda@0.5.1
+
+      - name: Install specodelic (spk) — pinned 0.7.0, DDL §4
+        # Not in install-action's manifest — install from the canonical §1
+        # release tarball with checksum verification. Without spk, `ah sync
+        # --check` degrades to spk-unavailable and the contract-drift gate
+        # silently stops checking (tambor-41q).
+        run: |
+          curl -fsSL "https://github.com/charly-vibes/specodelic/releases/download/v0.7.0/specodelic_0.7.0_linux_amd64.tar.gz" -o /tmp/spk.tgz
+          curl -fsSL "https://github.com/charly-vibes/specodelic/releases/download/v0.7.0/checksums.txt" -o /tmp/spk-checksums.txt
+          grep "specodelic_0.7.0_linux_amd64.tar.gz" /tmp/spk-checksums.txt | (cd /tmp && sha256sum -c -)
+          tar -xzf /tmp/spk.tgz -C "$CARGO_HOME/bin" spk
+          spk --version
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -84,6 +97,9 @@ jobs:
 
       - name: pretender gate (gate mode — tambor-272)
         run: pretender check --mode gate
+
+      - name: testaruda init (store is machine-local, gitignored — tambor-41q)
+        run: testaruda init
 
       - name: testaruda exec
         run: |

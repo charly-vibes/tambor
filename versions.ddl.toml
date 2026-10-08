@@ -1,0 +1,13 @@
+# Pinned ecosystem tool versions for this repo's CI and dev setup.
+# DDL Standardization §4: installs are pinned, never `latest` — a broken
+# release of any tool must not break CI. Update deliberately, in the same
+# commit as the ci.yml pin changes (this file is the single source of truth
+# for the pins in .github/workflows/ci.yml).
+#
+# Consumer repo: pins cover exactly the tools this repo's gates run
+# (lefthook pre-commit/pre-push mirrored in ci.yml).
+[tools]
+espectacular = "0.9.3"     # ah — contracts + sync gate (0.9.3: Rev 18 sync support)
+specodelic = "0.7.0"       # spk — lint bridge + parse for ah sync (Rev 18)
+pretender = "0.7.0"        # complexity gate (full-repo gate mode, tambor-272)
+testaruda = "0.5.1"        # test selection loop (matches local dev install)
