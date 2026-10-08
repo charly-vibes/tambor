@@ -19,6 +19,7 @@ import { dispatch } from "../src/events/dispatch.ts";
 import { mouseDown } from "../src/events/event.ts";
 import {
   bounds,
+  isGroup,
   type CheckboxNode,
   type Elem,
   type HandlerNode,
@@ -44,7 +45,7 @@ function rowLayout(row: HandlerNode): readonly Elem[] {
 // the row handler's bounds).
 function findPoint(elem: Elem, name: string, acc: readonly [number, number] = [0, 0]): readonly [number, number] {
   if (elem == null) throw new Error(`no row labelled ${name}`);
-  if (Array.isArray(elem)) {
+  if (isGroup(elem)) {
     for (const child of elem) {
       try {
         return findPoint(child, name, acc);
@@ -80,7 +81,7 @@ function visibleRows(view: readonly Elem[]): readonly { name: string; checked: b
     let name: string | null = null;
     const walk = (e: Elem): void => {
       if (e == null) return;
-      if (Array.isArray(e)) {
+      if (isGroup(e)) {
         e.forEach(walk);
         return;
       }
@@ -103,6 +104,8 @@ function visibleRows(view: readonly Elem[]): readonly { name: string; checked: b
 }
 
 const NAMES = ["a.txt", "B.md", "notes"];
+// The intercept generator's names include the tapped item b.
+const INTERCEPT_NAMES = ["a.txt", "b"];
 
 // p_row_layout — derives_from: example.file_selector.row_layout
 // generator: one row — predicate: checkbox at origin [5, 5], then
@@ -171,7 +174,7 @@ it("p_row_default: the intent is update with the selected? path and not", () => 
 // yields add then remove, and the boolean path is never touched
 it("p_intercept: tapping b yields add then remove, and the boolean path is never touched", () => {
   // selected set empty: tapping b adds b
-  const empty = itemSelector(NAMES, { selected: new Set<string>(), $selected: SEL }) as readonly Elem[];
+  const empty = itemSelector(INTERCEPT_NAMES, { selected: new Set<string>(), $selected: SEL }) as readonly Elem[];
   const [type, path, fn] = dispatch(empty, mouseDown(findPoint(empty, "b")))[0] as [
     string,
     Path,
@@ -182,7 +185,7 @@ it("p_intercept: tapping b yields add then remove, and the boolean path is never
   expect(fn(new Set<string>())).toEqual(new Set(["b"]));
 
   // selected set containing b: tapping b removes it
-  const containing = itemSelector(NAMES, { selected: new Set(["b"]), $selected: SEL }) as readonly Elem[];
+  const containing = itemSelector(INTERCEPT_NAMES, { selected: new Set(["b"]), $selected: SEL }) as readonly Elem[];
   const intents = dispatch(containing, mouseDown(findPoint(containing, "b")));
   expect(intents).toHaveLength(1);
   const [type2, path2, fn2] = intents[0] as [string, Path, (set: unknown) => unknown];
@@ -281,10 +284,10 @@ it("p_persist: a.txt is still selected", () => {
   session.send(mouseDown(findPoint(session.render(), "a.txt")));
   // filter to nothing: nothing matches, but the selection is untouched
   session.dispatch([["set", STR_FILTER_PATH, "zzz"]]);
-  expect(visibleRows(session.render()).map((r) => r.name)).toEqual([]);
+  expect(visibleRows(session.render() as readonly Elem[]).map((r) => r.name)).toEqual([]);
   // clear the filter: every row is back and a.txt is still selected
   session.dispatch([["set", STR_FILTER_PATH, ""]]);
-  expect(visibleRows(session.render()).map((r) => r.name)).toEqual(NAMES);
+  expect(visibleRows(session.render() as readonly Elem[]).map((r) => r.name)).toEqual(NAMES);
   expect(session.stop()).toEqual(new Set(["a.txt"]));
 
   // Generalized property: changing the filter never changes the
