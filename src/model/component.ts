@@ -144,6 +144,34 @@ export function defineComponent(
   return component;
 }
 
+function hasKey(record: Record<string, unknown>, key: string): boolean {
+  return Object.prototype.hasOwnProperty.call(record, key);
+}
+
+// The per-call-site extra scratch key, derived from the sorted explicit
+// prop paths (call_site_identity): for a literal call the explicitly
+// passed entries sorted by name; for a non-literal call the declared
+// keys sorted by name, each carrying its path from the map when the map
+// contains the key. Serialised so the same call site keeps the same
+// extra across renders and different call sites get different extra.
+function extraKeyOf(
+  component: Component,
+  args: Record<string, unknown>,
+  nonliteral: boolean,
+  $m: Path | undefined,
+): string {
+  const entries: unknown[] = nonliteral
+    ? [...component.keys].sort().map((k) => {
+        if (hasKey(args, "$" + k)) return [k, args["$" + k]];
+        if (hasKey(args, k)) return [...($m as Path), ...keypath(k)];
+        return [k, null];
+      })
+    : Object.keys(args)
+        .sort()
+        .map((k) => [k, args[k]]);
+  return JSON.stringify(entries);
+}
+
 // A component call: the child's props map is filled from the call site
 // (the fill lives here because TypeScript has no macros to rewrite the
 // call site the way defui's does).
@@ -152,12 +180,16 @@ export function call(
   args: Record<string, unknown>,
   callsite: CallSite = {},
 ): ComponentCall {
-  const props: Record<string, unknown> = {};
   // every declared key plus the two implicit keys, in declaration order
   // with extra and context appended (implicit_extra_context)
   const allKeys = [...component.keys];
   if (!allKeys.includes("extra")) allKeys.push("extra");
   if (!allKeys.includes("context")) allKeys.push("context");
+
+  // a non-literal call knows the path of the map value it passes
+  // (nonliteral_call_fill); a literal map is one written at the call site
+  const nonliteral = callsite.$m !== undefined;
+  const $m = callsite.$m;
 
   // the call site's scratch trees; a top-level call falls back to the
   // root ::extra / ::context entries
@@ -166,32 +198,66 @@ export function call(
   const context = (callsite.context ?? {}) as Record<string, unknown>;
   const $context = callsite.$context ?? ROOT_CONTEXT_PATH;
 
+  // the child's context: the call site's context is shared down the
+  // whole tree; explicit context keys in the map win
+  const childContext = (args.context !== undefined ? args.context : context) as Record<
+    string,
+    unknown
+  >;
+  const child$context = (args.$context as Path | undefined) ?? $context;
+
+  // the child's extra scratch: the call site's extra addressed by the
+  // call-site key (call_site_identity)
+  const extraKey = extraKeyOf(component, args, nonliteral, $m);
+  const extra = (args.extra !== undefined ? args.extra : (parentExtra[extraKey] ?? {})) as Record<
+    string,
+    unknown
+  >;
+  const $extra = (args.$extra as Path | undefined) ?? [...parent$extra, ...keypath(extraKey)];
+
+  const props: Record<string, unknown> = {};
   for (const k of allKeys) {
     const $k = "$" + k;
-    // the value: the call site's entry, absent falls to the defaults
-    // (defaults_applied: absent or nil and a default is declared, the
-    // default is the value)
     let value: unknown;
-    if (k === "extra") {
-      value = args.extra !== undefined ? args.extra : parentExtra;
-    } else if (k === "context") {
-      value = args.context !== undefined ? args.context : context;
-    } else if (args[k] !== undefined) {
-      value = args[k];
-    } else {
-      value = component.defaults[k];
-    }
-    // the path: the explicit dollar key in the map wins
-    // (literal_call_paths); otherwise the scratch path
     let path: Path;
     if (k === "extra") {
-      path = (args.$extra as Path | undefined) ?? parent$extra;
+      value = extra;
+      path = $extra;
     } else if (k === "context") {
-      path = (args.$context as Path | undefined) ?? $context;
-    } else if (args[$k] !== undefined) {
-      path = args[$k] as Path;
+      value = childContext;
+      path = child$context;
+    } else if (component.contextual.has(k)) {
+      // a contextual prop reads its value from context[k] and its path
+      // is the context path plus keypath k; the call site cannot
+      // override it (contextual_source)
+      value = childContext[k];
+      path = [...child$context, ...keypath(k)];
     } else {
-      path = [...parent$extra, ...keypath(k)];
+      // the value: the call site's entry; missing values are filled
+      // from the scratch, then from the default (nonliteral_missing_vals)
+      value = hasKey(args, k) ? args[k] : extra[k];
+      const def = component.defaults[k];
+      // when a prop is absent or nil and a default is declared the
+      // default is the value (defaults_applied)
+      if ((value === undefined || value === null) && def !== undefined) {
+        value = def;
+      }
+      // the path: an explicit dollar key in the map wins
+      // (literal_call_paths); for a non-literal call a missing dollar
+      // key is filled from the map value when the map contains the key
+      // and from the call-site scratch otherwise (nonliteral_call_fill)
+      if (args[$k] !== undefined) {
+        path = args[$k] as Path;
+      } else if (nonliteral && hasKey(args, k)) {
+        path = [...($m as Path), ...keypath(k)];
+      } else {
+        path = [...$extra, ...keypath(k)];
+      }
+      // a defaulted prop's path carries a nil-to-val step
+      // (defaults_applied)
+      if (def !== undefined) {
+        path = [...path, ["nil-to-val", def]];
+      }
     }
     props[k] = value;
     props[$k] = path;
