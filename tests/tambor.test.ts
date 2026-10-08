@@ -90,34 +90,30 @@ it("p_values: JSON round-trip of a view deep-equals the original, and its type i
   const size = fc.integer({ min: 0, max: 64 });
   const coord = fc.integer({ min: -64, max: 64 });
 
-  const tree = fc.letrec((tie) => ({
-    node: fc.oneof(
-      tie("leaf") as fc.Arbitrary<Node>,
-      tie("wrap") as fc.Arbitrary<Node>,
-      tie("group") as fc.Arbitrary<readonly Elem[]>,
-    ),
-    leaf: fc.oneof(
-      fc.tuple(size, size).map(([w, h]) => rectangle(w, h)),
-      fc.tuple(size, size, size).map(([w, h, r]) => roundedRectangle(w, h, r)),
-      fc
-        .array(fc.tuple(coord, coord), { maxLength: 4 })
-        .map((points) => pathNode(...(points as readonly Vec2[]))),
-      fc.tuple(coord, coord).map(([x, y]) => spacer(x, y)),
-    ),
-    wrap: fc.oneof(
-      fc.tuple(coord, coord, tie("node") as fc.Arbitrary<Node>).map(([x, y, d]) => translate(x, y, d)),
-      fc
-        .tuple(color, tie("node") as fc.Arbitrary<Node>)
-        .map(([c, d]) => withColor(c, d)),
-      fc
-        .tuple(color, tie("node") as fc.Arbitrary<Node>)
-        .map(([c, d]) => withStyle("fill", withColor(c, d))),
-      fc
-        .tuple(fc.integer({ min: 0, max: 8 }), tie("node") as fc.Arbitrary<Node>)
-        .map(([sw, d]) => withStrokeWidth(sw, d)),
-    ),
-    group: fc.array(tie("node") as fc.Arbitrary<Node>, { maxLength: 4 }),
-  }));
+  const tree = fc.letrec((tie) => {
+    // the recursive ref, hoisted: every wrapper takes one Elem child
+    const node = tie("node") as fc.Arbitrary<Elem>;
+    return {
+      node: fc.oneof(tie("leaf"), tie("wrap"), tie("group")) as fc.Arbitrary<Elem>,
+      leaf: fc.oneof(
+        fc.tuple(size, size).map(([w, h]) => rectangle(w, h)),
+        fc.tuple(size, size, size).map(([w, h, r]) => roundedRectangle(w, h, r)),
+        fc
+          .array(fc.tuple(coord, coord), { maxLength: 4 })
+          .map((points) => pathNode(...(points as readonly Vec2[]))),
+        fc.tuple(coord, coord).map(([x, y]) => spacer(x, y)),
+      ),
+      wrap: fc.oneof(
+        fc.tuple(coord, coord, node).map(([x, y, d]) => translate(x, y, d)),
+        fc.tuple(color, node).map(([c, d]) => withColor(c, d)),
+        fc.tuple(color, node).map(([c, d]) => withStyle("fill", withColor(c, d))),
+        fc
+          .tuple(fc.integer({ min: 0, max: 8 }), node)
+          .map(([sw, d]) => withStrokeWidth(sw, d)),
+      ),
+      group: fc.array(node, { maxLength: 4 }),
+    };
+  });
 
   fc.assert(
     fc.property(tree.node, (view) => {
