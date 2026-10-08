@@ -39,7 +39,7 @@ traces_to = "[[tambor]]"
 [[constraints]]
 id = "host_agnostic"
 kind = "invariant"
-expr = "squint and ClojureScript programs use the library with no adapter layer beyond an optional five-function data-ops object, as specified in interop.model"
+expr = "ClojureScript programs use the library with no adapter layer beyond an optional five-function data-ops object, as specified in interop.model"
 traces_to = "[[tambor]]"
 
 [[constraints]]

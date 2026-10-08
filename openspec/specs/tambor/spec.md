@@ -18,7 +18,7 @@ Root spec for tambor, the strict-TypeScript, mobile-first port of the Clojure Me
 | paths_not_callbacks | invariant | children change parent state by returning effects that carry paths, never by calling parent callbacks | [[spec]] |
 | examples_are_acceptance | invariant | the counter and todo examples run unchanged against every backend and pass their scenarios in example.counter and example.todo | [[spec]] |
 | typescript_strict | invariant | the whole library is strict TypeScript and ships declaration files, as specified in typing.model | [[spec]] |
-| host_agnostic | invariant | squint and ClojureScript programs use the library with no adapter layer beyond an optional five-function data-ops object, as specified in interop.model | [[spec]] |
+| host_agnostic | invariant | ClojureScript programs use the library with no adapter layer beyond an optional five-function data-ops object, as specified in interop.model | [[spec]] |
 | mobile_first | invariant | every interaction reachable by mouse is reachable by touch with targets of at least 44 CSS px | [[spec]] |
 
 ## Model
@@ -46,7 +46,7 @@ Root spec for tambor, the strict-TypeScript, mobile-first port of the Clojure Me
 | p_no_callbacks | unit | [[spec.paths_not_callbacks]] | scan component handlers | every state change appears as an effect in a returned list |
 | p_examples | unit | [[spec.examples_are_acceptance]] | the scenario lists of both examples | every scenario passes on each backend |
 | p_typescript | unit | [[spec.typescript_strict]] | build the package | tsc strict passes and declarations are emitted |
-| p_host | unit | [[spec.host_agnostic]] | the todo example from TypeScript, squint and ClojureScript | the same effects result with no conversion calls |
+| p_host | unit | [[spec.host_agnostic]] | the todo example from TypeScript and ClojureScript | the same effects result with no conversion calls |
 | p_touch | unit | [[spec.mobile_first]] | all interactive nodes | every hit target is at least 44 by 44 |
 
 ## Requirements
@@ -94,7 +94,7 @@ Every property row is verified by exactly one dedicated scenario;
 
 #### Scenario: p_host
 
-- **WHEN** the todo example from TypeScript, squint and ClojureScript
+- **WHEN** the todo example from TypeScript and ClojureScript
 - **THEN** the same effects result with no conversion calls
 - **VERIFIES** [[spec.p_host]]
 

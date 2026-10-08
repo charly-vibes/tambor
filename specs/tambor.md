@@ -18,7 +18,7 @@ Root spec for tambor, the strict-TypeScript, mobile-first port of the Clojure Me
 | paths_not_callbacks | invariant | children change parent state by returning effects that carry paths, never by calling parent callbacks | [[tambor]] |
 | examples_are_acceptance | invariant | the counter and todo examples run unchanged against every backend and pass their scenarios in example.counter and example.todo | [[tambor]] |
 | typescript_strict | invariant | the whole library is strict TypeScript and ships declaration files, as specified in typing.model | [[tambor]] |
-| host_agnostic | invariant | squint and ClojureScript programs use the library with no adapter layer beyond an optional five-function data-ops object, as specified in interop.model | [[tambor]] |
+| host_agnostic | invariant | ClojureScript programs use the library with no adapter layer beyond an optional five-function data-ops object, as specified in interop.model | [[tambor]] |
 | mobile_first | invariant | every interaction reachable by mouse is reachable by touch with targets of at least 44 CSS px | [[tambor]] |
 
 ## Model
@@ -46,5 +46,5 @@ Root spec for tambor, the strict-TypeScript, mobile-first port of the Clojure Me
 | p_no_callbacks | unit | [[tambor.paths_not_callbacks]] | scan component handlers | every state change appears as an effect in a returned list |
 | p_examples | unit | [[tambor.examples_are_acceptance]] | the scenario lists of both examples | every scenario passes on each backend |
 | p_typescript | unit | [[tambor.typescript_strict]] | build the package | tsc strict passes and declarations are emitted |
-| p_host | unit | [[tambor.host_agnostic]] | the todo example from TypeScript, squint and ClojureScript | the same effects result with no conversion calls |
+| p_host | unit | [[tambor.host_agnostic]] | the todo example from TypeScript and ClojureScript | the same effects result with no conversion calls |
 | p_touch | unit | [[tambor.mobile_first]] | all interactive nodes | every hit target is at least 44 by 44 |

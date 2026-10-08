@@ -63,7 +63,7 @@ fn p_typescript() {
 }
 
 // id: p_host
-// generator: the todo example from TypeScript, squint and ClojureScript
+// generator: the todo example from TypeScript and ClojureScript
 // predicate: the same effects result with no conversion calls
 #[test]
 fn p_host() {

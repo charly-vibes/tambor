@@ -18,3 +18,11 @@
   - testaruda fix committed @ 4a51638 on fix/production-readiness referencing feedback ticket testaruda-2xn1 (fix↔issue linked); push BLOCKED by testaruda's own pre-push gate being environmentally broken (julia MbedTLS precompile + python fixture mismatches) — filed testaruda-srqu; rebuilt ~/.cargo/bin/testaruda already live so tambor gates work
   - tambor: S1+S2 committed (c3540e8, c777dbd) + pushed, tickets closed; ah check --run-tests 330 passed, debt 353 unchanged; bd ready → only T1 (tambor-yj9) unblocked
   - **Next:** fresh session — resolve testaruda-srqu (or julia toolchain) to unblock the testaruda push, then orchestrate round 2: T1 agent, then T2 ∥ T3 parallel, then T4 tracer e2e
+- 2026-10-08T00:13:00Z [id:b64d236851bd2a6b078d2cfe3f2b11b42a54ee70f46c0f5ce17c63e4ce9f3546] ### 2026-10-08 — snap
+  - Round 2 orchestration complete — TRACER DONE via pi sub-agents with named sessions (learned from specodelic pattern: always -n "subagent:<ticket>:<steps>", never --no-session)
+  - T1 (tambor-yj9): 23 contracts — view-layout 9/9 + view-model 12/12 + counter views; T2 ∥ T3 ran in parallel git worktrees (feat/t2-events, feat/t3-effects) with exclusive file ownership; T2 needed 1 retry after transient provider error (zero-progress crash)
+  - Merge reconciliation: only tests/example-counter.test.ts conflicted (import block), union-resolved; merged tree ah check --run-tests 438 passed
+  - T4 (tambor-09l): 8 contracts — headless app wire (dispatch/apply/re-render), raw mode, touch targets; STOPPED on tambor.p_examples (needs X1+R1) and tambor.p_host (corpus self-contradiction) — filed tambor-5bc for the squint contradiction
+  - Final: 446 contracts passed, debt 353 unchanged (props.rs are spk artifacts; debt shrink convention needs an orchestrator ruling — rust markers vs TS-port metric), 47 commits pushed through gates (2a548d9)
+  - Follow-ups filed: testaruda adapter id-mangling bug (testaruda repo), tambor-5bc (p_host contradiction); bd ready → C1-C5 core conversion now unblocked
+  - **Next:** C1 (tambor-9o1) full view-model+view-layout conversion on the tracer spine, or resolve debt-metric ruling first
