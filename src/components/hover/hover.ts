@@ -43,7 +43,7 @@ import {
 } from "../../views/model.ts";
 import { dispatch } from "../../events/dispatch.ts";
 import { mouseMove } from "../../events/event.ts";
-import type { Intent, IntentList } from "../../events/bubble.ts";
+import type { IntentList } from "../../events/bubble.ts";
 import { defeffect } from "../../effects/dispatch.ts";
 import type { Path } from "../../effects/paths.ts";
 
@@ -103,10 +103,10 @@ function hoverNodes(
   // effect sets hover? to true, followed by the child intents
   // (hover_enter, mouse_out_callback)
   const enter = on("mouse-move", (pos: unknown) => {
+    // the child intents under the same move, preceded by the set-true
+    // effect while not yet hovered
     const child = dispatch(bodyElem, mouseMove(pos as Vec2));
-    if (hovered) return child;
-    const intents: IntentList = [["set", $hover, true] as Intent];
-    return [...intents, ...child];
+    return hovered ? child : ([["set", $hover, true]] as IntentList).concat(child);
   }, bodyElem);
 
   // leaving: a global mouse-move outside the bounds — x < 0, x > w,
@@ -117,8 +117,9 @@ function hoverNodes(
     const p = pos as Vec2;
     const outside = p[0] < 0 || p[0] > w || p[1] < 0 || p[1] > h;
     if (!hovered || !outside) return [];
-    const intents: IntentList = [["set", $hover, false] as Intent];
-    if (onMouseOut) return [...intents, ...onMouseOut()];
+    const intents: IntentList = ([["set", $hover, false]] as IntentList).concat(
+      onMouseOut ? onMouseOut() : [],
+    );
     return intents;
   }, enter);
 }

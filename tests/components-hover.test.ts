@@ -62,7 +62,7 @@ function hoverWired(
   // derives the same scratch address as the app-wired instance
   const $hover = make({}).props["$hover?"] as Path;
   // a hovered instance starts with hover? already set in the scratch
-  const state = hovered ? setPath({}, ($hover as readonly unknown[]).slice(0, -1) as Path, { "hover?": true }) : {};
+  const state = hovered ? setPath({}, $hover.slice(0, -1), { "hover?": true }) : {};
   const app = makeHeadlessApp({
     view: (s) => {
       const root = (s ?? {}) as Record<string, unknown>;
