@@ -14,6 +14,7 @@ import {
   call,
   defineComponent,
   render,
+  type CallSite,
   type ComponentCall,
   type Props,
 } from "../src/model/component.ts";
@@ -224,4 +225,153 @@ it("p_contextual: c is nil without context c, and reads 13 with path context the
     ["keypath", "::context"],
     ["keypath", "c"],
   ]);
+});
+
+// p_as_map — derives_from: component.model.as_binding_whole_map
+// generator: child called with b 42
+// predicate: the as map contains a 42, b 42 and extra
+it("p_as_map: the as map contains a 42, b 42 and extra", () => {
+  const asChild = defineComponent(
+    "as-child",
+    [{ keys: ["a", "b"], defaults: { a: 42 }, as: "m" }],
+    propsBody,
+  );
+  const props = renderOf(call(asChild, { b: 42 }));
+  const m = props.m as Props;
+  // the as name is bound to the complete props map including the
+  // filled-in default
+  expect(m.a).toBe(42);
+  expect(m.b).toBe(42);
+  expect("extra" in m).toBe(true);
+});
+
+// p_literal_call — derives_from: component.model.literal_call_paths
+// generator: literal map with explicit dollar key
+// predicate: the explicit path wins
+it("p_literal_call: the explicit path wins", () => {
+  const litComp = defineComponent("lit-comp", [{ keys: ["a", "b"] }], propsBody);
+  const written: Path = [
+    ["keypath", "x"],
+    ["keypath", "a"],
+  ];
+  const explicit = renderOf(call(litComp, { a: 12, $a: written }));
+  // the explicit dollar key is the path the component receives
+  expect(explicit.$a).toEqual(written);
+  expect(explicit.a).toBe(12);
+  // without the explicit key the path falls back to the scratch, so the
+  // explicit one is what wins
+  const implicit = renderOf(call(litComp, { a: 12 }));
+  expect(implicit.$a).not.toEqual(written);
+});
+
+// The non-literal call pair from defui_test: non-literal-target declares
+// a, b, has-default (defaulting to 42) and a contextual is-context;
+// non-literal-origin calls it with a non-literal map.
+const nlTarget = defineComponent(
+  "non-literal-target",
+  [
+    {
+      keys: ["a", "b", "has-default", { key: "is-context", contextual: true }],
+      defaults: { "has-default": 42 },
+      as: "arg",
+    },
+  ],
+  propsBody,
+);
+
+// The callsite of a non-literal call inside a component body: the map's
+// own path marks the call non-literal, extra and context flow down.
+const nonLiteralCallsite: CallSite = {
+  $m: [["keypath", "m"]],
+  extra: {},
+  $extra: [["keypath", "::extra"]],
+  context: {},
+  $context: [["keypath", "::context"]],
+};
+
+// p_nonliteral — derives_from: component.model.nonliteral_call_fill
+// generator: m a 12 and has-default 4
+// predicate: a has path m then a and b falls back to extra
+it("p_nonliteral: a has path m then a and b falls back to extra", () => {
+  const props = renderOf(
+    call(nlTarget, { a: 12, "has-default": 4 }, nonLiteralCallsite),
+  ) as Props;
+  // a: the map contains the key, so the dollar key is filled from the
+  // map value's path — m then a
+  expect(props.$a).toEqual([
+    ["keypath", "m"],
+    ["keypath", "a"],
+  ]);
+  // b: the map does not contain the key, so the dollar key falls back
+  // to the call site's extra
+  expect(props.$b).toEqual([
+    ["keypath", "::extra"],
+    ["keypath", expect.any(String)],
+    ["keypath", "b"],
+  ]);
+  expect(props.a).toBe(12);
+});
+
+// p_nonliteral_vals — derives_from: component.model.nonliteral_missing_vals
+// generator: m with missing keys and context is-context 13
+// predicate: has-default is 42 when absent, is-context is 13, all from
+//   the right source
+it("p_nonliteral_vals: has-default is 42 when absent, is-context is 13, from the right source", () => {
+  const callsite = {
+    $m: [["keypath", "m"]] as Path,
+    extra: {},
+    $extra: [["keypath", "::extra"]] as Path,
+    context: { "is-context": 13 },
+    $context: [["keypath", "::context"]] as Path,
+  };
+  const props = renderOf(call(nlTarget, {}, callsite)) as Props;
+  // has-default is absent from the map and the scratch, so the default
+  // is the value
+  expect(props["has-default"]).toBe(42);
+  // the contextual value comes from context
+  expect(props["is-context"]).toBe(13);
+  // a missing non-defaulted key is filled from the extra scratch: the
+  // scratch is the call site's extra under the call-site key, so a
+  // seeded scratch is read back through the very same path
+  const extraKey = ((props.$extra as readonly unknown[]).at(-1) as readonly unknown[])[1] as string;
+  const seeded = renderOf(
+    call(nlTarget, {}, { ...callsite, extra: { [extraKey]: { b: 99 } } }),
+  ) as Props;
+  expect(seeded.b).toBe(99);
+  expect(seeded["has-default"]).toBe(42);
+});
+
+// p_identity — derives_from: component.model.call_site_identity
+// generator: two call sites with different args
+// predicate: extra keys differ and are stable across renders
+it("p_identity: extra keys differ and are stable across renders", () => {
+  const idChild = defineComponent("id-child", [{ keys: ["v"] }], propsBody);
+  // two call sites with different args inside one parent
+  const body = (props: Props): unknown => [
+    call(idChild, { v: 1 }, {
+      extra: props.extra,
+      $extra: props.$extra as Path,
+      context: props.context,
+      $context: props.$context as Path,
+    }),
+    call(idChild, { v: 2 }, {
+      extra: props.extra,
+      $extra: props.$extra as Path,
+      context: props.context,
+      $context: props.$context as Path,
+    }),
+  ];
+  const first = defineComponent("id-parent-1", [{ keys: [] }], body);
+  const rendered = render(call(first, {})) as readonly Props[];
+  // different call sites get different extra
+  expect(rendered[0] as Props).toBeDefined();
+  expect((rendered[0] as Props).$extra).not.toEqual((rendered[1] as Props).$extra);
+
+  // the same call site keeps the same extra across renders: a second,
+  // identically-argged parent (a different component, so the render
+  // cache cannot mask the derivation) yields the same child extra paths
+  const second = defineComponent("id-parent-2", [{ keys: [] }], body);
+  const rerendered = render(call(second, {})) as readonly Props[];
+  expect((rerendered[0] as Props).$extra).toEqual((rendered[0] as Props).$extra);
+  expect((rerendered[1] as Props).$extra).toEqual((rendered[1] as Props).$extra);
 });
