@@ -47,7 +47,7 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock', 'specodelic/**/*.rs') }}
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock', 'specodelic/**/*.rs', 'versions.ddl.toml') }}
           restore-keys: ${{ runner.os }}-cargo-
 
       - name: Install gate tools (DDL §4 pins — versions.ddl.toml is the source
@@ -63,9 +63,17 @@ jobs:
         # experiments/ *.cljc/*.cljs files). Without them, discover finds 0
         # test items and exec exits 20 (tambor-kpx).
         run: |
-          cargo install --locked --quiet \
-            --git https://github.com/charly-vibes/testaruda.git --tag v0.5.1 \
-            adapter-typescript adapter-clojure
+          # Adapters may already exist when the cargo cache (which includes
+          # ~/.cargo/bin) is restored — cargo install refuses to overwrite
+          # without --force (first CI run after a cache save failed this way,
+          # run 37949866581). Guard on presence: the cache key hashes
+          # versions.ddl.toml, so a pin bump rotates the cache and rebuilds.
+          if ! testaruda-adapter-typescript --version >/dev/null 2>&1 \
+            || ! testaruda-adapter-clojure --version >/dev/null 2>&1; then
+            cargo install --locked --quiet \
+              --git https://github.com/charly-vibes/testaruda.git --tag v0.5.1 \
+              adapter-typescript adapter-clojure
+          fi
           testaruda-adapter-typescript --version 2>/dev/null || true
           testaruda-adapter-clojure --version 2>/dev/null || true
 
