@@ -28,3 +28,4 @@ dist/
 .devenv/
 .devenv.flake.nix
 .direnv/
+.gate-timing.log

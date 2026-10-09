@@ -37,29 +37,18 @@ pre-commit:
 pre-push:
   jobs:
     - name: espectacular-contracts
-      run: ah check --run-tests
+      # Timing wrapped for the gate-cost distribution (tambor-j44).
+      run: tools/gate-timing.sh espectacular-contracts ah check --run-tests
 
     - name: pretender-gate-full
       # Full-repo scan, gate mode (see NOTE above).
-      run: pretender check --mode gate
+      run: tools/gate-timing.sh pretender-gate-full pretender check --mode gate
 
     - name: testaruda-exec
-      # exec loop: select → run → ingest → calibrate.
-      # Exit 0 = selected tests ran and passed; exit 20 = no tests affected
-      # (benign — nothing to run). Any other code blocks the push.
-      # `|| code=$?`: lefthook scripts may run under -e semantics like the
-      # CI mirror — a bare failing command would abort before the tolerance
-      # check runs (same latent bug fixed in ci.yml, tambor-kpx).
-      # Tolerated codes: 0 = ran and passed, 20 = nothing affected, 10 =
-      # store uncalibrated (first run after init/reset — calibration is
-      # non-blocking, tambor-cpd).
-      run: |
-        code=0
-        testaruda exec || code=$?
-        if [ "$code" -eq 0 ] || [ "$code" -eq 10 ] || [ "$code" -eq 20 ]; then exit 0; fi
-        echo "testaruda exec failed with exit code $code" >&2
-        exit "$code"
+      # exec loop: select → run → ingest → calibrate (tolerance logic in
+      # tools/gates/testaruda-exec.sh; timing wrapper tambor-j44).
+      run: tools/gate-timing.sh testaruda-exec tools/gates/testaruda-exec.sh
 
     - name: scaffold-debt-report
       # Non-blocking: how many predicates are still todo!() scaffolds.
-      run: tools/scaffold-debt.sh
+      run: tools/gate-timing.sh scaffold-debt-report tools/scaffold-debt.sh
