@@ -5,7 +5,7 @@
 //   of props; the {:keys [k $k]} sugar derives a $k path binding from
 //   the parent's path for every plain key the caller did not pass
 //   explicitly, and an explicit pass always wins.
-// Rationale: specs/interop-model.md is the design authority. The cljc
+// Rationale: openspec/specs/interop-model/spec.md is the design authority. The cljc
 //   macro (experiments/macros.cljc) is compile-time sugar; this module
 //   is its desugared runtime counterpart, kept in its own file — the
 //   other interop modules import nothing from here, so the library

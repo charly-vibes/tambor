@@ -2,7 +2,7 @@
 //   drag, flick and pinch, each mapping to a named intent.
 // Responsibilities: recognize(script) classifies a scripted pointer
 //   gesture and returns the intent named after the gesture.
-// Rationale: specs/ui-mobile.md gesture_set is the design authority:
+// Rationale: openspec/specs/ui-mobile/spec.md gesture_set is the design authority:
 //   "supported gestures are tap, long-press, drag, flick and pinch, and
 //   each maps to a named intent" — the intent is named after its
 //   gesture. Tap classification is the event model's own (tap_vs_drag:

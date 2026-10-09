@@ -14,7 +14,7 @@
 //   textarea's interpreter, returning the tree, the intents, the
 //   applied state and the external intents (request-focus, clipboard
 //   effects).
-// Rationale: specs/components-textarea.md is the design authority;
+// Rationale: openspec/specs/components-textarea/spec.md is the design authority;
 //   tambor-272 redistributes the former monolithic
 //   tests/components-textarea.test.ts into topic files, and every one
 //   of these helpers is used by two or more of the resulting files, so

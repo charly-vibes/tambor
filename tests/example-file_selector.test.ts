@@ -1,7 +1,7 @@
 // Purpose: executable contract tests for the example-file_selector spec.
 // Responsibilities: encode the spec rows' generators and predicates as
 //   vitest + fast-check properties, one test per converted property.
-// Rationale: specs/example-file_selector.md is the design authority;
+// Rationale: openspec/specs/example-file_selector/spec.md is the design authority;
 //   each predicate here mirrors a Properties row (provenance:
 //   src/membrane/example/file_selector.clj, see TRACEABILITY.md).
 

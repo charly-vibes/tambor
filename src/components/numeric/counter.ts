@@ -9,7 +9,7 @@
 //   (counter_buttons); applying dec updates num to max(min, num - 1)
 //   when min is given and to num - 1 otherwise (counter_dec_rule), and
 //   inc is min(max, num + 1) / num + 1 (counter_inc_rule).
-// Rationale: specs/components-numeric.md is the design authority —
+// Rationale: openspec/specs/components-numeric/spec.md is the design authority —
 //   never improvise semantics beyond its constraint rows. Effects are
 //   plain data applied by the dispatcher (effect.dispatch); the dec and
 //   inc registrations here are the numeric component's own effect

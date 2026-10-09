@@ -8,7 +8,7 @@
 //   previous-line, next-line) and raw update effects against the state,
 //   and returns the external intents (request-focus, clipboard-copy,
 //   clipboard-cut) untouched for the app-level dispatcher.
-// Rationale: specs/components-textarea.md is the design authority —
+// Rationale: openspec/specs/components-textarea/spec.md is the design authority —
 //   editing state is split (text and focus in app state, cursor,
 //   select-cursor, down-pos, mpos and last-click in the textarea-state
 //   extra map), editing effects carry their text and extra paths as

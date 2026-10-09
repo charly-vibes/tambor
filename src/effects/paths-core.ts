@@ -5,7 +5,7 @@
 //   vocabulary, and normalize (nested path arrays flatten; keypath-list
 //   expands to nested keypath steps; the path navigator splices its
 //   path); small value helpers shared by the walk.
-// Rationale: specs/state-paths.md is the design authority. Splitting
+// Rationale: openspec/specs/state-paths/spec.md is the design authority. Splitting
 //   the atoms out keeps paths.ts a thin public-API surface and the
 //   walk machinery self-contained (tambor-272).
 

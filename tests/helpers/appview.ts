@@ -3,7 +3,7 @@
 // Responsibilities: centreOf computes the click point at a found node's
 //   drawn centre; toggleOptionOf locates the toggle-option handler
 //   whose subtree draws the label with the given option text.
-// Rationale: specs/tambor.md and specs/example-todo.md are the design
+// Rationale: openspec/specs/tambor/spec.md and openspec/specs/example-todo/spec.md are the design
 //   authorities; tambor-272 redistributes the former monolithic
 //   tests/tambor.test.ts into topic files, and these queries are used
 //   by two or more of the resulting files, so they live here instead of

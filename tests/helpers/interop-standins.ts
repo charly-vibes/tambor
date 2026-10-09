@@ -7,7 +7,7 @@
 //   experiments/seam.cljs, experiments/tambor-ops.mjs are the
 //   provenance); check plainness per interop.model.plain_data_api;
 //   shape views for deep-equality across independently built apps.
-// Rationale: specs/interop-model.md is the design authority. The
+// Rationale: openspec/specs/interop-model/spec.md is the design authority. The
 //   stand-ins live in the tests — host-language data is never part of
 //   the library's public surface, so no class instance here violates
 //   plain_data_api.

@@ -4,7 +4,7 @@
 // Responsibilities: encode each converted row's generator and predicate
 //   as a vitest + fast-check property, one test per converted property,
 //   porting the defui_test child/parent and non-literal call pairs.
-// Rationale: specs/component-model.md is the design authority; each
+// Rationale: openspec/specs/component-model/spec.md is the design authority; each
 //   predicate here mirrors a Properties row (generator + predicate text)
 //   and cites the defui_test.clj scenario it ports. tambor-272 splits the
 //   former monolithic tests/component-model.test.ts into topic files;

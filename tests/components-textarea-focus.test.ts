@@ -3,7 +3,7 @@
 //   keys_need_focus, key_map, enter_event_bubbles, ime_compose).
 // Responsibilities: encode each converted row's generator and predicate
 //   as a vitest + fast-check property, one test per converted property.
-// Rationale: specs/components-textarea.md is the design authority; each
+// Rationale: openspec/specs/components-textarea/spec.md is the design authority; each
 //   predicate here mirrors a Properties row (generator + predicate
 //   text). No vacuous predicates: every check encodes its row's stated
 //   behavior. request-focus is an external intent (the top-level

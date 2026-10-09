@@ -5,7 +5,7 @@
 //   word under an index; selectionHandles places the two draggable
 //   handles at the selection's edges; dragHandle feeds the
 //   drag-selection path by re-selecting through a dragged index.
-// Rationale: specs/ui-mobile.md selection_handles is the design
+// Rationale: openspec/specs/ui-mobile/spec.md selection_handles is the design
 //   authority. The word definition is the corpus's own: the
 //   whitespace-bounded word around an index, exactly as the textarea's
 //   double_click_word rule states it (components.textarea), so the

@@ -6,7 +6,7 @@
 //   plus the local independent counters (interactive-node count and
 //   button-label collection, computed without touching the a11y
 //   module).
-// Rationale: specs/backend-render.md is the design authority; each
+// Rationale: openspec/specs/backend-render/spec.md is the design authority; each
 //   predicate here mirrors a Properties row (generator + predicate
 //   text). tambor-272 redistributes the former monolithic
 //   tests/backend-render.test.ts into topic files; the tree counters

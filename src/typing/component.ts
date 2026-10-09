@@ -9,7 +9,7 @@
 //   at the call site and non-optional inside the component body
 //   (defaults_typed); the render function receives the augmentable
 //   AppContext (context_augmentable).
-// Rationale: specs/typing-model.md is the design authority. The dollar
+// Rationale: openspec/specs/typing-model/spec.md is the design authority. The dollar
 //   keys and the optional-default transform are pure type-level
 //   mappings over the inferred props; the runtime is the render call
 //   with the defaults filled in, so nothing depends on a type

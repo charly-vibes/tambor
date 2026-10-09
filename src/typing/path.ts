@@ -10,7 +10,7 @@
 //   element type, filter/take/drop keep the array type, nilToVal
 //   removes undefined, collectOne prepends the collected type to the
 //   update function parameters).
-// Rationale: specs/typing-model.md is the design authority; path
+// Rationale: openspec/specs/typing-model/spec.md is the design authority; path
 //   derivation (path.derivation) uses typed runtime refs rather than
 //   macros and these types sit on top of that — the lens phantoms are
 //   erased at runtime and every operation delegates to the exact

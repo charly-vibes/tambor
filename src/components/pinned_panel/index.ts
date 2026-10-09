@@ -9,7 +9,7 @@
 //   always-present slot spacer of the body's full authored extent
 //   (activation-range.end − activation-range.start in y, the body's width
 //   in x) plus the body placed per the activation branch.
-// Rationale: specs/components-pinned_panel.md is the design authority.
+// Rationale: openspec/specs/components-pinned_panel/spec.md is the design authority.
 //   activation_range_formula: active iff start ≤ offset.y ≤ end.
 //   spacer_matches_body_extent: the spacer is present in untranslated
 //   content flow at all times, active or not, so the ambient scrollview's

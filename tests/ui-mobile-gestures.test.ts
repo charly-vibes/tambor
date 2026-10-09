@@ -3,7 +3,7 @@
 //   pinch) recognized from touch moments.
 // Responsibilities: encode the converted row's generator and predicate
 //   as vitest + fast-check properties, one block per gesture.
-// Rationale: specs/ui-mobile.md is the design authority; the predicate
+// Rationale: openspec/specs/ui-mobile/spec.md is the design authority; the predicate
 //   here mirrors the Properties row (generator + predicate text).
 //   tambor-272: redistributed from the former monolithic
 //   tests/ui-mobile.test.ts — test names are byte-identical contract

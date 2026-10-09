@@ -3,7 +3,7 @@
 // Responsibilities: one mode-aware handler per special symbol; each
 //   receives the walk as its first argument so this module never
 //   imports the dispatcher.
-// Rationale: specs/state-paths.md is the design authority — never
+// Rationale: openspec/specs/state-paths/spec.md is the design authority — never
 //   improvise semantics beyond its constraint rows (tambor-272).
 
 import {

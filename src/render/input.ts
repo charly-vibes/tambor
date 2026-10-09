@@ -6,7 +6,7 @@
 //   become mouse events at the position minus the canvas origin, key
 //   events forward their normalised key, paste becomes a clipboard
 //   event carrying the string).
-// Rationale: specs/backend-render.md is the design authority —
+// Rationale: openspec/specs/backend-render/spec.md is the design authority —
 //   key_normalisation ("printable keys become one-character strings
 //   and Enter, Backspace and the four arrows become the named keys
 //   enter, backspace, up, down, left and right, and modifier keys

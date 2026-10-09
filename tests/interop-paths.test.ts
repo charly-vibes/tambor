@@ -3,7 +3,7 @@
 //   no-macro acceptance scenarios.
 // Responsibilities: encode each converted row's generator and predicate as a
 //   vitest + fast-check property, one test per converted property.
-// Rationale: specs/interop-model.md is the design authority; each predicate
+// Rationale: openspec/specs/interop-model/spec.md is the design authority; each predicate
 //   here mirrors a Properties row (generator + predicate text). No vacuous
 //   predicates: every check encodes its row's stated behavior. The
 //   acceptance tiers apply the emitted batches through the explicit path

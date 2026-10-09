@@ -6,7 +6,7 @@
 //   name registry (bound names resolve, unbound ones stay plain
 //   symbols); literal and opaque constant refs; the explicit
 //   each(xs, $xs, fn) API; and the removed loop forms that throw.
-// Rationale: specs/path-derivation.md is the design authority. The
+// Rationale: openspec/specs/path-derivation/spec.md is the design authority. The
 //   known-call table maps nth/get/get-in/keyword call/filter/take/drop/
 //   or/assoc/select-one/root-deref onto the navigators nth/keypath/
 //   keypath-list/keypath/filter/take/drop/nil-to-val/identity/path/

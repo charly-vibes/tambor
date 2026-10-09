@@ -8,7 +8,7 @@
 //   p_strict's project tsc run includes this file). The module
 //   augmentation below mirrors the corpus generator: applications
 //   extend the AppContext interface by declaration merging.
-// Rationale: specs/typing-model.md is the design authority;
+// Rationale: openspec/specs/typing-model/spec.md is the design authority;
 //   tambor-272 redistributed the monolithic tests/typing-model.test.ts
 //   into topic files, keeping every it name byte-identical for the
 //   --testNamePattern contract bindings.

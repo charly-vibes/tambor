@@ -13,7 +13,7 @@
 //   drawable/drawables child case into kidsOf); applyUpdate applies an
 //   update intent to a state holding offset, as the dispatcher would
 //   (the intent is data: [type, path, fn]).
-// Rationale: specs/components-scrollview.md is the design authority;
+// Rationale: openspec/specs/components-scrollview/spec.md is the design authority;
 //   tambor-272 redistributes the former monolithic
 //   tests/components-scrollview.test.ts into topic files, and every
 //   helper here is used by two or more of the resulting files, so they

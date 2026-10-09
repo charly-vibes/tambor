@@ -6,7 +6,7 @@
 //   backend's own input path), the counter scenario list, the runner
 //   that drives every scenario through every backend, and the
 //   generalized fast-check property over the counter stack.
-// Rationale: specs/tambor.md is the design authority (tambor.examples_
+// Rationale: openspec/specs/tambor/spec.md is the design authority (tambor.examples_
 //   are_acceptance). Split out of the former monolithic
 //   tests/tambor.test.ts (tambor-272); the todo scenario list lives in
 //   tests/helpers/todo-scenarios.ts and the tree scans in

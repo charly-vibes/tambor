@@ -7,7 +7,7 @@
 //   placed at x = width (respectively y = height); barScrollf — the
 //   start-scroll drag function mapping the pointer delta to the set
 //   offset effect offset = clamp(div0(position, viewport) * max offset).
-// Rationale: specs/components-scrollview.md is the design authority —
+// Rationale: openspec/specs/components-scrollview/spec.md is the design authority —
 //   bars_conditional, thumb_geometry, bar_drag and div0_safe. The track
 //   length is the viewport, which makes bar_drag's
 //   div0(position, viewport) * max mapping consistent: position at the

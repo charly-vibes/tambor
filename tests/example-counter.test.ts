@@ -1,7 +1,7 @@
 // Purpose: executable contract tests for the example-counter spec.
 // Responsibilities: encode the spec rows' generators and predicates as
 //   vitest + fast-check properties, one test per converted property.
-// Rationale: specs/example-counter.md is the design authority; each
+// Rationale: openspec/specs/example-counter/spec.md is the design authority; each
 //   predicate here mirrors a Properties row (p_label first — tracer).
 
 import { expect, it, vi } from "vitest";

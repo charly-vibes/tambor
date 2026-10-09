@@ -4,7 +4,7 @@
 //   decimal label of num (counter_layout); counterCounter(nums) stacks
 //   the "Add Counter" button above one counter per entry, in order
 //   (stack_layout).
-// Rationale: specs/example-counter.md is the design authority, porting
+// Rationale: openspec/specs/example-counter/spec.md is the design authority, porting
 //   membrane's example/counter.cljc. Only the view structure lives here
 //   in T1 — event handling, state paths and effect application are the
 //   T2/T3/T4 tickets. No behavior beyond the corpus.

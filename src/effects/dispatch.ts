@@ -9,7 +9,7 @@
 //   accept a plain initial state or an atom-like cell; place the
 //   backend's container size in the render context; support a custom
 //   dispatch for tests, undo history or an external store.
-// Rationale: specs/effect-dispatch.md is the design authority.
+// Rationale: openspec/specs/effect-dispatch/spec.md is the design authority.
 //   counter-increment (update with inc) and add-counter (update with
 //   conj of 0) are pre-registered effects. A registered effect receives
 //   dispatch first; effects it dispatches are applied before it

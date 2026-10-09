@@ -3,7 +3,7 @@
 // Responsibilities: encode the slider's converted rows — mapping,
 //   gesture, pointer capture, label, fill and max-width — as vitest +
 //   fast-check properties, with the slider app-state and view helpers.
-// Rationale: specs/components-numeric.md is the design authority; each
+// Rationale: openspec/specs/components-numeric/spec.md is the design authority; each
 //   predicate mirrors a Properties row of that spec. Split from
 //   components-numeric.test.ts so no file exceeds the test-role
 //   file-lines threshold (tambor-272); test names are byte-identical to

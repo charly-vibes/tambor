@@ -6,7 +6,7 @@
 //   as a vitest + fast-check property, one test per converted property,
 //   plus the local generators (the pixel-equality comparison and the
 //   random view arbitrary over the view model's nodes).
-// Rationale: specs/backend-render.md is the design authority; each
+// Rationale: openspec/specs/backend-render/spec.md is the design authority; each
 //   predicate here mirrors a Properties row (generator + predicate
 //   text). tambor-272 redistributes the former monolithic
 //   tests/backend-render.test.ts into topic files; the pixel comparison

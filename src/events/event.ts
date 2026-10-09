@@ -4,7 +4,7 @@
 //   pointer normalizer that maps mouse, touch and pen input onto one
 //   pointer shape, and the tap-vs-drag classifier with its synthetic
 //   mouse-down/mouse-up emission.
-// Rationale: specs/event-model.md is the design authority —
+// Rationale: openspec/specs/event-model/spec.md is the design authority —
 //   pointer_unified ("mouse, touch and pen input normalise to one
 //   pointer shape with position, button, down flag, modifiers and
 //   pointerType") and tap_vs_drag ("a pointer-up within 10 px and
@@ -14,7 +14,7 @@
 
 import type { Vec2 } from "../views/model.ts";
 
-// The delivery-rule families of specs/event-model.md:
+// The delivery-rule families of openspec/specs/event-model/spec.md:
 // - pointer kinds are first-match-wins (pointer_first_match)
 // - concat kinds visit every child in order (key_concat)
 // - mouse-move-global visits every descendant (global_move_all)

@@ -5,7 +5,7 @@
 //   wrap-on middleware (the handler receives the default handler
 //   first), the multi-pair on constructor that nests single-pair
 //   nodes, and the event-layer element type dispatch walks.
-// Rationale: specs/event-bubble.md is the design authority — a custom
+// Rationale: openspec/specs/event-bubble/spec.md is the design authority — a custom
 //   on type replaces descendant intents of that type
 //   (intercept_by_type), on-bubble receives the whole intent list of
 //   its children and its return value replaces it (on_bubble_raw),

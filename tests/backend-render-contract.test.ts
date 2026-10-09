@@ -6,7 +6,7 @@
 //   as a vitest + fast-check property, one test per converted property,
 //   plus the local generators (every primitive, the three backends, the
 //   counter-counter app wire).
-// Rationale: specs/backend-render.md is the design authority; each
+// Rationale: openspec/specs/backend-render/spec.md is the design authority; each
 //   predicate here mirrors a Properties row (generator + predicate
 //   text). tambor-272 redistributes the former monolithic
 //   tests/backend-render.test.ts into topic files; clipStub and inkOf

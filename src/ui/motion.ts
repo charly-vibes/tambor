@@ -5,7 +5,7 @@
 //   the scrollview's decaying momentum frames and schedules one
 //   animation frame per frame through the host — none at all when the
 //   media query is on.
-// Rationale: specs/ui-mobile.md reduced_motion is the design
+// Rationale: openspec/specs/ui-mobile/spec.md reduced_motion is the design
 //   authority: "with prefers-reduced-motion set, momentum and
 //   transitions are disabled". The momentum frames themselves are the
 //   scrollview's own (components.scrollview.momentum, which already

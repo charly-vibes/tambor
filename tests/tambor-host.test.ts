@@ -8,7 +8,7 @@
 //   dispatcher; once as a ClojureScript program, whose data (keywords,
 //   persistent maps) crosses the boundary unconverted through the
 //   five-function data-ops seam.
-// Rationale: specs/tambor.md is the design authority (tambor.host_
+// Rationale: openspec/specs/tambor/spec.md is the design authority (tambor.host_
 //   agnostic); the seam stand-ins live in tests/helpers/interop-
 //   standins.ts. Split out of the former monolithic tests/tambor.test.ts
 //   (tambor-272); the tree scans come from tests/helpers/scan.ts and the

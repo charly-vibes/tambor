@@ -3,7 +3,7 @@
 // Responsibilities: a mouse-down handler takes a Vec2 and returns
 //   readonly Effect[]; the wrap-on handler receives the typed default
 //   handler as its first argument (handler_signatures).
-// Rationale: specs/typing-model.md is the design authority. These are
+// Rationale: openspec/specs/typing-model/spec.md is the design authority. These are
 //   type contracts over the spine's event data: a handler's return is
 //   the effect batch the dispatcher applies, and wrap-on middleware
 //   wraps the default handler (wrap_on_middleware), so its typed first

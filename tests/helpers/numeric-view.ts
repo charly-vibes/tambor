@@ -3,7 +3,7 @@
 //   absolute origin, collected via children() plus translate offsets.
 // Responsibilities: nodeOrigins and its decomposed walk steps (group,
 //   translate, record + wrapper drawables).
-// Rationale: specs/components-numeric.md is the design authority. Split
+// Rationale: openspec/specs/components-numeric/spec.md is the design authority. Split
 //   from components-numeric.test.ts so both the counter and the slider
 //   files reuse it without duplication (tambor-272).
 

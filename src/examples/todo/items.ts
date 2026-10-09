@@ -3,7 +3,7 @@
 // Responsibilities: rowExtraPath / ROW_EXTRA_PATH (the per-row textarea
 //   scratch), todoItem (item_layout, item_bindings, delete_emits,
 //   complete_toggles), and toggle (toggle_render, toggle_sets_filter).
-// Rationale: specs/example-todo.md is the design authority. Split from
+// Rationale: openspec/specs/example-todo/spec.md is the design authority. Split from
 //   todo.ts so no file carries both the app shell and the item
 //   vocabulary (tambor-272). No behavior beyond the corpus.
 

@@ -7,7 +7,7 @@
 //   gating pointer events to the viewport region, and the conditional
 //   scrollbars; the wheel update logic, the touch drag scroll function
 //   and the momentum frames as pure functions of their inputs.
-// Rationale: specs/components-scrollview.md is the design authority.
+// Rationale: openspec/specs/components-scrollview/spec.md is the design authority.
 //   The stored offset is never clamped at render — a stale offset after
 //   a resize renders as-is and snaps back at the next scroll update
 //   (stale_offset_snaps) — and the wheel update reads the stored offset
@@ -16,7 +16,7 @@
 //
 //   Corpus gap, reported to the orchestrator rather than improvised:
 //   the landed event model's scroll event carries a position but no
-//   wheel delta and no pointer type (specs/event-model.md defines no
+//   wheel delta and no pointer type (openspec/specs/event-model/spec.md defines no
 //   delta field, and handlers receive only the position), so nothing in
 //   the corpus says how a wheel delta or a one-finger gesture reaches
 //   the scrollview through dispatch. wheelIntents, dragScrollf and

@@ -8,7 +8,7 @@
 //   height, labels drawn as their characters and strokes as cells), and
 //   routeClick — a pointer click normalised and handed to the corpus
 //   event router at view-space coordinates.
-// Rationale: specs/example-todo.md backend_portable ("the same
+// Rationale: openspec/specs/example-todo/spec.md backend_portable ("the same
 //   todo-app definition runs on the canvas, dom and text-terminal
 //   backends without change") is the design authority; specs/
 //   backend-render.md owns the full backend contract and primitive set,

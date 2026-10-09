@@ -6,7 +6,7 @@
 //   or any other iterable of children, normalizing to an array once at
 //   the boundary so apply and direct array calls both work
 //   (variadic_and_array, iterable_inputs).
-// Rationale: specs/interop-model.md is the design authority. The
+// Rationale: openspec/specs/interop-model/spec.md is the design authority. The
 //   normalization is exactly one toArray pass at the boundary — the
 //   lazy results of squint map and for arrive as iterables and are
 //   collected here, never later. Strings are node text, never child

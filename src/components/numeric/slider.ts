@@ -12,7 +12,7 @@
 //   pointer up sets mdown? false and updates (slider_gesture); on
 //   touch the slider keeps receiving moves after the finger leaves its
 //   bounds until release (slider_pointer_capture).
-// Rationale: specs/components-numeric.md is the design authority —
+// Rationale: openspec/specs/components-numeric/spec.md is the design authority —
 //   never improvise semantics beyond its constraint rows. The move
 //   handler listens on mouse-move-global and is rendered only while
 //   mdown? is true: the render-time read of the gesture state gates

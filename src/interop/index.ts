@@ -2,7 +2,7 @@
 //   exports and no top-level side effects (esm_named_exports), free
 //   functions taking data first (free_functions).
 // Responsibilities: re-export the interop surface under stable names.
-// Rationale: specs/interop-model.md is the design authority. Everything
+// Rationale: openspec/specs/interop-model/spec.md is the design authority. Everything
 //   here is a function, a constant or a sentinel — no methods, no
 //   builder chains, no reliance on this; and importing this module runs
 //   no side effect, so squint and shadow-cljs can require it plainly.

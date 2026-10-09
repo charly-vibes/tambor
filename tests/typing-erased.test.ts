@@ -3,7 +3,7 @@
 // Responsibilities: encode the converted row's generator and
 //   predicate as a vitest + fast-check property: an annotated function
 //   and its annotation-stripped twin must behave identically.
-// Rationale: specs/typing-model.md is the design authority; types
+// Rationale: openspec/specs/typing-model/spec.md is the design authority; types
 //   erase at runtime, so behaviour never depends on a type
 //   (types_erased). tambor-272 redistributed the monolithic
 //   tests/typing-model.test.ts into topic files, keeping every it

@@ -11,7 +11,7 @@
 //   carry dissoc); unknown tags reported and skipped; strict in-order
 //   batch application; no state conversion in either direction
 //   (no_boundary_conversion).
-// Rationale: specs/interop-model.md is the design authority. The
+// Rationale: openspec/specs/interop-model/spec.md is the design authority. The
 //   routing mirrors experiments/tambor-ops.mjs: host data straight in,
 //   host data straight out, tags and paths normalized only through the
 //   caller's ops. Paths are plain arrays of steps; their elements are

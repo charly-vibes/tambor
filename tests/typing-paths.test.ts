@@ -6,7 +6,7 @@
 //   predicate as a vitest test — expectTypeOf pins in-file plus
 //   ts-expect-error pins for the rejected programs (type_tests_in_ci;
 //   p_strict's project tsc run includes this file).
-// Rationale: specs/typing-model.md is the design authority; tambor-272
+// Rationale: openspec/specs/typing-model/spec.md is the design authority; tambor-272
 //   redistributed the monolithic tests/typing-model.test.ts into topic
 //   files, keeping every it name byte-identical for the
 //   --testNamePattern contract bindings. Types erase at runtime, so

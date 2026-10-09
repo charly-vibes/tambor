@@ -3,7 +3,7 @@
 //   release of an active Pin.
 // Responsibilities: encode each converted row's generator and predicate
 //   as a vitest + fast-check property, one test per converted property.
-// Rationale: specs/scrollytelling-pin.md is the design authority; the
+// Rationale: openspec/specs/scrollytelling-pin/spec.md is the design authority; the
 //   pin composes with the ambient scrollview (the offset source).
 //   tambor-272: redistributed from the former monolithic
 //   tests/ui-mobile.test.ts — test names are byte-identical contract

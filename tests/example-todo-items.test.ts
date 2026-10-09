@@ -3,7 +3,7 @@
 //   emission, and todo-list spacing.
 // Responsibilities: encode the spec rows' generators and predicates as
 //   vitest + fast-check properties, one test per converted property.
-// Rationale: specs/example-todo.md is the design authority; each
+// Rationale: openspec/specs/example-todo/spec.md is the design authority; each
 //   predicate here mirrors a Properties row (generator + predicate
 //   text). No vacuous predicates: every test carries the spec's example
 //   value verbatim plus a generalized fast-check property where the row

@@ -6,7 +6,7 @@
 //   constructors (label, rectangle, roundedRectangle, path, spacer,
 //   translate, button, on, checkbox, withColor, withStyle,
 //   withStrokeWidth) plus the ui checkbox draw geometry.
-// Rationale: specs/view-model.md is the design authority; nodes are
+// Rationale: openspec/specs/view-model/spec.md is the design authority; nodes are
 //   frozen after construction (immutable_nodes) and label size comes
 //   from an injected measure function (text_measure_injected). Split
 //   from model.ts so the model stays a thin hub (tambor-272). No

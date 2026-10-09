@@ -1,7 +1,7 @@
 // Purpose: executable contract tests for the state-paths spec.
 // Responsibilities: encode the spec rows' generators and predicates as
 //   vitest + fast-check properties, one test per converted property.
-// Rationale: specs/state-paths.md is the design authority; each
+// Rationale: openspec/specs/state-paths/spec.md is the design authority; each
 //   predicate here mirrors a Properties row of that spec.
 
 import { expect, it } from "vitest";

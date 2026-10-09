@@ -9,7 +9,7 @@
 //   each counter's num path is nums plus seq-nth(i)
 //   (independent_counters), and the Add Counter button returns
 //   add-counter with the nums path (add_appends_zero).
-// Rationale: specs/example-counter.md is the design authority. The
+// Rationale: openspec/specs/example-counter/spec.md is the design authority. The
 //   layout-only reference implementation lives in src/views/counter.ts
 //   (T1); this module adds only the handler wiring the effect contracts
 //   need. Handlers are pure: they capture their arguments at render

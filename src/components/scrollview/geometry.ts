@@ -4,7 +4,7 @@
 //   axis is max(0, total − viewport); clampScalar(v, max) —
 //   max(0, min(max, v)); div0(a, b) — division by zero yields 0, never
 //   NaN or infinity.
-// Rationale: specs/components-scrollview.md is the design authority —
+// Rationale: openspec/specs/components-scrollview/spec.md is the design authority —
 //   range_formula states both formulas verbatim and div0_safe states the
 //   zero-viewport rule; nothing here reads state or performs I/O.
 

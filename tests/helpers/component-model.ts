@@ -4,7 +4,7 @@
 //   its props map back out so tests can observe exactly what the
 //   component received; renderOf renders a call and reads the body output
 //   back as the props map.
-// Rationale: specs/component-model.md is the design authority;
+// Rationale: openspec/specs/component-model/spec.md is the design authority;
 //   tambor-272 redistributes the former monolithic
 //   tests/component-model.test.ts into topic files, and both helpers are
 //   used by two or more of the resulting files, so they live here instead

@@ -4,7 +4,7 @@
 //   as a vitest + fast-check property, one test per converted property;
 //   count with-color nodes and detect with-style stroke requests across
 //   the rendered tree.
-// Rationale: specs/components-textarea.md is the design authority; each
+// Rationale: openspec/specs/components-textarea/spec.md is the design authority; each
 //   predicate here mirrors a Properties row (generator + predicate
 //   text). No vacuous predicates: every check encodes its row's stated
 //   behavior. The tree scans reuse children()/isGroup() from

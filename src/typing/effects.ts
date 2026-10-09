@@ -13,7 +13,7 @@
 //   only members of the union and hands them to the runtime
 //   dispatcher; toRaw lowers a typed batch to the runtime effect data
 //   (paths become their navigator steps).
-// Rationale: specs/typing-model.md is the design authority. The type
+// Rationale: openspec/specs/typing-model/spec.md is the design authority. The type
 //   system does all the rejection work (dispatch_checked) — at runtime
 //   the batch is plain data forwarded to the effect.dispatch spec's
 //   dispatcher unchanged, so no behaviour depends on a type

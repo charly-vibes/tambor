@@ -4,7 +4,7 @@
 //   toArray, tag, plus dissoc where deletion is used) and the default
 //   jsOps implementation over plain JavaScript data, defaulting to
 //   plain JS operations when no ops are given (data_ops_seam).
-// Rationale: specs/interop-model.md is the design authority. The
+// Rationale: openspec/specs/interop-model/spec.md is the design authority. The
 //   library never knows what a host keyword or a persistent map is:
 //   tag normalization (tag_namespace_kept) and collection access live
 //   entirely inside the caller-supplied ops object, so ClojureScript

@@ -2,7 +2,7 @@
 //   opaque refs and filter composition.
 // Responsibilities: p_shadow, p_fn_shadow, p_call_table, p_get_default,
 //   p_assoc, p_literal, p_opaque, p_filter_path, p_unsupported.
-// Rationale: specs/path-derivation.md is the design authority. Split
+// Rationale: openspec/specs/path-derivation/spec.md is the design authority. Split
 //   from path-derivation.test.ts so no file exceeds the test-role
 //   file-lines threshold (tambor-272); test names are byte-identical to
 //   the originals (contract bindings are name-based).

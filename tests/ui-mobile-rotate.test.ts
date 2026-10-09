@@ -4,7 +4,7 @@
 // Responsibilities: encode the converted row's generator and predicate
 //   as a vitest + fast-check style contract, one test per converted
 //   property.
-// Rationale: specs/ui-mobile.md is the design authority; the predicate
+// Rationale: openspec/specs/ui-mobile/spec.md is the design authority; the predicate
 //   here mirrors the Properties row (generator + predicate text). The
 //   absolute-origin check reuses locate() from src/ui/overflow.ts — the
 //   corpus's own walker. tambor-272: redistributed from the former

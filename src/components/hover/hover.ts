@@ -8,7 +8,7 @@
 //   fill behind its border while hovered; checkbox is a pointer-down
 //   toggle over the ui checkbox; the toggle effect updates its path
 //   with logical not.
-// Rationale: specs/components-hover.md is the design authority.
+// Rationale: openspec/specs/components-hover/spec.md is the design authority.
 //   Entering sets hover? on a mouse-move over the body (hover_enter),
 //   returning set-true followed by the child intents (mouse_out_callback);
 //   leaving is detected by a global mouse-move (which is why the wrapper

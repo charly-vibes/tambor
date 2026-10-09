@@ -8,7 +8,7 @@
 //   event yields no intents (a handler mutated external state and
 //   returned nil) trigger one repaint anyway; render() is the current
 //   view tree.
-// Rationale: specs/example-counter.md raw_mode_supported is the design
+// Rationale: openspec/specs/example-counter/spec.md raw_mode_supported is the design
 //   authority: "a handler that mutates external state and returns nil is
 //   allowed in raw mode and triggers a repaint" — the no-framework
 //   version of the counter example, where the view reads the atom at

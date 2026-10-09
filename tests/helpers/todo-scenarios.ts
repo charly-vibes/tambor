@@ -7,7 +7,7 @@
 //   queries the predicates read (delete-X handlers, checkbox handlers),
 //   and one builder per todo scenario; todoScenarios() assembles the
 //   list in row order.
-// Rationale: specs/example-todo.md is the design authority; the rows
+// Rationale: openspec/specs/example-todo/spec.md is the design authority; the rows
 //   are the converted todo.cljc scenarios. tambor-272 split the former
 //   195-line todoScenarios() of tests/tambor.test.ts into these
 //   builders so every function stays under the complexity budgets, and

@@ -10,7 +10,7 @@
 //   stores mpos (drag_tracks), key-press maps the named keys and
 //   inserts any string while focused (key_map), and clipboard events
 //   copy, cut and paste while focused (clipboard rules).
-// Rationale: specs/components-textarea.md is the design authority.
+// Rationale: openspec/specs/components-textarea/spec.md is the design authority.
 //   Focus is a path: the textarea is focused exactly when the context
 //   focus deep-equals its text path (focus_by_path). Editing state is
 //   split: text and focus are app state; cursor, select-cursor,

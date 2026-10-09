@@ -6,7 +6,7 @@
 //   list), SimCanvas with width/height attrs, computedStyle returning
 //   kebab-case computed values, and the SimEvent shape the tests
 //   dispatch.
-// Rationale: specs/backend-render.md is the design authority. The
+// Rationale: openspec/specs/backend-render/spec.md is the design authority. The
 //   backends are headless-renderable (headless_render), so the DOM
 //   touchpoints are kept to the slice the corpus names: the canvas
 //   element's backing attributes and css size (dpr_scaled), its

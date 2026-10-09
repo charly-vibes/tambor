@@ -4,7 +4,7 @@
 //   value, and the flag read. Hover enter/leave effect shapes are the
 //   rows' concern in list.ts (set true on a mouse-move over the body,
 //   set false on a global mouse-move outside), per components.hover.
-// Rationale: specs/components-select.md row_hover_keyed is the design
+// Rationale: openspec/specs/components-select/spec.md row_hover_keyed is the design
 //   authority: "row hover flags are stored in extra under a key made of
 //   the hover marker and the row value, so rows hover independently".
 //   The marker is the hover? prop of components.hover; the key encodes

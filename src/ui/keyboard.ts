@@ -6,7 +6,7 @@
 //   hardware key-downs of the mobile keyboard, composition end) onto
 //   key-press events; makeKeyboardBridge tracks which textarea holds
 //   focus so the host can focus or blur the hidden input with it.
-// Rationale: specs/ui-mobile.md soft_keyboard_bridge is the design
+// Rationale: openspec/specs/ui-mobile/spec.md soft_keyboard_bridge is the design
 //   authority. The key-press names are the textarea key map's own
 //   (components.textarea.key_map: up, down, left, right, enter,
 //   backspace, any string inserts text), so every existing handler

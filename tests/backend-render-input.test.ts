@@ -5,7 +5,7 @@
 //   as a vitest + fast-check property, one test per converted property,
 //   plus the local probe-view fixture (records the local position the
 //   router passed).
-// Rationale: specs/backend-render.md is the design authority; each
+// Rationale: openspec/specs/backend-render/spec.md is the design authority; each
 //   predicate here mirrors a Properties row (generator + predicate
 //   text). No vacuous predicates: input checks the coordinates the
 //   router actually receives. tambor-272 redistributes the former

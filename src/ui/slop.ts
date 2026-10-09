@@ -8,7 +8,7 @@
 //   hit region; pickTarget resolves containment and nearest centre;
 //   slopDispatch(elem, event) routes touch pointer events through the
 //   slop layer and passes everything else to the plain dispatcher.
-// Rationale: specs/ui-mobile.md hit_slop and slop_resolves_overlap are
+// Rationale: openspec/specs/ui-mobile/spec.md hit_slop and slop_resolves_overlap are
 //   the design authority. The 44-by-44 minimum and the unchanged drawn
 //   size are hit_slop's own words (the per-axis maximum matches the
 //   host query in app/touch.ts, which draws nothing). Delivery mirrors

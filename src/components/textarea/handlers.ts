@@ -4,7 +4,7 @@
 //   double-click word selection), pointer move (mpos tracking), pointer
 //   up (selection finalization), key-press (named keys + text insert)
 //   and clipboard (copy/cut/paste) handlers.
-// Rationale: specs/components-textarea.md is the design authority.
+// Rationale: openspec/specs/components-textarea/spec.md is the design authority.
 //   Handlers are pure functions of the render-time context (props, the
 //   extra map snapshot, the text, focus, the intent builder and the
 //   position/index helpers) — textarea() composes them into the

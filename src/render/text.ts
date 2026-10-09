@@ -5,7 +5,7 @@
 //   draw(view) painting the tree into a character grid, send(event) as
 //   the pre-normalised input path (a terminal driver delivers events,
 //   not DOM), and the runtime wire.
-// Rationale: specs/backend-render.md is the design authority. The text
+// Rationale: openspec/specs/backend-render/spec.md is the design authority. The text
 //   backend treats one cell as one unit of width and height
 //   (text_backend_metrics), so the unit measure is its native metrics
 //   and apps are laid out in those units. Drawing paints labels as

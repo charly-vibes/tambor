@@ -4,7 +4,7 @@
 //   without visual jump, and spacer recomputation on resize.
 // Responsibilities: encode each converted row's generator and predicate
 //   as a vitest + fast-check property, one test per converted property.
-// Rationale: specs/scrollytelling-pin.md is the design authority; the
+// Rationale: openspec/specs/scrollytelling-pin/spec.md is the design authority; the
 //   pin composes with the ambient scrollview (the offset source) — no
 //   native document scroll. tambor-272: redistributed from the former
 //   monolithic tests/ui-mobile.test.ts — test names are byte-identical

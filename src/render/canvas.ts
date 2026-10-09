@@ -10,7 +10,7 @@
 //   event listeners), requestDraw with raf coalescing, resize with
 //   relayout and redraw, and the observable stack depth, draw count
 //   and a11y tree the predicates read.
-// Rationale: specs/backend-render.md is the design authority. The
+// Rationale: openspec/specs/backend-render/spec.md is the design authority. The
 //   rasterization target is the module's own ImageBuffer through
 //   image.ts's Painter — headless_render ("a view can be rendered to
 //   an image buffer with no window and no mounted DOM") is the

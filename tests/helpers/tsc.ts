@@ -6,7 +6,7 @@
 //   fixture module under target/typing-fixtures and returns its path;
 //   STRICT_FLAGS is the strict-flag set the typing.model
 //   strict_compiler row lists, as CLI flags for fixture runs.
-// Rationale: specs/typing-model.md is the design authority; tambor-272
+// Rationale: openspec/specs/typing-model/spec.md is the design authority; tambor-272
 //   redistributed the monolithic tests/typing-model.test.ts into topic
 //   files, and every spawned-tsc test (p_strict, p_no_any, p_core_dom,
 //   p_union, p_type_tests, p_esm) shares these drivers. The Node

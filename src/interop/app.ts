@@ -5,7 +5,7 @@
 //   and registry; dispatch routes every effect application through
 //   that closed-over seam, so two apps with different ops coexist and
 //   each behaves per its own ops.
-// Rationale: specs/interop-model.md is the design authority. Unlike
+// Rationale: openspec/specs/interop-model/spec.md is the design authority. Unlike
 //   the global effect registry of effect.dispatch, the interop tier
 //   keeps its seam per instance: the ops object is constructor state,
 //   not module state.

@@ -3,7 +3,7 @@
 //   thumb-zone placement of primary actions.
 // Responsibilities: encode each converted row's generator and predicate
 //   as a vitest + fast-check property, one test per converted property.
-// Rationale: specs/ui-mobile.md is the design authority; each predicate
+// Rationale: openspec/specs/ui-mobile/spec.md is the design authority; each predicate
 //   here mirrors a Properties row (generator + predicate text). The
 //   absolute-origin checks reuse locate() from src/ui/overflow.ts — the
 //   corpus's own walker — instead of a re-implemented one. tambor-272:

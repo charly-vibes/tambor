@@ -1,7 +1,7 @@
 // Purpose: executable contract tests for the event-bubble spec.
 // Responsibilities: encode the spec rows' generators and predicates as
 //   vitest + fast-check properties, one test per converted property.
-// Rationale: specs/event-bubble.md is the design authority; each
+// Rationale: openspec/specs/event-bubble/spec.md is the design authority; each
 //   predicate here mirrors a Properties row of that spec — bubbling is
 //   how a deep child asks an ancestor for something it cannot do
 //   itself.

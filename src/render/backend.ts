@@ -7,7 +7,7 @@
 //   indexForPosition over a measure function, the shared
 //   subscription set, and the runtime that routes forwarded events
 //   through the app view and hands the intents to the handler.
-// Rationale: specs/backend-render.md is the design authority —
+// Rationale: openspec/specs/backend-render/spec.md is the design authority —
 //   backend_contract ("a backend implements draw(view),
 //   measureText(text, font), indexForPosition(font, text, x, y),
 //   copyToClipboard(s), and an input subscription"),

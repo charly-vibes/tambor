@@ -3,7 +3,7 @@
 //   to a per-navigator handler (special symbols in paths-walk-specials,
 //   navigator tuples in paths-walk-navigators); select/set/update/
 //   delete build a context and run the walk to a leaf.
-// Rationale: specs/state-paths.md is the design authority — never
+// Rationale: openspec/specs/state-paths/spec.md is the design authority — never
 //   improvise semantics beyond its constraint rows. Dispatch is a table
 //   lookup so walk itself stays tiny; handlers receive the walk as
 //   their first argument, keeping the module graph acyclic (tambor-272).

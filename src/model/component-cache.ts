@@ -3,7 +3,7 @@
 // Responsibilities: canonical (deterministic, cycle-safe serialization
 //   with sorted object keys) and cacheKey (component name + canonical
 //   props).
-// Rationale: specs/component-model.md is the design authority; the
+// Rationale: openspec/specs/component-model/spec.md is the design authority; the
 //   as self-reference serialises to the cycle placeholder, which is
 //   constant for every props map. Split from component.ts so no file
 //   carries the model and its caching (tambor-272).

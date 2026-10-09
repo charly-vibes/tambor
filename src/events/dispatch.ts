@@ -4,7 +4,7 @@
 //   produced by the matching descendants under the delivery rule of the
 //   event type — plus the capability queries (has-key-press,
 //   has-key-event, has-mouse-move-global).
-// Rationale: specs/event-model.md is the design authority. Pointer
+// Rationale: openspec/specs/event-model/spec.md is the design authority. Pointer
 //   events (mouse-down, mouse-up, mouse-move, scroll, drop) are
 //   first-match-wins: children are tried last to first and the first
 //   non-empty intent list stops the search (pointer_first_match).
@@ -35,7 +35,7 @@ import {
 import type { EventElem, Intent, IntentList, WrapNode } from "./bubble.ts";
 import type { TamborEvent } from "./event.ts";
 
-// Delivery-rule families of specs/event-model.md.
+// Delivery-rule families of openspec/specs/event-model/spec.md.
 const POINTER_KINDS: readonly string[] = [
   "mouse-down",
   "mouse-up",

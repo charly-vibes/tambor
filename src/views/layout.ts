@@ -2,7 +2,7 @@
 // Responsibilities: vertical/horizontal stacking with a configurable
 //   one-pixel gap, table layout with aligned columns and rows, centering,
 //   and stretch resolution against a container size.
-// Rationale: specs/view-layout.md is the design authority — layout only
+// Rationale: openspec/specs/view-layout/spec.md is the design authority — layout only
 //   wraps children in Translate nodes (layout_pure), the first child
 //   stays at the origin and each later child is translated by the
 //   running offset of size plus origin plus the gap (vstack_offsets,

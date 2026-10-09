@@ -4,7 +4,7 @@
 //   accessibilityTree(view): one accessible node per interactive node
 //   (button, checkbox), in draw order, traversing groups, wrappers,
 //   handlers, translates and unknown nodes' children.
-// Rationale: specs/backend-render.md is the design authority —
+// Rationale: openspec/specs/backend-render/spec.md is the design authority —
 //   a11y_mirror ("the canvas backend keeps an offscreen accessibility
 //   tree mirroring interactive nodes") and p_a11y ("views with
 //   buttons: one accessible node per interactive node"). Buttons mirror

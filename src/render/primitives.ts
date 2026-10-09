@@ -6,7 +6,7 @@
 // Responsibilities: the frozen node constructors and their types; the
 //   UnknownNode shape whose children a backend falls back to drawing
 //   (primitive_set's unknown-node rule); AnyDraw as the draw target.
-// Rationale: specs/backend-render.md is the design authority —
+// Rationale: openspec/specs/backend-render/spec.md is the design authority —
 //   primitive_set names exactly these primitives ("label, text-
 //   selection, text-cursor, image, rectangle and rounded rectangle in
 //   stroke or fill, path, arc, translate, rotate, scale, color, style,

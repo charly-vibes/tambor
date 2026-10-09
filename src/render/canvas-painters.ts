@@ -4,7 +4,7 @@
 //   tree-walk for recursion and the Painter instance) behind the
 //   PAINTERS dispatch table; the CanvasNode draw-tree shape; the
 //   checkerboard pattern for image primitives without pixel data.
-// Rationale: specs/render-paint.md's primitive_set traversal with
+// Rationale: openspec/specs/render-paint/spec.md's primitive_set traversal with
 //   per-node painters keeps no single function carrying the whole
 //   vocabulary (tambor-272).
 

@@ -4,7 +4,7 @@
 //   positions and reports every node whose right edge extends past the
 //   viewport width, skipping subtrees the caller marks as horizontal
 //   scroll regions; locate finds a node's absolute origin.
-// Rationale: specs/ui-mobile.md no_horizontal_overflow is the design
+// Rationale: openspec/specs/ui-mobile/spec.md no_horizontal_overflow is the design
 //   authority. The walk mirrors the event model's coordinate rule
 //   (coords_translated: descending through Translate subtracts x and y
 //   — here accumulated additively) and the view model's bounds

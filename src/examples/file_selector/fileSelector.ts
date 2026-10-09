@@ -10,7 +10,7 @@
 //   removes the name if present and adds it otherwise; fileSelector is
 //   the runner: a headless app over the item-selector whose stop reads
 //   the final selection from the state, as file-selector does.
-// Rationale: specs/example-file_selector.md is the design authority —
+// Rationale: openspec/specs/example-file_selector/spec.md is the design authority —
 //   never improvise semantics beyond its constraint rows. The filter is
 //   matched against the lower-cased name as given (the filter itself is
 //   not lower-cased, filter_matches); str-filter defaults to the empty

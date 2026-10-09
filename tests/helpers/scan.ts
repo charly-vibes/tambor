@@ -8,7 +8,7 @@
 //   reports every drawable node with its absolute origin plus the
 //   ancestor context the corpus predicates name (under a gray
 //   with-color wrapper, under a clickability handler).
-// Rationale: specs/ui-mobile.md and specs/example-todo.md are the
+// Rationale: openspec/specs/ui-mobile/spec.md and openspec/specs/example-todo/spec.md are the
 //   design authorities; tambor-272 redistributes the former monolithic
 //   tests/ui-mobile.test.ts and tests/example-todo.test.ts into topic
 //   files, and every walker here keeps cyclomatic complexity ≤ 3 by

@@ -4,7 +4,7 @@
 //   list, tokenValue resolving a token in a scheme, and
 //   colorSchemePref reading the media query through an injected
 //   matcher.
-// Rationale: specs/ui-mobile.md theme_aware is the design authority:
+// Rationale: openspec/specs/ui-mobile/spec.md theme_aware is the design authority:
 //   "colors follow prefers-color-scheme, with explicit tokens for both
 //   themes". The corpus pins the mechanism, not the palette values;
 //   the token names are this port's semantic vocabulary and each

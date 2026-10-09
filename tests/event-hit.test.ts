@@ -1,7 +1,7 @@
 // Purpose: executable contract tests for event-model hit-testing rows.
 // Responsibilities: encode the spec rows' generators and predicates as
 //   vitest + fast-check properties, one test per converted property.
-// Rationale: specs/event-model.md is the design authority; each
+// Rationale: openspec/specs/event-model/spec.md is the design authority; each
 //   predicate here mirrors a Properties row of that spec — hit-testing
 //   is half-open, handlers see local coords, and button fires on down.
 

@@ -2,7 +2,7 @@
 //   wheel scrolling (wheel_defers_to_children, wheel_updates_offset).
 // Responsibilities: encode each converted row's generator and predicate
 //   as a vitest + fast-check property, one test per converted property.
-// Rationale: specs/components-scrollview.md is the design authority; each
+// Rationale: openspec/specs/components-scrollview/spec.md is the design authority; each
 //   predicate here mirrors a Properties row (generator + predicate text).
 //   No vacuous predicates: every check encodes its row's stated behavior,
 //   with the contrasting in-range case asserted where the row implies it.

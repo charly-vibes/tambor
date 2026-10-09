@@ -11,7 +11,7 @@
 //   intercepted and expanded to select followed by the effect that
 //   sets open? to false; the select effect sets the selected path to
 //   the value.
-// Rationale: specs/components-select.md is the design authority — never
+// Rationale: openspec/specs/components-select/spec.md is the design authority — never
 //   improvise semantics beyond its constraint rows. The header toggle
 //   is the update-with-not effect (header_toggles). The corpus
 //   specifies gray for the no-selection text without a value; the color

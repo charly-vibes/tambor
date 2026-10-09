@@ -4,7 +4,7 @@
 // Responsibilities: mapTouchDown/Move/Up construct the mapped events,
 //   and touchTap classifies a touch down/up pair (tap_vs_drag) and
 //   emits the mapped mouse pair for a tap.
-// Rationale: specs/ui-mobile.md touch_maps_to_pointer is the design
+// Rationale: openspec/specs/ui-mobile/spec.md touch_maps_to_pointer is the design
 //   authority: the mapping reuses the event model's mouse kinds
 //   verbatim. The mapped events keep pointerType "touch": the slop
 //   router (ui.mobile.hit_slop) and the hover layer

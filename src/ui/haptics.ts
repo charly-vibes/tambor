@@ -3,7 +3,7 @@
 // Responsibilities: tapHaptics fires the short tap vibration through
 //   the host's vibrate capability when present and does nothing —
 //   without error — when it is absent.
-// Rationale: specs/ui-mobile.md haptics_optional is the design
+// Rationale: openspec/specs/ui-mobile/spec.md haptics_optional is the design
 //   authority: "a short vibration on button taps where navigator.vibrate
 //   exists". The capability query is the call's argument, so headless
 //   hosts (no navigator at all) are the absent case the no-error

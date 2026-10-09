@@ -10,7 +10,7 @@
 //   register custom effects by extending the EffectMap interface by
 //   declaration merging (the todo example's add-todo and the
 //   dropdown's select intent).
-// Rationale: specs/typing-model.md is the design authority;
+// Rationale: openspec/specs/typing-model/spec.md is the design authority;
 //   tambor-272 redistributed the monolithic tests/typing-model.test.ts
 //   into topic files, keeping every it name byte-identical for the
 //   --testNamePattern contract bindings.

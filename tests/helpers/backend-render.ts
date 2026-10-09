@@ -4,7 +4,7 @@
 //   check the clipboard service; inkOf draws one node into a fresh
 //   canvas backend and reports its ink as a bounding box in device
 //   pixels (single options object, params ≤ 2).
-// Rationale: specs/backend-render.md is the design authority; tambor-272
+// Rationale: openspec/specs/backend-render/spec.md is the design authority; tambor-272
 //   redistributes the former monolithic tests/backend-render.test.ts
 //   into topic-clustered files, and clipStub (contract + input files)
 //   and inkOf (contract + a11y files) are each used by two or more of

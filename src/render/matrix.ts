@@ -2,7 +2,7 @@
 //   e, y' = b x + d y + f).
 // Responsibilities: the Mat shape, IDENTITY, and the translate/rotate/
 //   scale/apply constructors the draw traversals compose.
-// Rationale: specs/backend-render.md is the design authority; split
+// Rationale: openspec/specs/backend-render/spec.md is the design authority; split
 //   from image.ts so no file carries both the raster and the algebra
 //   (tambor-272). image.ts re-exports these names for compatibility.
 

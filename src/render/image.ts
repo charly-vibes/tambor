@@ -7,7 +7,7 @@
 //   save/restore (the transform/clip/style stack), fill/stroke style
 //   and width, scissor clipping, fillRect/strokeRect, path building
 //   with fill/stroke, arc sampling, fillText and drawImage.
-// Rationale: specs/backend-render.md is the design authority.
+// Rationale: openspec/specs/backend-render/spec.md is the design authority.
 //   draw_deterministic needs two draws to produce identical pixels, so
 //   every rasterization step is a pure function of its inputs: pixels
 //   are overwritten (no blending), rects fill half-open (the same

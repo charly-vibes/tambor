@@ -3,7 +3,7 @@
 //   groupBounds), width, height, children, setWidth, setHeight and
 //   makeNode — each dispatching per node type through a table so no
 //   function carries the whole vocabulary.
-// Rationale: specs/view-model.md is the design authority; bounds are
+// Rationale: openspec/specs/view-model/spec.md is the design authority; bounds are
 //   pure functions (bounds_total, container_bounds_max), containers
 //   reduce to the max of child origin plus size (container_bounds_max),
 //   and set_size_single_child governs setWidth/setHeight. Split from

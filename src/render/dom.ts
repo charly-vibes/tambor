@@ -4,7 +4,7 @@
 // Responsibilities: the BackendContract services, draw(view) building
 //   an element tree under its root element, attach(surface) wiring the
 //   same listeners, resize redrawing, and the runtime wire.
-// Rationale: specs/backend-render.md is the design authority. The dom
+// Rationale: openspec/specs/backend-render/spec.md is the design authority. The dom
 //   backend draws "accessible, selectable text": labels become text
 //   nodes, buttons become real button elements (natively accessible
 //   and focusable), rectangles become styled divs, and wrappers nest

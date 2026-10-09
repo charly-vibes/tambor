@@ -17,7 +17,7 @@
 //   would move past the last interactive element inside — emits the
 //   release instead of trapping focus (focus_releases_pin), stored
 //   through the state path so it sticks.
-// Rationale: specs/scrollytelling-pin.md is the design authority. The
+// Rationale: openspec/specs/scrollytelling-pin/spec.md is the design authority. The
 //   realization composes components.scrollview (the offset source, wired
 //   by the app's view layer into context.scroll) with
 //   components.pinned_panel (activation_range_formula,

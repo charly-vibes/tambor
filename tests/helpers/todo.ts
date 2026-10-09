@@ -3,7 +3,7 @@
 // Responsibilities: the todo-item fast-check arbitrary, the unfiltered
 //   todo paths, and the app-view body/list/description queries the
 //   predicates read.
-// Rationale: specs/example-todo.md is the design authority; tambor-272
+// Rationale: openspec/specs/example-todo/spec.md is the design authority; tambor-272
 //   split the former monolithic tests/example-todo.test.ts into
 //   topic-clustered files, and helpers used by two or more of them live
 //   here instead of being duplicated. Every walker stays within the

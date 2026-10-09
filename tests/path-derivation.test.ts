@@ -1,7 +1,7 @@
 // Purpose: executable contract tests for the path-derivation spec.
 // Responsibilities: encode the spec rows' generators and predicates as
 //   vitest + fast-check properties, one test per converted property.
-// Rationale: specs/path-derivation.md is the design authority; each
+// Rationale: openspec/specs/path-derivation/spec.md is the design authority; each
 //   predicate here mirrors a Properties row of that spec. The port's
 //   primary strategy is the typed runtime ref (Ref<T> carrying value and
 //   path); the explicit API is the third, macro-free tier.
@@ -11,7 +11,7 @@
 // Responsibilities: p_every_binding, p_extract, p_update, p_transform,
 //   p_compiles, p_rest, p_map_iter, p_key_ro, p_pairs, p_when_let,
 //   p_if_let.
-// Rationale: specs/path-derivation.md is the design authority. Split
+// Rationale: openspec/specs/path-derivation/spec.md is the design authority. Split
 //   from path-derivation.test.ts so no file exceeds the test-role
 //   file-lines threshold (tambor-272); test names are byte-identical to
 //   the originals (contract bindings are name-based).

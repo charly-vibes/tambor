@@ -5,9 +5,9 @@
 //   44-by-44 minimum on a touch host — and interactiveNodes(elem), the scan
 //   of every interactive node in a tree (the root spec's "all interactive
 //   nodes" generator).
-// Rationale: specs/example-counter.md counter_touch_target ("the more
+// Rationale: openspec/specs/example-counter/spec.md counter_touch_target ("the more
 //   button has a hit area of at least 44 by 44 on touch devices") and
-//   specs/tambor.md mobile_first are the design authority; the 44-by-44
+//   openspec/specs/tambor/spec.md mobile_first are the design authority; the 44-by-44
 //   minimum and the unchanged drawn size come from ui.mobile.hit_slop.
 //   This module is a pure query only: slop-region event routing and
 //   overlap resolution are the ui.mobile router layer, not this module.

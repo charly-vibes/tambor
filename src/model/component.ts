@@ -9,7 +9,7 @@
 //   scratch keyed by the sorted explicit prop paths, memoized rendering
 //   keyed by component name plus props (reset when any component is
 //   redefined), and setWidth/setHeight by assoc.
-// Rationale: specs/component-model.md is the design authority — never
+// Rationale: openspec/specs/component-model/spec.md is the design authority — never
 //   improvise semantics beyond its constraint rows. It ports membrane's
 //   defui (component.cljc) as exercised by defui_test.clj: extra is the
 //   per-call-site scratch stored under ::extra of the parent, context is

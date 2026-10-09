@@ -3,7 +3,7 @@
 //   advanced-compilation safety and the same-effect-everywhere pin.
 // Responsibilities: encode each converted row's generator and predicate as a
 //   vitest + fast-check property, one test per converted property.
-// Rationale: specs/interop-model.md is the design authority; each predicate
+// Rationale: openspec/specs/interop-model/spec.md is the design authority; each predicate
 //   here mirrors a Properties row (generator + predicate text). No vacuous
 //   predicates: every check encodes its row's stated behavior. Host
 //   stand-ins (Keyword, PMap, cljsOps) live in tests/helpers — they are

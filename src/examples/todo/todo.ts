@@ -1,4 +1,4 @@
-// Purpose: the example.todo app (specs/example-todo.md) — the todo
+// Purpose: the example.todo app (openspec/specs/example-todo/spec.md) — the todo
 //   views: the delete X, the todo-item row, the todo-list spacing, and
 //   the filter fns and paths that keep every visible item's edits on
 //   the underlying list.
@@ -12,7 +12,7 @@
 //   shows complete? false, complete shows complete? true, an unknown
 //   filter shows all) and the visible-row builder whose item paths are
 //   todos then filter then seq-nth(j).
-// Rationale: specs/example-todo.md is the design authority — never
+// Rationale: openspec/specs/example-todo/spec.md is the design authority — never
 //   improvise semantics beyond its constraint rows. The central
 //   subtlety is that the list shown is filter(filter-fn, todos), yet
 //   every item path still reaches the original list: each row's $todo

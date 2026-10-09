@@ -13,7 +13,7 @@
 //   clear-focus effect; makeTopApp(options) wires topEventHandler
 //   against make-app, with the root wrapped so has-mouse-move-global
 //   always reports true.
-// Rationale: specs/app-toplevel.md is the design authority — never
+// Rationale: openspec/specs/app-toplevel/spec.md is the design authority — never
 //   improvise semantics beyond its constraint rows. It ports membrane's
 //   TopEventHandler, wrap-scroll and wrap-start-scroll (component.cljc):
 //   the scrollbars return a start-scroll intent holding a function from

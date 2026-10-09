@@ -11,7 +11,7 @@
 //   mobile root: toggle, rows, and a bottom bar carrying the Add Todo
 //   primary action; wide textareas are placed inside a real scrollview
 //   region whose wrapper the overflow scan exempts.
-// Rationale: the geometry and intents are specs/example-todo.md's own
+// Rationale: the geometry and intents are openspec/specs/example-todo/spec.md's own
 //   rows (delete_x_geometry, item_layout, toggle_render, list_spacing,
 //   add_button) — this module adapts their arrangement to the mobile
 //   viewport, never their semantics. The mobile arrangement is

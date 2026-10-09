@@ -11,7 +11,7 @@
 //   style and stroke-width applied down the tree; handler, checkbox,
 //   button and unknown containers recurse into their children, and the
 //   event layer's wrap/bubble roots draw their drawables.
-// Rationale: specs/example-todo.md image_render is the design authority
+// Rationale: openspec/specs/example-todo/spec.md image_render is the design authority
 //   ("the app renders to an image with no window from plain state, as
 //   save-image does in the original"); backend.render headless_render
 //   states the same capability for every backend and owns the full

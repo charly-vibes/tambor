@@ -10,7 +10,7 @@
 //   hover flags live in extra keyed by the row's hover key, entered on
 //   mouse-move over the body and left on a global mouse-move outside
 //   (row_hover_keyed, with the effect shapes from components.hover).
-// Rationale: specs/components-select.md is the design authority — never
+// Rationale: openspec/specs/components-select/spec.md is the design authority — never
 //   improvise semantics beyond its constraint rows. The box is the list
 //   node: a rounded rectangle behind the rows, so a rounded-rectangle
 //   presence in the tree is what "the list is part of the view" reads

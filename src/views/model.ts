@@ -3,7 +3,7 @@
 //   rectangle, rounded-rectangle, path, spacer, translate, style
 //   wrappers — plus the pure queries the corpus names: origin, bounds,
 //   width, height, children, makeNode.
-// Rationale: specs/view-model.md is the design authority; nodes are
+// Rationale: openspec/specs/view-model/spec.md is the design authority; nodes are
 //   frozen after construction (immutable_nodes), bounds are pure
 //   functions (bounds_total, container_bounds_max), label size comes
 //   from an injected measure function (text_measure_injected), and

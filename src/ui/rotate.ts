@@ -2,7 +2,7 @@
 //   relayouts without losing state.
 // Responsibilities: rotatedSize maps a container size to the size the
 //   same container reports after a quarter-turn rotation.
-// Rationale: specs/ui-mobile.md orientation_supported is the design
+// Rationale: openspec/specs/ui-mobile/spec.md orientation_supported is the design
 //   authority: "rotating the device relayouts without losing state".
 //   The relayout is the app's own render path — the root view is built
 //   from the container size (viewport_responsive), so a rotation is a

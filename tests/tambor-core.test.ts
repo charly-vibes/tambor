@@ -4,7 +4,7 @@
 //   mobile-first touch targets.
 // Responsibilities: encode each converted row's generator and predicate
 //   as a vitest + fast-check property, one test per converted property.
-// Rationale: specs/tambor.md is the design authority; the rows are
+// Rationale: openspec/specs/tambor/spec.md is the design authority; the rows are
 //   checked against the working spine (views, events, paths, effects).
 //   Split out of the former monolithic tests/tambor.test.ts
 //   (tambor-272); the example-acceptance and host rows live in

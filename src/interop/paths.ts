@@ -6,7 +6,7 @@
 //   flatten); filterNav builds the ["filter", pred] navigator; each
 //   walks a list giving (value, path) per child, the child path being
 //   the parent path plus the child's index.
-// Rationale: specs/interop-model.md is the design authority, porting
+// Rationale: openspec/specs/interop-model/spec.md is the design authority, porting
 //   experiments/tambor-paths.mjs's path-aware each. Paths are the
 //   plain data of state.paths; concatenation normalizes once so
 //   nesting never leaks. each gives the i-th child the path

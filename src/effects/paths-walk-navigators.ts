@@ -4,7 +4,7 @@
 // Responsibilities: one mode-aware handler per navigator plus its
 //   write-back; structural-sharing helpers (cloneWith, withoutKey,
 //   writeBackSubseq); the navigator dispatch table.
-// Rationale: specs/state-paths.md is the design authority — never
+// Rationale: openspec/specs/state-paths/spec.md is the design authority — never
 //   improvise semantics beyond its constraint rows. Handlers receive
 //   the walk as their first argument so this module never imports the
 //   dispatcher (tambor-272).

@@ -1,7 +1,7 @@
 // Purpose: executable contract tests for the components.pinned_panel spec.
 // Responsibilities: encode each converted row's generator and predicate
 //   as a vitest + fast-check property, one test per converted property.
-// Rationale: specs/components-pinned_panel.md is the design authority;
+// Rationale: openspec/specs/components-pinned_panel/spec.md is the design authority;
 //   each predicate here mirrors a Properties row (generator + predicate
 //   text) of that spec. No vacuous predicates: every check encodes its
 //   row's stated behavior. The ambient scrollview frame is simulated per

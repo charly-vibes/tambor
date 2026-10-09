@@ -4,7 +4,7 @@
 //   drag-scrolling and clears focus on a click that hits nothing.
 // Responsibilities: encode each converted row's generator and predicate
 //   as a vitest + fast-check property, one test per converted property.
-// Rationale: specs/app-toplevel.md is the design authority; each
+// Rationale: openspec/specs/app-toplevel/spec.md is the design authority; each
 //   predicate here mirrors a Properties row (generator + predicate
 //   text). No vacuous predicates: every check encodes its row's stated
 //   behavior. The reserved namespaces use the "::" prefix — the port of

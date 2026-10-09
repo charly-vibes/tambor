@@ -3,7 +3,7 @@
 //   viewport.
 // Responsibilities: avoidScroll computes the scroll that brings a
 //   focused textarea's rect fully inside the area above the keyboard.
-// Rationale: specs/ui-mobile.md keyboard_avoidance is the design
+// Rationale: openspec/specs/ui-mobile/spec.md keyboard_avoidance is the design
 //   authority: "when the soft keyboard opens, the focused textarea is
 //   scrolled into the visible viewport". The visible viewport is the
 //   area above the keyboard, i.e. [0, keyboardTop); the scroll moves

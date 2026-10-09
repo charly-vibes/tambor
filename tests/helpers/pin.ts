@@ -6,7 +6,7 @@
 //   pin's reserved spacer (pinSpacerHeight), and build composed
 //   pin-in-scrollview frames and headless pinned apps (pinFrame,
 //   pinApp).
-// Rationale: specs/scrollytelling-pin.md is the design authority; the
+// Rationale: openspec/specs/scrollytelling-pin/spec.md is the design authority; the
 //   ambient scrollview is the offset source and the pin composes with
 //   it (no native document scroll). tambor-272 redistributes the former
 //   monolithic tests/ui-mobile.test.ts; every walker here keeps
