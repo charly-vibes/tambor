@@ -55,6 +55,19 @@ jobs:
         with:
           tool: espectacular@0.9.3,pretender@0.7.0,testaruda@0.5.1
 
+      - name: Install testaruda adapters (DDL §4 pins — git tag v0.5.1)
+        # The testaruda release tarballs only bundle the core binary +
+        # adapter-rust/adapter-python; tambor needs adapter-typescript (the
+        # default adapter for the vitest stack) and adapter-clojure (the
+        # experiments/ *.cljc/*.cljs files). Without them, discover finds 0
+        # test items and exec exits 20 (tambor-kpx).
+        run: |
+          cargo install --locked --quiet \
+            --git https://github.com/charly-vibes/testaruda.git --tag v0.5.1 \
+            adapter-typescript adapter-clojure
+          testaruda-adapter-typescript --version 2>/dev/null || true
+          testaruda-adapter-clojure --version 2>/dev/null || true
+
       - name: Install specodelic (spk) — pinned 0.7.0, DDL §4
         # Not in install-action's manifest — install from the canonical §1
         # release tarball with checksum verification. Without spk, `ah sync
@@ -105,9 +118,12 @@ jobs:
         run: testaruda init
 
       - name: testaruda exec
+        # `|| code=$?` (not `cmd; code=$?`): GitHub runs steps with bash -e,
+        # so a bare failing command aborts the shell before the tolerance
+        # check ever runs. In a `||` context, -e does not fire.
         run: |
-          testaruda exec
-          code=$?
+          code=0
+          testaruda exec || code=$?
           if [ "$code" -eq 0 ] || [ "$code" -eq 20 ]; then exit 0; fi
           echo "testaruda exec failed with exit code $code" >&2
           exit "$code"

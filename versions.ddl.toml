@@ -11,3 +11,8 @@ espectacular = "0.9.3"     # ah — contracts + sync gate (0.9.3: Rev 18 sync su
 specodelic = "0.7.0"       # spk — lint bridge + parse for ah sync (Rev 18)
 pretender = "0.7.0"        # complexity gate (full-repo gate mode, tambor-272)
 testaruda = "0.5.1"        # test selection loop (matches local dev install)
+# testaruda adapters — NOT in the release tarballs (which bundle only the core
+# binary + adapter-rust/adapter-python). Installed in CI from the testaruda
+# repo at this git tag (tambor-kpx).
+testaruda-adapter-typescript = "git:v0.5.1"
+testaruda-adapter-clojure = "git:v0.5.1"
