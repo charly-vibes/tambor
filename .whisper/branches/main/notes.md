@@ -62,3 +62,10 @@
   - Learned: cargo install + cargo-cached bin dirs = always guard on presence or --force; hash tool-pin files into cache keys.
   - Open: tambor-j44 (P2 gate-cost measurement/parallelization), tambor-cpd (P3 calibration, blocked on testaruda-1fwk release)
   - **Next:** /renew tambor → tambor-j44 (measure per-gate pre-push cost, parallelize or move calibration to CI)
+- 2026-10-09T18:55:17Z [id:a948b4a455e685902eb9fb5b3bec78edd508f057b4881b272009b8811385ca62] ### 2026-10-09 18:30 — snap
+  - tambor-j44 CLOSED (measure → act): per-gate timing instrumentation landed — tools/gate-timing.sh wraps every pre-push job (ts,gate,exit,duration_ms CSV rows → .gate-timing.log, gitignored), testaruda tolerance block extracted to tools/gates/testaruda-exec.sh, vitest contract tests cover format/exit-propagation/append/wiring. MEASURED: espectacular-contracts 790-840s = ~93% of push; testaruda-exec 23-37s; pretender 0.4s; scaffold-debt 0.4s.
+  - Root cause found upstream: espectacular runner.rs::run_declared_tests spawns ONE runner process per contract (658 sequential vitest spawns ≈ 790s). Filed charly-vibes/espectacular#40 (batch per test file + junit-name attribution, expected 790s → ~60-90s); tracked locally as tambor-8rq (pin bump on release). Also closed upstream #39 (AH-361 fix released in v0.9.3, verified via tambor-41q).
+  - REJECTED on data: parallel:true (saves ~7% max, CPU contention on dominant gate); calibrate→CI (calibrate measured <1s, exec has no --skip-calibrate).
+  - Learned: repo typing gates — tests/ import node: builtins only via @ts-expect-error markers (no @types/node by design, tsconfig types:[vitest/globals]); noUncheckedIndexedAccess forbids bare destructuring; first instrumented push failed strict-tsc contracts and was fixed in 0e34a79. Instrumented failed push also showed testaruda exit 1 = selected tests genuinely failing (correct behavior).
+  - Open: tambor-8rq (P2, ah batching adoption), tambor-cpd (P3, on testaruda-1fwk release)
+  - **Next:** /renew tambor → tambor-8rq when espectacular#40 ships, or feature work from the epic plan
