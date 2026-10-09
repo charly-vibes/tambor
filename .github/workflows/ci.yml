@@ -7,8 +7,9 @@
 #                               accumulated; tambor-272 refactored the
 #                               hotspots down and gate mode is restored)
 #   3. testaruda exec         — select → run → ingest → calibrate loop
-#                               (exit 0 = ran and passed, exit 20 = nothing
-#                               affected — both benign)
+#                               (exit 0 = ran and passed, exit 10 = store
+#                               uncalibrated, exit 20 = nothing affected —
+#                               all benign)
 # Non-blocking report:
 #   4. tools/scaffold-debt.sh — todo_predicate! scaffold count (always exit 0)
 
@@ -92,9 +93,11 @@ jobs:
       # package.json may not exist yet (repo bootstrap in flight); tolerate
       # missing manifest and missing lockfile.
       - name: Set up Node
+        # vitest 5 declares engines ^22.12.0 || ^24.0.0 || >=26.0.0 — node 20
+        # sits outside that range (it happens to run, but unsupported).
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
 
       - name: Install JS deps (tolerate missing package.json/lockfile)
         run: |
@@ -121,10 +124,15 @@ jobs:
         # `|| code=$?` (not `cmd; code=$?`): GitHub runs steps with bash -e,
         # so a bare failing command aborts the shell before the tolerance
         # check ever runs. In a `||` context, -e does not fire.
+        # Tolerated codes: 0 = selected tests ran and passed; 20 = nothing
+        # affected; 10 = store uncalibrated — the CI store is ephemeral
+        # (init'd fresh every run), so exec is always a cold first run here.
+        # Calibration is non-blocking (tambor-cpd); the pass/fail signal is
+        # the ah check --run-tests step.
         run: |
           code=0
           testaruda exec || code=$?
-          if [ "$code" -eq 0 ] || [ "$code" -eq 20 ]; then exit 0; fi
+          if [ "$code" -eq 0 ] || [ "$code" -eq 10 ] || [ "$code" -eq 20 ]; then exit 0; fi
           echo "testaruda exec failed with exit code $code" >&2
           exit "$code"
 
