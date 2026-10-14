@@ -121,3 +121,10 @@
   - jsdom devDependency added; tests/domhost.test.ts is per-file @vitest-environment jsdom (node env untouched).
   - Pushed eb63d20 through all gates. tambor-e2y (SPA demo: esbuild entry + index.html + todo mount) now unblocked.
   - **Next:** tambor-e2y red-green, or fresh session.
+- 2026-10-14T23:40:12Z [id:d4b4caebf5633eafd47d4239cf0df2093e31543c0a6b48f29248fe3065c5ec52] ### 2026-10-14T23:40 — tambor-e2y closed: browser SPA demo (todo example live in the DOM)
+  
+  - src/spa/mount.ts: makeApp (registry-aware) + DomBackend realDomFactory; subscription loop = routeClick shape (dispatch → app.dispatch(intents) → re-draw). src/spa/main.ts entry + index.html + esbuild build:spa → dist/spa.js ~50kB. tests/spa-mount.test.ts (jsdom): boot renders todo list; real click on 'complete' toggle re-renders filtered. Bundle smoke-tested in jsdom (boot + zero unknown-effect noise).
+  - WIRING LESSONS (found live, recorded in mount.ts): (1) Runtime.send bypasses the defeffect registry — its handler is defaultHandler only, add-todo reported unknown; host must route via dispatch + app.dispatch. (2) makeTopApp's topView must NOT wrap todoApp's own wrapOn root — nested event layers are unroutable (bounds of wrap = unreachable geometry) AND jsdom swallows listener errors (silent no-op clicks — debug via raw dispatch first). (3) Corpus host shape = makeApp + routeClick, exactly as backends.ts routeClick encodes.
+  - Gotchas: pretender-gate-staged blocks function_lines 42>40 (mountSpa split into createTodoApp/wireSurface); pre-push scanned dist/spa.js as app code → dist/** exclusion added to pretender.toml (same leading-** rule as tambor-8nt). Gate errors surface as commit exit 1 with the finding only mid-output — grep the full log, don't trust tail.
+  - Pushed 8e5d078 through all gates. tambor bd: ZERO open tickets.
+  - **Next:** fresh session — post-SPA feature work (e.g. native <button> click routing → corpus intents as a nice follow-up), README/project.md stale-status CRITICALs, or the user's broader build-out.
