@@ -87,3 +87,16 @@
   - Acceptance: pin 0.12.0 + shim gone + one clean push zero batch-fallback; Meter: .gate-timing.log espectacular-contracts <= 60s exit 0. Anti-goals: per-reporter outputFile map in vitest.config.ts STAYS (protects junit ingested by testaruda); no other gate changes.
   - Context: tambor-8rq (0.11.0 batching adoption + shim) closed 2026-10-14, CI green, gate measured 790s -> 28-30s. Only other open ticket: tambor-cpd (P3 testaruda calibration, unrelated).
   - NEXT: tambor-kue implementation (claim + TDD-lite: config/shim change verified by real push + gate-timing measurement, then close + close espectacular#40).
+- 2026-10-14T20:45:00Z ### 2026-10-14 17:45 — snap
+  - Pin-bump session: tambor-8q3 closed (testaruda 0.5.1→0.5.5, espectacular 0.11.0→0.12.0 in versions.ddl.toml + ci.yml, a6e5a8c pushed, CI run 38632309310 green — CI ingests 60 results >0, was 0). Local testaruda upgraded to 0.5.5; all gates green (658 contracts, 27s batched).
+  - Also this session: docs Rule-of-5 review (stale-status CRITICALs in README/project.md — unfixed), beads JSONL export fixed (.beads/.gitignore + export.auto, tracked in b5150f2), tambor-cpd hygiene (files/base_commit/labels/Must gate/interim ruling recorded).
+  - Root causes located upstream in testaruda, filed: testaruda-uwup (junit attrs not XML-unescaped — the 12 local unmatched), testaruda-7r9l (CI resolves only 60/333 vs local 321/333, CI-environmental).
+  - Note: parallel session filed tambor-kue (P2: ah 0.12.0 tool_version + retire vitest-runner.sh shim) — my ci.yml/DDL bump covered versions.ddl.toml only; .espectacular/config.toml tool_version still 0.11.0 and shim still present.
+  - **Next:** tambor-kue (config tool_version 0.12.0 + shim retirement), then testaruda-uwup (small red-green adapter fix), then tambor-cpd semantics decision on real calibration data.
+- 2026-10-14T21:05:00Z ### 2026-10-14 21:05 — snap
+  - tambor-kue CLOSED (4e1b2b4 pushed through all gates): .espectacular/config.toml tool_version 0.11.0->0.12.0 + runners.vitest back to plain ["npx","vitest","run"] (pre-8rq form); tools/vitest-runner.sh deleted; vitest.config.ts comment updated (per-reporter outputFile map STAYS — junit for testaruda ingest untouched).
+  - MEASURED: local ah check --run-tests 658 passed, 0 findings, 25.05s (zero batch-fallback, zero missing-runner — batch attribution reads the named report file, GH#46 fix confirmed); pre-push espectacular-contracts gate exit 0 at 23.06s (.gate-timing.log), all 4 jobs green.
+  - Gotcha: .espectacular/config.toml [runners] is a REQUIRED field — an empty [runners] table means "no runner configured" and 329/658 contracts degrade to missing-runner + batch-fallback (found live in this session's first ah check). Explicit vitest entry required.
+  - Upstream: espectacular#40 CLOSED with before/after evidence (issuecomment-6178197794) — 790s serial -> 23-25s batched, shim no longer needed.
+  - Only remaining open ticket: tambor-cpd (P3 testaruda calibration semantics, still gated on testaruda-uwup junit XML-unescape fix).
+  - **Next:** /renew tambor -> testaruda-uwup (small red-green adapter fix upstream) or epic-plan feature work; espectacular#42 adoption (range-based run-tests selection) when it ships.
