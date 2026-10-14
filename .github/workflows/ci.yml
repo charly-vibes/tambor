@@ -54,9 +54,9 @@ jobs:
         # of truth for these versions; never `latest`)
         uses: taiki-e/install-action@v2
         with:
-          tool: espectacular@0.11.0,pretender@0.7.0,testaruda@0.5.1
+          tool: espectacular@0.12.0,pretender@0.7.0,testaruda@0.5.5
 
-      - name: Install testaruda adapters (DDL §4 pins — git tag v0.5.1)
+      - name: Install testaruda adapters (DDL §4 pins — git tag v0.5.5)
         # The testaruda release tarballs only bundle the core binary +
         # adapter-rust/adapter-python; tambor needs adapter-typescript (the
         # default adapter for the vitest stack) and adapter-clojure (the
@@ -71,7 +71,7 @@ jobs:
           if ! testaruda-adapter-typescript --version >/dev/null 2>&1 \
             || ! testaruda-adapter-clojure --version >/dev/null 2>&1; then
             cargo install --locked --quiet \
-              --git https://github.com/charly-vibes/testaruda.git --tag v0.5.1 \
+              --git https://github.com/charly-vibes/testaruda.git --tag v0.5.5 \
               adapter-typescript adapter-clojure
           fi
           testaruda-adapter-typescript --version 2>/dev/null || true
