@@ -49,3 +49,19 @@ Enforcement (all wired as hard gates in `lefthook.yml`):
 Edits go straight to `openspec/specs/` — it is the authored corpus, there is
 no separate deployed copy (tambor-41q retired the `specs/` flat corpus and
 `tools/deploy_specs.py`).
+## Browser SPA demo (tambor-2v8 + tambor-e2y)
+
+The todo example runs as a single-page app on the real-DOM host adapter:
+
+    npm run build:spa        # esbuild → dist/spa.js (49.9 kB, ESM, no runtime deps)
+    npx serve .              # or any static file server, then open index.html
+
+Every element is drawn by the corpus `DomBackend` through
+`src/interop/domhost.ts` (the structural `ElementLike` seam — no `lib.dom`
+in core): labels are real selectable `<span>`s, buttons are real
+`<button>`s, rectangles are styled `<div>`s. Input stays corpus-native:
+events route through the surface → `dispatch` → `makeApp`'s
+registry-aware dispatcher (`add-todo` etc. apply), then the tree
+re-draws from the app view. The mount is jsdom-tested
+(`tests/spa-mount.test.ts`): boot renders the list, and a real pointer
+click on the *complete* filter re-renders the filtered list.

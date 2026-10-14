@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>tambor — todo SPA</title>
+    <style>
+      body { font-family: system-ui, sans-serif; margin: 2rem; }
+      canvas { touch-action: none; }
+      button { cursor: pointer; }
+    </style>
+  </head>
+  <body>
+    <h1>tambor — the todo example as a SPA</h1>
+    <p>Every element below is drawn by the corpus DomBackend through the
+      real-DOM host adapter — labels are selectable text, buttons are real
+      <code><button></code>s, and clicks route through the corpus event
+      router (try the <em>complete</em> filter toggle).</p>
+    <div id="app"></div>
+    <script type="module" src="./dist/spa.js"></script>
+  </body>
+</html>

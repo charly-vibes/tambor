@@ -27,6 +27,7 @@ type ShimListener = (ev: SimEvent) => void;
 export interface HostDoc {
   createElement(tag: string): HostElement;
   body: HostElement;
+  getElementById(id: string): HostElement | null;
 }
 
 // The structural element surface the adapter touches — a real DOM
@@ -40,6 +41,8 @@ export interface HostElement {
     contains(name: string): boolean;
   };
   appendChild(child: HostElement): HostElement;
+  removeChild(child: HostElement): HostElement;
+  childNodes: Iterable<HostElement>;
   textContent: string;
   addEventListener(type: string, fn: (ev: unknown) => void): void;
   removeEventListener(type: string, fn: (ev: unknown) => void): void;
@@ -150,6 +153,14 @@ export class RealDomElement {
   }
 
   appendChild(child: RealDomElement): RealDomElement {
+    // The shim's rebuild pattern is children.length = 0 then appends;
+    // an append into an emptied array means the tree was rebuilt, so
+    // the stale mirrored children come off the host first.
+    if (this.children.length === 0) {
+      for (const existing of [...this.host.childNodes]) {
+        this.host.removeChild(existing);
+      }
+    }
     this.children.push(child);
     this.host.appendChild(child.host);
     return child;

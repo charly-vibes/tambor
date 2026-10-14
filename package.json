@@ -3,11 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Strict-TypeScript, mobile-first UI library — specodelic corpus port of membrane",
+  "description": "Strict-TypeScript, mobile-first UI library \u2014 specodelic corpus port of membrane",
   "scripts": {
-    "test": "vitest run"
+    "test": "vitest run",
+    "build:spa": "esbuild src/spa/main.ts --bundle --format=esm --outfile=dist/spa.js"
   },
   "devDependencies": {
+    "esbuild": "^0.28.2",
     "fast-check": "^4.10.2",
     "jest-junit": "^17.0.0",
     "jsdom": "^30.1.2",
