@@ -107,3 +107,17 @@
   - Local engines rebuilt from merged mains: ~/.cargo/bin/testaruda + adapter-typescript. Pin bump to next testaruda release (>0.5.5) rides next release-ride (needs user auth).
   - Open: testaruda-8trl/srqu (dogfood gate, mostly fixed upstream), testaruda-7r9l (CI ingest 60/333), testaruda epic (h7bv). tambor bd: ZERO open tickets.
   - **Next:** tambor epic-plan feature work, or testaruda-7r9l (CI-side ingest matching), or release-ride testaruda >0.5.5 (user-gated) to pin-bump tambor.
+- 2026-10-14T23:44:00Z ### 2026-10-14 23:44 — snap
+  - tambor-cpd CLOSED across two repos: testaruda PR #85 (vacuous pass for 0-failure hold-out — recall 1.0 + explicit printer line, merged ef325f6) + tambor testaruda-exec.sh never-silent wrapper (vacuous→explicit note, failures>0/unparseable→exit 1; shim-verified). Gate now prints ✓ CALIBRATED (vacuous) on tambor's real store. tambor bd: ZERO open tickets.
+  - Parallel-session hazards hit: (a) 'git add src/commands.rs' in shared dirty testaruda worktree swept in their 8trl hunks → fixed via detached-worktree revert; (b) gh pr merge --delete-branch + worktree ops set core.bare=true on repo config (git config core.bare false fixes). Parallel session merged their 8trl fix (PR #86) — testaruda dogfood pre-push gate green, no more --no-verify needed.
+  - Escalation of the session: tambor-kue (ah 0.12.0 pin + shim retired, espectacular#40 closed) → testaruda-uwup (junit XML-unescape, PR #84) → tambor-cpd (this snap). All pushed, all CI green.
+  - **Next:** /renew tambor → epic-plan feature work (post-tracer), testaruda-7r9l (CI ingest 60/333), or user-authorized testaruda release >0.5.5 to ride the tambor pin bump. Pending minor: README/project.md stale-status CRITICALs from docs Rule-of-5 review.
+- 2026-10-14T22:57:48Z [id:206840e35e02f030d97b83fbe0b2ad35bf05095d279fc99e0ed01fa4eed8f318] ### 2026-10-14T22:57 — tambor-2v8 closed: real-DOM host adapter (SPA step 1)
+  
+  - Factory injection: DomBackendOptions.createElement (default SimElement); builders take BuildCtx {make, build} — draw semantics untouched, 658/658 contracts 0 findings.
+  - KEY LEARNING: SimElement has private members → nothing can be structurally assignable to it; the seam had to be an interface (ElementLike in domsim.ts) and RealDomElement implements it WITHOUT extending (class-field own-props textContent/style/attrs would shadow subclass accessors — the mirror silently no-ops).
+  - Adapter src/interop/domhost.ts: structural HostDoc/HostElement (no lib.dom, core stays DOM-free), write-through attrs/style proxies (kebab mapping), real events → SimEvent on registration, dispatch() keeps shim path.
+  - Gotchas: jsdom serializes rgba(0,0,0,1) → 'rgb(0, 0, 0)' on getPropertyValue (assert serialized form); vitest does NOT typecheck — npx tsc --noEmit caught 12 errors the green suite hid.
+  - jsdom devDependency added; tests/domhost.test.ts is per-file @vitest-environment jsdom (node env untouched).
+  - Pushed eb63d20 through all gates. tambor-e2y (SPA demo: esbuild entry + index.html + todo mount) now unblocked.
+  - **Next:** tambor-e2y red-green, or fresh session.
