@@ -1,12 +1,16 @@
-tool_version = "0.11.0"
+tool_version = "0.12.0"
 
 [paths]
 specs = "openspec/specs"
 changes = "openspec/changes"
 
+# [runners] retired (tambor-kue): ah 0.12.0 follows vitest 5's
+# "JSON report written to <path>" notice and attributes batches from the
+# named report file (GH#46 fix), so the tambor-8rq stdout shim
+# (tools/vitest-runner.sh) is no longer needed — plain vitest works.
+# Table kept explicit (an empty [runners] is "no runner configured").
+
 [runners]
-# vitest via the runner shim (tambor-8rq): ah's batched --reporter=json
-# invocation expects the jest-shaped report on stdout, but vitest 5 always
-# writes it to a file — the shim re-runs json mode with --outputFile and
-# cats the clean JSON; non-json per-binding runs pass through untouched.
-vitest = ["sh", "tools/vitest-runner.sh"]
+# vitest adapter — plain invocation; ah 0.12.0 attributes the batched
+# json run from the report file itself (GH#46), no shim needed.
+vitest = ["npx", "vitest", "run"]
