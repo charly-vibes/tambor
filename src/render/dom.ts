@@ -27,7 +27,7 @@ import {
   type RuntimeOptions,
   Subscriptions,
 } from "./backend.ts";
-import { SimElement, type SimCanvas, type SimEvent } from "./domsim.ts";
+import { SimElement, type ElementLike, type SimEvent } from "./domsim.ts";
 import { normalizeDOMEvent } from "./input.ts";
 import type { AnyDraw } from "./primitives.ts";
 import type { Color } from "../views/model.ts";
@@ -36,24 +36,31 @@ export interface DomBackendOptions extends RuntimeOptions {
   containerSize?: Vec2;
   clipboard?: Clipboard;
   measure?: (text: string, font?: Font | null) => Vec2;
+  // Where elements come from (tambor-2v8): the default is the domsim
+  // recording shim; the real-DOM host adapter supplies its own factory
+  // so the drawn tree lands in a live document. Draw semantics are
+  // untouched — only element production is parameterized.
+  createElement?: (tag: string) => ElementLike;
 }
 
 export class DomBackend implements BackendContract {
   containerSize: Vec2;
-  readonly root: SimElement;
+  readonly root: ElementLike;
   drawCount = 0;
   readonly runtime: Runtime | undefined;
 
   private subs = new Subscriptions();
   private clipboard: Clipboard | undefined;
   private measure: (text: string, font?: Font | null) => Vec2;
-  private surface: SimCanvas | undefined;
+  private readonly make: (tag: string) => ElementLike;
+  private surface: ElementLike | undefined;
 
   constructor(options: DomBackendOptions = {}) {
     this.containerSize = options.containerSize ?? [512, 512];
     this.clipboard = options.clipboard;
     this.measure = options.measure ?? measureUnit;
-    this.root = new SimElement("div");
+    this.make = options.createElement ?? ((tag: string) => new SimElement(tag));
+    this.root = this.make("div");
     if (options.view) {
       this.runtime = new Runtime(
         {
@@ -101,7 +108,7 @@ export class DomBackend implements BackendContract {
   }
 
   // attach: the same raw-event wiring the canvas backend mounts.
-  attach(surface: SimCanvas): void {
+  attach(surface: ElementLike): void {
     this.surface = surface;
     const origin = (): Vec2 => {
       const r = surface.getBoundingClientRect();
@@ -128,10 +135,14 @@ export class DomBackend implements BackendContract {
   // The element-building traversal (primitive_set): one builder per
   // drawable type behind the BUILDERS dispatch table; unknown node
   // types fall back to drawing their children.
-  build(view: AnyDraw, parent: SimElement): void {
+  build(view: AnyDraw, parent: ElementLike): void {
     if (view == null) return;
+    const ctx: BuildCtx = {
+      make: (tag: string) => this.make(tag),
+      build: (v: AnyDraw, p: ElementLike) => this.build(v, p),
+    };
     if (Array.isArray(view)) {
-      const box = new SimElement("div");
+      const box = ctx.make("div");
       for (const child of view as readonly AnyDraw[]) this.build(child, box);
       parent.appendChild(box);
       return;
@@ -139,10 +150,10 @@ export class DomBackend implements BackendContract {
     const node = view as DomNode;
     const builder = BUILDERS[node.type];
     if (builder === undefined) {
-      buildChildrenOf(this.build.bind(this), node, parent);
+      buildChildrenOf(ctx, node, parent);
       return;
     }
-    builder(this.build.bind(this), node, parent);
+    builder(ctx, node, parent);
   }
 }
 
@@ -160,30 +171,36 @@ interface DomNode {
   y?: number;
 }
 
-type DomBuilder = (view: AnyDraw, parent: SimElement) => void;
-type DomPainter = (build: DomBuilder, node: DomNode, parent: SimElement) => void;
+type DomBuilder = (view: AnyDraw, parent: ElementLike) => void;
+// The per-backend build context: where elements come from (make) and
+// the recursive traversal (build). Builders stay pure module functions.
+interface BuildCtx {
+  make(tag: string): ElementLike;
+  build(view: AnyDraw, parent: ElementLike): void;
+}
+type DomPainter = (ctx: BuildCtx, node: DomNode, parent: ElementLike) => void;
 
-function buildChildrenOf(build: DomBuilder, node: DomNode, parent: SimElement): void {
-  const el = new SimElement("div");
-  for (const child of node.drawables ?? []) build(child, el);
+function buildChildrenOf(ctx: BuildCtx, node: DomNode, parent: ElementLike): void {
+  const el = ctx.make("div");
+  for (const child of node.drawables ?? []) ctx.build(child, el);
   parent.appendChild(el);
 }
 
-function buildLabel(_b: DomBuilder, node: DomNode, parent: SimElement): void {
-  const el = new SimElement("span");
+function buildLabel(_ctx: BuildCtx, node: DomNode, parent: ElementLike): void {
+  const el = _ctx.make("span");
   el.textContent = node.text ?? "";
   parent.appendChild(el);
 }
 
-function buildButton(_b: DomBuilder, node: DomNode, parent: SimElement): void {
+function buildButton(_ctx: BuildCtx, node: DomNode, parent: ElementLike): void {
   // a real button element: natively accessible and selectable
-  const el = new SimElement("button");
+  const el = _ctx.make("button");
   el.textContent = node.text ?? "";
   parent.appendChild(el);
 }
 
-function buildRectangle(_b: DomBuilder, node: DomNode, parent: SimElement): void {
-  const el = new SimElement("div");
+function buildRectangle(_ctx: BuildCtx, node: DomNode, parent: ElementLike): void {
+  const el = _ctx.make("div");
   el.style["width"] = `${node.width ?? 0}px`;
   el.style["height"] = `${node.height ?? 0}px`;
   const color = nodeColor(node);
@@ -191,48 +208,48 @@ function buildRectangle(_b: DomBuilder, node: DomNode, parent: SimElement): void
   parent.appendChild(el);
 }
 
-function buildTranslate(b: DomBuilder, node: DomNode, parent: SimElement): void {
-  const el = new SimElement("div");
+function buildTranslate(ctx: BuildCtx, node: DomNode, parent: ElementLike): void {
+  const el = ctx.make("div");
   el.style["position"] = "absolute";
   el.style["left"] = `${node.x ?? 0}px`;
   el.style["top"] = `${node.y ?? 0}px`;
-  b(node.drawable ?? null, el);
+  ctx.build(node.drawable ?? null, el);
   parent.appendChild(el);
 }
 
 // rotate/scale/scissor contribute an (empty) box; the color paints
 // the wrapper's background.
-function buildWrapperWithColor(b: DomBuilder, node: DomNode, parent: SimElement): void {
-  const el = new SimElement("div");
+function buildWrapperWithColor(ctx: BuildCtx, node: DomNode, parent: ElementLike): void {
+  const el = ctx.make("div");
   const color = nodeColor(node);
   if (color) el.style["background"] = color;
-  for (const child of node.drawables ?? []) b(child, el);
+  for (const child of node.drawables ?? []) ctx.build(child, el);
   parent.appendChild(el);
 }
 
-function buildTextSelection(_b: DomBuilder, _n: DomNode, parent: SimElement): void {
-  const el = new SimElement("span");
+function buildTextSelection(_ctx: BuildCtx, _n: DomNode, parent: ElementLike): void {
+  const el = _ctx.make("span");
   el.style["background"] = "rgba(0, 0, 255, 0.25)";
   parent.appendChild(el);
 }
 
-function buildTextCursor(_b: DomBuilder, node: DomNode, parent: SimElement): void {
-  const el = new SimElement("span");
+function buildTextCursor(_ctx: BuildCtx, node: DomNode, parent: ElementLike): void {
+  const el = _ctx.make("span");
   el.style["width"] = "1px";
   el.style["height"] = `${node.height ?? 0}px`;
   parent.appendChild(el);
 }
 
-function buildImage(_b: DomBuilder, node: DomNode, parent: SimElement): void {
-  const el = new SimElement("img");
+function buildImage(_ctx: BuildCtx, node: DomNode, parent: ElementLike): void {
+  const el = _ctx.make("img");
   el.attrs["width"] = node.width ?? 0;
   el.attrs["height"] = node.height ?? 0;
   parent.appendChild(el);
 }
 
 // no dom element for an arc or a path: they contribute their (empty) box
-function buildBox(_b: DomBuilder, _n: DomNode, parent: SimElement): void {
-  parent.appendChild(new SimElement("div"));
+function buildBox(_ctx: BuildCtx, _n: DomNode, parent: ElementLike): void {
+  parent.appendChild(_ctx.make("div"));
 }
 
 // One builder per drawable type; the pass-through types (with-style,

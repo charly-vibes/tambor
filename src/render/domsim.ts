@@ -35,6 +35,33 @@ export interface SimEvent {
 
 type Listener = (ev: SimEvent) => void;
 
+// The structural element seam (tambor-2v8): the shim's public surface as
+// an interface. SimElement satisfies it; the real-DOM host adapter
+// implements it over a live document. Element production is the
+// parameterization point — DomBackend's createElement factory returns
+// this, so the drawn tree can land anywhere the surface can mirror.
+// (Deliberately NOT a type alias of SimElement: SimElement carries
+// private state, so nothing outside the class could ever be assignable
+// to it — the seam must be structural.)
+export interface ElementLike {
+  readonly tagName: string;
+  readonly attrs: Record<string, string | number>;
+  readonly style: Record<string, string>;
+  readonly children: ElementLike[];
+  textContent: string;
+  readonly classList: {
+    add(...names: string[]): void;
+    remove(...names: string[]): void;
+    contains(name: string): boolean;
+  };
+  getBoundingClientRect(): SimRect;
+  addEventListener(type: string, fn: (ev: SimEvent) => void): void;
+  removeEventListener(type: string, fn: (ev: SimEvent) => void): void;
+  dispatch(ev: SimEvent): boolean;
+  appendChild(child: ElementLike): ElementLike;
+  setAttribute(name: string, value: string | number): void;
+}
+
 export class SimElement {
   readonly tagName: string;
   readonly attrs: Record<string, string | number> = {};
