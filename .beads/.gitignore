@@ -1,0 +1,44 @@
+# Machine-local beads state — never committed. The git source of truth is
+# .beads/issues.jsonl (export.auto in config.yaml); config.yaml, metadata.json,
+# README.md and hooks/ are tracked. The parent directory is un-ignored in the
+# repo-root .gitignore (the global ~/.gitignore excludes .beads/ wholesale).
+#
+# NOTE: do not negate anything here — everything matched below is runtime
+# or database state owned by this machine's bd instance.
+
+# Embedded Dolt database (machine-local)
+embeddeddolt/
+
+# Auto backups (machine-local)
+backup/
+last-touched
+
+# Locks and sockets
+*.lock
+bd.sock
+bd.sock.startlock
+
+# Daemon / dolt server runtime
+daemon.*
+dolt-server.*
+.exclusive-lock
+.activity
+
+# Push / sync / export state (per-machine)
+push-state.json
+sync-state.json
+.sync.lock
+export-state/
+export-state.json
+.local_version
+redirect
+
+# Legacy sqlite store (pre-Dolt)
+*.db
+*.db?*
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Hook backups
+*.backup

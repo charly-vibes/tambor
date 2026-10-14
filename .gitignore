@@ -17,11 +17,21 @@ dist/
 .whisper/private/
 
 # Beads / Dolt files (added by bd init)
+# Git is the sync mechanism: .beads/issues.jsonl is committed (export.auto
+# in .beads/config.yaml keeps it fresh). The embedded Dolt DB and runtime
+# state are machine-local — ignored inside .beads/.gitignore. The global
+# ~/.gitignore excludes .beads/ wholesale, which would make the tracked
+# files unversionable (a parent dir excluded cannot be un-ignored); the
+# negation below re-includes the directory, and .beads/.gitignore then
+# ignores the machine-local state inside it.
 .dolt/
 *.db
 .beads-credential-key
 .beads/proxieddb/
 *.gate.lock*
+.beads/
+!.beads/
+.beads/*.backup
 .worktrees/
 
 # devenv.sh state (see devenv.nix)

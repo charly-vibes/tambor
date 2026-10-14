@@ -1,0 +1,7 @@
+{
+  "database": "dolt",
+  "backend": "dolt",
+  "dolt_mode": "embedded",
+  "dolt_database": "tambor",
+  "project_id": "732d6b96-e214-4c41-b28a-96bf4fd1f747"
+}
