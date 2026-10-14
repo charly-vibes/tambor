@@ -79,3 +79,11 @@
   - Learned: vitest 5 --reporter=json NEVER goes to stdout; CLI reporter flag REPLACES config reporter list; vitest exits 0 when --testNamePattern matches nothing (old path = vacuous pass).
   - Open: tambor-cpd (P3 testaruda calibration, still on testaruda-1fwk release).
   - **Next:** /renew tambor -> feature work from the epic plan, or espectacular#42 adoption (range-based run-tests selection) when it ships
+- 2026-10-14T13:44:47Z [id:b51c2fbb2a8139f7cd1b30c21831f8ebc8a72b4523d0a8fe0f146a9d67d3a33b] ### 2026-10-14 10:44 — snap
+  - /next quick stash: tambor-8rq session fully closed out (see 2026-10-14 13:45 snap — ah 0.11.0 batching adopted, contracts gate 790s->30s, espectacular#46 filed upstream, bd7d944 pushed). No open work in flight; only tambor-cpd (P3) remains, release-gated on testaruda v0.5.3.
+  - **Next:** /renew tambor -> epic-plan feature work, or espectacular#42 adoption (range-based run-tests selection) when it ships
+- 2026-10-14T20:10:33Z [id:a0f17cc1eb045fea2297ad8e0b1c742578e72afc419fc4b373d9b0996be85be6] ### 2026-10-14 — tambor-kue filed: ah 0.12.0 upgrade + shim retirement
+  - Ticket tambor-kue (P2) filed per user approval: bump tool_version 0.11.0 -> 0.12.0, retire tools/vitest-runner.sh (workaround for espectacular#46, fixed upstream in ah 0.12.0 — batch attribution follows vitest 5's json-report-to-file notice), re-measure espectacular-contracts gate expecting ~28-30s batched path WITHOUT shim and zero batch-fallback findings. Result doubles as evidence to close espectacular#40.
+  - Acceptance: pin 0.12.0 + shim gone + one clean push zero batch-fallback; Meter: .gate-timing.log espectacular-contracts <= 60s exit 0. Anti-goals: per-reporter outputFile map in vitest.config.ts STAYS (protects junit ingested by testaruda); no other gate changes.
+  - Context: tambor-8rq (0.11.0 batching adoption + shim) closed 2026-10-14, CI green, gate measured 790s -> 28-30s. Only other open ticket: tambor-cpd (P3 testaruda calibration, unrelated).
+  - NEXT: tambor-kue implementation (claim + TDD-lite: config/shim change verified by real push + gate-timing measurement, then close + close espectacular#40).
