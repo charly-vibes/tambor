@@ -1,9 +1,12 @@
-tool_version = "0.9.3"
+tool_version = "0.11.0"
 
 [paths]
 specs = "openspec/specs"
 changes = "openspec/changes"
 
 [runners]
-# vitest adapter (detected via package.json) — explicit for clarity.
-vitest = ["npx", "vitest", "run"]
+# vitest via the runner shim (tambor-8rq): ah's batched --reporter=json
+# invocation expects the jest-shaped report on stdout, but vitest 5 always
+# writes it to a file — the shim re-runs json mode with --outputFile and
+# cats the clean JSON; non-json per-binding runs pass through untouched.
+vitest = ["sh", "tools/vitest-runner.sh"]

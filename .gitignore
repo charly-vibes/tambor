@@ -29,3 +29,7 @@ dist/
 .devenv.flake.nix
 .direnv/
 .gate-timing.log
+
+# vitest default json-reporter output dir (vitest 5 writes it even when
+# the reporter is CLI-requested; tambor routes json via tools/vitest-runner.sh)
+.vitest/
