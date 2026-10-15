@@ -44,7 +44,7 @@ EOF
 }
 
 stamp README.md   spk-version    "$SPK_VERSION"
-stamp README.md   spec-count     "$SPEC_COUNT corpus specs"
+stamp README.md   spec-count     "$SPEC_COUNT"
 stamp README.md   contract-count "$CONTRACT_COUNT contracts"
 stamp README.md   bundle-size    "$BUNDLE_KB"
 stamp EVALUATION.md spec-count   "$SPEC_COUNT specs"
