@@ -156,9 +156,10 @@ function logoCanvas(w: World): Elem {
   return [segs, tri];
 }
 
-// A button whose click returns the given effect vector.
-function fxButton(text: string, ...effects: unknown[]): Elem {
-  return button(text, () => effects as IntentList as unknown);
+// A button whose click returns the one effect vector its arguments
+// spell (an IntentList: the list containing that vector).
+function fxButton(text: string, ...vector: readonly unknown[]): Elem {
+  return button(text, () => [vector] as unknown as IntentList);
 }
 
 // The time-travel row: ◀ / slider / ▶ / "cursor/entries".

@@ -19,6 +19,7 @@ import { dropdown } from "../components/select/dropdown.ts";
 import { makeApp, type App } from "../effects/dispatch.ts";
 import type { Path } from "../effects/paths.ts";
 import { todoApp, todoState, type TodoState } from "../examples/todo/todo.ts";
+import { createLogoApp } from "../examples/logo/logo.ts";
 import type { Elem } from "../views/model.ts";
 import { VIEWPORT } from "./viewport.ts";
 
@@ -110,6 +111,16 @@ function createSelectDemo(): App {
   });
 }
 
+// --- example-logo (the wanna-chat Logo world) -------------------------------
+
+// The live-world demo: the state is plain data, the world is re-derived
+// from fold(entries[0..cursor]) every render, and run/clear route
+// through the demo's per-app registry (makeOpsApp), never the global
+// effect registry.
+function createLogoDemo(): App {
+  return createLogoApp();
+}
+
 // --- registry ---------------------------------------------------------------
 
 export const DEMOS: readonly DemoDef[] = [
@@ -133,5 +144,12 @@ export const DEMOS: readonly DemoDef[] = [
     blurb:
       "components.select — tap the header to open, tap an option to select; select closes the list.",
     create: createSelectDemo,
+  },
+  {
+    id: "logo",
+    title: "logo",
+    blurb:
+      "example.logo — the world is never stored: world = fold(entries[0..cursor]). Run programs, rewind with the slider, redefine a procedure for late binding.",
+    create: createLogoDemo,
   },
 ];
