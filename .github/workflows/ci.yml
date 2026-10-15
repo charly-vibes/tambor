@@ -146,3 +146,11 @@ jobs:
 
       - name: scaffold-debt report (non-blocking)
         run: tools/scaffold-debt.sh
+
+      - name: docs stamp accuracy gate (tambor-cie.5)
+        # Regenerate every stamped fact and fail if the committed docs differ —
+        # hand-edited numbers (spec counts, pins, bundle size) can no longer drift.
+        run: |
+          tools/stamp-docs.sh >/dev/null
+          git diff --exit-code -- README.md EVALUATION.md \
+            || { echo '::error::stamped doc facts are stale — run tools/stamp-docs.sh and commit'; git diff --stat -- README.md EVALUATION.md; exit 1; }

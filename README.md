@@ -10,10 +10,10 @@ source it was derived from (see TRACEABILITY.md and EVALUATION.md).
     spk lint openspec/specs && spk graph openspec/specs
     spk compile openspec/specs && spk model-check openspec/specs
 
-24 corpus specs (including the scrollytelling bridge: components.pinned_panel
+<!-- stamp:spec-count -->24 corpus specs<!-- /stamp:spec-count --> (including the scrollytelling bridge: components.pinned_panel
 and scrollytelling.pin). Intended test stack: vitest + fast-check for
 properties, expectTypeOf for type tests. `verify` is not implemented in
-specodelic 0.4.0, so properties are proptest scaffolds
+specodelic <!-- stamp:spk-version -->0.7.0<!-- /stamp:spk-version -->, so properties are proptest scaffolds
 (specodelic/*_props.rs), not executed tests; model-check is exploration-only.
 
 ## Spec → test correspondence (espectacular)
@@ -35,7 +35,7 @@ The full loop for a spec change:
     ah sync                         # derive/refresh contracts
     # 2. wire any new contract: append [[tests.shell]] scaffold binding
     #    (copy the pattern from an existing .espectacular/<spec>/*.toml)
-    ah check --run-tests            # verify all 329+ contracts
+    ah check --run-tests            # verify all <!-- stamp:contract-count -->329 contracts<!-- /stamp:contract-count -->
 
 Enforcement (all wired as hard gates in `lefthook.yml`):
 
@@ -53,7 +53,7 @@ no separate deployed copy (tambor-41q retired the `specs/` flat corpus and
 
 The todo example runs as a single-page app on the real-DOM host adapter:
 
-    npm run build:spa        # esbuild → dist/spa.js (49.9 kB, ESM, no runtime deps)
+    npm run build:spa        # esbuild → dist/spa.js (<!-- stamp:bundle-size -->52.3 kB<!-- /stamp:bundle-size -->, ESM, no runtime deps)
     npx serve .              # or any static file server, then open index.html
 
 Every element is drawn by the corpus `DomBackend` through
