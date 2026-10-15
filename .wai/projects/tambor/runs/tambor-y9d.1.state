@@ -1,5 +1,5 @@
 ticket: tambor-y9d.1
 branch: main
 brief_path: .wai/projects/tambor/briefs/tambor-y9d.1.md
-steps: [claim@b643cce, gates@b643cce, brief@ae4bdd7]
+steps: [claim@gates@b643cce, brief@ae4bdd7, spawn@3fcd77d+a7ecbfc(subagent interrupted; manual resume per Invariant 6), verify@e289e5f, ship@e289e5f, stop@e289e5f]
 base: b643cce
