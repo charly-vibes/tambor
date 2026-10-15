@@ -29,6 +29,7 @@ import {
 } from "../interop/domhost.ts";
 import { todoApp, todoState, type TodoState } from "../examples/todo/todo.ts";
 import { makeApp, type App } from "../effects/dispatch.ts";
+import { VIEWPORT } from "./viewport.ts";
 import { dispatch } from "../events/dispatch.ts";
 import type { TamborEvent } from "../events/event.ts";
 
@@ -42,8 +43,6 @@ export interface SpaHandle {
 
 // The demo viewport, used for both the app render context and the
 // backend container size.
-const VIEWPORT: readonly [number, number] = [300, 300];
-
 // The registry-aware app wire (makeApp): defeffect effects like
 // add-todo apply; the backend is carried so the render context sees
 // the container size.
@@ -68,7 +67,18 @@ function wireSurface(backend: DomBackend, app: App): void {
 }
 
 export function mountSpa(doc: HostDoc, container: HostElement): SpaHandle {
-  const app = createTodoApp();
+  return mountDemo(doc, container, createTodoApp);
+}
+
+// One gallery demo mount: the same wire as mountSpa, over any demo's
+// app factory (tambor-cie.2). The corpus semantics live in the demo
+// view + state; this is mounting plumbing only.
+export function mountDemo(
+  doc: HostDoc,
+  container: HostElement,
+  create: () => App,
+): SpaHandle {
+  const app = create();
   const backend = new DomBackend({
     createElement: realDomFactory(doc),
     containerSize: VIEWPORT,

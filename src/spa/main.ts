@@ -1,21 +1,59 @@
-// Purpose: the SPA browser entry (tambor-e2y) — wires the mount to the
-//   real document and boots the todo demo into #app.
+// Purpose: the SPA browser entry (tambor-e2y + tambor-cie.2 gallery) —
+//   builds the demo nav and boots the selected gallery demo into #app.
 // Responsibilities: reach the document structurally (no lib.dom — the
-//   core stays DOM-free; this entry is the only DOM-touching file),
-//   find the #app container (falling back to body) and hand both to
-//   mountSpa.
-// Rationale: tambor-e2y — the demo runs from the esbuild bundle
-//   (dist/spa.js) loaded by index.html; every corpus semantic lives in
-//   the backend and the example, not here.
+//   core stays DOM-free; this entry only touches the HostDoc surface),
+//   render one nav button per gallery demo (DEMOS) plus a content
+//   container, and mount the active demo via mountDemo; switching
+//   demos unmounts the previous handle and mounts the next. Falls back
+//   to body when #app is missing.
+// Rationale: the gallery is mounting plumbing — nav buttons are plain
+//   DOM outside the corpus; every demo's semantics live in its view +
+//   state and route through the corpus wire (gallery.ts, mount.ts).
+//   All DOM access stays on the structural HostDoc/HostElement seam.
 
-import { mountSpa } from "./mount.ts";
-import type { HostDoc } from "../interop/domhost.ts";
+import { mountDemo, type SpaHandle } from "./mount.ts";
+import { DEMOS } from "./gallery.ts";
+import type { HostDoc, HostElement } from "../interop/domhost.ts";
 
 const doc = (globalThis as { document?: unknown }).document as
   | HostDoc
   | undefined;
 
 if (doc !== undefined) {
-  const container = doc.getElementById("app") ?? doc.body;
-  mountSpa(doc, container);
+  const d: HostDoc = doc;
+  const container = d.getElementById("app") ?? d.body;
+
+  const nav: HostElement = d.createElement("nav");
+  const content: HostElement = d.createElement("div");
+  content.setAttribute("id", "demo");
+  container.appendChild(nav);
+  container.appendChild(content);
+
+  let current: SpaHandle | undefined;
+
+  function select(demoIndex: number): void {
+    const demo = DEMOS[demoIndex]!;
+    current?.unmount();
+    content.textContent = "";
+    const blurb: HostElement = d.createElement("p");
+    blurb.setAttribute("class", "blurb");
+    blurb.textContent = demo.blurb;
+    content.appendChild(blurb);
+    current = mountDemo(d, content, demo.create);
+    let i = 0;
+    for (const child of nav.childNodes) {
+      if (i === demoIndex) child.setAttribute("class", "active");
+      else child.setAttribute("class", "");
+      i++;
+    }
+  }
+
+  DEMOS.forEach((demo, i) => {
+    const btn: HostElement = d.createElement("button");
+    btn.textContent = demo.title;
+    btn.addEventListener("click", () => select(i));
+    nav.appendChild(btn);
+  });
+
+  select(0);
 }
