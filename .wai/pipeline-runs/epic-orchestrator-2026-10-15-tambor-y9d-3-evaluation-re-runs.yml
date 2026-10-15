@@ -1,0 +1,11 @@
+run_id: epic-orchestrator-2026-10-15-tambor-y9d-3-evaluation-re-runs
+pipeline: epic-orchestrator
+topic: tambor-y9d.3 evaluation re-runs
+created_at: '2026-10-15T17:54:01.712542939+00:00'
+current_step: 2
+approvals: {}
+epic: null
+child_issues: []
+child_runs: []
+handoff_artifact: null
+bypasses: []

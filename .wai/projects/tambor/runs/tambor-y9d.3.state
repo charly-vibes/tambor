@@ -1,0 +1,5 @@
+ticket: tambor-y9d.3
+branch: main
+brief_path:
+steps: [claim@b6a2e43]
+base: b6a2e43, gates@b6a2e43]
