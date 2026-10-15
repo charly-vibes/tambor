@@ -1,0 +1,62 @@
+# Purpose: deploy the browser SPA (index.html + dist/spa.js) to GitHub Pages,
+#   fixing the configured-but-404 Pages site (tambor-cie.1, ACC-001/ACC-004).
+# Responsibilities: build the SPA bundle from source on every push to main
+#   touching the SPA surfaces, upload the site root as the Pages artifact
+#   (index.html + dist/, never committed to git), and hand it to the
+#   deploy-pages action. Exposes concurrency-cancellation like ci.yml.
+# Rationale: Pages is enabled with build_type=workflow but no deploy workflow
+#   existed and dist/ is gitignored, so the site 404s; this workflow is the
+#   single deploy path and keeps build output out of version control.
+name: deploy-pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - index.html
+      - src/**
+      - package.json
+      - package-lock.json
+      - .github/workflows/deploy-pages.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: build + deploy SPA
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        # vitest 5 declares engines ^22.12.0 || ^24.0.0 || >=26.0.0 — match ci.yml.
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install JS deps
+        run: npm ci
+
+      - name: Build SPA bundle
+        run: npm run build:spa
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          # Site root: index.html at top level + the built bundle under dist/.
+          path: '.'
+
+      - id: deployment
+        name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4
