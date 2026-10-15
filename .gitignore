@@ -46,3 +46,12 @@ dist/
 
 # generated AI docs (tools/gen_ai_docs.py output — deployed, not committed)
 ai/
+# compiled CLJS probe output (squint/cherry CLI artifacts) — regenerate with
+# npx squint compile experiments/<f>.cljs / npx cherry compile <f>.cljs
+experiments/real-*.mjs
+experiments/real-macro-defs.mjs
+experiments/shadow-probe/probe-advanced.cjs
+experiments/shadow-probe/.shadow-cljs/
+experiments/shadow-probe/experiments/
+experiments/shadow-probe/node_modules/
+squint.edn

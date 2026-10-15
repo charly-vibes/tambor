@@ -52,3 +52,37 @@ New `interop.model` (19 constraints, 19 properties). `tambor.md` gains `host_agn
 1. Build the real `tambor` core with `DataOps` and rerun `experiments/` against it.
 2. Port `defui` to a `.cljc` macro and run it on squint.
 3. Build the todo example with shadow-cljs `:advanced`.
+
+## Re-run against the real built library (tambor-y9d.3, 2026-10-15)
+
+Node 26, squint-cljs 0.15.212, cherry-cljs 0.6.38, shadow-cljs 3.5.7.
+Every probe below imports the REAL emitted library (`dist/`, built by
+`tsconfig.build.json`), not the `.mjs` stand-ins of the original assessment.
+Probes: `experiments/real-squint-probe.mjs`, `experiments/real-cherry-probe.mjs`,
+`experiments/real-macro-probe.mjs`, `experiments/shadow-probe/` (run
+`npx squint compile <f>.cljs && node <f>.mjs`; shadow: `npx shadow-cljs release probe`
+from `experiments/shadow-probe`, then `node probe-advanced.cjs`).
+
+| # | Question | Result |
+|---|----------|--------|
+| R1 | squint data vs the real library | **PASS.** Plain-object maps, vectors and fn preds flow through the real example app (`todoRows`), real path derivation (`filterNav`/`nthNav`/`concatPath`) and the real `makeApp` dispatch tier (rAF-guarded, Node-safe). Filtered delete + toggle correct. |
+| R2 | cherry persistent data vs the real seam | **PASS** after two real findings (below). Persistent maps in/out, `identical?` sharing on untouched todos, **0.0086 ms/dispatch** on a 5000-item state (stand-in measured ~0.067). |
+| R3 | macro path-walker (tier 3) | **PASS.** squint `defmacro` (`experiments/real_macro_defs.cljc`) desugars a component to the explicit tier-2 API; expansion compiles and derives real paths against the real library. Note: squint resolves macro ns→file with **underscores** (`real_macro_defs.cljc`, not hyphens). |
+| R4 | shadow-cljs `:advanced` | **PASS with one recorded surface.** Paths, state, filter/select and dispatch survive munging on plain `#js` data. Keyword-as-fn reads on plain JS data **break** (`(:description item)` → nil; `aget` works) — the matrix's unverified row is now confirmed: use `aget`/`goog.object` under `:advanced`. Also: `clj->js` under `:advanced` munges to a no-op vector pass-through — materialize data with `#js` literals, not `clj->js`. |
+
+### Real findings the stand-ins masked (filed as follow-up tickets)
+
+1. **Seam path materialization.** The seam tier (`seamSelect`/`seamSet`) reads
+   paths with JS indexing (`path[i]`), so cherry persistent-vector keyword
+   paths recurse infinitely (undefined step). Probes materialize paths with
+   `to-array` at the boundary; state stays persistent. Only the *internal path
+   representation* converts.
+2. **Vector deletion in ops.** `dissoc` is not defined for CLJS vectors; the
+   DataOps `dissoc` must own vector-deletion semantics (`into (subvec c 0 k)
+   (subvec c (inc k))` — prefix stays structurally shared). The stand-in's
+   dissoc silently accepted vectors.
+
+### Remaining untested
+None. All items in the original assessment and this matrix now have recorded
+results. Open follow-up: first-class host-vector path support in the seam
+(beads ticket, see the epic's board).

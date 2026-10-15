@@ -1,0 +1,5 @@
+{:source-paths ["src" "../../dist"]
+ :builds {:probe {:target :node-script
+                  :output-to "experiments/shadow-probe/probe-advanced.cjs"
+                  :main shadowprobe.core/main
+                  :compiler-options {:optimizations :advanced}}}}
