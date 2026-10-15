@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.12.0"
+derived_from = "p_lint_green@52b0c126148e"
+description = "the corpus linter exits zero"
+falsifiability_class = "safety"
+id = "p-lint-green"
+status = "active"
+superseded_by = ""
+
+[[tests.shell]]
+command = "spk lint openspec/specs"

@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.12.0"
+derived_from = "p_clean_import@643d2c3e332d"
+description = "import of the root entry resolves with at least five named exports"
+falsifiability_class = "safety"
+id = "p-clean-import"
+status = "active"
+superseded_by = ""
+
+[[tests.shell]]
+command = "tools/pack-probe.sh"

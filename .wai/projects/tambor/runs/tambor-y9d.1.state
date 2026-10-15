@@ -1,0 +1,5 @@
+ticket: tambor-y9d.1
+branch: main
+brief_path: .wai/projects/tambor/briefs/tambor-y9d.1.md
+steps: [claim@b643cce, gates@b643cce, brief@ae4bdd7]
+base: b643cce

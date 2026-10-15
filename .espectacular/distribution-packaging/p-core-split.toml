@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.12.0"
+derived_from = "p_core_split@5b8a6030e948"
+description = "the core entry resolves and exports more than the root gate floor while the dom subpath stays out of the core barrel"
+falsifiability_class = "safety"
+id = "p-core-split"
+status = "active"
+superseded_by = ""
+
+[[tests.shell]]
+command = "tools/core-split-check.sh"
