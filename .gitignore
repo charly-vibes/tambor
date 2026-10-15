@@ -50,8 +50,18 @@ ai/
 # npx squint compile experiments/<f>.cljs / npx cherry compile <f>.cljs
 experiments/real-*.mjs
 experiments/real-macro-defs.mjs
+experiments/cljs-probe.mjs
+experiments/edges.mjs
+experiments/macros.mjs
+experiments/probe.mjs
+experiments/seam.mjs
+experiments/seam2.mjs
+experiments/todo-nomacro.mjs
 experiments/shadow-probe/probe-advanced.cjs
 experiments/shadow-probe/.shadow-cljs/
 experiments/shadow-probe/experiments/
 experiments/shadow-probe/node_modules/
 squint.edn
+
+# npm pack output (y9d.1 publishable-package build artifact)
+tambor-*.tgz
