@@ -43,3 +43,6 @@ dist/
 # vitest default json-reporter output dir (vitest 5 writes it even when
 # the reporter is CLI-requested; tambor routes json via tools/vitest-runner.sh)
 .vitest/
+
+# generated AI docs (tools/gen_ai_docs.py output — deployed, not committed)
+ai/

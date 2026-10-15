@@ -51,6 +51,12 @@ jobs:
       - name: Build SPA bundle
         run: npm run build:spa
 
+      - name: Generate AI docs (llms.txt + per-spec pages, tambor-cie.4)
+        run: |
+          python3 tools/gen_ai_docs.py
+          test -s ai/llms.txt
+          test "$(ls ai/specs | wc -l)" -eq "$(ls -1 openspec/specs | wc -l)"
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:

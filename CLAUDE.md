@@ -117,3 +117,17 @@ This protocol applies when ending a Beads implementation workflow. It is subordi
 - Do not commit or push without clear authority from the active profile or the current user request.
 - If a required sync or push is blocked, stop and report the exact command and error.
 <!-- END BEADS INTEGRATION -->
+
+## Project summary (tambor — read this before spec work)
+
+tambor is a strict-TypeScript, mobile-first UI library ported from
+phronmophobic/membrane: views are plain immutable values, handlers are pure
+functions returning effects, components edit parent state only through
+derived paths. The repo's source of truth is the specodelic corpus in
+`openspec/specs/<name>/spec.md` (dual-format, `id: spec`); `.espectacular/`
+contracts and proptest scaffolds are derived, never hand-edited. Membrane
+quirks are deliberately preserved as `advisory` constraints. Gates:
+`spk lint openspec/specs`, `spk compile`, `ah check --run-tests` (pre-commit
++ pre-push via lefthook, mirrored in CI). AI-facing generated docs live at
+`ai/llms.txt` (built by `tools/gen_ai_docs.py`, deployed to Pages); the SPA
+demo/gallery is at https://charly-vibes.github.io/tambor/.
