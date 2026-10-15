@@ -1,0 +1,18 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    // Emit config for the publishable package (tambor-y9d.1). Strict flags
+    // are inherited untouched; the only additions are emit-side:
+    // rewriteRelativeImportExtensions turns the .ts specifiers that
+    // allowImportingTsExtensions permits in source into .js/.d.ts
+    // specifiers that survive plain tsc emit (DESIGN sub-decision recorded
+    // in openspec/changes/add-distribution-packaging/design.md).
+    "noEmit": false,
+    "outDir": "dist",
+    "rootDir": "src",
+    "declaration": true,
+    "rewriteRelativeImportExtensions": true,
+    "types": []
+  },
+  "include": ["src/**/*.ts"]
+}
