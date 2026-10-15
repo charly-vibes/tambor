@@ -1,0 +1,108 @@
+// @vitest-environment jsdom
+// Purpose: the built-bundle smoke test (tambor-y9d.2 acceptance) — the
+//   actual dist/spa.js artifact mounts the Logo demo through the
+//   real-DOM host and completes a dispatch → re-draw round trip.
+// Responsibilities: build the bundle exactly as build:spa does (esbuild
+//   API, same entry and outfile), import it into a live jsdom document
+//   (the entry boots on import), navigate to the logo demo through the
+//   gallery nav, click Run at the view-derived position, and assert the
+//   cursor label re-rendered 0/0 → 1/1.
+// Rationale: the acceptance meter of tambor-y9d.2 names the built
+//   dist/spa.js, not the source entry — a jsdom smoke over the artifact
+//   is what proves the published bundle mounts (backend_portable). The
+//   click position comes from the same view tree the corpus contracts
+//   use (scanOf + centreOf), as in the gallery tests.
+
+import { describe, expect, it, beforeAll } from "vitest";
+// test-only node access (tsconfig types:[vitest/globals] by design);
+// the build runs in a child process — esbuild's node code inside the
+// jsdom environment trips the TextEncoder invariant
+// @ts-expect-error node builtin
+import { execSync } from "node:child_process";
+
+import { scanOf } from "./helpers/scan.ts";
+import { centreOf } from "./helpers/appview.ts";
+import { createLogoApp } from "../src/examples/logo/logo.ts";
+import type { ButtonNode } from "../src/views/model.ts";
+import type { HostDoc } from "../src/interop/domhost.ts";
+
+// jsdom's document, reached structurally (no lib.dom in tsconfig)
+function hostDoc(): HostDoc {
+  return (globalThis as { document?: unknown }).document as HostDoc;
+}
+
+// The structural DOM element type of the host seam.
+type HostEl = ReturnType<HostDoc["createElement"]>;
+
+function mouseEventCtor(): new (
+  type: string,
+  init: { clientX: number; clientY: number },
+) => unknown {
+  const ctor = (globalThis as { MouseEvent?: unknown }).MouseEvent;
+  if (typeof ctor !== "function") throw new Error("MouseEvent unavailable");
+  return ctor as new (
+    type: string,
+    init: { clientX: number; clientY: number },
+  ) => unknown;
+}
+
+function clickAt(host: HostEl, x: number, y: number): void {
+  const ME = mouseEventCtor();
+  host.dispatchEvent(new ME("pointerdown", { clientX: x, clientY: y }));
+  host.dispatchEvent(new ME("pointerup", { clientX: x, clientY: y }));
+}
+
+// The Run button's centre in the demo's own view tree — the same
+// position the mounted bundle draws it at (the view is pure state).
+function runCentre(): readonly [number, number] {
+  const app = createLogoApp();
+  const found = scanOf(app.view())
+    .find((f) => f.node.type === "button" && (f.node as ButtonNode).text === "Run");
+  if (found === undefined) throw new Error("Run button not in the view");
+  return centreOf(found);
+}
+
+beforeAll(() => {
+  // the build:spa recipe, verbatim (a child process: esbuild's node
+  // code cannot load inside the jsdom environment)
+  execSync("npm run build:spa", { stdio: "pipe" });
+});
+
+describe("spa bundle — dist/spa.js mounts the logo demo", () => {
+  it("boots, navigates to logo, and Run round-trips 0/0 → 1/1", async () => {
+    const doc: HostDoc = hostDoc();
+    // the mount point the entry looks up (getElementById("app"))
+    const mount = doc.createElement("div");
+    mount.setAttribute("id", "app");
+    doc.body.appendChild(mount);
+
+    // the variable specifier keeps tsc from demanding a .d.ts for the
+    // build artifact; @vite-ignore defers to node ESM resolution
+    const bundle: string = "../dist/spa.js";
+    await import(/* @vite-ignore */ bundle);
+
+    // the entry built the gallery nav; select the logo demo
+    const navs = Array.from(doc.body.querySelectorAll("nav"));
+    expect(navs.length).toBeGreaterThan(0);
+    let logo: HostEl | undefined;
+    for (const b of (navs[0] as unknown as HostEl).querySelectorAll("button")) {
+      if (b.textContent === "logo") logo = b as unknown as HostEl;
+    }
+    expect(logo).toBeDefined();
+    (logo as HostEl).dispatchEvent(new (mouseEventCtor())("click", { clientX: 0, clientY: 0 }));
+
+    const demo = doc.getElementById("demo");
+    expect(demo).not.toBeNull();
+    expect((demo as HostEl).textContent).toContain("tambor logo");
+    expect((demo as HostEl).textContent).toContain("0/0");
+
+    // click Run on the demo's canvas surface at the view-derived centre
+    const canvases = Array.from((demo as HostEl).querySelectorAll("canvas"));
+    expect(canvases.length).toBeGreaterThan(0);
+    const surface = canvases[canvases.length - 1] as unknown as HostEl;
+    const [x, y] = runCentre();
+    clickAt(surface, x, y);
+
+    expect((demo as HostEl).textContent).toContain("1/1");
+  });
+});
