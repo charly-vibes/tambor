@@ -1,0 +1,138 @@
+{
+  "startedAt": "2026-10-16T16:29:37.493Z",
+  "csp": "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:",
+  "builds": {
+    "squint": {
+      "build": "squint",
+      "pass": true,
+      "checks": [
+        {
+          "name": "golden: square",
+          "pass": true,
+          "detail": "segs=4 hd=360 procs=[]"
+        },
+        {
+          "name": "golden: star",
+          "pass": true,
+          "detail": "segs=5 hd=720 procs=[]"
+        },
+        {
+          "name": "golden: spiral",
+          "pass": true,
+          "detail": "segs=66 hd=6006 procs=[spiral]"
+        },
+        {
+          "name": "golden: flower",
+          "pass": true,
+          "detail": "segs=720 hd=4680 procs=[petal]"
+        },
+        {
+          "name": "golden: tree",
+          "pass": true,
+          "detail": "segs=254 hd=0 procs=[tree]"
+        },
+        {
+          "name": "late binding: newest defs re-run the old drawing",
+          "pass": true,
+          "detail": "late segs=33 early segs=66"
+        },
+        {
+          "name": "time travel: prefix fold over entries[0..cursor]",
+          "pass": true,
+          "detail": "cursor=1 segs=1 cursor=3 segs=2"
+        },
+        {
+          "name": "error surface: unknown command",
+          "pass": true,
+          "detail": "message: I don't know how to flurbish"
+        },
+        {
+          "name": "seam finding 1: persistent-vector path vs JS-indexing seam",
+          "pass": true,
+          "detail": "host vector is JS array? true; unmaterialised select -> \"todos\"; to-array at boundary -> \"todos\""
+        },
+        {
+          "name": "seam finding 2: dissoc on vectors is DataOps-owned",
+          "pass": true,
+          "detail": "dissoc on vector -> \"dissoc expects a map, got: object\"; DataOps subvec deletion -> [first,third]; prefix identical? false (no persistent sharing under either build — `into` rebuilds)"
+        }
+      ],
+      "screenshot": "evidence/squint-browser.png",
+      "console": [],
+      "cspScan": {
+        "eval": 0,
+        "newFunction": 0,
+        "dynamicImport": 0,
+        "documentWrite": 0,
+        "bytes": 64624
+      }
+    },
+    "cherry": {
+      "build": "cherry",
+      "pass": true,
+      "checks": [
+        {
+          "name": "golden: square",
+          "pass": true,
+          "detail": "segs=4 hd=360 procs=[]"
+        },
+        {
+          "name": "golden: star",
+          "pass": true,
+          "detail": "segs=5 hd=720 procs=[]"
+        },
+        {
+          "name": "golden: spiral",
+          "pass": true,
+          "detail": "segs=66 hd=6006 procs=[spiral]"
+        },
+        {
+          "name": "golden: flower",
+          "pass": true,
+          "detail": "segs=720 hd=4680 procs=[petal]"
+        },
+        {
+          "name": "golden: tree",
+          "pass": true,
+          "detail": "segs=254 hd=0 procs=[tree]"
+        },
+        {
+          "name": "late binding: newest defs re-run the old drawing",
+          "pass": true,
+          "detail": "late segs=33 early segs=66"
+        },
+        {
+          "name": "time travel: prefix fold over entries[0..cursor]",
+          "pass": true,
+          "detail": "cursor=1 segs=1 cursor=3 segs=2"
+        },
+        {
+          "name": "error surface: unknown command",
+          "pass": true,
+          "detail": "message: I don't know how to flurbish"
+        },
+        {
+          "name": "seam finding 1: persistent-vector path vs JS-indexing seam",
+          "pass": true,
+          "detail": "host vector is JS array? false; unmaterialised select -> \"seamSelect: undefined step — path not materialised\"; to-array at boundary -> \"todos\""
+        },
+        {
+          "name": "seam finding 2: dissoc on vectors is DataOps-owned",
+          "pass": true,
+          "detail": "dissoc on vector -> \"No protocol method IMap.-dissoc defined for type object: [\\\"first\\\" \\\"second\\\" \\\"third\\\"]\"; DataOps subvec deletion -> [first,third]; prefix identical? false (no persistent sharing under either build — `into` rebuilds)"
+        }
+      ],
+      "screenshot": "evidence/cherry-browser.png",
+      "console": [],
+      "cspScan": {
+        "eval": 0,
+        "newFunction": 0,
+        "dynamicImport": 0,
+        "documentWrite": 0,
+        "bytes": 609995
+      }
+    }
+  },
+  "overallPass": true,
+  "finishedAt": "2026-10-16T16:29:39.018Z"
+}
