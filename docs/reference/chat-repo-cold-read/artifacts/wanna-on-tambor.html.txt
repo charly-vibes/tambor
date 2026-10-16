@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>wanna × tambor — review session demo</title>
+<style>
+:root{--bg:#faf8f4;--fg:#1c1b19;--mut:#6b675f;--card:#fff;--line:#ddd7cb;--ok:#1d7a46;--warn:#9a6700;--bad:#b3261e;--info:#33566e;--acc:#1c1b19;--accfg:#faf8f4;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#15140f;--fg:#efece4;--mut:#a29d90;--card:#201e18;--line:#3a372e;--ok:#5fcf8f;--warn:#e3b341;--bad:#ff8a80;--info:#8fb8d4;--acc:#efece4;--accfg:#15140f}}
+:root[data-theme="dark"]{--bg:#15140f;--fg:#efece4;--mut:#a29d90;--card:#201e18;--line:#3a372e;--ok:#5fcf8f;--warn:#e3b341;--bad:#ff8a80;--info:#8fb8d4;--acc:#efece4;--accfg:#15140f}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.45 system-ui,sans-serif}
+main{max-width:640px;margin:0 auto;padding:16px}h1{font-size:20px;margin:0 0 4px}h2{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);margin:22px 0 8px}
+p{margin:0 0 8px}.mut{color:var(--mut)}.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.row.sp{justify-content:space-between}
+button{font:inherit;border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:10px;padding:9px 12px;min-height:40px;cursor:pointer}
+button.pri{background:var(--acc);color:var(--accfg);border-color:var(--acc)}button:disabled{opacity:.45;cursor:not-allowed}button.on{outline:2px solid var(--warn)}
+textarea{width:100%;min-height:76px;font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px;margin:8px 0}
+.chip{display:inline-block;font-size:12px;font-weight:600;border:1px solid currentColor;border-radius:99px;padding:1px 8px}
+.ok{color:var(--ok)}.warn{color:var(--warn)}.bad{color:var(--bad)}.info{color:var(--info)}
+.log{border-left:3px solid currentColor;padding:4px 0 4px 10px;margin:0 0 10px}.log .msg{color:var(--fg)}.log .ob{color:var(--mut);font-size:13px}
+.pr{display:flex;gap:8px;font-size:13px;padding:5px 0;border-bottom:1px dashed var(--line)}.pr:last-child{border:0}.dot{flex:none;width:18px;height:18px;border-radius:50%;border:1px solid var(--line);text-align:center;font-size:11px;line-height:16px}.pr.lit .dot{background:var(--ok);color:var(--accfg);border-color:var(--ok)}
+code{font:12.5px ui-monospace,monospace;background:var(--bg);border:1px solid var(--line);border-radius:5px;padding:0 4px}
+</style>
+</head>
+<body><main id="app"></main>
+<script>
+"use strict";
+/* ================= mini-tambor: the model, in ~40 lines =================
+   state = plain data · view = pure fn(state) → immutable value tree
+   handlers = pure fns (state, event) → effect list · components edit state only via paths
+   dispatch applies effects, then the WHOLE view is re-derived (no vdom diffing).      */
+const h=(tag,props={},...kids)=>Object.freeze({tag,props:Object.freeze(props),kids:kids.flat().filter(k=>k!=null&&k!==false)});
+const getIn=(o,p)=>p.reduce((a,k)=>a?.[k],o);
+const setIn=(o,p,v)=>p.length?{...o,[p[0]]:setIn(o?.[p[0]]??{},p.slice(1),v)}:v;
+function build(v){ if(typeof v==="string")return document.createTextNode(v);
+  const el=document.createElement(v.tag),p=v.props;
+  for(const k in p){ if(k==="on"||k==="bind"||k==="id"||k==="cls"||k==="text")continue; if(p[k]===true)el.setAttribute(k,"");else if(p[k]!==false)el.setAttribute(k,p[k]); }
+  if(p.cls)el.className=p.cls; if(p.id)el.dataset.id=p.id;
+  for(const ev in p.on||{})el.addEventListener(ev,e=>dispatch(p.on[ev](state,e)));       // pure handler → effects
+  if(p.bind){el.value=getIn(state,p.bind);el.addEventListener("input",e=>dispatch([["set",p.bind,e.target.value]]));} // derived-path edit
+  v.kids.forEach(k=>el.appendChild(build(k))); return el; }
+let state,root;
+function paint(){ const a=document.activeElement,id=a?.dataset?.id,s=a?.selectionStart;
+  root.replaceChildren(build(view(state)));
+  if(id){const n=root.querySelector(`[data-id="${id}"]`);if(n){n.focus();if(s!=null)n.setSelectionRange(s,s);}} }
+const effects={ set:(s,p,v)=>setIn(s,p,v),
+  log:(s,e)=>({...s,log:[e,...s.log].slice(0,40),lit:{...s.lit,typed:1,rec:1,...(e.p?{[e.p]:1}:{})}}),
+  shell:(s,fn)=>dispatchOn(s,shell[fn](s)), fault:(s,k)=>{P[k]=!P[k];return setIn(s,["faults",k],P[k]);} };
+function dispatchOn(s,fx){ for(const[n,...a]of fx||[])s=effects[n](s,...a); return s; }
+function dispatch(fx){ state=dispatchOn(state,fx); paint(); }
+
+/* ================= host port (the durable store behind the shell) ================= */
+let P;
+const freshPort=()=>({rev:1,agg:1,reviews:[],done:{},n:1,down:false,loseAck:false});
+const snap=()=>({rev:P.rev,agg:P.agg,reviews:P.reviews.map(r=>({...r}))});
+
+/* ================= wanna review shell: typed outcomes, each a contract ================= */
+const L=(kind,msg,ob,p,cls)=>["log",{kind,msg,ob,p,cls}];
+const active=s=>[...s.shell.snap.reviews].reverse().find(r=>r.status==="pending");
+const blocked=(s,what)=>s.shell.unknown?[L("unknown_effect",`${what} refused before touching storage — outcome of "${s.shell.unknown}" is unproven.`,"Do not retry. Reconcile first.","unk","bad")]
+  :s.shell.stale?[L("stale",`${what} refused before touching storage — snapshot is out of date.`,"Draft preserved. Refresh, then start a fresh review.","stale","warn")]:null;
+const shell={
+  evaluate(s){const b=blocked(s,"Evaluate");if(b)return b;
+    return [["set",["shell","decision"],{id:"decision-"+s.shell.snap.rev,rev:s.shell.snap.rev}],L("decided",`Need evaluated for revision ${s.shell.snap.rev}. Decided, not yet durable.`,"Commit it to make it real.","dur","info")];},
+  commit(s){const d=s.shell.decision;if(!d)return [L("refused","Nothing evaluated yet.","Evaluate first.",null,"info")];
+    const b=blocked(s,"Commit");if(b)return b;
+    if(P.down)return [L("unavailable","Storage could not be reached.","Preserve state; retry allowed.",null,"info")];
+    if(P.agg!==s.shell.snap.agg)return [["set",["shell","stale"],true],L("stale","Conditional commit rejected: aggregate moved since the last snapshot.","Refresh before anything else.","stale","warn")];
+    if(P.reviews.some(r=>r.status==="pending"&&r.rev===d.rev))return [L("refused","A review for this revision is already pending.","Submit or cancel it.",null,"info")];
+    P.reviews.push({id:"review-"+P.n++,rev:d.rev,status:"pending",feedback:null});P.agg++;
+    return [["set",["shell","snap"],snap()],["set",["shell","decision"],null],L("committed",`Review created for revision ${d.rev} (aggregate v${P.agg}).`,"Render the pending review.",null,"ok")];},
+  submit(s){const r=active(s),fb=s.draft.trim();if(!r)return [L("refused","No pending review to answer.","Evaluate and commit one.",null,"info")];
+    if(!fb)return [L("refused","Write feedback first.","",null,"info")];
+    const b=blocked(s,"Submit");if(b)return b;
+    const eid=s.eventId;
+    if(P.done[eid])return [L("duplicate",`Event "${eid}" was already recorded.`,"Nothing changed. Say so and stop.","idem","info")];
+    if(P.down)return [L("unavailable","Storage could not be reached.","Draft preserved; retry allowed.",null,"info")];
+    if(r.rev!==P.rev)return [["set",["shell","stale"],true],L("stale",`You reviewed revision ${r.rev}; the artifact is now revision ${P.rev}. Feedback was NOT retargeted.`,"Draft preserved. Show what changed; let the reviewer start fresh.","stale","warn")];
+    const rec=P.reviews.find(x=>x.id===r.id);rec.status="completed";rec.feedback=fb;P.done[eid]=true;P.agg++;
+    if(P.loseAck){P.loseAck=false;return [["set",["shell","unknown"],eid],["set",["lastEvent"],{eid,fb}],L("unknown_effect",`Write for "${eid}" may or may not have applied — the acknowledgement was lost.`,"Do NOT retry. Reconcile.","unk","bad")];}
+    return [["set",["shell","snap"],snap()],["set",["draft"],""],["set",["eventId"],"feedback-"+P.n++],["set",["lastEvent"],{eid,fb}],L("recorded",`Completion committed for revision ${r.rev}.`,"Render the completion; stop.",null,"ok")];},
+  redeliver(s){const e=s.lastEvent;if(!e)return [L("refused","Nothing has been submitted yet.","",null,"info")];
+    return P.done[e.eid]?[L("duplicate",`Re-delivery of "${e.eid}" — already recorded, no second mutation.`,"Nothing changed. Say so and stop.","idem","info")]:[L("refused","That event never committed.","",null,"info")];},
+  refresh(s){return [["set",["shell","snap"],snap()],["set",["shell","stale"],false],L("refreshed",`Authoritative snapshot loaded: revision ${P.rev}, aggregate v${P.agg}.`,"Mutations are allowed again.",null,"ok")];},
+  reconcile(s){const u=s.shell.unknown;if(!u)return [L("refused","No uncertain effect to reconcile.","",null,"info")];
+    if(P.down)return [L("unknown_effect","Storage unreachable — still uncertain.","Reconcile again later.","unk","bad")];
+    if(P.done[u])return [["set",["shell","snap"],snap()],["set",["shell","unknown"],null],["set",["draft"],""],["set",["eventId"],"feedback-"+P.n++],L("applied",`"${u}" did commit.`,"Render the completion; never repeat it.","unk","ok")];
+    return [["set",["shell","unknown"],null],L("not_applied",`"${u}" never landed.`,"Retrying is now allowed.","unk","warn")];},
+  cancel(s){const r=active(s);if(!r)return [L("refused","No pending review to cancel.","",null,"info")];
+    const b=blocked(s,"Cancel");if(b)return b;if(P.down)return [L("unavailable","Storage could not be reached.","Retry allowed.",null,"info")];
+    P.reviews.find(x=>x.id===r.id).status="retired";P.agg++;
+    return [["set",["shell","snap"],snap()],L("retired",`${r.id} retired by explicit command. History stays inspectable.`,"Retirement never happens implicitly.","cancel","ok")];},
+  restart(s){const lost=s.shell.decision;
+    return [["set",["shell"],{snap:snap(),stale:false,unknown:null,decision:null}],L("resumed",`New shell opened over the same port: ${P.reviews.length} review(s), aggregate v${P.agg}.`+(lost?" The uncommitted decision was discarded.":""),"Only committed operations survive.","dur","info")];},
+  writer(s){P.rev++;P.agg++;return [L("info",`Another writer changed the artifact to revision ${P.rev}. This shell hasn't been told.`,"Its next mutation will be refused as stale.",null,"info")];}
+};
+
+/* ================= views: pure functions of state ================= */
+const PRINCIPLES=[["typed","Every outcome is typed — five submit outcomes, five obligations."],["stale","Stale feedback is never silently retargeted; the draft survives."],["idem","Duplicate delivery changes nothing."],["unk","Unknown effect → reconcile, never retry."],["cancel","Retirement only by the explicit cancel command."],["dur","Only committed operations are durable across restart."],["rec","The shell records outcomes. It authorizes nothing and publishes nothing."]];
+const act=(fn)=>()=>[["shell",fn]];
+const btn=(label,fn,o={})=>h("button",{cls:o.pri?"pri":"",disabled:!!o.off,on:{click:act(fn)}},label);
+const chip=(t,c)=>h("span",{cls:"chip "+c},t);
+function view(s){const r=active(s),sh=s.shell,snp=sh.snap;
+  return h("div",{},
+    h("h1",{},"wanna × tambor"),
+    h("p",{cls:"mut"},"A review session whose every edge case is a typed outcome — rendered by a pure view over plain state. Poke the fault buttons, then try to submit."),
+    h("h2",{},"Artifact & shell"),
+    h("div",{cls:"card"},
+      h("div",{cls:"row sp"},h("strong",{},`Artifact revision ${P.rev}`),h("span",{cls:"mut"},`shell sees rev ${snp.rev} · aggregate v${snp.agg}`)),
+      h("div",{cls:"row",style:"margin-top:8px"},
+        sh.stale?chip("STALE — refresh required","warn"):chip("snapshot current","ok"),
+        sh.unknown?chip(`UNKNOWN EFFECT: ${sh.unknown}`,"bad"):null,
+        sh.decision?chip("decision evaluated, not durable","info"):null,
+        s.faults.down?chip("storage down","bad"):null,s.faults.loseAck?chip("next ack will be lost","warn"):null)),
+    h("h2",{},"Review"),
+    h("div",{cls:"card"},
+      r?h("div",{},h("p",{},h("strong",{},r.id),` · pending · reviewing revision ${r.rev}`),
+        h("textarea",{id:"draft",bind:["draft"],placeholder:"Feedback for this revision…","aria-label":"Feedback draft"}),
+        h("div",{cls:"row"},btn("Submit feedback","submit",{pri:1}),btn("Cancel review","cancel"),btn("Re-deliver last event","redeliver")))
+       :h("div",{},h("p",{cls:"mut"},"No pending review."),h("div",{cls:"row"},btn("1 · Evaluate need","evaluate"),btn("2 · Commit decision","commit",{off:!sh.decision,pri:!!sh.decision}))),
+      h("div",{cls:"row",style:"margin-top:10px"},btn("Refresh","refresh",{off:!sh.stale}),btn("Reconcile","reconcile",{off:!sh.unknown}),btn("Restart shell","restart"))),
+    h("h2",{},"Break things"),
+    h("div",{cls:"card"},h("div",{cls:"row"},
+      h("button",{on:{click:act("writer")}},"Another writer edits artifact"),
+      h("button",{cls:s.faults.loseAck?"on":"",on:{click:()=>[["fault","loseAck"]]}},"Lose next ack"),
+      h("button",{cls:s.faults.down?"on":"",on:{click:()=>[["fault","down"]]}},"Storage down"))),
+    h("h2",{},"History"),
+    snp.reviews.length?h("div",{cls:"card"},snp.reviews.map(x=>h("p",{},h("strong",{},x.id)," · rev "+x.rev+" · ",chip(x.status,x.status==="completed"?"ok":x.status==="retired"?"warn":"info"),x.feedback?h("span",{cls:"mut"},` — “${x.feedback}”`):null))):h("p",{cls:"mut"},"Empty."),
+    h("h2",{},"Outcome log"),
+    s.log.length?s.log.map(e=>h("div",{cls:"log "+(e.cls||"info")},h("div",{},chip(e.kind,e.cls||"info")),h("div",{cls:"msg"},e.msg),e.ob?h("div",{cls:"ob"},"→ "+e.ob):null)):h("p",{cls:"mut"},"Nothing yet. Evaluate a need to begin."),
+    h("h2",{},"Principles exercised"),
+    h("div",{cls:"card"},PRINCIPLES.map(([id,t],i)=>h("div",{cls:"pr"+(s.lit[id]?" lit":"")},h("span",{cls:"dot"},s.lit[id]?"✓":String(i+1)),t))),
+    h("p",{cls:"mut"},"Simulated port, in-memory. Handlers are pure and return effects like ",h("code",{},'["shell","submit"]'),"; the view is re-derived whole after each dispatch."));}
+
+function init(){P=freshPort();root=document.getElementById("app");
+  state={draft:"",eventId:"feedback-"+P.n++,lastEvent:null,log:[],lit:{},faults:{down:false,loseAck:false},shell:{snap:snap(),stale:false,unknown:null,decision:null}};
+  paint();}
+init();
+</script></body></html>

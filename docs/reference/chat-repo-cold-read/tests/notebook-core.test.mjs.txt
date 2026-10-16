@@ -1,0 +1,50 @@
+// Tests the reactive core extracted from artifacts/tambor-notebook.html (no DOM needed).
+// Usage: node tests/notebook-core.test.mjs
+import fs from "node:fs";
+import assert from "node:assert/strict";
+const html = fs.readFileSync(new URL("../artifacts/tambor-notebook.html", import.meta.url), "utf8");
+const js = html.slice(html.indexOf("<script>") + 8, html.indexOf("</script>"));
+const core = js.slice(js.indexOf("/* ===== notebook core"), js.indexOf("/* ===== effects"));
+const { runAll } = new Function(core + "; return {runAll};")();
+
+const cells = [
+  { id: 1, src: "freq = slider(1, 10, 1, 3)" }, { id: 2, src: "xs = linspace(0, 6.283, 120)" },
+  { id: 3, src: "ys = sin(xs * freq)" }, { id: 4, src: "plot(xs, ys)" },
+  { id: 5, src: "energy = sum(ys * ys) / len(ys)" }, { id: 6, src: "amp = slider(0.5, 3, 0.1, 1)" },
+  { id: 7, src: "zs = ys * amp" }, { id: 8, src: "plot(xs, zs)" },
+];
+const full = runAll(cells, {}, {}, null);
+assert.equal(full.ran, 8);
+assert.ok(Math.abs(full.out[5].v - 0.5) < 0.02, "mean of sin^2 is about 0.5");
+
+// incremental: moving `amp` re-runs only zs and its plot (+ the slider itself)
+const inc = runAll(cells, { 6: 2 }, full.out, [6]);
+assert.equal(inc.ran, 3, "amp, zs, plot(xs,zs)");
+assert.equal(inc.out[2], full.out[2], "untouched cell value is reused by identity");
+// moving `freq` re-runs freq, ys, plot, energy, zs, plot = 6
+assert.equal(runAll(cells, { 1: 5 }, full.out, [1]).ran, 6);
+
+// errors
+const bad = runAll([{ id: 1, src: "a = b + 1" }], {}, {}, null);
+assert.match(bad.out[1].err, /b is not defined/);
+const cyc = runAll([{ id: 1, src: "a = b" }, { id: 2, src: "b = a" }], {}, {}, null);
+assert.ok(cyc.out[1].err || cyc.out[2].err, "cycle reported");
+assert.match(runAll([{ id: 1, src: "x = 1" }, { id: 2, src: "x = 2" }], {}, {}, null).out[2].err, /defined twice/);
+assert.match(runAll([{ id: 1, src: "x = x + 1" }], {}, {}, null).out[1].err, /cycle/);
+assert.match(runAll([{ id: 1, src: "x = 1 +" }], {}, {}, null).out[1].err, /ended early|unexpected/);
+assert.match(runAll([{ id: 1, src: "x = foo(1)" }], {}, {}, null).out[1].err, /unknown function/);
+
+// chain of 200: incremental touches the whole chain, full does the same; fan-out of 200 off one slider
+const chain = [{ id: 0, src: "base = slider(0, 10, 1, 1)" }];
+for (let k = 1; k <= 200; k++) chain.push({ id: k, src: `c${k} = ${k === 1 ? "base" : "c" + (k - 1)} + 1` });
+const c0 = runAll(chain, {}, {}, null);
+assert.equal(c0.out[200].v, 201);
+const c1 = runAll(chain, { 0: 5 }, c0.out, [0]);
+assert.equal(c1.out[200].v, 205);
+assert.equal(c1.ran, 201);
+
+// 200k-point array stays in budget
+const t = performance.now();
+runAll([{ id: 1, src: "xs = linspace(0, 6.283, 200000)" }, { id: 2, src: "s = sum(sin(xs * 3))" }], {}, {}, null);
+console.log("200k linspace + sin + sum:", (performance.now() - t).toFixed(1), "ms");
+console.log("notebook core: all checks passed");

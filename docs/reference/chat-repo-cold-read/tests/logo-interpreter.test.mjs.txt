@@ -1,0 +1,25 @@
+// Runs the Logo interpreter extracted from artifacts/tambor-logo.html (no DOM needed).
+// Usage: node tests/logo-interpreter.test.mjs
+import fs from "node:fs";
+import assert from "node:assert/strict";
+const html = fs.readFileSync(new URL("../artifacts/tambor-logo.html", import.meta.url), "utf8");
+const js = html.slice(html.indexOf("<script>") + 8, html.indexOf("</script>"));
+const core = js.slice(js.indexOf("/* ===== the Logo"), js.indexOf("/* ===== views"));
+const ex = js.slice(js.indexOf("const EX="), js.indexOf("const procText"));
+const { derive, EX } = new Function(core + ex + "; return {derive, EX};")();
+
+const n = k => derive([{ text: EX[k] }], false).trace.length;
+assert.equal(n("square"), 4);
+assert.equal(n("star"), 5);
+assert.equal(n("spiral"), 66);
+assert.equal(n("flower"), 720);
+assert.equal(n("tree"), 254);
+
+const entries = [{ text: EX.spiral }, { text: "to spiral :n\n fd :n rt 121\n if :n < 200 [spiral :n + 3]\nend" }];
+const early = derive(entries, false).trace[1], late = derive(entries, true).trace[1];
+assert.notDeepEqual(early, late, "late binding must change the drawing");
+
+assert.throws(() => derive([{ text: "foo" }], false), /don't know how to foo/);
+assert.throws(() => derive([{ text: "to a a end a" }], false), /recursion too deep/);
+assert.throws(() => derive([{ text: "repeat 99999 [repeat 99999 [fd 1]]" }], false), /too many steps/);
+console.log("logo interpreter: all checks passed");

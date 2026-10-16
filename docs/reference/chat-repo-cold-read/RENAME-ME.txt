@@ -1,0 +1,3 @@
+Mail-safe copy: script and html files have ".txt" appended so mail scanners accept the zip.
+Remove the ".txt" suffix from every file in artifacts/ and tests/ to restore them
+(tests read ../artifacts/<name>.html). Then: node tests/logo-interpreter.test.mjs ; node tests/notebook-core.test.mjs

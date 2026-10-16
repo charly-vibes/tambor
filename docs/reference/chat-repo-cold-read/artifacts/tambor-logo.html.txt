@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>tambor logo — a live world as a fold over data</title>
+<style>
+:root{--bg:#faf8f4;--fg:#1c1b19;--mut:#6b675f;--card:#fff;--line:#ddd7cb;--bad:#b3261e;--acc:#1c1b19;--accfg:#faf8f4;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#15140f;--fg:#efece4;--mut:#a29d90;--card:#201e18;--line:#3a372e;--bad:#ff8a80;--acc:#efece4;--accfg:#15140f}}
+:root[data-theme="dark"]{--bg:#15140f;--fg:#efece4;--mut:#a29d90;--card:#201e18;--line:#3a372e;--bad:#ff8a80;--acc:#efece4;--accfg:#15140f}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.45 system-ui,sans-serif}
+main{max-width:640px;margin:0 auto;padding:16px}h1{font-size:20px;margin:0 0 4px}h2{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);margin:20px 0 8px}
+p{margin:0 0 8px}.mut{color:var(--mut)}.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+button{font:inherit;border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:10px;padding:8px 12px;min-height:40px;cursor:pointer}
+button.pri{background:var(--acc);color:var(--accfg);border-color:var(--acc)}button.on{outline:2px solid var(--fg)}
+textarea{width:100%;min-height:96px;font:13.5px ui-monospace,monospace;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px;margin-bottom:8px}
+input[type=range]{flex:1;min-width:120px}svg{width:100%;height:auto;display:block;background:var(--bg);border-radius:8px;touch-action:none}
+.err{color:var(--bad);font-weight:600}code{font:12.5px ui-monospace,monospace}
+</style>
+</head>
+<body><main id="app"></main>
+<script>
+"use strict";
+/* ===== mini-tambor core: state = data, view = pure fn(state), handlers return effects ===== */
+const SVG=new Set(["svg","line","polygon","rect"]);
+const h=(tag,props={},...kids)=>Object.freeze({tag,props:Object.freeze(props),kids:kids.flat().filter(k=>k!=null&&k!==false)});
+const getIn=(o,p)=>p.reduce((a,k)=>a?.[k],o);
+const setIn=(o,p,v)=>p.length?{...o,[p[0]]:setIn(o?.[p[0]]??{},p.slice(1),v)}:v;
+function build(v){ if(typeof v==="string")return document.createTextNode(v);
+  const p=v.props,el=SVG.has(v.tag)?document.createElementNS("http://www.w3.org/2000/svg",v.tag):document.createElement(v.tag);
+  for(const k in p){ if(["on","bind","keep","cls"].includes(k))continue; if(p[k]===true)el.setAttribute(k,"");else if(p[k]!==false)el.setAttribute(k,p[k]); }
+  if(p.cls)el.className=p.cls;
+  for(const ev in p.on||{})el.addEventListener(ev,e=>dispatch(p.on[ev](state,e)));
+  if(p.bind){el.value=getIn(state,p.bind);el.addEventListener("input",e=>dispatch([["set",p.bind,e.target.value]]));}
+  if(p.keep){el.dataset.keep=p.keep;} v.kids.forEach(k=>el.appendChild(build(k))); return el; }
+let state,root;
+function paint(){ // live widgets (textarea, slider) are carried over so focus/drag survive re-derivation
+  const old={};root.querySelectorAll("[data-keep]").forEach(n=>old[n.dataset.keep]=n);
+  const f=build(view(state)),t=document.createElement("div");t.appendChild(f);
+  t.querySelectorAll("[data-keep]").forEach(n=>{const o=old[n.dataset.keep];if(!o)return;
+    for(const a of["max","min"])o.setAttribute(a,n.getAttribute(a)??"");
+    if(document.activeElement!==o)o.value=n.value; n.replaceWith(o);});
+  root.replaceChildren(f); }
+const fx={set:(s,p,v)=>setIn(s,p,v),
+  run(s){const entries=s.entries.slice(0,s.cursor).concat({text:s.src});
+    try{derive(entries,s.late);return{...s,entries,cursor:entries.length,err:""};}catch(e){return{...s,err:e.message};}},
+  clear:s=>({...s,entries:[],cursor:0,err:""})};
+const dispatch=fx2=>{for(const[n,...a]of fx2||[])state=fx[n](state,...a);paint();};
+
+/* ===== the Logo interpreter: (entries) → world, a pure fold ===== */
+const COLORS={red:"#d93025",green:"#1e8e3e",blue:"#1a73e8",orange:"#e8710a",purple:"#9334e6",black:null};
+const tokenize=src=>src.replace(/;.*$/gm,"").replace(/[\[\]()]/g," $& ").toLowerCase().split(/\s+/).filter(Boolean);
+class Stop{}
+function stripDefs(t){const o=[];for(let i=0;i<t.length;i++){if(t[i]==="to"){while(i<t.length&&t[i]!=="end")i++;}else o.push(t[i]);}return o;}
+function defsOf(t,w){for(let i=0;i<t.length;i++)if(t[i]==="to"){const name=t[++i],params=[];i++;while(t[i]?.[0]===":")params.push(t[i++].slice(1));const body=[];while(i<t.length&&t[i]!=="end")body.push(t[i++]);w.procs[name]={params,body};}}
+function derive(entries,late){ // late: apply every definition first, then re-run all commands
+  const w={procs:{},x:0,y:0,hd:0,pen:true,color:null,trace:[],steps:0},toks=entries.map(e=>tokenize(e.text));
+  if(late)toks.forEach(t=>defsOf(t,w));
+  toks.forEach(t=>{if(!late)defsOf(t,w);exec({t:stripDefs(t),i:0},{},w,0);});
+  return w;}
+function block(P){if(P.t[P.i]!=="[")throw Error("expected [");let d=0,s=P.i;do{if(P.t[P.i]==="[")d++;if(P.t[P.i]==="]")d--;P.i++;if(P.i>P.t.length+1)throw Error("missing ]");}while(d>0&&P.i<=P.t.length);
+  if(d>0)throw Error("missing ]");return P.t.slice(s+1,P.i-1);}
+function expr(P,env){let a=sum(P,env);const o=P.t[P.i];if(o==="<"||o===">"||o==="="){P.i++;const b=sum(P,env);return o==="<"?a<b:o===">"?a>b:a===b;}return a;}
+function sum(P,env){let a=term(P,env);while(P.t[P.i]==="+"||P.t[P.i]==="-"){const o=P.t[P.i++],b=term(P,env);a=o==="+"?a+b:a-b;}return a;}
+function term(P,env){let a=fac(P,env);while(P.t[P.i]==="*"||P.t[P.i]==="/"){const o=P.t[P.i++],b=fac(P,env);a=o==="*"?a*b:a/b;}return a;}
+function fac(P,env){const t=P.t[P.i++];if(t===undefined)throw Error("a number was expected");
+  if(t==="-")return -fac(P,env);if(t==="(" ){const v=expr(P,env);P.i++;return v;}
+  if(t[0]===":"){const k=t.slice(1);if(!(k in env))throw Error("no value for :"+k);return env[k];}
+  const n=Number(t);if(Number.isNaN(n))throw Error("a number was expected, got "+t);return n;}
+function move(w,d){const r=w.hd*Math.PI/180,nx=w.x+d*Math.sin(r),ny=w.y+d*Math.cos(r);
+  if(w.pen&&w.trace.length<20000)w.trace.push([w.x,w.y,nx,ny,w.color]);w.x=nx;w.y=ny;}
+function exec(P,env,w,depth){
+  while(P.i<P.t.length){const t=P.t[P.i++];
+    if(++w.steps>30000)throw Error("too many steps — infinite loop?");
+    if(t==="to"){while(P.i<P.t.length&&P.t[P.i++]!=="end");continue;}   // defs are registered by the fold, not here
+    if(t==="fd"||t==="forward")move(w,expr(P,env));
+    else if(t==="bk"||t==="back")move(w,-expr(P,env));
+    else if(t==="rt"||t==="right")w.hd+=expr(P,env);
+    else if(t==="lt"||t==="left")w.hd-=expr(P,env);
+    else if(t==="pu")w.pen=false;else if(t==="pd")w.pen=true;
+    else if(t==="home"){w.x=0;w.y=0;w.hd=0;}
+    else if(t==="setcolor"){const c=P.t[P.i++];if(!(c in COLORS))throw Error("unknown color "+c);w.color=COLORS[c];}
+    else if(t==="repeat"){const n=expr(P,env),b=block(P);for(let k=0;k<n;k++)exec({t:b,i:0},env,w,depth);}
+    else if(t==="if"){const c=expr(P,env),b=block(P);if(c)exec({t:b,i:0},env,w,depth);}
+    else if(t==="stop")throw new Stop();
+    else if(w.procs[t]){const pr=w.procs[t];if(depth>150)throw Error("recursion too deep");
+      const e2={};pr.params.forEach(k=>e2[k]=expr(P,env));
+      try{exec({t:pr.body,i:0},e2,w,depth+1);}catch(e){if(!(e instanceof Stop))throw e;}}
+    else if(t==="end"){}
+    else throw Error("I don't know how to "+t);}
+  return w;}
+/* ===== views ===== */
+const EX={square:"repeat 4 [fd 80 rt 90]",star:"setcolor purple\nrepeat 5 [fd 120 rt 144]",
+ spiral:"to spiral :n\n fd :n rt 91\n if :n < 200 [spiral :n + 3]\nend\nsetcolor blue\nspiral 5",
+ flower:"to petal\n repeat 2 [repeat 30 [fd 3 rt 3] rt 90]\nend\nsetcolor orange\nrepeat 12 [petal rt 30]",
+ tree:"to tree :s\n if :s < 8 [stop]\n fd :s lt 25 tree :s * 0.7\n rt 50 tree :s * 0.7\n lt 25 bk :s\nend\nsetcolor green\npu bk 100 pd\ntree 80"};
+const procText=(n,p)=>`to ${n} ${p.params.map(x=>":"+x).join(" ")}\n ${p.body.join(" ").replace(/ \[ /g," [").replace(/ \]/g,"]")}\nend`;
+function view(s){let w,err=s.err;
+  try{w=derive(s.entries.slice(0,s.cursor),s.late);}catch(e){w={procs:{},x:0,y:0,hd:0,trace:[]};err=err||e.message;}
+  const n=s.entries.length,tri=`${w.x},${-w.y} ${w.x-5},${-w.y+11} ${w.x+5},${-w.y+11}`;
+  return h("div",{},
+    h("h1",{},"tambor logo"),
+    h("p",{cls:"mut"},"The world is never stored — it is derived: ",h("code",{},"world = fold(entries[0..cursor])"),". Drag the slider to rewind. Edit a procedure and redraw to see late binding."),
+    h("div",{cls:"card"},
+      h("svg",{viewBox:"-200 -200 400 400",role:"img","aria-label":"Turtle canvas"},
+        w.trace.map(([a,b,c,d,col])=>h("line",{x1:a,y1:-b,x2:c,y2:-d,stroke:col||"currentColor","stroke-width":1.5,"stroke-linecap":"round",style:"color:var(--fg)"})),
+        h("polygon",{points:tri,fill:"var(--bad)",transform:`rotate(${w.hd} ${w.x} ${-w.y})`})),
+      h("div",{cls:"row",style:"margin-top:8px"},
+        h("button",{on:{click:()=>[["set",["cursor"],Math.max(0,s.cursor-1)]]}},"◀"),
+        h("input",{type:"range",keep:"slider","aria-label":"Time travel",min:0,max:n,value:s.cursor,on:{input:e=>[["set",["cursor"],+e.target.value]]}}),
+        h("button",{on:{click:()=>[["set",["cursor"],Math.min(n,s.cursor+1)]]}},"▶"),
+        h("span",{cls:"mut"},`${s.cursor}/${n}`))),
+    h("div",{cls:"row",style:"margin-bottom:8px"},Object.keys(EX).map(k=>h("button",{on:{click:()=>[["set",["src"],EX[k]]]}},k))),
+    h("textarea",{keep:"src",bind:["src"],"aria-label":"Logo source",spellcheck:"false"}),
+    err?h("p",{cls:"err",role:"alert"},err):null,
+    h("div",{cls:"row"},h("button",{cls:"pri",on:{click:()=>[["run"]]}},"Run"),h("button",{on:{click:()=>[["clear"]]}},"Clear world"),
+      h("button",{cls:s.late?"on":"",on:{click:()=>[["set",["late"],!s.late]]}},"Late binding: "+(s.late?"on":"off"))),
+    h("p",{cls:"mut",style:"margin-top:8px;font-size:13px"},s.late?"All definitions are applied first, then every command re-runs — the old drawing is redrawn with the newest procedures.":"Each entry runs against the definitions that existed at the time."),
+    h("h2",{},"Procedures in this world"),
+    Object.keys(w.procs).length?h("div",{cls:"row"},Object.entries(w.procs).map(([k,p])=>h("button",{on:{click:()=>[["set",["src"],procText(k,p)]]}},k+" ✎"))):h("p",{cls:"mut"},"None yet — define one with ",h("code",{},"to name :arg … end"),"."),
+    h("p",{cls:"mut",style:"font-size:13px"},"Tap a procedure to load it into the editor, change it, and Run to redefine it."));}
+
+state={src:EX.spiral,entries:[],cursor:0,late:false,err:""};
+root=document.getElementById("app");paint();
+</script></body></html>

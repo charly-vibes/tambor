@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>tambor notebook — reactive cells as a dependency graph</title>
+<style>
+:root{--bg:#faf8f4;--fg:#1c1b19;--mut:#6b675f;--card:#fff;--line:#ddd7cb;--bad:#b3261e;--ok:#1d7a46;--acc:#1c1b19;--accfg:#faf8f4;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#15140f;--fg:#efece4;--mut:#a29d90;--card:#201e18;--line:#3a372e;--bad:#ff8a80;--ok:#5fcf8f;--acc:#efece4;--accfg:#15140f}}
+:root[data-theme="dark"]{--bg:#15140f;--fg:#efece4;--mut:#a29d90;--card:#201e18;--line:#3a372e;--bad:#ff8a80;--ok:#5fcf8f;--acc:#efece4;--accfg:#15140f}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.45 system-ui,sans-serif}
+main{max-width:680px;margin:0 auto;padding:16px}h1{font-size:20px;margin:0 0 4px}p{margin:0 0 8px}.mut{color:var(--mut)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px;margin-bottom:8px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.sp{justify-content:space-between}
+button{font:inherit;border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:10px;padding:7px 11px;min-height:38px;cursor:pointer}
+button.on{outline:2px solid var(--fg)}
+textarea{width:100%;font:13.5px ui-monospace,monospace;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:6px;margin:6px 0;resize:vertical}
+input[type=range]{flex:1;min-width:140px}svg{width:100%;height:auto;display:block}
+.chip{font-size:12px;border:1px solid var(--line);border-radius:99px;padding:1px 8px;color:var(--mut)}.err{color:var(--bad);font-size:13.5px}.val{font:13.5px ui-monospace,monospace;color:var(--ok);word-break:break-all}
+.stats{position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);padding:6px 0;font-size:13px;z-index:2}
+</style>
+</head>
+<body><main id="app"></main>
+<script>
+"use strict";
+/* ===== mini-tambor core: state = data, view = pure fn(state), handlers return effects ===== */
+const SVG=new Set(["svg","polyline","rect"]);
+const h=(tag,props={},...kids)=>Object.freeze({tag,props:Object.freeze(props),kids:kids.flat().filter(k=>k!=null&&k!==false)});
+function build(v){ if(typeof v==="string")return document.createTextNode(v);
+  const p=v.props,el=SVG.has(v.tag)?document.createElementNS("http://www.w3.org/2000/svg",v.tag):document.createElement(v.tag);
+  for(const k in p){ if(["on","keep","cls","val"].includes(k))continue; if(p[k]===true)el.setAttribute(k,"");else if(p[k]!==false)el.setAttribute(k,p[k]); }
+  if(p.cls)el.className=p.cls; if("val" in p)el.value=p.val;
+  for(const ev in p.on||{})el.addEventListener(ev,e=>dispatch(p.on[ev](state,e)));
+  if(p.keep)el.dataset.keep=p.keep; v.kids.forEach(k=>el.appendChild(build(k))); return el; }
+let state,root;
+function paint(){ const t0=performance.now(),old={};root.querySelectorAll("[data-keep]").forEach(n=>old[n.dataset.keep]=n);
+  const f=build(view(state)),t=document.createElement("div");t.appendChild(f);
+  t.querySelectorAll("[data-keep]").forEach(n=>{const o=old[n.dataset.keep];if(!o)return;
+    if(o.type==="range")for(const a of["max","min","step"])o.setAttribute(a,n.getAttribute(a));
+    if(document.activeElement!==o)o.value=n.value; n.replaceWith(o);});
+  root.replaceChildren(f); const m=root.querySelector("#pms"); if(m)m.textContent=(performance.now()-t0).toFixed(1)+" ms"; }
+const dispatchOn=(s,fx)=>{for(const[n,...a]of fx||[])s=effects[n](s,...a);return s;};
+const dispatch=fx=>{state=dispatchOn(state,fx);paint();};
+
+/* ===== notebook core: parse → dependency graph → topological, incremental evaluation ===== */
+const MAXN=1e6,isA=v=>v instanceof Float64Array;
+const map1=(f,a)=>{if(!isA(a))return f(a);const r=new Float64Array(a.length);for(let i=0;i<a.length;i++)r[i]=f(a[i]);return r;};
+function zip(f,a,b){const A=!isA(a),B=!isA(b);if(A&&B)return f(a,b);if(!A&&!B&&a.length!==b.length)throw Error(`length mismatch ${a.length} vs ${b.length}`);
+  const n=A?b.length:a.length,r=new Float64Array(n);for(let i=0;i<n;i++)r[i]=f(A?a:a[i],B?b:b[i]);return r;}
+const OPS={"+":(a,b)=>a+b,"-":(a,b)=>a-b,"*":(a,b)=>a*b,"/":(a,b)=>a/b,"%":(a,b)=>a%b,"^":Math.pow},PREC={"+":1,"-":1,"*":2,"/":2,"%":2,"^":3};
+const F1={sin:Math.sin,cos:Math.cos,tan:Math.tan,abs:Math.abs,sqrt:Math.sqrt,exp:Math.exp,log:Math.log,floor:Math.floor,round:Math.round};
+const red=(a,f,z)=>{if(!isA(a))return a;let s=z;for(let i=0;i<a.length;i++)s=f(s,a[i]);return s;};
+const FN={sum:a=>red(a,(s,x)=>s+x,0),len:a=>isA(a)?a.length:1,mean:a=>FN.sum(a)/FN.len(a),min:a=>red(a,Math.min,Infinity),max:a=>red(a,Math.max,-Infinity),
+  range:(a,b)=>{if(b===undefined){b=a;a=0;}const n=Math.max(0,Math.ceil(b-a));if(n>MAXN)throw Error("array too large");const r=new Float64Array(n);for(let i=0;i<n;i++)r[i]=a+i;return r;},
+  linspace:(a,b,n)=>{n=Math.floor(n);if(!(n>=2)||n>MAXN)throw Error("linspace needs 2 ≤ n ≤ 1e6");const r=new Float64Array(n);for(let i=0;i<n;i++)r[i]=a+(b-a)*i/(n-1);return r;},
+  plot:(x,y)=>{if(!isA(x)||!isA(y)||x.length!==y.length)throw Error("plot needs two arrays of equal length");return{plot:[x,y]};}};
+function tokenize(s){const t=[],re=/\s*(\d+\.?\d*(?:e[+-]?\d+)?|[A-Za-z_]\w*|[-+*\/^%(),])/gy;let m,last=0;while((m=re.exec(s))){t.push(m[1]);last=re.lastIndex;}
+  if(s.slice(last).trim())throw Error("unexpected "+s.slice(last).trim()[0]);return t;}
+function parse(t){let i=0;
+  const expr=minp=>{let l=unary();for(;;){const o=t[i],p=PREC[o];if(!p||p<minp)break;i++;l={t:"bin",o,l,r:expr(o==="^"?p:p+1)};}return l;};
+  const unary=()=>{if(t[i]==="-"){i++;return{t:"neg",e:expr(3)};}return atom();};
+  const atom=()=>{const k=t[i++];if(k===undefined)throw Error("expression ended early");
+    if(/^\d/.test(k))return{t:"num",v:Number(k)};
+    if(/^[A-Za-z_]/.test(k)){if(t[i]!=="(")return{t:"id",n:k};i++;const args=[];if(t[i]===")")i++;else for(;;){args.push(expr(1));if(t[i]===","){i++;continue;}if(t[i]===")"){i++;break;}throw Error("expected , or )");}return{t:"call",f:k,args};}
+    if(k==="("){const e=expr(1);if(t[i++]!==")")throw Error("missing )");return e;}throw Error("unexpected "+k);};
+  const e=expr(1);if(i<t.length)throw Error("unexpected "+t[i]);return e;}
+const ids=(n,o=[])=>{if(n.t==="id")o.push(n.n);else if(n.t==="neg")ids(n.e,o);else if(n.t==="bin"){ids(n.l,o);ids(n.r,o);}else if(n.t==="call")n.args.forEach(a=>ids(a,o));return o;};
+function ev(n,look){switch(n.t){case"num":return n.v;case"id":return look(n.n);case"neg":return map1(x=>-x,ev(n.e,look));
+  case"bin":return zip(OPS[n.o],ev(n.l,look),ev(n.r,look));
+  case"call":{const a=n.args.map(x=>ev(x,look));if(F1[n.f])return map1(F1[n.f],a[0]);if(FN[n.f])return FN[n.f](...a);throw Error("unknown function "+n.f);}}}
+function analyze(cells){const info={},defs={},order=[],mark={};
+  for(const c of cells){const m=/^\s*([A-Za-z_]\w*)\s*=(?!=)([\s\S]*)$/.exec(c.src),name=m?m[1]:null,inf=info[c.id]={name,reads:[],err:null,ast:null,input:null};
+    try{if(!(m?m[2]:c.src).trim())throw Error("empty cell");inf.ast=parse(tokenize(m?m[2]:c.src));inf.reads=[...new Set(ids(inf.ast))];
+      if(inf.ast.t==="call"&&inf.ast.f==="slider"){const a=inf.ast.args;if(!name||a.length!==4||a.some(x=>x.t!=="num"))throw Error("use: name = slider(min, max, step, value)");inf.input=a.map(x=>x.v);}
+      if(name){if(name in defs)throw Error(name+" is defined twice");if(F1[name]||FN[name])throw Error(name+" is a built-in");}}catch(e){inf.err=e.message;}
+    if(name&&!inf.err)defs[name]=c.id;}
+  const visit=(id,path)=>{if(mark[id]===2)return;if(mark[id]===1){return;}mark[id]=1;const inf=info[id];
+    for(const r of inf.reads){const d=defs[r];if(d===undefined)continue;if(d===id||mark[d]===1){inf.err="cycle: "+[...path,id,r].join(" → ");continue;}visit(d,[...path,id]);}
+    mark[id]=2;if(!inf.err)order.push(id);};
+  cells.forEach(c=>{if(!info[c.id].err)visit(c.id,[]);});
+  return{info,defs,order};}
+function runAll(cells,sliders,prev,dirty){const t0=performance.now(),{info,defs,order}=analyze(cells),readers={};
+  cells.forEach(c=>info[c.id].reads.forEach(r=>(readers[r]??=[]).push(c.id)));
+  let aff;if(dirty===null)aff=new Set(cells.map(c=>c.id));else{aff=new Set();const q=[...dirty];cells.forEach(c=>{if(prev[c.id]?.err)q.push(c.id);});
+    while(q.length){const id=q.pop();if(aff.has(id))continue;aff.add(id);const n=info[id]?.name;if(n)(readers[n]||[]).forEach(x=>q.push(x));}}
+  const out={},vals={};let ran=0;
+  const look=n=>{if(n in vals)return vals[n];const d=defs[n];throw Error(d!==undefined?`upstream error in ${n}`:`${n} is not defined`);};
+  for(const id of order){const inf=info[id];
+    if(aff.has(id)||!prev[id]){ran++;try{out[id]={v:inf.input?(sliders[id]??inf.input[3]):ev(inf.ast,look)};}catch(e){out[id]={err:e.message};}}else out[id]=prev[id];
+    if(inf.name&&out[id].v!==undefined)vals[inf.name]=out[id].v;}
+  cells.forEach(c=>{if(!(c.id in out))out[c.id]={err:info[c.id].err||"not run"};});
+  return{out,info,ran,ms:performance.now()-t0};}
+
+/* ===== effects (state transitions) ===== */
+const exec=(s,dirty)=>{const r=runAll(s.cells,s.sliders,s.out,s.mode==="full"?null:dirty);return{...s,out:r.out,info:r.info,stats:{ran:r.ran,total:s.cells.length,ms:r.ms}};};
+const effects={
+  edit:(s,id,src)=>{const sl={...s.sliders};delete sl[id];return exec({...s,cells:s.cells.map(c=>c.id===id?{...c,src}:c),sliders:sl},[id]);},
+  slider:(s,id,v)=>exec({...s,sliders:{...s.sliders,[id]:v}},[id]),
+  add:s=>exec({...s,cells:[...s.cells,{id:s.nextId,src:"1 + 1"}],nextId:s.nextId+1},null),
+  del:(s,id)=>exec({...s,cells:s.cells.filter(c=>c.id!==id)},null),
+  mode:s=>({...s,mode:s.mode==="full"?"incremental":"full"}),
+  chain:s=>{const n=s.nextId,cs=[{id:n,src:`base${n} = slider(0, 10, 1, 1)`}];for(let k=1;k<=200;k++)cs.push({id:n+k,src:`ch${n}_${k} = ${k===1?"base"+n:`ch${n}_${k-1}`} + 1`});
+    return exec({...s,cells:[...s.cells,...cs],nextId:n+201},null);},
+  fan:s=>{const n=s.nextId,cs=[];for(let k=1;k<=200;k++)cs.push({id:n+k-1,src:`fan${n}_${k} = sum(sin(xs * ${k}))`});return exec({...s,cells:[...s.cells,...cs],nextId:n+200},null);},
+  big:s=>{const c=s.cells.find(c=>s.info[c.id]?.name==="xs");return c?effects.edit(s,c.id,"xs = linspace(0, 6.283, 200000)"):s;},
+  reset:()=>initial()};
+
+/* ===== views ===== */
+const fmt=v=>typeof v==="number"?String(+v.toPrecision(6)):`[${Array.from(v.subarray(0,4),x=>+x.toPrecision(4)).join(", ")}${v.length>4?", …":""}] · n=${v.length}`;
+function plotView(x,y){const n=x.length,st=Math.max(1,Math.ceil(n/300));let x0=Infinity,x1=-Infinity,y0=Infinity,y1=-Infinity;
+  for(let i=0;i<n;i+=st){x0=Math.min(x0,x[i]);x1=Math.max(x1,x[i]);y0=Math.min(y0,y[i]);y1=Math.max(y1,y[i]);}
+  const sx=(x1-x0)||1,sy=(y1-y0)||1,pts=[];for(let i=0;i<n;i+=st)pts.push(((x[i]-x0)/sx*296+2).toFixed(1)+","+(78-(y[i]-y0)/sy*76).toFixed(1));
+  return h("svg",{viewBox:"0 0 300 80",role:"img","aria-label":"plot"},h("polyline",{points:pts.join(" "),fill:"none",stroke:"var(--ok)","stroke-width":1.5}));}
+function cardView(c,s){const inf=s.info[c.id]||{},o=s.out[c.id]||{},inp=inf.input,cur=s.sliders[c.id]??(inp&&inp[3]);
+  return h("div",{cls:"card"},
+    h("div",{cls:"row sp"},h("div",{cls:"row"},inf.name?h("span",{cls:"chip"},"defines "+inf.name):h("span",{cls:"chip"},"output"),inf.reads&&inf.reads.length?h("span",{cls:"chip"},"reads "+inf.reads.join(", ")):null),
+      h("button",{"aria-label":"Delete cell",on:{click:()=>[["del",c.id]]}},"✕")),
+    h("textarea",{keep:"src"+c.id,rows:1,spellcheck:"false","aria-label":"Cell source",val:c.src,on:{input:e=>[["edit",c.id,e.target.value]]}}),
+    inp&&!inf.err?h("div",{cls:"row"},h("input",{type:"range",keep:"sl"+c.id,min:inp[0],max:inp[1],step:inp[2],val:cur,"aria-label":inf.name,on:{input:e=>[["slider",c.id,+e.target.value]]}}),h("span",{cls:"val"},fmt(cur)))
+    :o.err?h("div",{cls:"err",role:"alert"},o.err)
+    :o.v&&o.v.plot?plotView(...o.v.plot):o.v!==undefined?h("div",{cls:"val"},fmt(o.v)):null);}
+function view(s){const st=s.stats;
+  return h("div",{},h("h1",{},"tambor notebook"),
+    h("p",{cls:"mut"},"Reactive cells: each cell defines one name, dependencies are inferred, and editing a cell re-runs only what depends on it. State is plain data; the page is re-derived on every dispatch."),
+    h("div",{cls:"stats"},h("div",{cls:"row"},
+      h("span",{},`${st.ran}/${st.total} cells ran · compute ${st.ms.toFixed(1)} ms · paint `,h("span",{id:"pms"},"…")),
+      h("button",{cls:s.mode==="full"?"on":"",on:{click:()=>[["mode"]]}},"Mode: "+s.mode))),
+    h("div",{cls:"row",style:"margin:6px 0"},h("button",{on:{click:()=>[["add"]]}},"+ cell"),h("button",{on:{click:()=>[["chain"]]}},"+200 chained"),h("button",{on:{click:()=>[["fan"]]}},"+200 fan-out"),h("button",{on:{click:()=>[["big"]]}},"xs → 200k pts"),h("button",{on:{click:()=>[["reset"]]}},"Reset")),
+    s.cells.map(c=>cardView(c,s)),
+    h("p",{cls:"mut",style:"font-size:13px"},"Try: move a slider in Incremental vs Full mode with 200 chained cells and compare compute and paint times. Syntax: name = expression · slider(min,max,step,value) · linspace, range, sin, cos, sum, mean, len, min, max, plot(xs, ys). Errors (undefined names, cycles, duplicate definitions) are shown per cell."));}
+
+const initial=()=>exec({cells:[
+  {id:1,src:"freq = slider(1, 10, 1, 3)"},{id:2,src:"xs = linspace(0, 6.283, 120)"},{id:3,src:"ys = sin(xs * freq)"},{id:4,src:"plot(xs, ys)"},
+  {id:5,src:"energy = sum(ys * ys) / len(ys)"},{id:6,src:"amp = slider(0.5, 3, 0.1, 1)"},{id:7,src:"zs = ys * amp"},{id:8,src:"plot(xs, zs)"}],
+  nextId:9,sliders:{},out:{},info:{},mode:"incremental",stats:{ran:0,total:0,ms:0}},null);
+state=initial();root=document.getElementById("app");paint();
+</script></body></html>
