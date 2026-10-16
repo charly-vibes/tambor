@@ -25,7 +25,7 @@ import type { IntentList } from "../../events/bubble.ts";
 import { horizontalLayout } from "../../views/layout.ts";
 import {
   button,
-  defaultMeasure,
+  currentLabelMeasure,
   label as labelNode,
   type Label,
   type MeasureFn,
@@ -35,8 +35,12 @@ import {
 export const CENTRED_MIN_WIDTH = 20;
 
 // The counter's label padded on both sides so the centred area — the
-// padded label's own width — is at least 20 (counter_label_width).
-export function centredLabel(text: string, measure: MeasureFn = defaultMeasure): Label {
+// padded label's own width — is at least 20 (counter_label_width). The
+// measure defaults to the ACTIVE label measure (tambor-0rp: the override
+// the browser entry configured) — padding computed in unit cells while
+// siblings measure in real font metrics misplaces the plus button over
+// the value.
+export function centredLabel(text: string, measure: MeasureFn = currentLabelMeasure()): Label {
   const [w] = measure(text);
   const total = Math.max(w, CENTRED_MIN_WIDTH);
   const left = Math.floor((total - w) / 2);

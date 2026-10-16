@@ -34,16 +34,19 @@ import {
   type BuildCtx,
   type DomNode,
   type DomPainter,
-  buildBox,
+  buildArc,
   buildButton,
   buildChildrenOf,
   buildImage,
   buildLabel,
+  buildPath,
   buildRectangle,
   buildTextCursor,
   buildTextSelection,
   buildTranslate,
+  buildWithStyle,
   buildWrapperWithColor,
+  buildWrapperWithStrokeWidth,
 } from "./dom-painters.ts";
 
 export interface DomBackendOptions extends RuntimeOptions {
@@ -155,10 +158,21 @@ export class DomBackend implements BackendContract {
   // types fall back to drawing their children.
   build(view: AnyDraw, parent: ElementLike): void {
     if (view == null) return;
+    // One ctx per root build: the mutable style field threads the
+    // with-style mode down the subtree across recursive calls
+    // (tambor-0rp — a fresh ctx per recursion would drop it).
     const ctx: BuildCtx = {
       make: (tag: string) => this.make(tag),
-      build: (v: AnyDraw, p: ElementLike) => this.build(v, p),
+      build: (v: AnyDraw, p: ElementLike) => this.buildWith(ctx!, v, p),
+      style: undefined as string | undefined,
+      stroke: undefined as string | undefined,
+      strokeWidth: undefined as number | undefined,
     };
+    this.buildWith(ctx, view, parent);
+  }
+
+  private buildWith(ctx: BuildCtx, view: AnyDraw, parent: ElementLike): void {
+    if (view == null) return;
     if (Array.isArray(view)) {
       // a bare sequence superimposes its children at the current origin
       // (canvas semantics) — the box anchors them (tambor-0rp)
@@ -166,7 +180,7 @@ export class DomBackend implements BackendContract {
       box.style["position"] = "absolute";
       box.style["left"] = "0px";
       box.style["top"] = "0px";
-      for (const child of view as readonly AnyDraw[]) this.build(child, box);
+      for (const child of view as readonly AnyDraw[]) ctx.build(child, box);
       parent.appendChild(box);
       return;
     }
@@ -196,14 +210,14 @@ const BUILDERS: Readonly<Record<string, DomPainter>> = {
   "scale": buildWrapperWithColor,
   "scissor": buildWrapperWithColor,
   "with-color": buildWrapperWithColor,
-  "with-style": buildChildrenOf,
-  "with-stroke-width": buildChildrenOf,
+  "with-style": buildWithStyle,
+  "with-stroke-width": buildWrapperWithStrokeWidth,
   "handler": buildChildrenOf,
   "text-selection": buildTextSelection,
   "text-cursor": buildTextCursor,
   "image": buildImage,
-  "arc": buildBox,
-  "path": buildBox,
+  "arc": buildArc,
+  "path": buildPath,
 };
 
 

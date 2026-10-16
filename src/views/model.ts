@@ -25,6 +25,7 @@ export {
   withStyle,
   withStrokeWidth,
   defaultMeasure,
+  currentLabelMeasure,
   type Vec2,
   type Color,
   type MeasureFn,

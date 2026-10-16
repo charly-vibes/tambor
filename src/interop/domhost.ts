@@ -26,6 +26,11 @@ type ShimListener = (ev: SimEvent) => void;
 // The document seam: only element creation is needed.
 export interface HostDoc {
   createElement(tag: string): HostElement;
+  // SVG elements live in the svg namespace — an HTML-document
+  // createElement('svg') makes a non-rendering HTMLUnknownElement. The
+  // dom painters emit inline svg for path/arc strokes (tambor-0rp), so
+  // the adapter needs the namespaced constructor when the host has one.
+  createElementNS?(namespace: string, tag: string): HostElement;
   body: HostElement;
   getElementById(id: string): HostElement | null;
 }
@@ -101,7 +106,12 @@ export class RealDomElement {
 
   constructor(tagName: string, doc: HostDoc) {
     this.tagName = tagName;
-    this.host = doc.createElement(tagName);
+    // svg subtree elements need the svg namespace to render (the dom
+    // painters emit path/arc strokes as inline svg — tambor-0rp)
+    const SVG_NS = "http://www.w3.org/2000/svg";
+    this.host = tagName === "svg" || tagName === "path"
+      ? (doc.createElementNS?.(SVG_NS, tagName) ?? doc.createElement(tagName))
+      : doc.createElement(tagName);
     // attrs: write-through proxy — buildImage writes el.attrs directly,
     // so every record write mirrors onto the host element.
     this.attrs = new Proxy(

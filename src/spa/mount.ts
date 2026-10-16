@@ -94,8 +94,16 @@ export function domMeasure(doc: HostDoc): (text: string, font?: Font | null) => 
     if (!ctx) return unit;
     ctx.font = '16px system-ui, sans-serif';
     return (text, _font) => {
-      const width = ctx.measureText(text).width;
-      return [width, 16];
+      // multiline labels (textarea bodies): the width is the widest line,
+      // the height is one line-box per line — matches the pre-formatted
+      // span the DOM emission renders (tambor-0rp)
+      const lines = text.split("\n");
+      let width = 0;
+      for (const line of lines) {
+        const w = ctx.measureText(line).width;
+        if (w > width) width = w;
+      }
+      return [width, 16 * lines.length];
     };
   } catch {
     return unit;

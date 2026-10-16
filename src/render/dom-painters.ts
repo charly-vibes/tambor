@@ -20,6 +20,7 @@
 import type { ElementLike } from "./domsim.ts";
 import type { AnyDraw } from "./primitives.ts";
 import type { Color } from "../views/model.ts";
+import { currentLabelMeasure } from "../views/nodes.ts";
 
 // A drawable node, as the draw tree actually carries it.
 export interface DomNode {
@@ -33,6 +34,13 @@ export interface DomNode {
   height?: number;
   x?: number;
   y?: number;
+  points?: readonly (readonly [number, number])[];
+  cx?: number;
+  cy?: number;
+  radius?: number;
+  start?: number;
+  end?: number;
+  strokeWidth?: number;
 }
 
 export type DomBuilder = (view: AnyDraw, parent: ElementLike) => void;
@@ -41,6 +49,17 @@ export type DomBuilder = (view: AnyDraw, parent: ElementLike) => void;
 export interface BuildCtx {
   make(tag: string): ElementLike;
   build(view: AnyDraw, parent: ElementLike): void;
+  // The inherited with-style mode (fill | stroke | stroke-and-fill) for
+  // the node currently being built — the DOM counterpart of the canvas
+  // painter's setStyle: with-color wrappers and bare rectangles read it
+  // to decide background vs border (tambor-0rp textarea frame parity).
+  style?: string | undefined;
+  // The inherited stroke ink and width (canvas setStyle/setLineWidth
+  // semantics): with-color and with-stroke-width thread these for the
+  // subtree; the svg path/arc builders consume them (tambor-0rp round 3
+  // — primitive_set parity: path and arc draw on EVERY backend).
+  stroke?: string | undefined;
+  strokeWidth?: number | undefined;
 }
 export type DomPainter = (ctx: BuildCtx, node: DomNode, parent: ElementLike) => void;
 
@@ -64,7 +83,15 @@ export function buildChildrenOf(ctx: BuildCtx, node: DomNode, parent: ElementLik
 export function buildLabel(_ctx: BuildCtx, node: DomNode, parent: ElementLike): void {
   const el = _ctx.make("span");
   atOrigin(el);
-  el.style["white-space"] = "nowrap";
+  // Corpus spaces are LAYOUT: centredLabel pads with space runs to centre
+  // text in its measured box (counter_label_width et al) — the measure
+  // counts every space, so the DOM must render them (white-space:pre;
+  // HTML's default collapsing would delete the padding and glue the text
+  // to its neighbours). Single-line by definition (tambor-0rp).
+  el.style["white-space"] = "pre";
+  // rendered line box == measured bounds height (line-height:1)
+  el.style["line-height"] = "1";
+  el.style["display"] = "block";
   el.textContent = node.text ?? "";
   parent.appendChild(el);
 }
@@ -73,20 +100,40 @@ export function buildButton(_ctx: BuildCtx, node: DomNode, parent: ElementLike):
   // a real button element: natively accessible and selectable
   const el = _ctx.make("button");
   atOrigin(el);
-  // a corpus label is a single line: the measured width is the box width,
-  // and a hair of subpixel difference must not wrap it (tambor-0rp)
-  el.style["white-space"] = "nowrap";
+  // a corpus label is a single line and its spaces are layout (see
+  // buildLabel) — pre keeps the measured box honest (tambor-0rp)
+  el.style["white-space"] = "pre";
+  // the emitted box IS the corpus button_bounds: label bounds + 12 on each
+  // axis (geometry.ts) — browser-intrinsic padding/border would inflate the
+  // rendered box past the layout math and collide with siblings. Explicit
+  // size + border-box keeps rendered == laid-out == hit-tested geometry.
+  const [tw, th] = currentLabelMeasure()(node.text ?? "");
+  el.style["width"] = `${tw + 12}px`;
+  el.style["height"] = `${th + 12}px`;
+  el.style["box-sizing"] = "border-box";
+  el.style["padding"] = "0";
+  el.style["margin"] = "0";
+  el.style["display"] = "flex";
+  el.style["align-items"] = "center";
+  el.style["justify-content"] = "center";
   el.textContent = node.text ?? "";
   parent.appendChild(el);
 }
 
-export function buildRectangle(_ctx: BuildCtx, node: DomNode, parent: ElementLike): void {
-  const el = _ctx.make("div");
+export function buildRectangle(ctx: BuildCtx, node: DomNode, parent: ElementLike): void {
+  const el = ctx.make("div");
   atOrigin(el);
   el.style["width"] = `${node.width ?? 0}px`;
   el.style["height"] = `${node.height ?? 0}px`;
   const color = nodeColor(node);
-  if (color) el.style["background"] = color;
+  const style = ctx.style ?? "fill";
+  if (color && style !== "stroke") el.style["background"] = color;
+  if (style === "stroke" || style === "stroke-and-fill") {
+    // a stroked rectangle outlines its box (canvas stroke semantics);
+    // stroke mode with no color draws the default ink
+    el.style["border"] = `1px solid ${color ?? "currentColor"}`;
+    el.style["box-sizing"] = "border-box";
+  }
   parent.appendChild(el);
 }
 
@@ -101,12 +148,46 @@ export function buildTranslate(ctx: BuildCtx, node: DomNode, parent: ElementLike
 
 // rotate/scale/scissor contribute an (empty) box; the color paints
 // the wrapper's background.
+// with-style: the mode governs how DESCENDANTS paint (canvas setStyle
+// semantics) — thread it through the mutable ctx for the subtree.
+export function buildWithStyle(ctx: BuildCtx, node: DomNode, parent: ElementLike): void {
+  const prev = ctx.style;
+  ctx.style = (node.style ?? "fill") as string;
+  const el = ctx.make("div");
+  atOrigin(el);
+  for (const child of node.drawables ?? []) ctx.build(child, el);
+  parent.appendChild(el);
+  ctx.style = prev;
+}
+
 export function buildWrapperWithColor(ctx: BuildCtx, node: DomNode, parent: ElementLike): void {
   const el = ctx.make("div");
   atOrigin(el);
   const color = nodeColor(node);
-  if (color) el.style["background"] = color;
+  const style = ctx.style ?? "fill";
+  // the stroke ink threads for the subtree (svg path/arc read it) — the
+  // canvas counterpart is setStyle: with-color sets the stroke color
+  const prevStroke = ctx.stroke;
+  if (color) ctx.stroke = color;
+  if (color && style !== "stroke") el.style["background"] = color;
+  if (color && (style === "stroke" || style === "stroke-and-fill")) {
+    el.style["border"] = `1px solid ${color}`;
+    el.style["box-sizing"] = "border-box";
+  }
   for (const child of node.drawables ?? []) ctx.build(child, el);
+  ctx.stroke = prevStroke;
+  parent.appendChild(el);
+}
+
+// with-stroke-width: the width governs how DESCENDANTS stroke (canvas
+// setLineWidth semantics) — thread it through the mutable ctx.
+export function buildWrapperWithStrokeWidth(ctx: BuildCtx, node: DomNode, parent: ElementLike): void {
+  const prev = ctx.strokeWidth;
+  ctx.strokeWidth = node.strokeWidth ?? prev;
+  const el = ctx.make("div");
+  atOrigin(el);
+  for (const child of node.drawables ?? []) ctx.build(child, el);
+  ctx.strokeWidth = prev;
   parent.appendChild(el);
 }
 
@@ -133,11 +214,84 @@ export function buildImage(_ctx: BuildCtx, node: DomNode, parent: ElementLike): 
   parent.appendChild(el);
 }
 
-// no dom element for an arc or a path: they contribute their (empty) box
-export function buildBox(_ctx: BuildCtx, _n: DomNode, parent: ElementLike): void {
-  const el = _ctx.make("div");
+// path and arc DRAW (tambor-0rp round 3, primitive_set parity): an
+// inline svg anchored at the origin whose viewport COVERS THE GEOMETRY —
+// Chrome paints nothing from a 0×0 svg viewport even with overflow
+// visible (the blank logo world), so width/height are the node's extent.
+// overflow:visible keeps out-of-viewport geometry (negative coords)
+// painting, and pointer-events none keeps the stroke from intercepting
+// clicks (canvas strokes don't hit-test). The stroke inherits the
+// threaded with-color ink.
+function svgExtent(node: DomNode, kind: "path" | "arc"): [number, number] {
+  if (kind === "path") {
+    const pts = node.points ?? [];
+    const xs = pts.map((p) => p[0] ?? 0);
+    const ys = pts.map((p) => p[1] ?? 0);
+    return [
+      Math.max(0, ...xs),
+      Math.max(0, ...ys),
+    ];
+  }
+  // the arc lives in the circle box around (cx, cy): the viewport from
+  // the origin covering cx+r, cy+r contains it (overflow shows the rest)
+  const r = node.radius ?? 0;
+  return [
+    Math.max(0, (node.cx ?? 0) + r),
+    Math.max(0, (node.cy ?? 0) + r),
+  ];
+}
+
+function svgStroke(kind: "path" | "arc", node: DomNode, ctx: BuildCtx, parent: ElementLike): void {
+  const el = ctx.make("svg");
   atOrigin(el);
+  const [w, h] = svgExtent(node, kind);
+  el.attrs["width"] = Math.ceil(w);
+  el.attrs["height"] = Math.ceil(h);
+  el.style["overflow"] = "visible";
+  el.style["pointer-events"] = "none";
+  const p = ctx.make("path");
+  p.attrs["d"] = kind === "path" ? pathData(node) : arcData(node);
+  p.attrs["fill"] = "none";
+  p.attrs["stroke"] = ctx.stroke ?? "currentColor";
+  p.attrs["stroke-width"] = String(ctx.strokeWidth ?? 1);
+  el.appendChild(p);
   parent.appendChild(el);
+}
+
+function pathData(node: DomNode): string {
+  const pts = node.points ?? [];
+  if (pts.length === 0) return "";
+  const [x0, y0] = pts[0]!;
+  let d = `M ${x0} ${y0}`;
+  for (const [x, y] of pts.slice(1)) d += ` L ${x} ${y}`;
+  return d;
+}
+
+// canvas arc semantics: angles are y-down (0 = +x, PI/2 = +y) and the
+// stroke runs from start to end in the positive-angle direction — the
+// svg sweep-flag 1 direction; delta > PI flips the large-arc flag.
+function arcData(node: DomNode): string {
+  const cx = node.cx ?? 0;
+  const cy = node.cy ?? 0;
+  const r = node.radius ?? 0;
+  const start = node.start ?? 0;
+  const end = node.end ?? 0;
+  const x0 = cx + r * Math.cos(start);
+  const y0 = cy + r * Math.sin(start);
+  const x1 = cx + r * Math.cos(end);
+  const y1 = cy + r * Math.sin(end);
+  const delta = end - start;
+  const large = Math.abs(delta) > Math.PI ? 1 : 0;
+  const sweep = delta >= 0 ? 1 : 0;
+  return `M ${x0} ${y0} A ${r} ${r} 0 ${large} ${sweep} ${x1} ${y1}`;
+}
+
+export function buildPath(ctx: BuildCtx, node: DomNode, parent: ElementLike): void {
+  svgStroke("path", node, ctx, parent);
+}
+
+export function buildArc(ctx: BuildCtx, node: DomNode, parent: ElementLike): void {
+  svgStroke("arc", node, ctx, parent);
 }
 
 export function nodeColor(node: { color?: Color; style?: string }): string | undefined {

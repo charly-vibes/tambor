@@ -163,6 +163,14 @@ function currentMeasure(): MeasureFn {
   return measureOverride ?? defaultMeasure;
 }
 
+// The active label measure — for emitters that must compute the SAME box
+// the layout math used (dom-painters button sizing: button_bounds = label
+// bounds + 12, geometry.ts). Exported so rendered geometry equals layout
+// geometry and hit-testing geometry (tambor-0rp alignment).
+export function currentLabelMeasure(): MeasureFn {
+  return currentMeasure();
+}
+
 export function label(text: string, measure: MeasureFn = currentMeasure()): Label {
   return deepFreeze({ type: "label", text, measure });
 }
