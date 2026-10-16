@@ -174,3 +174,10 @@
 - KNOWN RESIDUAL (unfixed, candidate follow-up): when the world grows entries, the drawn bottom rows (Clear world/Late binding/Español/outcome/procs chips) spill past #app into the page blurb text — layout-measured row heights vs drawn extent mismatch; also dropdown-open superimposes row "Uno" over the header (corpus-faithful bare-sequence semantics — the demo composition puts list at same origin as header; canvas would do the same).
 - Gates: vitest 405, tsc 0, playwright 39+3skip, ah check --run-tests 663/0 findings.
 - **Next:** commit+push → user HITL re-review of screenshots → close 0rp/y9d.4/y9d or another fix round on the residual overlap.
+- 2026-10-16T21:27:48Z [id:c5bc3714d782479649643cc61e81ce5f85c47eea5ba3833f09fa829205793b69] ### 2026-10-16 18:24 — session close (tambor-0rp rounds 2+3)
+  - Pushed e37d0a4 (+73f71f3 beads): DOM backend now draws path+arc (primitive_set parity) — inline svg stroked at origin; ctx.stroke/strokeWidth threading (canvas setStyle semantics); arc→svg A command (y-down, sweep=delta>=0, large=|delta|>PI); domhost createElementNS for svg NS.
+  - KEY FINDING pinned in tests/dom-layout.test.ts: Chrome paints NOTHING from a 0x0 svg viewport even with overflow:visible — svg width/height MUST cover the node extent. First attempt (0x0+overflow) emitted all 66 segment svgs correctly, painted blank.
+  - Verified: logo demo renders full blue spiral + red turtle after Run. Gates: vitest 405, tsc 0, playwright 39+3skip, ah 663/0.
+  - User ruling: NO ad-hoc JS probes — investigate through corpus lanes (jsdom contract tests, existing e2e specs) only.
+  - Residuals for HITL: (1) grown-world bottom rows spill past #app into page blurb (layout-measured heights vs drawn extent); (2) dropdown-open Uno-over-header is corpus-faithful bare-sequence semantics; (3) expected-fails unchanged (dark-mode unwired, 44px targets).
+  - **Next:** user screenshot review → close tambor-0rp + y9d.4 + epic y9d, or one more round on the #app spill-over; then epic tambor-54j (benchmarks).
