@@ -1,0 +1,56 @@
+<!doctype html>
+<!-- Purpose: the Playwright fixture page (tambor-y9d.4) — loads the real
+     dist/spa.js bundle (same entry index.html loads) with test-only CSS
+     that pins the demo surface and the drawn root to a known 300×300
+     origin so scripted pointer coordinates (view-space centreOf points)
+     map 1:1 onto client coordinates.
+     Responsibilities: host #app for the SPA entry; overlay the surface
+     canvas on the drawn root so every pointer event lands on the
+     surface listener (the corpus wire's input seam — the drawn buttons
+     are display-only accessibility mirrors); touch-action none so touch
+     drags reach the pointer listeners.
+     Rationale: index.html is outside this ticket's ownership set and
+     has no surface-origin pinning, so the fixture re-hosts the same
+     bundle. The bundle itself is untouched — everything below the
+     mount seam is the real artifact. -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>tambor — gallery (e2e fixture)</title>
+    <style>
+      body { font-family: system-ui, sans-serif; margin: 0; }
+      nav { display: flex; gap: 0.5rem; padding: 0.5rem; }
+      nav button { cursor: pointer; }
+      nav button.active { font-weight: bold; }
+      /* The 300×300 demo stage: the drawn root mirrors the view tree
+         (pointer-events none — display only), the surface canvas sits
+         on top and receives every pointer/key event. */
+      #app { width: 100%; }
+      #demo {
+        position: relative;
+        width: 300px;
+        /* taller than VIEWPORT (300): the logo demo draws content below
+           y=300 (Run/Clear/Late row — and the row sinks further with every fold entry) and the SPA's real surface — a
+           300×300 canvas — can never deliver events there (recorded as
+           a y9d.4 finding); the fixture widens the input reach so the
+           HITL pass can exercise the below-fold semantics. */
+        height: 800px;
+        margin: 0.5rem;
+      }
+      #demo > p.blurb { position: absolute; top: 800px; width: 380px; }
+      #demo > div { position: absolute; inset: 0; pointer-events: none; }
+      #demo > canvas {
+        position: absolute;
+        inset: 0;
+        width: 300px;
+        height: 800px;
+        touch-action: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/dist/spa.js"></script>
+  </body>
+</html>

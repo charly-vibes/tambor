@@ -65,3 +65,4 @@ squint.edn
 
 # npm pack output (y9d.1 publishable-package build artifact)
 tambor-*.tgz
+/test-results/
