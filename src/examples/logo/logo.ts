@@ -3,12 +3,14 @@
 //   plain data and whose view re-derives from
 //   `fold(entries[0..cursor])` every render.
 // Responsibilities: the LogoState shape (src, entries, cursor, late?,
-//   dialect, err) and initial data; the run/clear handlers as per-app registry
-//   entries (makeOpsApp — never the global registry); CURSOR/SRC/LATE
-//   paths; the pure view — the turtle trace as colored path segments,
-//   the time-travel slider bound to the cursor, the ◀ ▶ stepper
-//   buttons, the example and procedure buttons, the corpus textarea
-//   bound to src, the error label — and the corpus App wire
+//   dialect, err, sel) and initial data; the run/clear handlers as per-app
+//   registry entries (makeOpsApp — never the global registry); the
+//   select-path effect entry routing through select.ts (tambor-y9d.6);
+//   CURSOR/SRC/LATE paths; the pure view — the canvas (canvas.ts: trace
+//   segments, turtle marker, halo handles), the inspector pane
+//   (inspector.ts), the time-travel slider bound to the cursor, the
+//   ◀ ▶ stepper buttons, the example and procedure buttons, the corpus
+//   textarea bound to src, the error label — and the corpus App wire
 //   (view/dispatch/getState) over makeOpsApp for mountDemo.
 // Rationale: the wanna-chat session demo (insights/dynamic-environment.md)
 //   is the design authority for the fold/liveness semantics;
@@ -27,10 +29,7 @@ import type { IntentList } from "../../events/bubble.ts";
 import {
   button,
   label as labelNode,
-  path as pathNode,
-  translate,
   withColor,
-  withStrokeWidth,
   type Color,
   type Elem,
 } from "../../views/model.ts";
@@ -47,15 +46,17 @@ import {
   type Dialect,
   type LogoEntry,
   type Proc,
-  type TraceSeg,
   type World,
 } from "./interpreter.ts";
+import {
+  selectLogo,
+  type Selection,
+} from "./select.ts";
+import { logoCanvas } from "./canvas.ts";
+import { inspectorPane } from "./inspector.ts";
 
-// The demo's presentation constants (original CSS analogues).
-const INK: Color = [0.11, 0.106, 0.098];
-const TURTLE: Color = [0.7, 0.149, 0.118];
+// The error label's color.
 const ERROR: Color = [0.7, 0.149, 0.118];
-const WORLD_RADIUS = 200;
 
 export const LOGO_TITLE = "tambor logo";
 
@@ -68,6 +69,8 @@ export interface LogoState {
   readonly dialect: Dialect;
   readonly err: string;
   readonly "slider-mdown?": boolean;
+  // the Smalltalk-style selection: the selected item's path, or null
+  readonly sel: Selection;
 }
 
 export function logoState(): LogoState {
@@ -79,6 +82,7 @@ export function logoState(): LogoState {
     dialect: "en",
     err: "",
     "slider-mdown?": false,
+    sel: null,
   };
 }
 
@@ -121,6 +125,9 @@ export function logoRegistry(): Map<string, InterHandler> {
   const r = makeRegistry();
   r.set("run", (state) => runLogo(state as LogoState));
   r.set("clear", (state) => clearLogo(state as LogoState));
+  // the select-path effect: the carried path is data, applied by the
+  // pure toggle handler — never imperative mutation
+  r.set("select", (state, ...args) => selectLogo(state as LogoState, (args[0] ?? null) as Selection));
   return r;
 }
 
@@ -138,27 +145,8 @@ export function createLogoApp(): App {
   };
 }
 
-// "#rrggbb" → the corpus [0..1] rgb triple; anything else is ink.
-function hexColor(name: string | null): Color {
-  if (typeof name === "string" && /^#[0-9a-f]{6}$/i.test(name)) {
-    const n = parseInt(name.slice(1), 16);
-    return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255];
-  }
-  return INK;
-}
-
 function emptyWorld(): World {
   return derive([], false);
-}
-
-// The turtle canvas: every trace segment is a colored path node; the
-// turtle marker is a stroked triangle at the current heading.
-function logoCanvas(w: World): Elem {
-  const segs: Elem = w.trace.map((seg: TraceSeg) =>
-    translate(seg[0] + WORLD_RADIUS, WORLD_RADIUS - seg[1], withColor(hexColor(seg[4]), withStrokeWidth(2, pathNode([0, 0], [seg[2] - seg[0], seg[1] - seg[3]])))),
-  );
-  const tri: Elem = translate(w.x + WORLD_RADIUS, WORLD_RADIUS - w.y, withColor(TURTLE, withStrokeWidth(2, pathNode([0, 0], [-5, -11], [5, -11], [0, 0]))));
-  return [segs, tri];
 }
 
 // A button whose click returns the one effect vector its arguments
@@ -240,7 +228,8 @@ export function logoView(s: LogoState, context: { focus?: unknown } = {}): Elem 
   const lateLabel = `Late binding: ${s["late?"] ? "on" : "off"}`;
   return verticalLayout([
     labelNode(LOGO_TITLE),
-    logoCanvas(w),
+    logoCanvas(s, w),
+    inspectorPane(s, w),
     timeTravel(s),
     editor(s, focus),
     verticalLayout([

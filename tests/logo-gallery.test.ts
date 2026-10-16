@@ -122,4 +122,93 @@ describe("logo gallery demo — the world is a fold", () => {
     ).toBe(5); // 4 segments + the turtle marker
     spa.unmount();
   });
+
+  it("tambor-y9d.6: clicking the turtle selects it — halo handles and inspector appear", () => {
+    const doc = hostDoc();
+    const container = doc.createElement("div");
+    doc.body.appendChild(container);
+    const def = DEMOS.find((d) => d.id === "logo")!;
+    const spa = mountDemo(doc, container, def.create);
+
+    clickAt(spa.surface, ...buttonCentre(spa, "Run"));
+    const haloCount = (view: unknown): number =>
+      scanOf(view as never).filter(
+        (f) =>
+          f.node.type === "rectangle" &&
+          (f.node as { width: number; height: number }).width === HALO_HANDLE &&
+          (f.node as { width: number; height: number }).height === HALO_HANDLE,
+      ).length;
+    const before = haloCount(spa.app.view());
+    expect(before).toBe(0);
+
+    // the turtle marker is the only 4-point path in the canvas
+    const turtle = scanOf(spa.app.view() as never).find(
+      (f) => f.node.type === "path" && (f.node as { points: readonly unknown[] }).points.length === 4,
+    );
+    expect(turtle).toBeDefined();
+    clickAt(spa.surface, ...centreOf(turtle!));
+
+    // the halo draws four handles and the inspector shows the fields
+    expect(haloCount(spa.app.view())).toBe(before + 4);
+    const text = container.textContent ?? "";
+    expect(text).toContain("inspector — turtle");
+    expect(text).toContain("pen: true");
+    spa.unmount();
+  });
+
+  it("tambor-y9d.6: the ✕ handle deselects — halo and inspector disappear", () => {
+    const doc = hostDoc();
+    const container = doc.createElement("div");
+    doc.body.appendChild(container);
+    const def = DEMOS.find((d) => d.id === "logo")!;
+    const spa = mountDemo(doc, container, def.create);
+
+    clickAt(spa.surface, ...buttonCentre(spa, "Run"));
+    const turtle = scanOf(spa.app.view() as never).find(
+      (f) => f.node.type === "path" && (f.node as { points: readonly unknown[] }).points.length === 4,
+    )!;
+    clickAt(spa.surface, ...centreOf(turtle));
+    expect((container.textContent ?? "")).toContain("inspector — turtle");
+
+    clickAt(spa.surface, ...buttonCentre(spa, "✕"));
+    expect((container.textContent ?? "")).not.toContain("inspector — turtle");
+    expect(
+      scanOf(spa.app.view() as never).filter(
+        (f) =>
+          f.node.type === "rectangle" &&
+          (f.node as { width: number; height: number }).width === HALO_HANDLE,
+      ).length,
+    ).toBe(0);
+    spa.unmount();
+  });
+
+  it("tambor-y9d.6: clicking a drawn segment selects it — the inspector shows its row", () => {
+    const doc = hostDoc();
+    const container = doc.createElement("div");
+    doc.body.appendChild(container);
+    const def = DEMOS.find((d) => d.id === "logo")!;
+    const spa = mountDemo(doc, container, def.create);
+
+    clickAt(spa.surface, ...buttonCentre(spa, "Run"));
+    // a segment whose bbox is a real area (spiral turns ~91° per step):
+    // the topmost segment covering the click point is the one selected
+    const seg = scanOf(spa.app.view() as never).find(
+      (f) =>
+        f.node.type === "path" &&
+        (f.node as { points: readonly (readonly [number, number])[] }).points.length === 2 &&
+        (f.node as { points: readonly (readonly [number, number])[] }).points[0]![0] !==
+          (f.node as { points: readonly (readonly [number, number])[] }).points[1]![0] &&
+        (f.node as { points: readonly (readonly [number, number])[] }).points[0]![1] !==
+          (f.node as { points: readonly (readonly [number, number])[] }).points[1]![1],
+    );
+    expect(seg).toBeDefined();
+    clickAt(spa.surface, ...centreOf(seg!));
+
+    expect(container.textContent).toMatch(/inspector — segment \d+/);
+    expect(container.textContent).toContain("x1:");
+    spa.unmount();
+  });
 });
+
+// the halo handle size drawn for every selected item
+const HALO_HANDLE = 6;
