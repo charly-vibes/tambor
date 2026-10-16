@@ -101,4 +101,25 @@ describe("logo gallery demo — the world is a fold", () => {
     ).toBe(1); // the turtle marker only
     spa.unmount();
   });
+
+  it("tambor-y9d.5: a Spanish program runs end-to-end after the dialect toggle", () => {
+    const doc = hostDoc();
+    const container = doc.createElement("div");
+    doc.body.appendChild(container);
+    const def = DEMOS.find((d) => d.id === "logo")!;
+    const spa = mountDemo(doc, container, def.create);
+
+    // Switch to Spanish: the example loaders become the ES set.
+    clickAt(spa.surface, ...buttonCentre(spa, "Español"));
+    clickAt(spa.surface, ...buttonCentre(spa, "cuadrado"));
+    // The Spanish square: repite 4 [avanza 80 giraderecha 90].
+    clickAt(spa.surface, ...buttonCentre(spa, "Run"));
+
+    expect(container.textContent).toContain("1/1");
+    const view = spa.app.view() as never;
+    expect(
+      scanOf(view).filter((f) => f.node.type === "path").length,
+    ).toBe(5); // 4 segments + the turtle marker
+    spa.unmount();
+  });
 });

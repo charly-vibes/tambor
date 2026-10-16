@@ -3,7 +3,7 @@
 //   plain data and whose view re-derives from
 //   `fold(entries[0..cursor])` every render.
 // Responsibilities: the LogoState shape (src, entries, cursor, late?,
-//   err) and initial data; the run/clear handlers as per-app registry
+//   dialect, err) and initial data; the run/clear handlers as per-app registry
 //   entries (makeOpsApp — never the global registry); CURSOR/SRC/LATE
 //   paths; the pure view — the turtle trace as colored path segments,
 //   the time-travel slider bound to the cursor, the ◀ ▶ stepper
@@ -42,7 +42,9 @@ import { initialTextareaExtra } from "../../components/textarea/edit.ts";
 import {
   derive,
   EXAMPLES,
+  EXAMPLES_ES,
   procText,
+  type Dialect,
   type LogoEntry,
   type Proc,
   type TraceSeg,
@@ -63,6 +65,7 @@ export interface LogoState {
   readonly entries: readonly LogoEntry[];
   readonly cursor: number;
   readonly "late?": boolean;
+  readonly dialect: Dialect;
   readonly err: string;
   readonly "slider-mdown?": boolean;
 }
@@ -73,6 +76,7 @@ export function logoState(): LogoState {
     entries: [],
     cursor: 0,
     "late?": false,
+    dialect: "en",
     err: "",
     "slider-mdown?": false,
   };
@@ -87,6 +91,7 @@ const step = (...steps: readonly string[]): Path => steps as unknown as Path;
 export const SRC_PATH: Path = step("src");
 export const CURSOR_PATH: Path = step("cursor");
 export const LATE_PATH: Path = step("late?");
+export const DIALECT_PATH: Path = step("dialect");
 export const SLIDER_MDOWN_PATH: Path = step("slider-mdown?");
 
 // run: keep entries[0..cursor], append the editor source, validate by
@@ -98,7 +103,7 @@ export function runLogo(s: LogoState): LogoState {
     { text: s.src },
   ];
   try {
-    derive(entries, s["late?"]);
+    derive(entries, s["late?"], s.dialect);
     return { ...s, entries, cursor: entries.length, err: "" };
   } catch (e) {
     return { ...s, err: e instanceof Error ? e.message : String(e) };
@@ -186,8 +191,10 @@ function timeTravel(s: LogoState): Elem {
 
 // The editor: example loaders, the src textarea, the error label.
 function editor(s: LogoState, focus: unknown): Elem {
-  const examples: Elem[] = Object.keys(EXAMPLES).map((k) =>
-    fxButton(k, "set", SRC_PATH, EXAMPLES[k]),
+  const shown: Readonly<Record<string, string>> =
+    s.dialect === "es" ? EXAMPLES_ES : EXAMPLES;
+  const examples: Elem[] = Object.keys(shown).map((k) =>
+    fxButton(k, "set", SRC_PATH, shown[k]),
   );
   const errLabel: Elem = s.err.length === 0 ? null : labelNode(s.err);
   const ta: Elem = textarea({
@@ -225,7 +232,7 @@ export function logoView(s: LogoState, context: { focus?: unknown } = {}): Elem 
   let w: World;
   let err = s.err;
   try {
-    w = derive(s.entries.slice(0, s.cursor), s["late?"]);
+    w = derive(s.entries.slice(0, s.cursor), s["late?"], s.dialect);
   } catch (e) {
     w = emptyWorld();
     err = err.length === 0 ? (e instanceof Error ? e.message : String(e)) : err;
@@ -240,6 +247,12 @@ export function logoView(s: LogoState, context: { focus?: unknown } = {}): Elem 
       fxButton("Run", "run"),
       fxButton("Clear world", "clear"),
       fxButton(lateLabel, "set", LATE_PATH, !s["late?"]),
+      fxButton(
+        s.dialect === "es" ? "English" : "Español",
+        "set",
+        DIALECT_PATH,
+        s.dialect === "es" ? "en" : "es",
+      ),
     ]),
     withColor(ERROR, err.length === 0 ? labelNode(" ") : labelNode(err)),
     procsRow(w),
