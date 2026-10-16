@@ -146,7 +146,24 @@ export function deepFreeze<T>(value: T): T {
 // backends inject their own measureText-derived function.
 export const defaultMeasure: MeasureFn = (text) => [text.length, 1];
 
-export function label(text: string, measure: MeasureFn = defaultMeasure): Label {
+// Startup metrics override (tambor-0rp): the advisory text_backend_metrics
+// invariant lays apps out in unit cells, but a real-DOM or canvas rendering
+// paints glyphs at real font metrics — siblings offset by unit measures
+// overlap ('addcomplete' overdraw). A browser entry configures a real
+// measureText-derived function BEFORE constructing views; every label
+// built afterwards captures it (text_measure_injected: the measure rides
+// the node). Unset (tests, headless) the corpus unit default applies.
+let measureOverride: MeasureFn | undefined;
+
+export function configureLabelMeasure(measure: MeasureFn): void {
+  measureOverride = measure;
+}
+
+function currentMeasure(): MeasureFn {
+  return measureOverride ?? defaultMeasure;
+}
+
+export function label(text: string, measure: MeasureFn = currentMeasure()): Label {
   return deepFreeze({ type: "label", text, measure });
 }
 

@@ -30,7 +30,21 @@ import {
 import { SimElement, type ElementLike, type SimEvent } from "./domsim.ts";
 import { normalizeDOMEvent } from "./input.ts";
 import type { AnyDraw } from "./primitives.ts";
-import type { Color } from "../views/model.ts";
+import {
+  type BuildCtx,
+  type DomNode,
+  type DomPainter,
+  buildBox,
+  buildButton,
+  buildChildrenOf,
+  buildImage,
+  buildLabel,
+  buildRectangle,
+  buildTextCursor,
+  buildTextSelection,
+  buildTranslate,
+  buildWrapperWithColor,
+} from "./dom-painters.ts";
 
 export interface DomBackendOptions extends RuntimeOptions {
   containerSize?: Vec2;
@@ -61,6 +75,10 @@ export class DomBackend implements BackendContract {
     this.measure = options.measure ?? measureUnit;
     this.make = options.createElement ?? ((tag: string) => new SimElement(tag));
     this.root = this.make("div");
+    // Anchor the drawn tree inside the mount container (tambor-0rp): the
+    // emission is absolutely positioned, so without this the translate
+    // wrappers anchor to the document and demo content escapes #app.
+    this.root.style["position"] = "relative";
     if (options.view) {
       this.runtime = new Runtime(
         {
@@ -142,7 +160,12 @@ export class DomBackend implements BackendContract {
       build: (v: AnyDraw, p: ElementLike) => this.build(v, p),
     };
     if (Array.isArray(view)) {
+      // a bare sequence superimposes its children at the current origin
+      // (canvas semantics) — the box anchors them (tambor-0rp)
       const box = ctx.make("div");
+      box.style["position"] = "absolute";
+      box.style["left"] = "0px";
+      box.style["top"] = "0px";
       for (const child of view as readonly AnyDraw[]) this.build(child, box);
       parent.appendChild(box);
       return;
@@ -157,103 +180,11 @@ export class DomBackend implements BackendContract {
   }
 }
 
-// A drawable node, as the draw tree actually carries it.
-interface DomNode {
-  type: string;
-  drawable?: AnyDraw;
-  drawables?: readonly AnyDraw[];
-  text?: string;
-  color?: Color;
-  style?: string;
-  width?: number;
-  height?: number;
-  x?: number;
-  y?: number;
-}
-
-type DomBuilder = (view: AnyDraw, parent: ElementLike) => void;
-// The per-backend build context: where elements come from (make) and
-// the recursive traversal (build). Builders stay pure module functions.
-interface BuildCtx {
-  make(tag: string): ElementLike;
-  build(view: AnyDraw, parent: ElementLike): void;
-}
-type DomPainter = (ctx: BuildCtx, node: DomNode, parent: ElementLike) => void;
-
-function buildChildrenOf(ctx: BuildCtx, node: DomNode, parent: ElementLike): void {
-  const el = ctx.make("div");
-  for (const child of node.drawables ?? []) ctx.build(child, el);
-  parent.appendChild(el);
-}
-
-function buildLabel(_ctx: BuildCtx, node: DomNode, parent: ElementLike): void {
-  const el = _ctx.make("span");
-  el.textContent = node.text ?? "";
-  parent.appendChild(el);
-}
-
-function buildButton(_ctx: BuildCtx, node: DomNode, parent: ElementLike): void {
-  // a real button element: natively accessible and selectable
-  const el = _ctx.make("button");
-  el.textContent = node.text ?? "";
-  parent.appendChild(el);
-}
-
-function buildRectangle(_ctx: BuildCtx, node: DomNode, parent: ElementLike): void {
-  const el = _ctx.make("div");
-  el.style["width"] = `${node.width ?? 0}px`;
-  el.style["height"] = `${node.height ?? 0}px`;
-  const color = nodeColor(node);
-  if (color) el.style["background"] = color;
-  parent.appendChild(el);
-}
-
-function buildTranslate(ctx: BuildCtx, node: DomNode, parent: ElementLike): void {
-  const el = ctx.make("div");
-  el.style["position"] = "absolute";
-  el.style["left"] = `${node.x ?? 0}px`;
-  el.style["top"] = `${node.y ?? 0}px`;
-  ctx.build(node.drawable ?? null, el);
-  parent.appendChild(el);
-}
-
-// rotate/scale/scissor contribute an (empty) box; the color paints
-// the wrapper's background.
-function buildWrapperWithColor(ctx: BuildCtx, node: DomNode, parent: ElementLike): void {
-  const el = ctx.make("div");
-  const color = nodeColor(node);
-  if (color) el.style["background"] = color;
-  for (const child of node.drawables ?? []) ctx.build(child, el);
-  parent.appendChild(el);
-}
-
-function buildTextSelection(_ctx: BuildCtx, _n: DomNode, parent: ElementLike): void {
-  const el = _ctx.make("span");
-  el.style["background"] = "rgba(0, 0, 255, 0.25)";
-  parent.appendChild(el);
-}
-
-function buildTextCursor(_ctx: BuildCtx, node: DomNode, parent: ElementLike): void {
-  const el = _ctx.make("span");
-  el.style["width"] = "1px";
-  el.style["height"] = `${node.height ?? 0}px`;
-  parent.appendChild(el);
-}
-
-function buildImage(_ctx: BuildCtx, node: DomNode, parent: ElementLike): void {
-  const el = _ctx.make("img");
-  el.attrs["width"] = node.width ?? 0;
-  el.attrs["height"] = node.height ?? 0;
-  parent.appendChild(el);
-}
-
-// no dom element for an arc or a path: they contribute their (empty) box
-function buildBox(_ctx: BuildCtx, _n: DomNode, parent: ElementLike): void {
-  parent.appendChild(_ctx.make("div"));
-}
-
 // One builder per drawable type; the pass-through types (with-style,
-// with-stroke-width, handler) just build their children.
+// with-stroke-width, handler) just build their children. The painters live
+// in dom-painters.ts (tambor-0rp split): every emission is absolutely
+// positioned at its containing origin so the DOM composites like the canvas
+// backend (bare groups superimpose; translate carries the coordinates).
 const BUILDERS: Readonly<Record<string, DomPainter>> = {
   "label": buildLabel,
   "button": buildButton,
@@ -275,9 +206,4 @@ const BUILDERS: Readonly<Record<string, DomPainter>> = {
   "path": buildBox,
 };
 
-function nodeColor(node: { color?: Color; style?: string }): string | undefined {
-  const c = node.color;
-  if (!c || node.style === "stroke") return undefined;
-  const a = c[3] ?? 1;
-  return `rgba(${Math.round((c[0] ?? 0) * 255)}, ${Math.round((c[1] ?? 0) * 255)}, ${Math.round((c[2] ?? 0) * 255)}, ${a})`;
-}
+

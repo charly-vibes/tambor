@@ -96,6 +96,24 @@ export async function clickView(page: Page, p: ViewPoint): Promise<void> {
   await page.mouse.click(c.x, c.y);
 }
 
+// Click a DRAWN element by its live bounding-box centre (tambor-0rp):
+// DOM ground truth. The drawn root carries the same offsets the corpus
+// layout computed (the emission writes translate coordinates as real CSS),
+// so the element's live box centre is exactly the view-space point to
+// route — through the overlaying surface canvas, same as clickView. This
+// replaces in-process replay coordinates wherever the live state shifts
+// positions: the browser layout uses real text metrics (configured at the
+// bundle entry), which a node-side replay cannot reproduce.
+export async function clickDrawnText(
+  page: Page,
+  text: string,
+): Promise<void> {
+  const el = page.locator("#demo").getByText(text, { exact: true }).last();
+  const box = await el.boundingBox();
+  if (box === null) throw new Error(`no drawn element with text: ${text}`);
+  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+}
+
 // The view-space point of a drawn element's live box origin: the
 // drawn translate wrappers write the same offsets as real CSS, so a
 // drawn element's bounding-box origin (page space) minus the stage

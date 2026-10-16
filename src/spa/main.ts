@@ -11,8 +11,9 @@
 //   state and route through the corpus wire (gallery.ts, mount.ts).
 //   All DOM access stays on the structural HostDoc/HostElement seam.
 
-import { mountDemo, type SpaHandle } from "./mount.ts";
+import { mountDemo, domMeasure, type SpaHandle } from "./mount.ts";
 import { DEMOS } from "./gallery.ts";
+import { configureLabelMeasure } from "../views/nodes.ts";
 import type { HostDoc, HostElement } from "../interop/domhost.ts";
 
 const doc = (globalThis as { document?: unknown }).document as
@@ -21,6 +22,11 @@ const doc = (globalThis as { document?: unknown }).document as
 
 if (doc !== undefined) {
   const d: HostDoc = doc;
+  // Real text metrics BEFORE any view construction (tambor-0rp): layout
+  // offsets are computed at view-build time from label measures, and the
+  // emitted DOM renders glyphs at browser metrics — without this the two
+  // disagree and siblings overlap ('addcomplete' overdraw).
+  configureLabelMeasure(domMeasure(d));
   const container = d.getElementById("app") ?? d.body;
 
   const nav: HostElement = d.createElement("nav");

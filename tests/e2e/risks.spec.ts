@@ -15,15 +15,11 @@
 //   reads (bd comment tambor-y9d.4 lists the same findings).
 
 import { expect, test, type Page } from "@playwright/test";
-import { CURSOR_PATH } from "../../src/examples/logo/logo.ts";
 import {
-  buttonPoint,
+  clickDrawnText,
   clickView,
-  demoView,
   drawnText,
   open,
-  pointWhere,
-  replayView,
   shot,
 } from "./drive.ts";
 
@@ -42,22 +38,25 @@ test.describe("risk: keep-node swap / live textarea (todo)", () => {
   // app.dispatch whose defaultHandler ignores request-focus, and the
   // view context focus is never threaded — so the new-todo textarea
   // never focuses and every keypress is dropped (keys_need_focus).
-  test.fail(true, "request-focus is dropped by the SPA wire: typing edits nothing");
   test("typing into the new-todo textarea edits the scratch and survives redraws", async ({
     page,
   }) => {
+    test.fail(true, "request-focus is dropped by the SPA wire: typing edits nothing");
     await open(page);
     await clickView(page, TODO_TA);
     await page.keyboard.type("hello");
     // the redraw round trip (any click re-draws) must carry the typed
     // scratch — the keep-node property
-    await clickView(page, buttonPoint(demoView("todo"), "Add Todo"));
+    await clickDrawnText(page, "Add Todo");
     expect(await drawnText(page)).toContain("hello");
   });
 
-  // FINDING (recorded, expected-fail): same root cause — the Enter
-  // middleware only replaces insert-newline for the FOCUSED textarea.
-  test.fail(true, "focus never lands: Enter cannot trigger the add");
+  // RESOLVED (tambor-0rp layout parity): with real text metrics the
+  // textarea renders where the view says it is — a click gives it REAL
+  // browser focus natively, so typed keys land and Enter triggers the
+  // add. The request-focus WIRE gap remains for programmatic focus
+  // restoration (see the data-id finding below) but no longer blocks
+  // the click-to-type path.
   test("Enter in the new-todo textarea appends the typed todo", async ({
     page,
   }) => {
@@ -71,10 +70,10 @@ test.describe("risk: keep-node swap / live textarea (todo)", () => {
   // FINDING (recorded, expected-fail): no data-id anchor exists in the
   // drawn DOM at all — focus restoration across re-derivation has no
   // mechanism to anchor to.
-  test.fail(true, "no data-id anchors in the drawn DOM: focus restoration is unanchored");
   test("the drawn tree carries data-id anchors for focus restoration", async ({
     page,
   }) => {
+    test.fail(true, "no data-id anchors in the drawn DOM: focus restoration is unanchored");
     await open(page);
     // string form: the callback runs in the browser and the repo
     // tsconfig has no DOM lib (lib-free core by design)
@@ -96,22 +95,18 @@ test.describe("risk: slider touch tap (works)", () => {
     await open(page);
     await page.getByRole("button", { name: "logo" }).click();
     for (let i = 0; i < 3; i++) {
-      await clickView(
-        page,
-        buttonPoint(replayView("logo", runs(i)), "Run"),
-      );
+      await clickDrawnText(page, "Run");
     }
-    const track = pointWhere(
-      replayView("logo", runs(3)),
-      (f) => f.node.type === "rectangle" && (f.node as { width?: number }).width === 150,
-    );
-    const origin = (await page.evaluate(
-      "(() => { const r = document.querySelector('#demo > canvas').getBoundingClientRect(); return [r.x, r.y]; })()",
-    )) as readonly [number, number];
+    // the track: the 150-wide absolute div in the LIVE drawn DOM
+    // (tambor-0rp: real metrics live in the bundle, not in a node-side
+    // replay — DOM ground truth is the only honest coordinate source)
+    const track = page.locator('#demo div[style*="width: 150px"]').last();
+    const box = await track.boundingBox();
+    if (box === null) throw new Error("slider track has no box");
     const cdp = await page.context().newCDPSession(page);
     await cdp.send("Input.dispatchTouchEvent", {
       type: "touchStart",
-      touchPoints: [{ x: origin[0] + track[0] - 40, y: origin[1] + track[1] }],
+      touchPoints: [{ x: box.x + 35, y: box.y + box.height / 2 }],
     });
     await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
     expect(await drawnText(page)).toContain("0/3");
@@ -126,25 +121,22 @@ test.describe("risk: slider drag tracking", () => {
   // value update re-derives the logo world, shifting the layout under
   // the pointer mid-drag (the corpus's touch capture —
   // slider_pointer_capture — cannot compensate through this wire).
-  test.fail(true, "browser wire never delivers mouse-move-global: drag tracking dead");
   test("a full pointer drag tracks the value to its endpoint", async ({
     page,
   }) => {
+    test.fail(true, "browser wire never delivers mouse-move-global: drag tracking dead");
     await open(page);
     await page.getByRole("button", { name: "logo" }).click();
     for (let i = 0; i < 3; i++) {
-      await clickView(
-        page,
-        buttonPoint(replayView("logo", runs(i)), "Run"),
-      );
+      await clickDrawnText(page, "Run");
     }
-    const track = pointWhere(
-      replayView("logo", runs(3)),
-      (f) => f.node.type === "rectangle" && (f.node as { width?: number }).width === 150,
-    );
-    await page.mouse.move(track[0] - 40 + 8, track[1] + 45);
+    // the track: the 150-wide absolute div in the LIVE drawn DOM
+    const track = page.locator('#demo div[style*="width: 150px"]').last();
+    const tbox = await track.boundingBox();
+    if (tbox === null) throw new Error("slider track has no box");
+    await page.mouse.move(tbox.x + 35, tbox.y + tbox.height / 2);
     await page.mouse.down();
-    await page.mouse.move(track[0] + 40 + 8, track[1] + 45, { steps: 8 });
+    await page.mouse.move(tbox.x + tbox.width - 35, tbox.y + tbox.height / 2, { steps: 8 });
     await page.mouse.up();
     // the drag endpoint (centre+40 → local 115 → value 2)
     expect(await drawnText(page)).toContain("2/3");
@@ -166,8 +158,8 @@ test.describe("risk: small screens at 380px", () => {
   // FINDING (recorded, expected-fail on the 380px project): the nav row
   // overflows the 380px viewport by ~8px (scrollWidth 388) — horizontal
   // panning on a small phone.
-  test.fail(true, "nav row overflows the 380px viewport by ~8px");
   test("no horizontal overflow at 380px", async ({ page }, testInfo) => {
+    test.fail(true, "nav row overflows the 380px viewport by ~8px");
     test.skip(testInfo.project.name !== "mobile-380", "380px project only");
     await open(page);
     const [scrollWidth, clientWidth] = (await page.evaluate(
@@ -203,8 +195,8 @@ test.describe("risk: dark-mode tokens are unwired", () => {
   // but the gallery SPA never consumes them: the page CSS and the
   // drawn colors are light-scheme literals, so emulating
   // prefers-color-scheme dark changes nothing on screen.
-  test.fail(true, "gallery never consumes the theme tokens: no dark-scheme rules exist");
   test("the page carries dark-scheme CSS rules", async ({ page }) => {
+    test.fail(true, "gallery never consumes the theme tokens: no dark-scheme rules exist");
     await open(page);
     // the ideal: the stylesheet carries prefers-color-scheme rules the
     // tokens would live behind
@@ -231,10 +223,10 @@ test.describe("risk: touch targets", () => {
   // touch-target floor (44px Apple / 48dp Material); the corpus draws
   // geometry in unit-space (buttons ~1 unit tall), so the DOM mirrors
   // inherit the browser's intrinsic 21px button height.
-  test.fail(true, "buttons render ~21px tall: under the 44px touch-target floor");
   test("every native button meets the 44px touch-target floor", async ({
     page,
   }) => {
+    test.fail(true, "buttons render ~21px tall: under the 44px touch-target floor");
     await open(page);
     const sizes = (await page.evaluate(
       `Array.from(document.querySelectorAll("nav button, #demo > div button"))

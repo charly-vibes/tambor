@@ -21,15 +21,12 @@
 import { expect, test, type Page } from "@playwright/test";
 import { CURSOR_PATH } from "../../src/examples/logo/logo.ts";
 import {
-  buttonPoint,
+  clickDrawnText,
   clickView,
-  demoView,
   drawnText,
   navTo,
   open,
-  optionPoint,
   pointWhere,
-  replayView,
   shot,
 } from "./drive.ts";
 
@@ -68,10 +65,9 @@ test.describe("gallery smoke + screenshots", () => {
 test.describe("counter", () => {
   test("inc and dec move the label", async ({ page }, testInfo) => {
     await gotoDemo(page, "counter");
-    const view = demoView("counter");
-    await clickView(page, buttonPoint(view, "+"));
-    await clickView(page, buttonPoint(view, "+"));
-    await clickView(page, buttonPoint(view, "-"));
+    await clickDrawnText(page, "+");
+    await clickDrawnText(page, "+");
+    await clickDrawnText(page, "-");
     const text = await drawnText(page);
     // 5 + 2 - 1
     expect(text).toContain("6");
@@ -90,7 +86,7 @@ test.describe("todo", () => {
     await gotoDemo(page, "todo");
     const reds = page.locator('#demo > div div[style*="rgb(255, 0, 0)"]');
     expect(await reds.count()).toBe(6);
-    await clickView(page, buttonPoint(demoView("todo"), "Add Todo"));
+    await clickDrawnText(page, "Add Todo");
     expect(await reds.count()).toBe(8);
     await shot(page, "todo-after-add", testInfo.project.name);
     // restart: nav away and back re-mounts fresh (unmount + fresh state)
@@ -102,9 +98,9 @@ test.describe("todo", () => {
 
   test("filter row switches the visible rows", async ({ page }, testInfo) => {
     await gotoDemo(page, "todo");
-    const view = demoView("todo");
-    // the toggle options are handler nodes drawing their label
-    await clickView(page, optionPoint(view, "complete"));
+    // the toggle options are handler nodes drawing their label — click the
+    // drawn label's live box (DOM ground truth, tambor-0rp)
+    await clickDrawnText(page, "complete");
     const text = await drawnText(page);
     expect(text).toContain("third");
     expect(text).not.toContain("first");
@@ -117,18 +113,13 @@ test.describe("dropdown", () => {
     page,
   }, testInfo) => {
     await gotoDemo(page, "dropdown");
-    const view = demoView("select");
-    // the closed select draws one handler: the header
-    await clickView(page, pointWhere(view, (f) => f.node.type === "handler"));
+    // the closed header draws the gray "no selection" label — click its
+    // drawn box (DOM ground truth, tambor-0rp)
+    await clickDrawnText(page, "no selection");
     const opened = await drawnText(page);
     expect(opened).toContain("Uno");
     await shot(page, "dropdown-open", testInfo.project.name);
-    // the option rows exist only while open: replay the header toggle
-    // intent on an in-process app to re-derive the open view
-    const openView = replayView("select", [
-      ["update", [["keypath", "open?"]], (v: unknown) => !(v as boolean)],
-    ]);
-    await clickView(page, optionPoint(openView, "Dos"));
+    await clickDrawnText(page, "Dos");
     const after = await drawnText(page);
     expect(after).toContain("Dos");
     expect(after).not.toContain("Uno");
@@ -142,19 +133,18 @@ test.describe("logo", () => {
   }, testInfo) => {
     await gotoDemo(page, "logo");
     expect(await drawnText(page)).toContain("0/0");
-    await clickView(page, buttonPoint(demoView("logo"), "Run"));
+    await clickDrawnText(page, "Run");
     expect(await drawnText(page)).toContain("1/1");
     await shot(page, "logo-after-run", testInfo.project.name);
   });
 
   test("Clear world empties the fold", async ({ page }, testInfo) => {
     await gotoDemo(page, "logo");
-    await clickView(page, buttonPoint(demoView("logo"), "Run"));
+    await clickDrawnText(page, "Run");
     expect(await drawnText(page)).toContain("1/1");
-    // the buttons row shifted with the grown world — re-derive the
-    // live view by replaying the run intent
-    const live = replayView("logo", [["run"]]);
-    await clickView(page, buttonPoint(live, "Clear world"));
+    // the buttons row shifted with the grown world — the drawn box of
+    // "Clear world" IS the live position (DOM ground truth)
+    await clickDrawnText(page, "Clear world");
     expect(await drawnText(page)).toContain("0/0");
     await shot(page, "logo-after-clear", testInfo.project.name);
   });
@@ -163,24 +153,18 @@ test.describe("logo", () => {
     page,
   }, testInfo) => {
     await gotoDemo(page, "logo");
-    // three fold entries; the buttons row grows as the world does, so
-    // every click re-derives the live view
-    // the i-th click runs on a page holding i-1 entries, so the live
-    // view to derive is the one before that click
+    // three fold entries — each Run click targets the drawn button's
+    // live box (DOM ground truth), so the growing row needs no replay
     for (let i = 0; i < 3; i++) {
-      await clickView(
-        page,
-        buttonPoint(replayView("logo", runsOf(i)), "Run"),
-      );
+      await clickDrawnText(page, "Run");
     }
     expect(await drawnText(page)).toContain("3/3");
     await shot(page, "logo-3-entries", testInfo.project.name);
-    // the track: the 150-wide rectangle of the time-travel row — the
-    // point is the track's drawn centre, so ±40 lands inside it
-    const track = pointWhere(
-      replayView("logo", runsOf(3)),
-      (f) => f.node.type === "rectangle" && (f.node as { width?: number }).width === 150,
-    );
+    // the track: the 150-wide rectangle of the time-travel row — located
+    // in the LIVE drawn DOM (a 150px-wide absolute div), not replayed
+    const track = page
+      .locator('#demo div[style*="width: 150px"]')
+      .last();
     // pointer down on the track's left third rewinds the cursor to the
     // mapped value (35/150 of [0..3] → 0): 3/3 → 0/3. The full drag
     // gesture is asserted as far as the wire supports it — see
@@ -188,19 +172,16 @@ test.describe("logo", () => {
     // so mid-drag tracking (slider_gesture's move updates) is dead and
     // every value update re-derives the world, shifting the layout
     // under the pointer (recorded findings, HITL review).
-    await clickView(page, [track[0] - 40, track[1]]);
+    const box = await track.boundingBox();
+    if (box === null) throw new Error("slider track has no box");
+    await page.mouse.click(box.x + 35, box.y + box.height / 2);
     expect(await drawnText(page)).toContain("0/3");
     await shot(page, "logo-after-slider-pointerdown", testInfo.project.name);
-    // a second pointerdown further right maps to entry 2 (the replay
-    // re-derives the shrunken-world layout with cursor 0)
-    const shrunk = pointWhere(
-      replayView("logo", [
-        ...runsOf(3),
-        ["update", CURSOR_PATH, () => 0],
-      ]),
-      (f) => f.node.type === "rectangle" && (f.node as { width?: number }).width === 150,
-    );
-    await clickView(page, [shrunk[0] + 40, shrunk[1]]);
+    // a second pointerdown further right maps to entry 2 — the LIVE
+    // box again (the locator re-resolves after the world re-derived)
+    const box2 = await track.boundingBox();
+    if (box2 === null) throw new Error("slider track has no box");
+    await page.mouse.click(box2.x + box2.width - 35, box2.y + box2.height / 2);
     expect(await drawnText(page)).toContain("2/3");
     await shot(page, "logo-after-slider-tap-right", testInfo.project.name);
   });

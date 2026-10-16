@@ -21,6 +21,9 @@
 //   renders as live DOM).
 
 import { DomBackend } from "../render/dom.ts";
+import { measureUnit } from "../render/backend.ts";
+import type { Vec2 } from "../views/model.ts";
+import type { Font } from "../render/backend.ts";
 import {
   RealDomElement,
   realDomFactory,
@@ -70,6 +73,35 @@ export function mountSpa(doc: HostDoc, container: HostElement): SpaHandle {
   return mountDemo(doc, container, createTodoApp);
 }
 
+// Real font metrics for the mount path (tambor-0rp): measure text the way
+// the emitted DOM spans will render it — canvas 2D measureText with the
+// mount/host CSS default font (16px system-ui). The demos draw with
+// font: null, and layout offsets come from measure, so without this the
+// unit measure (1px/char) under-measures real text and siblings overlap
+// in a real browser. jsdom has no canvas 2D context (getContext returns
+// null) — fall back to the unit measure; the structural contracts and
+// the jsdom suite do not need metrics, only the real browser does.
+// Exported for the browser entry (main.ts), which also feeds it to
+// configureLabelMeasure so VIEW-build-time layout (bounds/verticalLayout)
+// uses the same metrics the backend measures with.
+export function domMeasure(doc: HostDoc): (text: string, font?: Font | null) => Vec2 {
+  const unit = measureUnit;
+  try {
+    const canvas = doc.createElement("canvas");
+    const ctx = (canvas as unknown as {
+      getContext: (kind: string) => { font: string; measureText: (t: string) => { width: number } } | null;
+    }).getContext("2d");
+    if (!ctx) return unit;
+    ctx.font = '16px system-ui, sans-serif';
+    return (text, _font) => {
+      const width = ctx.measureText(text).width;
+      return [width, 16];
+    };
+  } catch {
+    return unit;
+  }
+}
+
 // One gallery demo mount: the same wire as mountSpa, over any demo's
 // app factory (tambor-cie.2). The corpus semantics live in the demo
 // view + state; this is mounting plumbing only.
@@ -82,6 +114,13 @@ export function mountDemo(
   const backend = new DomBackend({
     createElement: realDomFactory(doc),
     containerSize: VIEWPORT,
+    // Real font metrics (tambor-0rp): the drawn DOM labels render at
+    // browser text metrics, so sibling offsets computed with the unit
+    // measure (1px/char) overlap in a real browser. Measure with the same
+    // font the emitted spans inherit (16px system-ui, the mount/host CSS
+    // default). jsdom has no canvas 2D context — falls back to the unit
+    // measure there, where the structural contracts don't need metrics.
+    measure: domMeasure(doc),
   });
   wireSurface(backend, app);
 
