@@ -65,10 +65,30 @@ from `experiments/shadow-probe`, then `node probe-advanced.cjs`).
 
 | # | Question | Result |
 |---|----------|--------|
-| R1 | squint data vs the real library | **PASS.** Plain-object maps, vectors and fn preds flow through the real example app (`todoRows`), real path derivation (`filterNav`/`nthNav`/`concatPath`) and the real `makeApp` dispatch tier (rAF-guarded, Node-safe). Filtered delete + toggle correct. |
-| R2 | cherry persistent data vs the real seam | **PASS** after two real findings (below). Persistent maps in/out, `identical?` sharing on untouched todos, **0.0086 ms/dispatch** on a 5000-item state (stand-in measured ~0.067). |
-| R3 | macro path-walker (tier 3) | **PASS.** squint `defmacro` (`experiments/real_macro_defs.cljc`) desugars a component to the explicit tier-2 API; expansion compiles and derives real paths against the real library. Note: squint resolves macro ns→file with **underscores** (`real_macro_defs.cljc`, not hyphens). |
-| R4 | shadow-cljs `:advanced` | **PASS with one recorded surface.** Paths, state, filter/select and dispatch survive munging on plain `#js` data. Keyword-as-fn reads on plain JS data **break** (`(:description item)` → nil; `aget` works) — the matrix's unverified row is now confirmed: use `aget`/`goog.object` under `:advanced`. Also: `clj->js` under `:advanced` munges to a no-op vector pass-through — materialize data with `#js` literals, not `clj->js`. |
+| R1 | squint data vs the real library | **PASS** (re-run 2026-10-16, evidence: `experiments/cljs-reruns/logs/r1-squint-probe.log` — see the re-run section below). Plain-object maps, vectors and fn preds flow through the real example app (`todoRows`), real path derivation (`filterNav`/`nthNav`/`concatPath`) and the real `makeApp` dispatch tier (rAF-guarded, Node-safe). Filtered delete + toggle correct. |
+| R2 | cherry persistent data vs the real seam | **PASS** (re-run 2026-10-16, evidence: `experiments/cljs-reruns/logs/r2-cherry-probe.log`) after two real findings (below). Persistent maps in/out, `identical?` sharing on untouched todos, **0.0086 ms/dispatch** on a 5000-item state (stand-in measured ~0.067). |
+| R3 | macro path-walker (tier 3) | **PASS** (re-run 2026-10-16, evidence: `experiments/cljs-reruns/logs/r3-macro-probe.log`). squint `defmacro` (`experiments/real_macro_defs.cljc`) desugars a component to the explicit tier-2 API; expansion compiles and derives real paths against the real library. Note: squint resolves macro ns→file with **underscores** (`real_macro_defs.cljc`, not hyphens). |
+| R4 | shadow-cljs `:advanced` | **PASS with one recorded surface** (re-run 2026-10-16, evidence: `experiments/cljs-reruns/logs/r4-shadow-{release,probe}.log`; one refinement — see the re-run section below). Paths, state, filter/select and dispatch survive munging on plain `#js` data. Keyword-as-fn reads on plain JS data **break** (`(:description item)` → nil; `aget` works) — the matrix's unverified row is now confirmed: use `aget`/`goog.object` under `:advanced`. Also: `clj->js` under `:advanced` munges to a no-op vector pass-through — materialize data with `#js` literals, not `clj->js`. |
+
+### Re-run verification (tambor-y9d.9, 2026-10-16)
+
+All four rows were re-executed at the same pin (Node 26, squint-cljs 0.15.212,
+cherry-cljs 0.6.38, shadow-cljs 3.5.7 → ClojureScript 1.12.145,
+closure-compiler v20260907) against a fresh `dist/` build, in the
+self-contained npm project `experiments/cljs-reruns/` (own `package.json`
+pins the versions; `./rerun.sh` re-runs everything in order). Evidence: the
+committed command transcripts in `experiments/cljs-reruns/logs/`.
+
+| # | Re-run | Result |
+|---|--------|--------|
+| R1 | `logs/r1-squint-probe.log` | **Confirmed.** `REAL-SQUINT-PROBE: PASS` — todoRows, filtered delete + toggle through the real dispatch tier. |
+| R2 | `logs/r2-cherry-probe.log` | **Confirmed.** `REAL-CHERRY-PROBE: PASS` — 0.0084 ms/dispatch on the 5000-item state (recorded: 0.0086). |
+| R3 | `logs/r3-macro-probe.log` | **Confirmed.** `REAL-MACRO-PROBE: PASS` — squint `defmacro` desugars to tier-2 and derives real paths against the real library. |
+| R4 | `logs/r4-shadow-release.log`, `logs/r4-shadow-probe.log` | **Confirmed with one refinement.** `:advanced` build compiles clean (49 files, 0 warnings); `#js` data and `#js` paths survive munging (select/filter over plain data correct); the keyword-as-fn break reproduces exactly (`kw desc: nil`, `aget desc: first`). **Refinement:** the recorded `clj->js` caveat does NOT reproduce at this pin — `clj->js` now converts correctly (`#js [#js {:a 1} ...]`) and `select` over `clj->js` state succeeds (likely the newer closure-compiler/CLJS shadow-cljs 3.5.7 resolves). `#js` literals remain the recorded safe default. |
+
+One environment note: shadow-cljs `:node-script` releases leave the dist JS
+requires external — the probe runs with `NODE_PATH=<repo>/dist` (recorded in
+`rerun.sh`), otherwise `require("interop/paths.js")` cannot resolve.
 
 ### Real findings the stand-ins masked (filed as follow-up tickets)
 
