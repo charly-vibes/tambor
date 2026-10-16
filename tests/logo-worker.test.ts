@@ -26,18 +26,25 @@ import { execSync } from "node:child_process";
 // @ts-expect-error node builtin
 import { Worker } from "node:worker_threads";
 
-import { EXAMPLES, EXAMPLES_ES, derive } from "../src/examples/logo/interpreter.ts";
+import {
+  EXAMPLES,
+  EXAMPLES_ES,
+  derive,
+  type Dialect,
+} from "../src/examples/logo/interpreter.ts";
+import { logoState, logoView } from "../src/examples/logo/logo.ts";
 import {
   runProgram,
   WORKER_BUDGET,
   type RunRequest,
   type RunResponse,
 } from "../src/examples/logo/worker-main.ts";
-import { makeRunner } from "../src/examples/logo/worker-client.ts";
+import {
+  makeRunner,
+  makeWorkerRunner,
+} from "../src/examples/logo/worker-client.ts";
 import {
   applyRun,
-  logoState,
-  logoView,
   startRun,
   stopLogo,
   type RunOutcome,
@@ -46,11 +53,18 @@ import { scanOf } from "./helpers/scan.ts";
 
 // The node worker harness bundle (built in beforeAll — a child process:
 // esbuild's node code cannot load inside the vitest environment).
-const BUNDLE = "dist/logo-worker-node.test.mjs";
+const BUNDLE = "./dist/logo-worker-node.test.mjs";
+
+// The timer globals reached structurally (the ES2022 lib has no timer
+// declarations; tsconfig types exclude node).
+const timers = globalThis as unknown as {
+  setTimeout: (f: () => void, ms: number) => unknown;
+  clearTimeout: (t: unknown) => void;
+};
 
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => {
-    setTimeout(resolve, ms);
+    timers.setTimeout(resolve, ms);
   });
 }
 
@@ -58,20 +72,20 @@ function delay(ms: number): Promise<void> {
 // runProgram's response envelope, in order).
 function send(w: Worker, req: RunRequest): Promise<RunResponse> {
   return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error("worker did not reply")), 20000);
+    const timer = timers.setTimeout(() => reject(new Error("worker did not reply")), 20000);
     w.on("message", (m: unknown) => {
-      clearTimeout(timer);
+      timers.clearTimeout(timer);
       resolve(m as RunResponse);
     });
     w.on("error", (e: unknown) => {
-      clearTimeout(timer);
+      timers.clearTimeout(timer);
       reject(e);
     });
     w.postMessage(req);
   });
 }
 
-function reqOf(id: number, text: string, late = false, dialect = "en"): RunRequest {
+function reqOf(id: number, text: string, late = false, dialect: Dialect = "en"): RunRequest {
   return { id, entries: [{ text }], late, dialect, budget: WORKER_BUDGET };
 }
 
@@ -143,12 +157,12 @@ describe("logo worker — the killable run boundary", () => {
     const ok = applyRun(base, {
       id: 3,
       ok: true,
-      world: derive([{ text: src }]),
+      world: derive([{ text: src }], false),
     });
     expect(ok.entries.length).toBe(1);
     expect(ok.cursor).toBe(1);
     expect(ok.outcome).toEqual({ kind: "ok" });
-    const stale = applyRun(base, { id: 2, ok: true, world: derive([{ text: src }]) });
+    const stale = applyRun(base, { id: 2, ok: true, world: derive([{ text: src }], false) });
     expect(stale.entries.length).toBe(0);
     const bad = applyRun(base, { id: 3, ok: false, message: "boom" });
     expect(bad.entries.length).toBe(0);
@@ -159,16 +173,18 @@ describe("logo worker — the killable run boundary", () => {
   it("normal runs produce identical worlds to the in-thread interpreter", async () => {
     const w = new Worker(BUNDLE);
     let id = 0;
-    for (const src of [...Object.values(EXAMPLES), ...Object.values(EXAMPLES_ES)]) {
+    const en = Object.values(EXAMPLES).map((src) => [src, "en"] as const);
+    const es = Object.values(EXAMPLES_ES).map((src) => [src, "es"] as const);
+    for (const [src, dialect] of [...en, ...es]) {
       id += 1;
-      const resp = await send(w, reqOf(id, src));
+      const resp = await send(w, reqOf(id, src, false, dialect));
       if (!resp.ok) throw new Error("expected ok for " + src);
-      expect(resp.world).toEqual(derive([{ text: src }]));
+      expect(resp.world).toEqual(derive([{ text: src }], false, dialect));
     }
     // the Spanish dialect rides the same boundary
-    const es = await send(w, reqOf(91, EXAMPLES_ES["cuadrado"] as string, false, "es"));
-    if (!es.ok) throw new Error("expected ok for the es example");
-    expect(es.world).toEqual(derive([{ text: EXAMPLES_ES["cuadrado"] as string }], false, "es"));
+    const esResp = await send(w, reqOf(91, EXAMPLES_ES["cuadrado"] as string, false, "es"));
+    if (!esResp.ok) throw new Error("expected ok for the es example");
+    expect(esResp.world).toEqual(derive([{ text: EXAMPLES_ES["cuadrado"] as string }], false, "es"));
     // late binding re-runs every command against the newest definitions
     const late = await send(w, reqOf(92, EXAMPLES["tree"] as string, true));
     if (!late.ok) throw new Error("expected ok for the late example");
@@ -186,6 +202,44 @@ describe("logo worker — graceful degradation", () => {
     // the vitest node environment has no Worker global: the demo must
     // fall back instead of freezing or crashing
     expect(makeRunner().worker).toBe(false);
+  });
+
+  it("a worker that fails to load answers a typed failure and downgrades", async () => {
+    // a Worker whose module never loads: the runner must not stick in
+    // "running" — the in-flight run resolves as a typed failure (with its
+    // own request id, so the typed apply records it), and later runs use
+    // the bounded in-thread fallback
+    class FakeWorker {
+      onerror: ((e: unknown) => void) | null = null;
+      onmessage: ((e: { readonly data: unknown }) => void) | null = null;
+      postMessage(): void {
+        this.onerror?.(null);
+      }
+      terminate(): void {}
+    }
+    class FakeURL {
+      constructor(u: string, base: string) {
+        void base;
+        this.u = u;
+      }
+      u: string;
+    }
+    const runner = makeWorkerRunner(
+      FakeWorker as unknown as Parameters<typeof makeWorkerRunner>[0],
+      FakeURL as unknown as Parameters<typeof makeWorkerRunner>[1],
+    );
+    if (runner === null) throw new Error("expected a worker-backed runner");
+    expect(runner.worker).toBe(true);
+    const first = await runner.run(reqOf(1, "fd 10"));
+    expect(first.ok).toBe(false);
+    if (!first.ok) {
+      expect(first.id).toBe(1);
+      expect(first.message).toMatch(/worker failed to load/);
+    }
+    // subsequent runs ride the bounded fallback (typed, never a hang)
+    const second = await runner.run(reqOf(2, "foo"));
+    expect(second.ok).toBe(false);
+    if (!second.ok) expect(second.message).toMatch(/don't know how to foo/);
   });
 
   it("the fallback runner answers typed outcomes under the in-thread budget", async () => {
@@ -206,7 +260,8 @@ describe("logo worker — the pure envelope", () => {
     const resp = runProgram(reqOf(7, "fd 10"));
     expect(resp.ok).toBe(true);
     if (!resp.ok) throw new Error("expected ok");
-    expect(resp.world.x).toBeCloseTo(10);
+    // hd 0 faces +y: fd 10 moves the turtle to (0, 10)
+    expect(resp.world.y).toBeCloseTo(10);
     const bad = runProgram(reqOf(8, "foo"));
     expect(bad.ok).toBe(false);
     if (!bad.ok) expect(bad.message).toMatch(/don't know how to foo/);
