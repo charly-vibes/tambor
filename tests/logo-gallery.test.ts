@@ -143,7 +143,7 @@ describe("logo gallery demo — the world is a fold", () => {
 
     // the turtle marker is the only 4-point path in the canvas
     const turtle = scanOf(spa.app.view() as never).find(
-      (f) => f.node.type === "path" && (f.node as { points: unknown[] }).points.length === 4,
+      (f) => f.node.type === "path" && (f.node as { points: readonly unknown[] }).points.length === 4,
     );
     expect(turtle).toBeDefined();
     clickAt(spa.surface, ...centreOf(turtle!));
@@ -165,7 +165,7 @@ describe("logo gallery demo — the world is a fold", () => {
 
     clickAt(spa.surface, ...buttonCentre(spa, "Run"));
     const turtle = scanOf(spa.app.view() as never).find(
-      (f) => f.node.type === "path" && (f.node as { points: unknown[] }).points.length === 4,
+      (f) => f.node.type === "path" && (f.node as { points: readonly unknown[] }).points.length === 4,
     )!;
     clickAt(spa.surface, ...centreOf(turtle));
     expect((container.textContent ?? "")).toContain("inspector — turtle");
@@ -195,11 +195,11 @@ describe("logo gallery demo — the world is a fold", () => {
     const seg = scanOf(spa.app.view() as never).find(
       (f) =>
         f.node.type === "path" &&
-        (f.node as { points: readonly [number, number][] }).points.length === 2 &&
-        (f.node as { points: readonly [number, number][] }).points[0]![0] !==
-          (f.node as { points: readonly [number, number][] }).points[1]![0] &&
-        (f.node as { points: readonly [number, number][] }).points[0]![1] !==
-          (f.node as { points: readonly [number, number][] }).points[1]![1],
+        (f.node as { points: readonly (readonly [number, number])[] }).points.length === 2 &&
+        (f.node as { points: readonly (readonly [number, number])[] }).points[0]![0] !==
+          (f.node as { points: readonly (readonly [number, number])[] }).points[1]![0] &&
+        (f.node as { points: readonly (readonly [number, number])[] }).points[0]![1] !==
+          (f.node as { points: readonly (readonly [number, number])[] }).points[1]![1],
     );
     expect(seg).toBeDefined();
     clickAt(spa.surface, ...centreOf(seg!));
