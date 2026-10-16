@@ -14,6 +14,14 @@ selectable text, buttons are real `<button>`s). AI agents: start from
 [`ai/llms.txt`](https://charly-vibes.github.io/tambor/ai/llms.txt) (generated
 from the spec corpus, one page per spec).
 
+## Install
+
+```sh
+npm install @charly-vibes/tambor
+```
+
+ESM-only, zero runtime dependencies. Subpath exports: `@charly-vibes/tambor` (everything), `…/core` (DOM-free core: model, paths, effect dispatch, events, layout), `…/spa` (browser mounting), `…/dom` (real-DOM host adapter).
+
 ## Quickstart
 
 The library is plain data in, plain values out — no classes, no `this`:

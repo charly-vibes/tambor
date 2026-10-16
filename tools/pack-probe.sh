@@ -30,17 +30,17 @@ npm i --no-save --silent "$TARBALL_PATH" >/dev/null
 echo "== ESM import probe =="
 node -e '
   const min = Number(process.env.MIN_EXPORTS);
-  Promise.all([import("tambor"), import("tambor/core")]).then(
+  Promise.all([import("@charly-vibes/tambor"), import("@charly-vibes/tambor/core")]).then(
     ([root, core]) => {
       const n = Object.keys(root).length;
       const c = Object.keys(core).length;
       console.log("exports:", n, "core:", c);
       if (n < min) {
-        console.error(`FAIL: root tambor has ${n} named exports, need >= ${min}`);
+        console.error(`FAIL: root @charly-vibes/tambor has ${n} named exports, need >= ${min}`);
         process.exit(1);
       }
       if (c < 1) {
-        console.error("FAIL: tambor/core resolved but exports nothing");
+        console.error("FAIL: @charly-vibes/tambor/core resolved but exports nothing");
         process.exit(1);
       }
     },

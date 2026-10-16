@@ -1,9 +1,14 @@
 {
-  "name": "tambor",
+  "name": "@charly-vibes/tambor",
   "version": "0.1.0",
   "private": false,
   "type": "module",
   "description": "Strict-TypeScript, mobile-first UI library \u2014 specodelic corpus port of membrane",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/charly-vibes/tambor.git"
+  },
   "sideEffects": false,
   "files": [
     "dist"

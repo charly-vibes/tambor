@@ -18,7 +18,7 @@ invariants and add only packaging.
 
 | id | kind | expr | traces_to |
 |----|------|------|-----------|
-| packable_metadata | invariant | package.json declares the package non-private at 0.x, carries a files allowlist limited to dist plus package metadata, and npm pack produces a tambor-0.1.0 tarball containing only those files | [[distribution.packaging]] |
+| packable_metadata | invariant | package.json declares the package non-private at 0.x, carries a files allowlist limited to dist plus package metadata, and npm pack produces a charly-vibes-tambor-0.1.0 tarball containing only those files | [[distribution.packaging]] |
 | declarations_emitted | invariant | tsc emit via the build config produces JavaScript and declaration files for the whole src tree, deriving solely from emit-side options, with every strict flag of the dev config inherited untouched and zero new build dependencies | [[distribution.packaging]] |
 | clean_esm_import | invariant | installing the packed tarball into a pristine project resolves the root ESM entry and yields at least five named exports with no top-level side effects run at import | [[distribution.packaging]] |
 | core_subpath_split | invariant | the exports map separates the DOM-free core subpath exporting model, paths, effect dispatch, events and layout from the spa and dom subpaths, and the core barrel imports no DOM-dependent module transitively | [[distribution.packaging]] |
@@ -45,7 +45,7 @@ invariants and add only packaging.
 
 | id | kind | derives_from | generator | predicate |
 |----|------|--------------|-----------|-----------|
-| p_packable | unit | [[distribution.packaging.packable_metadata]] | npm pack in the repo root | the probe packs a tambor-0.1.0 tarball and the clean project installs it |
+| p_packable | unit | [[distribution.packaging.packable_metadata]] | npm pack in the repo root | the probe packs a charly-vibes-tambor-0.1.0 tarball and the clean project installs it |
 | p_declarations | unit | [[distribution.packaging.declarations_emitted]] | the build config | npx tsc emits 83-plus js and 83-plus d.ts files and exits zero without flag changes |
 | p_clean_import | unit | [[distribution.packaging.clean_esm_import]] | a pristine project importing the tarball | import of the root entry resolves with at least five named exports |
 | p_core_split | unit | [[distribution.packaging.core_subpath_split]] | a pristine project importing the core subpath | the core entry resolves and exports more than the root gate floor while the dom subpath stays out of the core barrel |
