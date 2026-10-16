@@ -72,3 +72,4 @@ import:
 # - github.token    → use GITHUB_TOKEN env var instead
 
 sync.remote: "git+ssh://git@cv/charly-vibes/tambor.git"
+no-db: true
