@@ -2,9 +2,11 @@
 #
 # Gates live in lefthook.yml (pre-push: ah check --run-tests, pretender gate,
 # testaruda exec, scaffold-debt report) — this justfile is the dev loop, not
-# the gate. `just test` runs the affected-test loop through testaruda for the
-# TDD red→green cycle; `just test-full` is the plain vitest suite (what CI's
-# `npm test` parity and the ah contract tests effectively cover).
+# the gate. DDL test-runner standard (recorded in the dulce-de-leche repo):
+# `just test` is the most obvious entry — the testaruda exec loop for the
+# TDD red→green cycle; `just test-full` is the plain vitest suite (gate
+# parity, CI's `npm test`). Selection is for fast feedback, never a gate
+# substitute.
 #
 # House standard: dulce-de-leche justfile structure; testaruda exit-code
 # contract (0 = ran and passed, 10 = store uncalibrated, 20 = nothing

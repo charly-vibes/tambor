@@ -118,6 +118,20 @@ Write specs so `spk lint` passes; embedded format revision: specodelic.md Revisi
 Refresh this block after upgrading: `spk init --force`.
 <!-- SPECODELIC:END -->
 
+## Test runner (DDL standard — recorded in the dulce-de-leche repo)
+
+- **TDD loop**: agents run `just test` (testaruda exec loop) instead of
+  `npx vitest run` directly — it selects the affected test set from the
+  working diff, runs only those tests, and ingests results for future
+  selection. Tolerance contract (tools/gates/testaruda-exec.sh): exit
+  0/10/20 green; NOT CALIBRATED with 0 actual failures is a vacuous pass
+  (tambor-cpd), with failures it blocks. `just test-blast` previews the
+  affected set without running anything.
+- **Full suite**: `just test-full` is the plain vitest run (what CI's
+  `npm test` covers) — the gate before push is lefthook pre-push
+  (testaruda exec + ah check --run-tests); selection is for fast feedback,
+  never a gate substitute.
+
 <!-- WAI:START -->
 <!-- wai: managed block -->
 Run `wai status` to orient yourself.
