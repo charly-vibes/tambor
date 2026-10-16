@@ -87,7 +87,10 @@ describe("logo-select — the select-path effect is pure data", () => {
 
 describe("logo-select — the effect routes through the per-app registry", () => {
   it("logoRegistry carries a select handler beside run and clear", () => {
-    expect(logoRegistry().has("select")).toBe(true);
+    // the y9d.10 registry takes the hooks cell + worker flag (run/stop are
+    // per-app entries of the killable Worker boundary)
+    const hooks = { current: { launch: () => {}, stop: () => {} } };
+    expect(logoRegistry(hooks, false).has("select")).toBe(true);
   });
 
   it("dispatching the select effect round-trips through the seam", () => {

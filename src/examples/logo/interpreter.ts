@@ -8,9 +8,11 @@
 //   setcolor, repeat, if, stop); the EN/ES runtime keyword tables
 //   (tambor-y9d.5) consulted at tokenize time via translateTokens;
 //   defined-procedure invocation with
-//   depth guarding; derive(entries, late) — all definitions applied
-//   first when late is on, then every command re-run; the EXAMPLES
-//   library and the procText re-load helper.
+//   depth guarding; derive(entries, late, dialect, budget) — all
+//   definitions applied first when late is on, then every command re-run
+//   (the step budget is a parameter: the Worker boundary runs with a
+//   kill-sized budget, the in-thread fallback keeps the bounded one —
+//   tambor-y9d.10); the EXAMPLES library and the procText re-load helper.
 // Rationale: the wanna-chat session demo (insights/dynamic-environment.md,
 //   "Core idea realised in the Logo demo") is the design authority for
 //   the fold semantics; this port changes presentation only. Demo-local
@@ -101,11 +103,14 @@ interface WorldBuilder {
   color: string | null;
   trace: TraceSeg[];
   steps: number;
+  budget: number;
 }
 
 // The step budget and recursion depth guard (the demo's two runaway
-// protections, same limits as the original).
-const STEP_BUDGET = 30000;
+// protections, same limits as the original). The budget is exported so the
+// Worker boundary can size it (WORKER_BUDGET) and the in-thread fallback
+// can keep the bounded default.
+export const STEP_BUDGET = 30000;
 const TRACE_CAP = 20000;
 const MAX_DEPTH = 150;
 
@@ -206,7 +211,7 @@ function execReader(P: Reader, env: Env, w: WorldBuilder, depth: number): void {
     const t = P.t[P.i++];
     if (t === undefined) return;
     w.steps++;
-    if (w.steps > STEP_BUDGET) throw new Error("too many steps — infinite loop?");
+    if (w.steps > w.budget) throw new Error("too many steps — infinite loop?");
     const cmd = COMMANDS[t];
     if (cmd) {
       cmd({ P, env, w, depth });
@@ -221,8 +226,8 @@ function execReader(P: Reader, env: Env, w: WorldBuilder, depth: number): void {
   }
 }
 
-function freshWorld(): WorldBuilder {
-  return { procs: {}, x: 0, y: 0, hd: 0, pen: true, color: null, trace: [], steps: 0 };
+function freshWorld(budget: number): WorldBuilder {
+  return { procs: {}, x: 0, y: 0, hd: 0, pen: true, color: null, trace: [], steps: 0, budget };
 }
 
 function freezeWorld(w: WorldBuilder): World {
@@ -247,8 +252,9 @@ export function derive(
   entries: readonly LogoEntry[],
   late: boolean,
   dialect: Dialect = "en",
+  budget: number = STEP_BUDGET,
 ): World {
-  const w = freshWorld();
+  const w = freshWorld(budget);
   const table = TABLES[dialect];
   const toks = entries.map((e) => translateTokens(tokenize(e.text), table));
   if (late) toks.forEach((t) => defsOf(t, w.procs));

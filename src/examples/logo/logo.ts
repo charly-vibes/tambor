@@ -6,12 +6,16 @@
 //   dialect, err, sel) and initial data; the run/clear handlers as per-app
 //   registry entries (makeOpsApp — never the global registry); the
 //   select-path effect entry routing through select.ts (tambor-y9d.6);
-//   CURSOR/SRC/LATE paths; the pure view — the canvas (canvas.ts: trace
-//   segments, turtle marker, halo handles), the inspector pane
-//   (inspector.ts), the time-travel slider bound to the cursor, the
-//   ◀ ▶ stepper buttons, the example and procedure buttons, the corpus
-//   textarea bound to src, the error label — and the corpus App wire
-//   (view/dispatch/getState) over makeOpsApp for mountDemo.
+//   the killable Worker run boundary (tambor-y9d.10): run parks the
+//   candidate as a typed running outcome and the off-thread reply is
+//   applied by the typed apply (run.ts), with the in-thread fallback for
+//   Worker-less hosts; CURSOR/SRC/LATE paths; the pure view — the canvas
+//   (canvas.ts: trace segments, turtle marker, halo handles), the
+//   inspector pane (inspector.ts), the time-travel slider bound to the
+//   cursor, the ◀ ▶ stepper buttons, the example and procedure buttons,
+//   the corpus textarea bound to src, the run-outcome/error label — and
+//   the corpus App wire (view/dispatch/getState) over makeOpsApp for
+//   mountDemo.
 // Rationale: the wanna-chat session demo (insights/dynamic-environment.md)
 //   is the design authority for the fold/liveness semantics;
 //   openspec/specs/interop-model/spec.md governs the per-app seam
@@ -22,6 +26,16 @@
 //   (components.textarea), buttons returning effect vectors.
 
 import { makeOpsApp } from "../../interop/app.ts";
+import { makeRunner } from "./worker-client.ts";
+import type { RunRequest, RunResponse } from "./worker-main.ts";
+import {
+  applyRun,
+  outcomeLabel,
+  startRun,
+  stopLogo,
+  type RunHooks,
+  type RunOutcome,
+} from "./run.ts";
 import { makeRegistry, type InterHandler } from "../../interop/seam.ts";
 import type { App } from "../../effects/dispatch.ts";
 import type { Path } from "../../effects/paths.ts";
@@ -29,8 +43,6 @@ import type { IntentList } from "../../events/bubble.ts";
 import {
   button,
   label as labelNode,
-  withColor,
-  type Color,
   type Elem,
 } from "../../views/model.ts";
 import { verticalLayout } from "../../views/layout.ts";
@@ -55,8 +67,9 @@ import {
 import { logoCanvas } from "./canvas.ts";
 import { inspectorPane } from "./inspector.ts";
 
-// The error label's color.
-const ERROR: Color = [0.7, 0.149, 0.118];
+// runLogo moved to run.ts (the typed outcome module) — re-exported here so
+// the demo's public surface keeps its shape (tambor-y9d.10).
+export { runLogo } from "./run.ts";
 
 export const LOGO_TITLE = "tambor logo";
 
@@ -68,6 +81,8 @@ export interface LogoState {
   readonly "late?": boolean;
   readonly dialect: Dialect;
   readonly err: string;
+  readonly outcome: RunOutcome;
+  readonly runId: number;
   readonly "slider-mdown?": boolean;
   // the Smalltalk-style selection: the selected item's path, or null
   readonly sel: Selection;
@@ -81,6 +96,8 @@ export function logoState(): LogoState {
     "late?": false,
     dialect: "en",
     err: "",
+    outcome: { kind: "idle" },
+    runId: 0,
     "slider-mdown?": false,
     sel: null,
   };
@@ -98,32 +115,28 @@ export const LATE_PATH: Path = step("late?");
 export const DIALECT_PATH: Path = step("dialect");
 export const SLIDER_MDOWN_PATH: Path = step("slider-mdown?");
 
-// run: keep entries[0..cursor], append the editor source, validate by
-// deriving, move the cursor to the end — or record the error without
-// touching entries.
-export function runLogo(s: LogoState): LogoState {
-  const entries: readonly LogoEntry[] = [
-    ...s.entries.slice(0, s.cursor),
-    { text: s.src },
-  ];
-  try {
-    derive(entries, s["late?"], s.dialect);
-    return { ...s, entries, cursor: entries.length, err: "" };
-  } catch (e) {
-    return { ...s, err: e instanceof Error ? e.message : String(e) };
-  }
-}
-
-// clear: the world is empty again.
+// clear: the world is empty again (and any run outcome with it).
 export function clearLogo(s: LogoState): LogoState {
-  return { ...s, entries: [], cursor: 0, err: "" };
+  return { ...s, entries: [], cursor: 0, err: "", outcome: { kind: "idle" } };
 }
 
-// The per-app registry: run and clear, closed over per app
-// (ops_bound_to_app — never a global registration).
-export function logoRegistry(): Map<string, InterHandler> {
+// The per-app registry: run/stop/run-applied and clear, closed over per
+// app (ops_bound_to_app — never a global registration). `hooks` is the
+// cell createLogoApp fills with the runner wiring; `worker` selects the
+// off-thread park-and-apply path vs the in-thread fallback.
+export function logoRegistry(
+  hooks: { current: RunHooks },
+  worker: boolean,
+): Map<string, InterHandler> {
   const r = makeRegistry();
-  r.set("run", (state) => runLogo(state as LogoState));
+  r.set("run", (state) => startRun(state as LogoState, hooks.current, worker));
+  r.set("stop", (state) => {
+    hooks.current.stop();
+    return stopLogo(state as LogoState);
+  });
+  r.set("run-applied", (state, ...args) =>
+    applyRun(state as LogoState, (args[0] ?? null) as RunResponse),
+  );
   r.set("clear", (state) => clearLogo(state as LogoState));
   // the select-path effect: the carried path is data, applied by the
   // pure toggle handler — never imperative mutation
@@ -134,7 +147,21 @@ export function logoRegistry(): Map<string, InterHandler> {
 // The demo app on the corpus wire: view/dispatch/getState, dispatch
 // routed through the per-app ops seam.
 export function createLogoApp(): App {
-  const opsApp = makeOpsApp({ state: logoState(), registry: logoRegistry() });
+  // the runner: Worker-backed where the host has one, the bounded
+  // in-thread fallback otherwise (graceful degradation — tambor-y9d.10)
+  const runner = makeRunner();
+  // the hooks cell: filled after opsApp exists so the launch hook can
+  // dispatch the worker's reply back through the same per-app seam
+  const hooks: { current: RunHooks } = { current: { launch: () => {}, stop: () => {} } };
+  const opsApp = makeOpsApp({ state: logoState(), registry: logoRegistry(hooks, runner.worker) });
+  hooks.current = {
+    launch: (req: RunRequest) => {
+      void runner.run(req).then((resp) => {
+        opsApp.dispatch([["run-applied", resp]]);
+      });
+    },
+    stop: () => runner.terminate(),
+  };
   return {
     view: () => logoView(opsApp.getState() as LogoState, {}),
     dispatch: (batch, ...rest) => {
@@ -234,6 +261,7 @@ export function logoView(s: LogoState, context: { focus?: unknown } = {}): Elem 
     editor(s, focus),
     verticalLayout([
       fxButton("Run", "run"),
+      fxButton("Stop", "stop"),
       fxButton("Clear world", "clear"),
       fxButton(lateLabel, "set", LATE_PATH, !s["late?"]),
       fxButton(
@@ -243,7 +271,7 @@ export function logoView(s: LogoState, context: { focus?: unknown } = {}): Elem 
         s.dialect === "es" ? "en" : "es",
       ),
     ]),
-    withColor(ERROR, err.length === 0 ? labelNode(" ") : labelNode(err)),
+    outcomeLabel(s.outcome, err),
     procsRow(w),
   ]);
 }
