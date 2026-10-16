@@ -1,0 +1,4 @@
+node_modules/
+src/logo/*.mjs
+probe/
+artifact-*/bundle.js
