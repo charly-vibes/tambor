@@ -3,12 +3,14 @@
 //   plain data and whose view re-derives from
 //   `fold(entries[0..cursor])` every render.
 // Responsibilities: the LogoState shape (src, entries, cursor, late?,
-//   dialect, err) and initial data; the run/clear handlers as per-app registry
-//   entries (makeOpsApp — never the global registry); CURSOR/SRC/LATE
-//   paths; the pure view — the turtle trace as colored path segments,
-//   the time-travel slider bound to the cursor, the ◀ ▶ stepper
-//   buttons, the example and procedure buttons, the corpus textarea
-//   bound to src, the error label — and the corpus App wire
+//   dialect, err, sel) and initial data; the run/clear handlers as per-app
+//   registry entries (makeOpsApp — never the global registry); the
+//   select-path effect entry routing through select.ts (tambor-y9d.6);
+//   CURSOR/SRC/LATE paths; the pure view — the canvas (canvas.ts: trace
+//   segments, turtle marker, halo handles), the inspector pane
+//   (inspector.ts), the time-travel slider bound to the cursor, the
+//   ◀ ▶ stepper buttons, the example and procedure buttons, the corpus
+//   textarea bound to src, the error label — and the corpus App wire
 //   (view/dispatch/getState) over makeOpsApp for mountDemo.
 // Rationale: the wanna-chat session demo (insights/dynamic-environment.md)
 //   is the design authority for the fold/liveness semantics;
