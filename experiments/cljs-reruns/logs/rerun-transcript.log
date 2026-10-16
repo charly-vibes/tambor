@@ -1,0 +1,40 @@
+== R1: squint probe (real library)
+[squint] Compiling CLJS file: real-squint-probe.cljs
+[squint] Wrote file: /var/home/sasha/para/areas/dev/gh/charly/tambor-wt-y9d9/experiments/cljs-reruns/real-squint-probe.mjs
+[squint] Compiled sources: 1
+todoRows over squint-state OK, rows: 3
+visible: ["first" "second"]
+after toggle: [true true]
+REAL-SQUINT-PROBE: PASS
+== R2: cherry probe (real library, seam)
+[cherry] Compiling CLJS file: real-cherry-probe.cljs
+[cherry] Wrote file: /var/home/sasha/para/areas/dev/gh/charly/tambor-wt-y9d9/experiments/cljs-reruns/real-cherry-probe.mjs
+[cherry] Compiled sources: 1
+result persistent map: true
+n: 42 todo2 complete?: true
+todos after delete: ["first" "third"]
+input untouched, todo2: false
+untouched todo shared: true
+1000 dispatches on 5000 items: 8.86 ms total, 0.0089 ms/dispatch
+REAL-CHERRY-PROBE: PASS
+== R3: macro path-walker probe (real library, squint defmacro)
+[squint] Compiling CLJS file: real-macro-probe.cljs
+[squint] Wrote file: /var/home/sasha/para/areas/dev/gh/charly/tambor-wt-y9d9/experiments/cljs-reruns/real-macro-probe.mjs
+[squint] Compiled sources: 1
+macro-expanded component derived: 2 visible rows
+row texts: ["first" "second"]
+second toggle path: [["keypath" "todos"] ["filter" #object[Function]] ["nth" 1] ["keypath" "complete?"]]
+REAL-MACRO-PROBE: PASS
+== R4: shadow-cljs :advanced probe (real library)
+shadow-cljs - config: /var/home/sasha/para/areas/dev/gh/charly/tambor-wt-y9d9/experiments/cljs-reruns/shadow-cljs.edn
+[:probe] Compiling ...
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::arrayBaseOffset has been called by com.google.javascript.jscomp.jarjar.com.google.protobuf.UnsafeUtil$MemoryAccessor (file:/var/home/sasha/.m2/repository/com/google/javascript/closure-compiler/v20260907/closure-compiler-v20260907.jar)
+WARNING: Please consider reporting this to the maintainers of class com.google.javascript.jscomp.jarjar.com.google.protobuf.UnsafeUtil$MemoryAccessor
+WARNING: sun.misc.Unsafe::arrayBaseOffset will be removed in a future release
+[:probe] Build completed. (49 files, 0 compiled, 0 warnings, 5.57s)
+item: #js {:description first, :complete? false} | aget desc: first | kw desc: nil
+visible count: 2
+clj->js of a vector: #js [#js {:a 1} #js {:a 2}]
+select over clj->js state: #js {:description "first", :complete? false}
+rerun ok

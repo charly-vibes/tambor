@@ -1,0 +1,7 @@
+result persistent map: true
+n: 42 todo2 complete?: true
+todos after delete: ["first" "third"]
+input untouched, todo2: false
+untouched todo shared: true
+1000 dispatches on 5000 items: 8.86 ms total, 0.0089 ms/dispatch
+REAL-CHERRY-PROBE: PASS

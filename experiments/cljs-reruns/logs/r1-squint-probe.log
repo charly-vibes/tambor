@@ -1,0 +1,4 @@
+todoRows over squint-state OK, rows: 3
+visible: ["first" "second"]
+after toggle: [true true]
+REAL-SQUINT-PROBE: PASS

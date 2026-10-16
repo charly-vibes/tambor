@@ -1,0 +1,4 @@
+item: #js {:description first, :complete? false} | aget desc: first | kw desc: nil
+visible count: 2
+clj->js of a vector: #js [#js {:a 1} #js {:a 2}]
+select over clj->js state: #js {:description "first", :complete? false}
