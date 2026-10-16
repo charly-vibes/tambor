@@ -1,0 +1,212 @@
+// Purpose: the gallery Playwright pass (tambor-y9d.4) — every demo
+//   mounted through the real dist/spa.js bundle in a real browser:
+//   screenshots per demo per state (the HITL review artifact) plus the
+//   scripted interactions the corpus semantics predict.
+// Responsibilities: per-demo smoke (nav, blurb, drawn content), counter
+//   dec/inc, todo add via the button + filter switch + restart,
+//   dropdown open + select + close, logo run + clear + slider pointer
+//   drag — each with a named screenshot of the reached state.
+// Rationale: openspec demo specs are the design authorities — the
+//   assertions here are the same corpus semantics the jsdom contract
+//   tests verify, driven through the real pointer wire of a real
+//   browser (surface hit-testing at view-space coordinates, mouse-move
+//   drag chains). Interactions whose targets sit at live-state
+//   positions replay the same intents on an in-process app to re-derive
+//   the live view (replayView); the rest use the fresh-view scan
+//   (buttonPoint) — the same centreOf pattern the contract tests use.
+//   The known-limitation risks (typing/focus, dark tokens, touch
+//   targets, below-fold reach) live in risks.spec.ts where they are
+//   measured, not asserted away here.
+
+import { expect, test, type Page } from "@playwright/test";
+import { CURSOR_PATH } from "../../src/examples/logo/logo.ts";
+import {
+  buttonPoint,
+  clickView,
+  demoView,
+  drawnText,
+  navTo,
+  open,
+  optionPoint,
+  pointWhere,
+  replayView,
+  shot,
+} from "./drive.ts";
+
+const DEMO_IDS = ["todo", "counter", "dropdown", "logo"] as const;
+const NAV_TITLES: Readonly<Record<string, string>> = {
+  todo: "todo",
+  counter: "counter",
+  dropdown: "dropdown",
+  logo: "logo",
+};
+
+async function gotoDemo(page: Page, id: string): Promise<void> {
+  await open(page);
+  await navTo(page, NAV_TITLES[id] ?? id);
+}
+
+test.describe("gallery smoke + screenshots", () => {
+  for (const id of DEMO_IDS) {
+    test(`${id}: mounts with nav, blurb and drawn content`, async ({
+      page,
+    }, testInfo) => {
+      await gotoDemo(page, id);
+      const navButtons = await page.locator("nav button").count();
+      expect(navButtons).toBe(DEMO_IDS.length);
+      await expect(page.locator("nav button.active")).toHaveText(
+        NAV_TITLES[id] ?? id,
+      );
+      await expect(page.locator("#demo .blurb")).not.toBeEmpty();
+      const text = await drawnText(page);
+      expect(text.length).toBeGreaterThan(0);
+      await shot(page, `${id}-initial`, testInfo.project.name);
+    });
+  }
+});
+
+test.describe("counter", () => {
+  test("inc and dec move the label", async ({ page }, testInfo) => {
+    await gotoDemo(page, "counter");
+    const view = demoView("counter");
+    await clickView(page, buttonPoint(view, "+"));
+    await clickView(page, buttonPoint(view, "+"));
+    await clickView(page, buttonPoint(view, "-"));
+    const text = await drawnText(page);
+    // 5 + 2 - 1
+    expect(text).toContain("6");
+    await shot(page, "counter-after-inc-inc-dec", testInfo.project.name);
+  });
+});
+
+test.describe("todo", () => {
+  // Each row draws its delete X as two red rectangles, so the row
+  // count is observable as the red-drawn count (the appended row's
+  // description is empty — Add Todo carries the unfocused textarea's
+  // state text, see risks.spec.ts for the typing finding).
+  test("Add Todo appends an entry and restart resets", async ({
+    page,
+  }, testInfo) => {
+    await gotoDemo(page, "todo");
+    const reds = page.locator('#demo > div div[style*="rgb(255, 0, 0)"]');
+    expect(await reds.count()).toBe(6);
+    await clickView(page, buttonPoint(demoView("todo"), "Add Todo"));
+    expect(await reds.count()).toBe(8);
+    await shot(page, "todo-after-add", testInfo.project.name);
+    // restart: nav away and back re-mounts fresh (unmount + fresh state)
+    await navTo(page, "counter");
+    await navTo(page, "todo");
+    expect(await reds.count()).toBe(6);
+    await shot(page, "todo-after-restart", testInfo.project.name);
+  });
+
+  test("filter row switches the visible rows", async ({ page }, testInfo) => {
+    await gotoDemo(page, "todo");
+    const view = demoView("todo");
+    // the toggle options are handler nodes drawing their label
+    await clickView(page, optionPoint(view, "complete"));
+    const text = await drawnText(page);
+    expect(text).toContain("third");
+    expect(text).not.toContain("first");
+    await shot(page, "todo-filter-complete", testInfo.project.name);
+  });
+});
+
+test.describe("dropdown", () => {
+  test("tap header opens, tap option selects and closes", async ({
+    page,
+  }, testInfo) => {
+    await gotoDemo(page, "dropdown");
+    const view = demoView("select");
+    // the closed select draws one handler: the header
+    await clickView(page, pointWhere(view, (f) => f.node.type === "handler"));
+    const opened = await drawnText(page);
+    expect(opened).toContain("Uno");
+    await shot(page, "dropdown-open", testInfo.project.name);
+    // the option rows exist only while open: replay the header toggle
+    // intent on an in-process app to re-derive the open view
+    const openView = replayView("select", [
+      ["update", [["keypath", "open?"]], (v: unknown) => !(v as boolean)],
+    ]);
+    await clickView(page, optionPoint(openView, "Dos"));
+    const after = await drawnText(page);
+    expect(after).toContain("Dos");
+    expect(after).not.toContain("Uno");
+    await shot(page, "dropdown-selected", testInfo.project.name);
+  });
+});
+
+test.describe("logo", () => {
+  test("Run appends a fold entry: cursor 0/0 → 1/1", async ({
+    page,
+  }, testInfo) => {
+    await gotoDemo(page, "logo");
+    expect(await drawnText(page)).toContain("0/0");
+    await clickView(page, buttonPoint(demoView("logo"), "Run"));
+    expect(await drawnText(page)).toContain("1/1");
+    await shot(page, "logo-after-run", testInfo.project.name);
+  });
+
+  test("Clear world empties the fold", async ({ page }, testInfo) => {
+    await gotoDemo(page, "logo");
+    await clickView(page, buttonPoint(demoView("logo"), "Run"));
+    expect(await drawnText(page)).toContain("1/1");
+    // the buttons row shifted with the grown world — re-derive the
+    // live view by replaying the run intent
+    const live = replayView("logo", [["run"]]);
+    await clickView(page, buttonPoint(live, "Clear world"));
+    expect(await drawnText(page)).toContain("0/0");
+    await shot(page, "logo-after-clear", testInfo.project.name);
+  });
+
+  test("slider pointer rewinds the cursor (3 → 0 → 2)", async ({
+    page,
+  }, testInfo) => {
+    await gotoDemo(page, "logo");
+    // three fold entries; the buttons row grows as the world does, so
+    // every click re-derives the live view
+    // the i-th click runs on a page holding i-1 entries, so the live
+    // view to derive is the one before that click
+    for (let i = 0; i < 3; i++) {
+      await clickView(
+        page,
+        buttonPoint(replayView("logo", runsOf(i)), "Run"),
+      );
+    }
+    expect(await drawnText(page)).toContain("3/3");
+    await shot(page, "logo-3-entries", testInfo.project.name);
+    // the track: the 150-wide rectangle of the time-travel row — the
+    // point is the track's drawn centre, so ±40 lands inside it
+    const track = pointWhere(
+      replayView("logo", runsOf(3)),
+      (f) => f.node.type === "rectangle" && (f.node as { width?: number }).width === 150,
+    );
+    // pointer down on the track's left third rewinds the cursor to the
+    // mapped value (35/150 of [0..3] → 0): 3/3 → 0/3. The full drag
+    // gesture is asserted as far as the wire supports it — see
+    // risks.spec.ts: the browser wire never delivers mouse-move-global,
+    // so mid-drag tracking (slider_gesture's move updates) is dead and
+    // every value update re-derives the world, shifting the layout
+    // under the pointer (recorded findings, HITL review).
+    await clickView(page, [track[0] - 40, track[1]]);
+    expect(await drawnText(page)).toContain("0/3");
+    await shot(page, "logo-after-slider-pointerdown", testInfo.project.name);
+    // a second pointerdown further right maps to entry 2 (the replay
+    // re-derives the shrunken-world layout with cursor 0)
+    const shrunk = pointWhere(
+      replayView("logo", [
+        ...runsOf(3),
+        ["update", CURSOR_PATH, () => 0],
+      ]),
+      (f) => f.node.type === "rectangle" && (f.node as { width?: number }).width === 150,
+    );
+    await clickView(page, [shrunk[0] + 40, shrunk[1]]);
+    expect(await drawnText(page)).toContain("2/3");
+    await shot(page, "logo-after-slider-tap-right", testInfo.project.name);
+  });
+});
+
+// The run intents replayed to reach n fold entries.
+function runsOf(n: number): readonly (readonly unknown[])[] {
+  return Array.from({ length: n }, () => ["run"]);
+}
