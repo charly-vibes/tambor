@@ -5,7 +5,9 @@
 //   newest procedure definitions.
 // Responsibilities: the World shape and pen-color table; move/trace
 //   recording; the COMMANDS dispatch table (fd/bk/rt/lt, pu/pd, home,
-//   setcolor, repeat, if, stop); defined-procedure invocation with
+//   setcolor, repeat, if, stop); the EN/ES runtime keyword tables
+//   (tambor-y9d.5) consulted at tokenize time via translateTokens;
+//   defined-procedure invocation with
 //   depth guarding; derive(entries, late) — all definitions applied
 //   first when late is on, then every command re-run; the EXAMPLES
 //   library and the procText re-load helper.
@@ -27,6 +29,9 @@ import {
   type Proc,
   type Reader,
 } from "./expr.ts";
+import { TABLES, translateTokens, type Dialect } from "./keywords.ts";
+
+export type { Dialect } from "./keywords.ts";
 
 export type { Proc } from "./expr.ts";
 
@@ -67,6 +72,13 @@ export const EXAMPLES: Readonly<Record<string, string>> = {
     "to petal\n repeat 2 [repeat 30 [fd 3 rt 3] rt 90]\nend\nsetcolor orange\nrepeat 12 [petal rt 30]",
   tree:
     "to tree :s\n if :s < 8 [stop]\n fd :s lt 25 tree :s * 0.7\n rt 50 tree :s * 0.7\n lt 25 bk :s\nend\nsetcolor green\npu bk 100 pd\ntree 80",
+};
+
+// The Spanish example programs (tambor-y9d.5): the same figures as the
+// English EXAMPLES above, written in the verified Spanish dialect.
+export const EXAMPLES_ES: Readonly<Record<string, string>> = {
+  cuadrado: "repite 4 [avanza 80 giraderecha 90]",
+  estrella: "poncolor morado\nrepite 5 [avanza 120 giraderecha 144]",
 };
 
 /** Load a procedure back into the editor as source text (procText). */
@@ -228,10 +240,17 @@ function freezeWorld(w: WorldBuilder): World {
 /** Derive the world: every entry runs as a fold step. With `late`, all
  * definitions are applied first, then every command re-runs — the old
  * drawing redrawn with the newest procedures. `to`/`end` tokens never
- * execute: definitions are registered by the fold. */
-export function derive(entries: readonly LogoEntry[], late: boolean): World {
+ * execute: definitions are registered by the fold. The dialect's
+ * keyword table translates tokens at tokenize time (EN default; the
+ * canonical words themselves always work in every dialect). */
+export function derive(
+  entries: readonly LogoEntry[],
+  late: boolean,
+  dialect: Dialect = "en",
+): World {
   const w = freshWorld();
-  const toks = entries.map((e) => tokenize(e.text));
+  const table = TABLES[dialect];
+  const toks = entries.map((e) => translateTokens(tokenize(e.text), table));
   if (late) toks.forEach((t) => defsOf(t, w.procs));
   toks.forEach((t) => {
     if (!late) defsOf(t, w.procs);
