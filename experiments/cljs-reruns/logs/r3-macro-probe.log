@@ -1,0 +1,4 @@
+macro-expanded component derived: 2 visible rows
+row texts: ["first" "second"]
+second toggle path: [["keypath" "todos"] ["filter" #object[Function]] ["nth" 1] ["keypath" "complete?"]]
+REAL-MACRO-PROBE: PASS

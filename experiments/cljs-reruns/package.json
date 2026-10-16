@@ -1,0 +1,16 @@
+{
+  "name": "tambor-cljs-reruns",
+  "private": true,
+  "type": "module",
+  "version": "0.1.0",
+  "description": "tambor-y9d.9 — re-runs of the recorded tambor×ClojureScript experiments (macro path-walker probe, shadow-cljs :advanced with its caveats) at the pinned versions EVALUATION.md records",
+  "scripts": {
+    "rerun": "./rerun.sh",
+    "probe:advanced": "npx shadow-cljs release probe && node probe-advanced.cjs"
+  },
+  "devDependencies": {
+    "cherry-cljs": "0.6.38",
+    "shadow-cljs": "3.5.7",
+    "squint-cljs": "0.15.212"
+  }
+}
