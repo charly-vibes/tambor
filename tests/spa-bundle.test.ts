@@ -1,7 +1,10 @@
 // @vitest-environment jsdom
 // Purpose: the built-bundle smoke test (tambor-y9d.2 acceptance) — the
 //   actual dist/spa.js artifact mounts the Logo demo through the
-//   real-DOM host and completes a dispatch → re-draw round trip.
+//   real-DOM host and completes a dispatch → re-draw round trip, and the
+//   build contract: dist/ carries every asset the bundle references —
+//   dist/worker.js included (tambor-amb) — so a Pages deploy cannot 404
+//   the logo worker into the silent fallback.
 // Responsibilities: build the bundle exactly as build:spa does (esbuild
 //   API, same entry and outfile), import it into a live jsdom document
 //   (the entry boots on import), navigate to the logo demo through the
@@ -23,6 +26,8 @@ import { describe, expect, it, beforeAll } from "vitest";
 // jsdom environment trips the TextEncoder invariant
 // @ts-expect-error node builtin
 import { execSync } from "node:child_process";
+// @ts-expect-error node builtin
+import { readFileSync } from "node:fs";
 
 import { scanOf } from "./helpers/scan.ts";
 import { centreOf } from "./helpers/appview.ts";
@@ -78,6 +83,25 @@ beforeAll(() => {
   // the build:spa recipe, verbatim (a child process: esbuild's node
   // code cannot load inside the jsdom environment)
   execSync("npm run build:spa", { stdio: "pipe" });
+});
+
+describe("spa bundle — the build contract", () => {
+  it("dist/ carries every asset the deployed bundle references (the logo worker)", () => {
+    // worker-client.ts constructs the Worker against a URL relative to the
+    // bundled spa.js: on Pages the site root is uploaded as-is, so a
+    // referenced asset that build:spa does not emit 404s and the client
+    // silently downgrades to the bounded in-thread fallback. The contract:
+    // the emitted dist/spa.js references ./worker.js and dist/worker.js
+    // exists as a real bundled asset (the worker entry, worker-main's
+    // envelope included).
+    const spa = readFileSync("dist/spa.js", "utf8");
+    expect(spa).toContain("./worker.js");
+    const worker = readFileSync("dist/worker.js", "utf8");
+    expect(worker.length).toBeGreaterThan(0);
+    // the bundle serves worker-main's runProgram envelope — a marker from
+    // the interpreter's typed failure, not a stray string
+    expect(worker).toContain("don't know how to");
+  });
 });
 
 describe("spa bundle — dist/spa.js mounts the logo demo", () => {
