@@ -20,6 +20,8 @@ import { makeApp, type App } from "../effects/dispatch.ts";
 import type { Path } from "../effects/paths.ts";
 import { todoApp, todoState, type TodoState } from "../examples/todo/todo.ts";
 import { createLogoApp } from "../examples/logo/logo.ts";
+import { createKeyedTableApp } from "../examples/bench/keyed-table.ts";
+import { createTodoBenchApp } from "../examples/bench/todomvc.ts";
 import type { Elem } from "../views/model.ts";
 import { VIEWPORT } from "./viewport.ts";
 
@@ -151,5 +153,19 @@ export const DEMOS: readonly DemoDef[] = [
     blurb:
       "example.logo — the world is never stored: world = fold(entries[0..cursor]). Run programs, rewind with the slider, redefine a procedure for late binding.",
     create: createLogoDemo,
+  },
+  {
+    id: "keyed-table",
+    title: "keyed-table",
+    blurb:
+      "bench key-table — 1000 keyed rows over plain state: Build 1000, Replace 10%, Swap Rows, Remove 10, Append 1k, each an ordinary update intent.",
+    create: createKeyedTableApp,
+  },
+  {
+    id: "todomvc",
+    title: "todomvc",
+    blurb:
+      "bench todo — the example.todo app at scale (200 seeded todos): add, complete, delete through the ordinary effects.",
+    create: createTodoBenchApp,
   },
 ];

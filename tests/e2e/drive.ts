@@ -90,7 +90,9 @@ export async function open(page: Page): Promise<void> {
 // Switch demos through the real nav (plain DOM buttons outside the
 // corpus — the entry's mounting plumbing).
 export async function navTo(page: Page, title: string): Promise<void> {
-  await page.locator("nav button", { hasText: title }).click();
+  // exact: substring matching went ambiguous when the bench apps added
+  // "todomvc" next to "todo" (both matched hasText "todo").
+  await page.getByRole("button", { name: title, exact: true }).click();
 }
 
 // Click a view-space point on the stage through the real mouse wire.
