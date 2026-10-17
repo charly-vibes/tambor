@@ -208,3 +208,7 @@
   - bd closed: 28k, x43, 54j.6 (B1-B8 core suite COMPLETE), 8yn. Exported JSONL 90 issues, pushed 2fa1903 through all gates (vitest 481/481, contracts 24s, testaruda 28s).
   - Stale worktrees cleaned: wt-28k, wt-x43 removed (merged). wt-54j6 still exists (feat/54j6-core-suite @ 6b48353, older). bd in_progress: ZERO.
   - **Next:** /renew tambor → 54j.7 BZ suite (streaming dashboard, plots, whiteboard, tracker, log streaming, live env, spreadsheet — each a keyed-table-pattern subagent lane) → 54j.3 design lane (interactive) → 54j.8-.11 → epic 54j close. 54j.3 is P1 and the only design-lane item left.
+- 2026-10-17T19:22:19Z [id:c8961fea35fc03f222061a5bdd3ae6806a1158141534bb2cbea34535f545f621] ### 2026-10-17 16:35 — snap (quick stash, session fully wrapped)
+  - Session recovered the failed orchestrator's work end-to-end and pushed: 8yn extent-sizing fix (spa/extent.ts), B7+B8 lane merges, keyed-table smoke spec fix, 54j.6 + 28k + x43 + 8yn all closed, whisper snap committed (9568c32).
+  - Board: bd ZERO in_progress; B1-B8 core suite complete; all gates green, origin/main up to date.
+  - **Next:** fresh session /renew tambor → 54j.7 BZ suite (BZ1-BZ7 lanes, keyed-table.ts pattern) → 54j.3 P1 design lane (interactive, run in lead session) → 54j.8-.11 → close epic 54j.
