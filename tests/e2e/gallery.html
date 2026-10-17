@@ -20,7 +20,14 @@
     <title>tambor — gallery (e2e fixture)</title>
     <style>
       body { font-family: system-ui, sans-serif; margin: 0; }
-      nav { display: flex; gap: 0.5rem; padding: 0.5rem; }
+      /* overflow-x on the nav itself: the 13-demo nav overflows the
+         fixture viewport — without a nav-local scroller, Playwright's
+         click on a fully-offscreen nav button scrolls the PAGE right
+         and the drawn stage (pinned at x=8) lands offscreen-left, so
+         every scripted stage click misses (tambor-54j.13, found by
+         the BZ1 bench's op clicks). The nav scrolls within itself;
+         the page and the stage origin never move. */
+      nav { display: flex; gap: 0.5rem; padding: 0.5rem; overflow-x: auto; }
       nav button { cursor: pointer; }
       nav button.active { font-weight: bold; }
       /* The 300-wide demo stage. Since tambor-huu the drawn root IS the

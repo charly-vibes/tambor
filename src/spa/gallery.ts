@@ -28,6 +28,7 @@ import { createTimeTravel10kApp } from "../examples/bench/time-travel-10k.ts";
 import { createSaveRestore5kApp } from "../examples/bench/save-restore-5k.ts";
 import { createDashboardDerivedApp } from "../examples/bench/dashboard-derived.ts";
 import { createReviewFaultsApp } from "../examples/bench/review-faults.ts";
+import { createStreamDashboardApp } from "../examples/bench/stream-dashboard.ts";
 import type { Elem } from "../views/model.ts";
 import { VIEWPORT } from "./viewport.ts";
 
@@ -215,5 +216,12 @@ export const DEMOS: readonly DemoDef[] = [
     blurb:
       "bench faults — a 200-item review session (draft → submitted → acked/rejected): duplicate, stale and lost acks are injected as ordinary update intents; echoed ids and typed outcomes keep the queue consistent.",
     create: createReviewFaultsApp,
+  },
+  {
+    id: "stream-dashboard",
+    title: "stream-dashboard",
+    blurb:
+      "bench stream — 500 tickers with sparklines and a top-of-book line fed by a simulated quote stream: Stream naive dispatches one intent per message (a full re-derive each), Stream frame folds the whole 80-message burst into one update — same final state, one repaint.",
+    create: createStreamDashboardApp,
   },
 ];

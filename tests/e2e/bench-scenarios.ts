@@ -9,7 +9,10 @@
 //   control-row / list-head positions), and SCENARIOS: keyed-table
 //   build/ops, todomvc-ops, form-200-focus, turtle-20k draw/recolor,
 //   save-restore-5k, time-travel-10k build/ops, dashboard-derived
-//   build/bump.
+//   build/bump, review-faults build/faults, and the BZ1 stream
+//   dashboard trio (bz1-build, bz1-stream-naive, bz1-stream-frame —
+//   the per-message-dispatch baseline vs the frame-coalesced
+//   candidate, tambor-54j.13).
 // Rationale: the ops are cycled, so a run's samples are labelled by
 //   position in the cycle in the samples array (cycle order, per run) —
 //   keyed-table-ops grows the table within a run (Append 1k), bounded
@@ -41,6 +44,14 @@ interface Scenario {
   readonly setupOf?: PointOf;
   readonly ops: number;
   readonly warmupOps: number;
+  /** drawn button texts cycled instead of the view-space points
+   * (tambor-54j.13): the in-process replay measures labels at
+   * text.length (defaultMeasure) while the bundle configures real
+   * text metrics, so a non-first button's replay point can fall
+   * inside the drawn first button's box — scenarios whose no-op guard
+   * distinguishes the ops click the drawn button's live DOM box
+   * (the drive.ts clickDrawnText ground truth) instead */
+  readonly drawnOps?: readonly string[];
 }
 
 // The first visible row's toggle checkbox (list-head-stable position).
@@ -202,6 +213,44 @@ export const SCENARIOS: readonly Scenario[] = [
     demoId: "dashboard-derived",
     pointsOf: [buttonText("Seed")],
     ops: 6,
+    warmupOps: 1,
+  },
+  {
+    id: "bz1-build",
+    // the built dashboard draws its 500 ticker rows — a silently
+    // dropped build would leave the stream empty
+    expectedDrawn: 500,
+    app: "stream dashboard (bench demo, dist/spa.js)",
+    demoId: "stream-dashboard",
+    pointsOf: [buttonText("Build 500")],
+    ops: 6,
+    warmupOps: 1,
+  },
+  {
+    id: "bz1-stream-naive",
+    // one dispatch PER message (80 per op): after warmup + 12 timed
+    // ops the summary line reads 13 × 80 = 1040 messages delivered —
+    // a dropped or duplicated message changes it
+    expectedText: "msgs 1040",
+    app: "stream dashboard (bench demo, dist/spa.js)",
+    demoId: "stream-dashboard",
+    pointsOf: [buttonText("Stream naive")],
+    drawnOps: ["Stream naive"],
+    setupOf: buttonText("Build 500"),
+    ops: 12,
+    warmupOps: 1,
+  },
+  {
+    id: "bz1-stream-frame",
+    // the coalesced candidate: the same 80-message burst folded into
+    // ONE update intent, so the same 1040 msgs must be on the line
+    expectedText: "msgs 1040",
+    app: "stream dashboard (bench demo, dist/spa.js)",
+    demoId: "stream-dashboard",
+    pointsOf: [buttonText("Stream frame")],
+    drawnOps: ["Stream frame"],
+    setupOf: buttonText("Build 500"),
+    ops: 12,
     warmupOps: 1,
   },
   {
