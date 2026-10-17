@@ -26,6 +26,7 @@ import { createTodoBenchApp } from "../examples/bench/todomvc.ts";
 import { createForm200App } from "../examples/bench/form-200.ts";
 import { createTimeTravel10kApp } from "../examples/bench/time-travel-10k.ts";
 import { createSaveRestore5kApp } from "../examples/bench/save-restore-5k.ts";
+import { createReviewFaultsApp } from "../examples/bench/review-faults.ts";
 import type { Elem } from "../views/model.ts";
 import { VIEWPORT } from "./viewport.ts";
 
@@ -199,5 +200,12 @@ export const DEMOS: readonly DemoDef[] = [
     blurb:
       "bench time travel — a 10k-step log over plain state: Build 10k, Scrub to 5k/10k and Undo one move the cursor as ordinary update intents (the log is never rewritten).",
     create: createTimeTravel10kApp,
+  },
+  {
+    id: "review-faults",
+    title: "review-faults",
+    blurb:
+      "bench faults — a 200-item review session (draft → submitted → acked/rejected): duplicate, stale and lost acks are injected as ordinary update intents; echoed ids and typed outcomes keep the queue consistent.",
+    create: createReviewFaultsApp,
   },
 ];

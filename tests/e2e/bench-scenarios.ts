@@ -149,6 +149,35 @@ export const SCENARIOS: readonly Scenario[] = [
     warmupOps: 1,
   },
   {
+    id: "review-build",
+    // submit moves all 200 drafts — the counts line is the no-op guard
+    expectedText: "submitted 200",
+    app: "review faults (bench demo, dist/spa.js)",
+    demoId: "review-faults",
+    pointsOf: [buttonText("Submit all")],
+    ops: 6,
+    warmupOps: 1,
+  },
+  {
+    id: "review-faults",
+    // honest ack + the three injections cycled over a submitted queue:
+    // after warmup + 12 timed ops (4-point cycle ×3) the fault log reads
+    // 3 duplicate + 3 stale + 3 lost — a dropped or mis-applied fault
+    // would change the summary line
+    expectedText: "fault log 9",
+    app: "review faults (bench demo, dist/spa.js)",
+    demoId: "review-faults",
+    pointsOf: [
+      buttonText("Ack next"),
+      buttonText("Duplicate ack"),
+      buttonText("Stale ack"),
+      buttonText("Drop ack"),
+    ],
+    setupOf: buttonText("Submit all"),
+    ops: 12,
+    warmupOps: 1,
+  },
+  {
     id: "time-travel-10k-ops",
     app: "time travel 10k (bench demo, dist/spa.js)",
     demoId: "time-travel-10k",
