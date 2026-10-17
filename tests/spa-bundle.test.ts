@@ -144,4 +144,32 @@ describe("spa bundle — dist/spa.js mounts the logo demo", () => {
 
     expect((demo as HostEl).textContent).toContain("1/1");
   });
+
+  it("keyed-table Build 1000 round-trips through the drawn button (tambor-yx8)", async () => {
+    const doc: HostDoc = hostDoc();
+    const mount = doc.createElement("div");
+    mount.setAttribute("id", "app");
+    doc.body.appendChild(mount);
+    const bundle: string = "../dist/spa.js";
+    await import(/* @vite-ignore */ bundle);
+
+    const navs = Array.from(doc.body.querySelectorAll("nav"));
+    let keyed: HostEl | undefined;
+    for (const b of (navs[0] as unknown as HostEl).querySelectorAll("button")) {
+      if (b.textContent === "keyed-table") keyed = b as unknown as HostEl;
+    }
+    expect(keyed).toBeDefined();
+    (keyed as HostEl).dispatchEvent(new (mouseEventCtor())("click", { clientX: 0, clientY: 0 }));
+
+    const demo = doc.getElementById("demo");
+    expect((demo as HostEl).textContent).toContain("bench key-table");
+
+    const build = Array.from((demo as HostEl).querySelectorAll("button")).find(
+      (b) => b.textContent === "Build 1000",
+    );
+    expect(build).toBeDefined();
+    clickAt(build as unknown as HostEl, 0, 0);
+
+    expect((demo as HostEl).textContent).toContain("row 999");
+  });
 });

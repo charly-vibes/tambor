@@ -69,6 +69,9 @@ const fsPromise: Promise<FsLike> = import("node:" + "fs");
 type PointOf = (view: Elem) => ViewPoint;
 
 interface Scenario {
+  /** minimum drawn-descendant count the op must produce — a no-op op
+   * (state update silently dropped) would measure overhead only */
+  readonly expectedDrawn?: number;
   readonly id: string;
   readonly app: string;
   readonly demoId: string;
@@ -96,6 +99,7 @@ const labelText = (text: string): PointOf => (view) =>
 const SCENARIOS: readonly Scenario[] = [
   {
     id: "keyed-table-build",
+    expectedDrawn: 1000,
     app: "keyed-table (bench demo, dist/spa.js)",
     demoId: "keyed-table",
     pointsOf: [buttonText("Build 1000")],
@@ -141,6 +145,24 @@ const SCENARIOS: readonly Scenario[] = [
       labelText("field 150"),
       labelText("field 199"),
     ],
+    ops: 10,
+    warmupOps: 1,
+  },
+  {
+    id: "turtle-20k-draw",
+    expectedDrawn: 20000,
+    app: "turtle 20k (bench demo, dist/spa.js)",
+    demoId: "turtle-20k",
+    pointsOf: [buttonText("Draw 20k")],
+    ops: 6,
+    warmupOps: 1,
+  },
+  {
+    id: "turtle-20k-recolor",
+    app: "turtle 20k (bench demo, dist/spa.js)",
+    demoId: "turtle-20k",
+    pointsOf: [buttonText("Recolor red")],
+    setupOf: buttonText("Draw 20k"),
     ops: 10,
     warmupOps: 1,
   },
@@ -244,6 +266,16 @@ test.describe("benchmark scenarios (bench apps)", () => {
           await settlePaint(page);
           const ms = Number(p.hrtime.bigint() - t0) / 1e6;
           samples.push(ms);
+        }
+
+        // The op actually happened: the drawn DOM must reflect the
+        // scenario's product (a silently dropped update would measure
+        // overhead only — the keyed-table finding, checked not eyeballed).
+        if (scenario.expectedDrawn !== undefined) {
+          const drawn = await page
+            .locator("#demo *")
+            .count();
+          expect(drawn).toBeGreaterThanOrEqual(scenario.expectedDrawn);
         }
 
         await context.close();
