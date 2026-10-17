@@ -5,13 +5,17 @@
 // Responsibilities: build the bundle exactly as build:spa does (esbuild
 //   API, same entry and outfile), import it into a live jsdom document
 //   (the entry boots on import), navigate to the logo demo through the
-//   gallery nav, click Run at the view-derived position, and assert the
-//   cursor label re-rendered 0/0 → 1/1.
+//   gallery nav, click the REAL drawn Run <button> node (events bubble
+//   to the drawn root where the backend listens), and assert the cursor
+//   label re-rendered 0/0 → 1/1.
 // Rationale: the acceptance meter of tambor-y9d.2 names the built
 //   dist/spa.js, not the source entry — a jsdom smoke over the artifact
 //   is what proves the published bundle mounts (backend_portable). The
-//   click position comes from the same view tree the corpus contracts
-//   use (scanOf + centreOf), as in the gallery tests.
+//   click targets the emitted button element itself (tambor-huu): real
+//   user input lands on the drawn DOM, not a canvas surface, so the
+//   smoke must exercise the same path. The click position comes from
+//   the same view tree the corpus contracts use (scanOf + centreOf),
+//   as in the gallery tests.
 
 import { describe, expect, it, beforeAll } from "vitest";
 // test-only node access (tsconfig types:[vitest/globals] by design);
@@ -46,10 +50,18 @@ function mouseEventCtor(): new (
   ) => unknown;
 }
 
+// bubbles: true — a real user click originates at the target element
+// and bubbles up to the drawn root where the backend listens
+// (tambor-huu); MouseEventInit defaults bubbles to false.
 function clickAt(host: HostEl, x: number, y: number): void {
   const ME = mouseEventCtor();
-  host.dispatchEvent(new ME("pointerdown", { clientX: x, clientY: y }));
-  host.dispatchEvent(new ME("pointerup", { clientX: x, clientY: y }));
+  const init = { bubbles: true, clientX: x, clientY: y } as {
+    bubbles: boolean;
+    clientX: number;
+    clientY: number;
+  };
+  host.dispatchEvent(new ME("pointerdown", init));
+  host.dispatchEvent(new ME("pointerup", init));
 }
 
 // The Run button's centre in the demo's own view tree — the same
@@ -96,12 +108,15 @@ describe("spa bundle — dist/spa.js mounts the logo demo", () => {
     expect((demo as HostEl).textContent).toContain("tambor logo");
     expect((demo as HostEl).textContent).toContain("0/0");
 
-    // click Run on the demo's canvas surface at the view-derived centre
-    const canvases = Array.from((demo as HostEl).querySelectorAll("canvas"));
-    expect(canvases.length).toBeGreaterThan(0);
-    const surface = canvases[canvases.length - 1] as unknown as HostEl;
+    // click the REAL drawn element (tambor-huu): the emitted <button>
+    // node itself, so the event bubbles to the drawn root the backend
+    // listens on — the same path real user input takes
+    const run = Array.from((demo as HostEl).querySelectorAll("button")).find(
+      (b) => b.textContent === "Run",
+    );
+    expect(run).toBeDefined();
     const [x, y] = runCentre();
-    clickAt(surface, x, y);
+    clickAt(run as unknown as HostEl, x, y);
 
     expect((demo as HostEl).textContent).toContain("1/1");
   });

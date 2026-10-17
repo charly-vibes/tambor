@@ -7,7 +7,9 @@
 //   and the subscription loop: every forwarded event routes through the
 //   corpus event router (dispatch), its intents go to app.dispatch, and
 //   the tree re-draws from app.view(). The first draw lands before any
-//   event; the <canvas> surface is attached for input.
+//   event; the input surface IS the drawn root (tambor-huu): real
+//   <button>/<span> children bubble their pointer events up to it, so
+//   a separate canvas would only ever see synthetic hits.
 // Rationale: openspec/specs/example-todo/spec.md is the design authority,
 //   with routeClick (backends.ts) as the host-side routing shape: the
 //   host dispatches the event and hands the intent list to the app's
@@ -67,6 +69,22 @@ function wireSurface(backend: DomBackend, app: App): void {
     if (intents.length > 0) app.dispatch(intents);
     backend.draw(app.view());
   });
+}
+
+// The input surface IS the drawn root (tambor-huu): pointer events on
+// the real <button>/<span> children bubble to it, and the origin is
+// the root's own bounding rect, so normalizeDOMEvent's view-space
+// translation lands the hit exactly where the tree was laid out. The
+// root is focusable (tabindex) for keyboard/paste, sized to the
+// viewport so it actually occupies layout, and touch-action:none so
+// touch input feeds the corpus instead of scrolling the page.
+function attachInputSurface(backend: DomBackend, root: RealDomElement): RealDomElement {
+  root.host.setAttribute("tabindex", "0");
+  root.host.style.setProperty("width", `${VIEWPORT[0]}px`);
+  root.host.style.setProperty("height", `${VIEWPORT[1]}px`);
+  root.host.style.setProperty("touch-action", "none");
+  backend.attach(root);
+  return root;
 }
 
 export function mountSpa(doc: HostDoc, container: HostElement): SpaHandle {
@@ -135,9 +153,7 @@ export function mountDemo(
   const root = backend.root as RealDomElement;
   container.appendChild(root.host);
 
-  const surface = new RealDomElement("canvas", doc);
-  container.appendChild(surface.host);
-  backend.attach(surface);
+  const surface = attachInputSurface(backend, root);
 
   backend.draw(app.view());
 
@@ -147,8 +163,8 @@ export function mountDemo(
     root,
     surface,
     unmount: () => {
+      // surface == root (tambor-huu): one host element to remove
       container.removeChild(root.host);
-      container.removeChild(surface.host);
     },
   };
 }
