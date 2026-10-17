@@ -23,29 +23,30 @@
       nav { display: flex; gap: 0.5rem; padding: 0.5rem; }
       nav button { cursor: pointer; }
       nav button.active { font-weight: bold; }
-      /* The 300×300 demo stage: the drawn root mirrors the view tree
-         (pointer-events none — display only), the surface canvas sits
-         on top and receives every pointer/key event. */
+      /* The 300-wide demo stage. Since tambor-huu the drawn root IS the
+         input surface (no separate canvas is mounted), so it must stay
+         pointer-events-enabled and reach the full 800px stage — the
+         old display-only pointer-events:none rule (canvas era) made
+         every gallery fixture click fall through to #demo and the SPA
+         received nothing (tambor-ibh follow-up, found by the bench
+         apps' expectedDrawn assertion). */
       #app { width: 100%; }
       #demo {
         position: relative;
         width: 300px;
         /* taller than VIEWPORT (300): the logo demo draws content below
-           y=300 (Run/Clear/Late row — and the row sinks further with every fold entry) and the SPA's real surface — a
-           300×300 canvas — can never deliver events there (recorded as
-           a y9d.4 finding); the fixture widens the input reach so the
-           HITL pass can exercise the below-fold semantics. */
+           y=300 (Run/Clear/Late row — and the row sinks further with
+           every fold entry); the root is stretched to the full stage so
+           below-fold drawn content stays event-reachable (the y9d.4
+           finding's remedy, kept for the root-as-surface era). */
         height: 800px;
         margin: 0.5rem;
       }
       #demo > p.blurb { position: absolute; top: 800px; width: 380px; }
-      #demo > div { position: absolute; inset: 0; pointer-events: none; }
-      #demo > canvas {
-        position: absolute;
-        inset: 0;
-        width: 300px;
-        height: 800px;
-        touch-action: none;
+      #demo > div {
+        /* the drawn root: stretch to the full stage over the mount's
+           inline 300px viewport height (below-fold reach, above) */
+        height: 800px !important;
       }
     </style>
   </head>

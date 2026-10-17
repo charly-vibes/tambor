@@ -21,6 +21,7 @@ import type { Path } from "../effects/paths.ts";
 import { todoApp, todoState, type TodoState } from "../examples/todo/todo.ts";
 import { createLogoApp } from "../examples/logo/logo.ts";
 import { createKeyedTableApp } from "../examples/bench/keyed-table.ts";
+import { createTurtle20kApp } from "../examples/bench/turtle-20k.ts";
 import { createTodoBenchApp } from "../examples/bench/todomvc.ts";
 import type { Elem } from "../views/model.ts";
 import { VIEWPORT } from "./viewport.ts";
@@ -160,6 +161,13 @@ export const DEMOS: readonly DemoDef[] = [
     blurb:
       "bench key-table — 1000 keyed rows over plain state: Build 1000, Replace 10%, Swap Rows, Remove 10, Append 1k, each an ordinary update intent.",
     create: createKeyedTableApp,
+  },
+  {
+    id: "turtle-20k",
+    title: "turtle-20k",
+    blurb:
+      "bench turtle — 20k path segments derived by the corpus logo interpreter: Draw 20k + Recolor as ordinary update intents.",
+    create: createTurtle20kApp,
   },
   {
     id: "todomvc",
