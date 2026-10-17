@@ -6,12 +6,13 @@
 //   CDP CPU throttle over exactly the timed ops, click → double-rAF
 //   paint as the op, warmup first, validate-before-write.
 // Responsibilities: per scenario — resolve the op points once from a
-//   fresh in-process view (demoView + buttonPoint/pointWhere: the op
-//   buttons sit in the fixed control row, and the todo ops target the
-//   first visible row whose position is list-head-stable), apply the
-//   untimed setup op (keyed-table-ops builds the 1000 rows it then
-//   mutates), cycle the op points, emit one result JSON per scenario
-//   into benchmarks/results/.
+//   fresh in-process view (demoView), apply the untimed setup op
+//   (keyed-table-ops builds the 1000 rows it then mutates), cycle the
+//   op points, validate the op actually happened (expectedDrawn /
+//   expectedText), emit one result JSON per scenario into
+//   benchmarks/results/. The declarative scenario registry (SCENARIOS)
+//   lives in bench-scenarios.ts — split to keep both files under the
+//   gate's file limit without renaming any scenario.
 // Rationale: the ops are cycled, so a run's samples are labelled by
 //   position in the cycle in the samples array (cycle order, per run) —
 //   keyed-table-ops grows the table within a run (Append 1k), bounded
@@ -24,12 +25,10 @@
 
 import { expect, test, type Page } from "@playwright/test";
 import {
-  buttonPoint,
   clickView,
   demoView,
   navTo,
   open,
-  pointWhere,
   type ViewPoint,
 } from "./drive.ts";
 import {
@@ -37,7 +36,7 @@ import {
   validateBenchResult,
   type BenchResult,
 } from "./bench-stats.ts";
-import type { Elem } from "../../src/views/model.ts";
+import { SCENARIOS } from "./bench-scenarios.ts";
 
 // --- structural node surface (no @types/node in this repo) ------------
 
@@ -61,112 +60,6 @@ function proc(): { hrtime: HrTime; version: string } | undefined {
 // static literal specifiers, and "node:fs" has no installed types, so
 // the variable form keeps `tsc --noEmit` green while still loading fs.
 const fsPromise: Promise<FsLike> = import("node:" + "fs");
-
-// --- scenario registry -------------------------------------------------
-
-// A view-point resolver: the fresh in-process view the page's initial
-// view equals (pure views over plain state).
-type PointOf = (view: Elem) => ViewPoint;
-
-interface Scenario {
-  /** minimum drawn-descendant count the op must produce — a no-op op
-   * (state update silently dropped) would measure overhead only */
-  readonly expectedDrawn?: number;
-  readonly id: string;
-  readonly app: string;
-  readonly demoId: string;
-  readonly pointsOf: readonly PointOf[];
-  readonly setupOf?: PointOf;
-  readonly ops: number;
-  readonly warmupOps: number;
-}
-
-// The first visible row's toggle checkbox (list-head-stable position).
-const firstCheckbox: PointOf = (view) =>
-  pointWhere(view, (f) => f.underHandler && f.node.type === "checkbox");
-
-// The first visible row's delete X (list-head-stable position).
-const firstDeleteX: PointOf = (view) =>
-  pointWhere(view, (f) => f.underHandler && f.node.type === "path");
-
-// The op button with the given drawn text (fixed control-row position).
-const buttonText = (text: string): PointOf => (view) => buttonPoint(view, text);
-
-// A drawn label by its exact text (the form's field labels).
-const labelText = (text: string): PointOf => (view) =>
-  pointWhere(view, (f) => f.node.type === "label" && f.node.text === text);
-
-const SCENARIOS: readonly Scenario[] = [
-  {
-    id: "keyed-table-build",
-    expectedDrawn: 1000,
-    app: "keyed-table (bench demo, dist/spa.js)",
-    demoId: "keyed-table",
-    pointsOf: [buttonText("Build 1000")],
-    ops: 6,
-    warmupOps: 1,
-  },
-  {
-    id: "keyed-table-ops",
-    app: "keyed-table (bench demo, dist/spa.js)",
-    demoId: "keyed-table",
-    pointsOf: [
-      buttonText("Replace 10%"),
-      buttonText("Swap Rows"),
-      buttonText("Remove 10"),
-      buttonText("Append 1k"),
-    ],
-    setupOf: buttonText("Build 1000"),
-    ops: 12,
-    warmupOps: 1,
-  },
-  {
-    id: "todomvc-ops",
-    app: "todo at scale (bench demo, dist/spa.js)",
-    demoId: "todomvc",
-    pointsOf: [
-      buttonText("Add Todo"),
-      firstCheckbox,
-      firstDeleteX,
-    ],
-    ops: 12,
-    warmupOps: 1,
-  },
-  {
-    id: "form-200-focus",
-    app: "200-field form (bench demo, dist/spa.js)",
-    demoId: "form-200",
-    // five spread fields, cycled — each click routes the ordinary
-    // request-focus/edit intents and re-derives the whole 200-field view
-    pointsOf: [
-      labelText("field 0"),
-      labelText("field 50"),
-      labelText("field 100"),
-      labelText("field 150"),
-      labelText("field 199"),
-    ],
-    ops: 10,
-    warmupOps: 1,
-  },
-  {
-    id: "turtle-20k-draw",
-    expectedDrawn: 20000,
-    app: "turtle 20k (bench demo, dist/spa.js)",
-    demoId: "turtle-20k",
-    pointsOf: [buttonText("Draw 20k")],
-    ops: 6,
-    warmupOps: 1,
-  },
-  {
-    id: "turtle-20k-recolor",
-    app: "turtle 20k (bench demo, dist/spa.js)",
-    demoId: "turtle-20k",
-    pointsOf: [buttonText("Recolor red")],
-    setupOf: buttonText("Draw 20k"),
-    ops: 10,
-    warmupOps: 1,
-  },
-];
 
 // --- env knobs (set by benchmarks/run.mjs) -----------------------------
 
@@ -276,6 +169,11 @@ test.describe("benchmark scenarios (bench apps)", () => {
             .locator("#demo *")
             .count();
           expect(drawn).toBeGreaterThanOrEqual(scenario.expectedDrawn);
+        }
+        if (scenario.expectedText !== undefined) {
+          await expect(page.locator("#demo")).toContainText(
+            scenario.expectedText,
+          );
         }
 
         await context.close();

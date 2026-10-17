@@ -24,6 +24,9 @@ import { createKeyedTableApp } from "../examples/bench/keyed-table.ts";
 import { createTurtle20kApp } from "../examples/bench/turtle-20k.ts";
 import { createTodoBenchApp } from "../examples/bench/todomvc.ts";
 import { createForm200App } from "../examples/bench/form-200.ts";
+import {
+  createSaveRestore5kApp,
+} from "../examples/bench/save-restore-5k.ts";
 import type { Elem } from "../views/model.ts";
 import { VIEWPORT } from "./viewport.ts";
 
@@ -176,6 +179,13 @@ export const DEMOS: readonly DemoDef[] = [
     blurb:
       "bench todo — the example.todo app at scale (200 seeded todos): add, complete, delete through the ordinary effects.",
     create: createTodoBenchApp,
+  },
+  {
+    id: "save-restore-5k",
+    title: "save-restore-5k",
+    blurb:
+      "bench state — 5k plain-data items: Save serialises the whole state to one JSON string, Restore rehydrates it and verifies the checksum — no component-tree traversal.",
+    create: createSaveRestore5kApp,
   },
   {
     id: "form-200",
