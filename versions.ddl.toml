@@ -14,5 +14,5 @@ testaruda = "0.5.5"        # test selection loop (0.5.3: collection_path ingest 
 # testaruda adapters — NOT in the release tarballs (which bundle only the core
 # binary + adapter-rust/adapter-python). Installed in CI from the testaruda
 # repo at this git tag (tambor-kpx).
-testaruda-adapter-typescript = "git:v0.5.5"
-testaruda-adapter-clojure = "git:v0.5.5"
+testaruda-adapter-typescript = "git:65e44d7" # collapse-fully-selected-files fix (tambor-ci-249)
+testaruda-adapter-clojure = "git:65e44d7"

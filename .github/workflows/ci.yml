@@ -56,7 +56,7 @@ jobs:
         with:
           tool: espectacular@0.12.0,pretender@0.7.0,testaruda@0.5.5
 
-      - name: Install testaruda adapters (DDL §4 pins — git tag v0.5.5)
+      - name: Install testaruda adapters (DDL §4 pins — adapter fix 65e44d7)
         # The testaruda release tarballs only bundle the core binary +
         # adapter-rust/adapter-python; tambor needs adapter-typescript (the
         # default adapter for the vitest stack) and adapter-clojure (the
@@ -71,7 +71,7 @@ jobs:
           if ! testaruda-adapter-typescript --version >/dev/null 2>&1 \
             || ! testaruda-adapter-clojure --version >/dev/null 2>&1; then
             cargo install --locked --quiet \
-              --git https://github.com/charly-vibes/testaruda.git --tag v0.5.5 \
+              --git https://github.com/charly-vibes/testaruda.git --rev 65e44d7d0aaf1b94ca2c332f2e18ac4c8003a3a1 \
               adapter-typescript adapter-clojure
           fi
           testaruda-adapter-typescript --version 2>/dev/null || true
@@ -136,45 +136,13 @@ jobs:
         # affected; 10 = store uncalibrated — the CI store is ephemeral
         # (init'd fresh every run), so exec is always a cold first run here.
         # Calibration is non-blocking (tambor-cpd); the pass/fail signal is
-        # the ah check --run-tests step.
-        # PROBE (tambor-ci-249): -vvv + XML listing to diagnose the CI-only
-        # "adapter ingest failed: Malformed response: empty run output" (249).
+        # the ah check --run-tests step. Adapter pinned to the commit that
+        # collapses fully-selected files to file-path filters: ~950 per-test
+        # vitest CLI filters die on CI node 24 with exit 249 + empty output
+        # (diagnosed via three probe runs, tambor-ci-249).
         run: |
-          # PROBE 3: replicate the engine's exact runner invocation and capture
-          # vitest's stdout/stderr/exit directly.
-          printf '{"command":"discover"}\n' | testaruda-adapter-typescript > /tmp/probe-discover.json 2>/dev/null || true
-          python3 - <<'PYEOF' 2>&1 | tail -6 >&2 || true
-          import json, subprocess
-          d = json.load(open('/tmp/probe-discover.json'))
-          ids = [i['node_id'] for i in d['result']]
-          cmd = json.dumps({"command":"run-args","params":{"selected":ids}}) + "\n"
-          out = subprocess.run(['testaruda-adapter-typescript'], input=cmd, capture_output=True, text=True)
-          ra = json.loads(out.stdout.strip().splitlines()[-1])['result']['runner_args']
-          import subprocess as sp, os, subprocess
-          print('probe3: node:', sp.run(['node','--version'],capture_output=True,text=True).stdout.strip())
-          print('probe3: npx:', sp.run(['npx','--version'],capture_output=True,text=True).stdout.strip())
-          for frac in (1.0, 0.5, 0.25, 0.1):
-              n = max(1, int(len(ids)*frac))
-              cmd2 = json.dumps({"command":"run-args","params":{"selected":ids[:n]}}) + "\n"
-              out2 = subprocess.run(['testaruda-adapter-typescript'], input=cmd2, capture_output=True, text=True)
-              ra2 = json.loads(out2.stdout.strip().splitlines()[-1])['result']['runner_args']
-              if frac == 1.0:
-                  ra2 = [a for a in ra2 if a != '--outputFile=target/test-results.xml'] + ['--outputFile=target/probe-full.xml']
-              else:
-                  ra2 = [a for a in ra2 if a != '--outputFile=target/test-results.xml'] + ['--outputFile=target/probe-frac.xml']
-              p = subprocess.run(ra2, capture_output=True, text=True)
-              print('probe3: frac', frac, 'filters=', len(ra2)-5, 'exit=', p.returncode, 'out', len(p.stdout), 'err', len(p.stderr))
-              if p.returncode != 0:
-                  print('probe3: stdout tail:', repr(p.stdout[-300:]))
-                  print('probe3: stderr tail:', repr(p.stderr[-300:]))
-          import os
-          print('probe3: xml exists:', os.path.exists('target/test-results.xml'))
-          PYEOF
           code=0
-          testaruda exec -vvv || code=$?
-          echo "probe: exec exit=$code" >&2
-          ls -la target/ 2>&1 | head -5 >&2 || true
-          echo "probe: xml head:" >&2; head -c 400 target/test-results.xml 2>&1 >&2 || echo "probe: no xml" >&2
+          testaruda exec || code=$?
           if [ "$code" -eq 0 ] || [ "$code" -eq 10 ] || [ "$code" -eq 20 ]; then exit 0; fi
           echo "testaruda exec failed with exit code $code" >&2
           exit "$code"
