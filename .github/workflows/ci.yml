@@ -137,9 +137,14 @@ jobs:
         # (init'd fresh every run), so exec is always a cold first run here.
         # Calibration is non-blocking (tambor-cpd); the pass/fail signal is
         # the ah check --run-tests step.
+        # PROBE (tambor-ci-249): -vvv + XML listing to diagnose the CI-only
+        # "adapter ingest failed: Malformed response: empty run output" (249).
         run: |
           code=0
-          testaruda exec || code=$?
+          testaruda exec -vvv || code=$?
+          echo "probe: exec exit=$code" >&2
+          ls -la target/ 2>&1 | head -5 >&2 || true
+          echo "probe: xml head:" >&2; head -c 400 target/test-results.xml 2>&1 >&2 || echo "probe: no xml" >&2
           if [ "$code" -eq 0 ] || [ "$code" -eq 10 ] || [ "$code" -eq 20 ]; then exit 0; fi
           echo "testaruda exec failed with exit code $code" >&2
           exit "$code"
