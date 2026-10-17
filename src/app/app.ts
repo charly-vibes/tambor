@@ -21,6 +21,7 @@
 
 import { dispatch } from "../events/dispatch.ts";
 import type { TamborEvent } from "../events/event.ts";
+import { phaseTimers } from "../events/phase-timers.ts";
 import { makeApp, type App, type Cell, type ViewFn } from "../effects/dispatch.ts";
 import type { Elem } from "../views/model.ts";
 
@@ -51,13 +52,25 @@ export function makeHeadlessApp(options: HeadlessAppOptions): HeadlessApp {
   });
 
   return {
+    // One routed event with the opt-in phase-timer seams (tambor-54j.1):
+    // derive is the view derivation feeding the route, handler is the
+    // routing plus the intent application; in raw mode the rAF repaint's
+    // re-derivation closes the record. All seam calls are no-ops while
+    // the timers are off.
     send(event: TamborEvent): void {
-      const intents = dispatch(app.view(), event);
+      phaseTimers.begin(event.type);
+      phaseTimers.startSpan("derive");
+      const view = app.view();
+      phaseTimers.endSpan();
+      phaseTimers.startSpan("handler");
+      const intents = dispatch(view, event);
       if (intents.length > 0) {
         // the framework path: the batch applies in order and make-app
         // schedules exactly one repaint
         app.dispatch(intents);
-      } else if (options.raw === true) {
+      }
+      phaseTimers.endSpan();
+      if (intents.length === 0 && options.raw === true) {
         // raw mode: the handler may have mutated external state and
         // returned nil — still exactly one repaint
         scheduleRepaint(app);
@@ -72,10 +85,16 @@ export function makeHeadlessApp(options: HeadlessAppOptions): HeadlessApp {
 
 // The host capability query: repaints ride the host's animation frame
 // when it provides one; a headless host without one repaints nothing.
+// The repaint's view re-derivation is the closing derive span of the
+// dispatch record when the timers are on (tambor-54j.1); the headless
+// app has no backend draw, so the record closes here.
 function scheduleRepaint(app: App): void {
   if (typeof globalThis.requestAnimationFrame === "function") {
     globalThis.requestAnimationFrame(() => {
+      phaseTimers.startSpan("derive");
       app.view();
+      phaseTimers.endSpan();
+      phaseTimers.finishDraw();
     });
   }
 }
