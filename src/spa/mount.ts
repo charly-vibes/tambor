@@ -37,7 +37,8 @@
 
 import { DomBackend } from "../render/dom.ts";
 import { measureUnit } from "../render/backend.ts";
-import type { Vec2 } from "../views/model.ts";
+import { type Elem, type Vec2 } from "../views/model.ts";
+import { wireExtentSizing } from "./extent.ts";
 import type { Font } from "../render/backend.ts";
 import {
   RealDomElement,
@@ -347,12 +348,8 @@ export function mountDemo(
   const backend = new DomBackend({
     createElement: realDomFactory(doc),
     containerSize: VIEWPORT,
-    // Real font metrics (tambor-0rp): the drawn DOM labels render at
-    // browser text metrics, so sibling offsets computed with the unit
-    // measure (1px/char) overlap in a real browser. Measure with the same
-    // font the emitted spans inherit (16px system-ui, the mount/host CSS
-    // default). jsdom has no canvas 2D context — falls back to the unit
-    // measure there, where the structural contracts don't need metrics.
+    // Real font metrics (tambor-0rp): measure with the font the emitted
+    // spans inherit (16px system-ui); jsdom falls back to unit measure.
     measure: domMeasure(doc),
   });
   const route = wireSurface(backend, app);
@@ -363,6 +360,10 @@ export function mountDemo(
   const surface = attachInputSurface(backend, root);
 
   wireSurfaceInput(surface, route, backend);
+
+  // Root height tracks the drawn extent per draw (tambor-8yn, extent.ts).
+  wireExtentSizing(backend, root.host);
+
   backend.draw(app.view());
 
   return {

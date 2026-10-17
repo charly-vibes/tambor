@@ -26,6 +26,7 @@ import { makeApp, lookupEffect } from "../src/effects/dispatch.ts";
 import { select, type Path } from "../src/effects/paths.ts";
 import { FOCUS_PATH } from "../src/app/top.ts";
 import { label, rectangle, type Elem } from "../src/views/model.ts";
+import { verticalLayout } from "../src/views/layout.ts";
 import { scrollview } from "../src/components/scrollview/scrollview.ts";
 import { call, render } from "../src/model/component.ts";
 import { todoApp, todoState, NEXT_TEXT_PATH } from "../src/examples/todo/todo.ts";
@@ -90,6 +91,43 @@ function eventCtor(): new (type: string, init?: { cancelable?: boolean }) => unk
   if (typeof ctor !== "function") throw new Error("Event unavailable");
   return ctor as new (type: string, init?: { cancelable?: boolean }) => unknown;
 }
+
+describe("spa-mount — root sized to the drawn extent (tambor-8yn)", () => {
+  it("the drawn root grows when an apply extends the view", () => {
+    const doc = hostDoc();
+    const container = doc.createElement("div");
+    doc.body.appendChild(container);
+    // the view is n stacked labels over plain state: the extent grows
+    // with the count, so an async apply (the worker-reply shape) must
+    // grow the root's inline height, not let rows draw outside it
+    const app = makeApp({
+      view: (state) => {
+        const rows: Elem[] = [];
+        for (let i = 0; i < (state as { n: number }).n; i++) {
+          rows.push(label(`row ${i}`));
+        }
+        // stacked like the demos draw them: translated rows, one per
+        // measured line (verticalLayout) — the extent grows with n
+        return verticalLayout(rows);
+      },
+      state: { n: 1 },
+    });
+    const spa = mountDemo(doc, container, () => app);
+    const h = () =>
+      Number(
+        spa.root.host.style
+          .getPropertyValue("height")
+          .replace("px", ""),
+      );
+    // short view: the root stays at the viewport floor
+    expect(h()).toBe(300);
+
+    // grown view: the root tracks the drawn extent (450 unit-height
+    // rows + gaps ≈ 899 — anything above 300 proves the sizing ran)
+    app.dispatch([["set", [["keypath", "n"]], 450]]);
+    expect(h()).toBeGreaterThan(300);
+  });
+});
 
 describe("spa-mount — async applies re-render (tambor-a45)", () => {
   it("a dispatch outside the event wire re-draws the view", () => {

@@ -41,11 +41,15 @@ if (doc !== undefined) {
     const demo = DEMOS[demoIndex]!;
     current?.unmount();
     content.textContent = "";
+    // mount FIRST, blurb after (tambor-8yn): the blurb flows below the
+    // drawn root in normal document order, so a grown demo pushes it
+    // down instead of drawing over it (the drawn root's height now
+    // tracks the drawn extent per draw).
+    current = mountDemo(d, content, demo.create);
     const blurb: HostElement = d.createElement("p");
     blurb.setAttribute("class", "blurb");
     blurb.textContent = demo.blurb;
     content.appendChild(blurb);
-    current = mountDemo(d, content, demo.create);
     let i = 0;
     for (const child of nav.childNodes) {
       if (i === demoIndex) child.setAttribute("class", "active");

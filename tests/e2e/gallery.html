@@ -34,19 +34,22 @@
       #demo {
         position: relative;
         width: 300px;
-        /* taller than VIEWPORT (300): the logo demo draws content below
-           y=300 (Run/Clear/Late row — and the row sinks further with
-           every fold entry); the root is stretched to the full stage so
-           below-fold drawn content stays event-reachable (the y9d.4
-           finding's remedy, kept for the root-as-surface era). */
-        height: 800px;
+        /* min-height 800 keeps the scripted stage stable, but the demo
+           must be allowed to GROW: the mount now sizes the drawn root
+           to the drawn extent per draw (tambor-8yn), so grown demos
+           push the blurb down in normal flow instead of drawing over
+           it (the fixed 800px + absolute blurb was the spill). */
+        min-height: 800px;
         margin: 0.5rem;
       }
-      #demo > p.blurb { position: absolute; top: 800px; width: 380px; }
+      /* the blurb flows AFTER the drawn root (main.ts appends it post-
+         mount), so grown content pushes it down instead of overlapping */
+      #demo > p.blurb { width: 380px; }
       #demo > div {
-        /* the drawn root: stretch to the full stage over the mount's
-           inline 300px viewport height (below-fold reach, above) */
-        height: 800px !important;
+        /* below-fold reach floor: min-height (not height!important) so
+           the mount's inline extent height can grow past it while a
+           short demo still keeps the full 800px scripted stage */
+        min-height: 800px;
       }
     </style>
   </head>
