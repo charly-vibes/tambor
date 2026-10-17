@@ -8,7 +8,8 @@
 //   resolvers (button text, first visible todo row, form label — fixed
 //   control-row / list-head positions), and SCENARIOS: keyed-table
 //   build/ops, todomvc-ops, form-200-focus, turtle-20k draw/recolor,
-//   save-restore-5k.
+//   save-restore-5k, time-travel-10k build/ops, dashboard-derived
+//   build/bump.
 // Rationale: the ops are cycled, so a run's samples are labelled by
 //   position in the cycle in the samples array (cycle order, per run) —
 //   keyed-table-ops grows the table within a run (Append 1k), bounded
@@ -160,6 +161,29 @@ export const SCENARIOS: readonly Scenario[] = [
       buttonText("Undo one"),
     ],
     setupOf: buttonText("Build 10k"),
+    ops: 12,
+    warmupOps: 1,
+  },
+  {
+    id: "dashboard-build",
+    // the seeded dashboard draws its ~20 tiles — a silently dropped
+    // seed would leave the grid empty
+    expectedDrawn: 20,
+    app: "dashboard derived (bench demo, dist/spa.js)",
+    demoId: "dashboard-derived",
+    pointsOf: [buttonText("Seed")],
+    ops: 6,
+    warmupOps: 1,
+  },
+  {
+    id: "dashboard-bump",
+    // the count tile still reads 500 after the Bump / Bump 100 cycle —
+    // every timed op re-derives all ~20 tiles from the bumped series
+    expectedText: "count 500",
+    app: "dashboard derived (bench demo, dist/spa.js)",
+    demoId: "dashboard-derived",
+    pointsOf: [buttonText("Bump"), buttonText("Bump 100")],
+    setupOf: buttonText("Seed"),
     ops: 12,
     warmupOps: 1,
   },
