@@ -89,6 +89,10 @@ const firstDeleteX: PointOf = (view) =>
 // The op button with the given drawn text (fixed control-row position).
 const buttonText = (text: string): PointOf => (view) => buttonPoint(view, text);
 
+// A drawn label by its exact text (the form's field labels).
+const labelText = (text: string): PointOf => (view) =>
+  pointWhere(view, (f) => f.node.type === "label" && f.node.text === text);
+
 const SCENARIOS: readonly Scenario[] = [
   {
     id: "keyed-table-build",
@@ -122,6 +126,22 @@ const SCENARIOS: readonly Scenario[] = [
       firstDeleteX,
     ],
     ops: 12,
+    warmupOps: 1,
+  },
+  {
+    id: "form-200-focus",
+    app: "200-field form (bench demo, dist/spa.js)",
+    demoId: "form-200",
+    // five spread fields, cycled — each click routes the ordinary
+    // request-focus/edit intents and re-derives the whole 200-field view
+    pointsOf: [
+      labelText("field 0"),
+      labelText("field 50"),
+      labelText("field 100"),
+      labelText("field 150"),
+      labelText("field 199"),
+    ],
+    ops: 10,
     warmupOps: 1,
   },
 ];

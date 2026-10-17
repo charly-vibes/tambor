@@ -22,6 +22,7 @@ import { todoApp, todoState, type TodoState } from "../examples/todo/todo.ts";
 import { createLogoApp } from "../examples/logo/logo.ts";
 import { createKeyedTableApp } from "../examples/bench/keyed-table.ts";
 import { createTodoBenchApp } from "../examples/bench/todomvc.ts";
+import { createForm200App } from "../examples/bench/form-200.ts";
 import type { Elem } from "../views/model.ts";
 import { VIEWPORT } from "./viewport.ts";
 
@@ -167,5 +168,12 @@ export const DEMOS: readonly DemoDef[] = [
     blurb:
       "bench todo — the example.todo app at scale (200 seeded todos): add, complete, delete through the ordinary effects.",
     create: createTodoBenchApp,
+  },
+  {
+    id: "form-200",
+    title: "form-200",
+    blurb:
+      "bench form — 200 labeled fields over plain state: every interaction re-derives the whole view (the honest weak-spot measurement).",
+    create: createForm200App,
   },
 ];
