@@ -23,8 +23,14 @@
 //   momentumFrames therefore take their inputs as plain data — exactly
 //   the spec rows' generators — and the event-side plumbing (delta and
 //   pointerType transport) is the backend-render / app-toplevel
-//   integration's to define. The scrollbar drags are wired through the
-//   start-scroll intent that app.toplevel handles.
+//   integration's to define. The integration side is now defined for
+//   the SPA surface (tambor-gov): its wheel listener forwards the raw
+//   deltas on the scroll event's delta field (src/events/event.ts) and
+//   scrollviewView's scroll wrap consumes them, so wheelIntents has a
+//   producer through dispatch here; the canvas backend still forwards
+//   no wheel. One-finger drag scrolling and the scrollbar drags (wired
+//   through the start-scroll intent that app.toplevel handles) remain
+//   integration work.
 
 import {
   bounds,
@@ -138,6 +144,34 @@ function axisMoving(o: Vec2, v: Vec2, max: Vec2, axis: 0 | 1): boolean {
   return clampScalar(o[axis] + vel, max[axis]) !== o[axis];
 }
 
+// The scroll pair's wrap handler (tambor-gov): the clip gate first —
+// content outside the viewport receives no pointer events either
+// (clip_events) — then the child intents when non-empty so that a
+// nested scrollview wins (wheel_defers_to_children), and otherwise the
+// wheel update built from the delta the scroll event carries (the
+// transport the integration defines) through wheelIntents
+// (wheel_updates_offset). Without a delta the event produces nothing:
+// a scroll event forwarded by a surface that transports no deltas is
+// not a wheel gesture this component can act on.
+function wheelGate(
+  viewport: Vec2,
+  offset: Vec2,
+  total: Vec2,
+  $offset: Path,
+): WrapHandler {
+  return (defaultHandler, pos, event) => {
+    const p = (pos ?? [0, 0]) as Vec2;
+    if (p[0] < 0 || p[0] >= viewport[0] || p[1] < 0 || p[1] >= viewport[1]) {
+      return [];
+    }
+    const child = defaultHandler();
+    if (child.length > 0) return child;
+    const delta = (event as { delta?: Vec2 } | undefined)?.delta;
+    if (delta === undefined) return [];
+    return wheelIntents(offset, delta, total, viewport, $offset);
+  };
+}
+
 // The pointer kinds the clip gates: content outside the viewport
 // receives no pointer events (clip_events), hit-tested half-open like
 // the event model (hit_half_open).
@@ -171,7 +205,13 @@ export function scrollviewView(props: Props): readonly EventElem[] {
 
   const gated = wrapOn(
     CLIP_KINDS.map(
-      (kind) => [kind, clipGate(viewport)] as const,
+      (kind) =>
+        [
+          kind,
+          kind === "scroll"
+            ? wheelGate(viewport, offset, total, $offset)
+            : clipGate(viewport),
+        ] as const,
     ),
     translate(-offset[0], -offset[1], body),
   );

@@ -255,7 +255,12 @@ function dispatchWrap(node: WrapNode, event: TamborEvent): IntentList {
 
 // Handler argument convention: pointer handlers receive the position
 // relative to their own node origin (local_pos_passed); key handlers
-// receive the key; clipboard handlers the data.
+// receive the key; clipboard handlers the data. Scroll wrap handlers
+// additionally receive the event object so the scrollview's wheel rules
+// can read the delta the input surface transported on it (the delta
+// transport components-scrollview's header delegates to the
+// integration) — the same additive extension the pointer handlers'
+// second argument follows.
 function handlerArgs(event: TamborEvent): readonly unknown[] {
   switch (event.type) {
     case "key-press":
@@ -263,6 +268,8 @@ function handlerArgs(event: TamborEvent): readonly unknown[] {
       return [event.key];
     case "clipboard":
       return [event.data];
+    case "scroll":
+      return [event.pos ?? [0, 0], event];
     default:
       // mouse-enter-global and mouse-move-global handlers receive the
       // (already origin-adjusted) position

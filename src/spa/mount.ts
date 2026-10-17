@@ -6,7 +6,10 @@
 //   effects like add-todo apply), a DomBackend with the realDomFactory,
 //   and the subscription loop: every forwarded event routes through the
 //   corpus event router (dispatch), its intents go to app.dispatch, and
-//   the tree re-draws from app.view(). The first draw lands before any
+//   the tree re-draws from app.view(). Wheel input has no backend
+//   listener, so the surface registers its own (tambor-gov): a raw
+//   wheel becomes the corpus scroll event with the deltas on its delta
+//   field, preventDefaulted so the page does not scroll. The first draw lands before any
 //   event; the input surface IS the drawn root (tambor-huu): real
 //   <button>/<span> children bubble their pointer events up to it, so
 //   a separate canvas would only ever see synthetic hits. The mount
@@ -47,7 +50,7 @@ import {
 } from "./focus.ts";
 import { VIEWPORT } from "./viewport.ts";
 import { dispatch } from "../events/dispatch.ts";
-import type { TamborEvent } from "../events/event.ts";
+import { scroll, type TamborEvent } from "../events/event.ts";
 
 export interface SpaHandle {
   readonly backend: DomBackend;
@@ -77,12 +80,46 @@ function createTodoApp(): App {
 
 // One forwarded event = one corpus wire round trip, the routeClick
 // shape: route through the event router, hand the intents to the
-// registry-aware dispatcher, re-draw from the app view.
-function wireSurface(backend: DomBackend, app: App): void {
-  backend.subscribe((ev: TamborEvent) => {
+// registry-aware dispatcher, re-draw from the app view. Returns the
+// wire so the surface's own wheel listener (tambor-gov) can feed the
+// same route.
+function wireSurface(backend: DomBackend, app: App): (ev: TamborEvent) => void {
+  const route = (ev: TamborEvent): void => {
     const intents = dispatch(app.view(), ev);
     if (intents.length > 0) app.dispatch(intents);
     backend.draw(app.view());
+  };
+  backend.subscribe(route);
+  return route;
+}
+
+// Wheel forwarding (tambor-gov): backend-render's input_forwarded says
+// raw wheel events are normalised and forwarded, but the backend
+// attaches no wheel listener, so the SPA surface registers its own on
+// the drawn root. The raw wheel becomes the corpus scroll event (the
+// event-model kind the wheel rules run on), carrying the raw deltas on
+// the event's delta field — the transport components-scrollview's
+// header delegates to the integration — at the cursor position
+// translated into view space the same way normalizeDOMEvent does it.
+// preventDefault so the page itself does not scroll; the mount owns
+// the delta, the wheel rules in the scrollview consume it.
+function wireWheel(surface: RealDomElement, route: (ev: TamborEvent) => void): void {
+  surface.host.addEventListener("wheel", (raw) => {
+    const e = raw as {
+      clientX?: number;
+      clientY?: number;
+      deltaX?: number;
+      deltaY?: number;
+      preventDefault(): void;
+    };
+    e.preventDefault();
+    const r = surface.host.getBoundingClientRect();
+    route(
+      scroll(
+        [(e.clientX ?? 0) - r.x, (e.clientY ?? 0) - r.y],
+        { delta: [e.deltaX ?? 0, e.deltaY ?? 0] },
+      ),
+    );
   });
 }
 
@@ -173,13 +210,14 @@ export function mountDemo(
     // measure there, where the structural contracts don't need metrics.
     measure: domMeasure(doc),
   });
-  wireSurface(backend, app);
+  const route = wireSurface(backend, app);
 
   const root = backend.root as RealDomElement;
   container.appendChild(root.host);
 
   const surface = attachInputSurface(backend, root);
 
+  wireWheel(surface, route);
   wireFocus(surface);
   backend.draw(app.view());
 

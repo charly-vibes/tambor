@@ -23,9 +23,11 @@ import { describe, expect, it } from "vitest";
 import { mountDemo, mountSpa } from "../src/spa/mount.ts";
 import { spaFocusView } from "../src/spa/focus.ts";
 import { makeApp, lookupEffect } from "../src/effects/dispatch.ts";
-import { select } from "../src/effects/paths.ts";
+import { select, type Path } from "../src/effects/paths.ts";
 import { FOCUS_PATH } from "../src/app/top.ts";
-import { label } from "../src/views/model.ts";
+import { label, rectangle, type Elem } from "../src/views/model.ts";
+import { scrollview } from "../src/components/scrollview/scrollview.ts";
+import { call, render } from "../src/model/component.ts";
 import { todoApp, todoState, NEXT_TEXT_PATH } from "../src/examples/todo/todo.ts";
 import { toggleOptionOf, centreOf } from "./helpers/appview.ts";
 import type { HostDoc } from "../src/interop/domhost.ts";
@@ -79,6 +81,61 @@ describe("spa-mount — todo example in a live document", () => {
     expect(text).not.toContain("first");
     expect(text).not.toContain("second");
     expect(text).toContain("third");
+  });
+});
+
+// The Event constructor, reached structurally (no lib.dom in tsconfig).
+function eventCtor(): new (type: string, init?: { cancelable?: boolean }) => unknown {
+  const ctor = (globalThis as { Event?: unknown }).Event;
+  if (typeof ctor !== "function") throw new Error("Event unavailable");
+  return ctor as new (type: string, init?: { cancelable?: boolean }) => unknown;
+}
+
+describe("spa-mount — wheel forwarding (tambor-gov)", () => {
+  it("a wheel event on the surface routes into the scrollview and updates the offset", () => {
+    const doc = hostDoc();
+    const container = doc.createElement("div");
+    doc.body.appendChild(container);
+    // the offset path the scrollview call's updates address; the view
+    // reads the stored offset through the same path (stale_offset_snaps)
+    const OFFSET_PATH: Path = [["keypath", "offset"]];
+    const app = makeApp({
+      view: (state) =>
+        render(
+          call(scrollview, {
+            "scroll-bounds": [200, 200],
+            body: rectangle(500, 500),
+            $offset: OFFSET_PATH,
+            offset: (state as { offset: [number, number] }).offset,
+          }),
+        ) as Elem,
+      state: { offset: [0, 0] },
+      backend: { containerSize: [300, 300] as const },
+    });
+    const spa = mountDemo(doc, container, () => app);
+
+    // a real wheel event on the drawn root (jsdom has no WheelEvent:
+    // an Event carrying the wheel init fields stands in)
+    const ev = new (eventCtor())("wheel", { cancelable: true }) as {
+      defaultPrevented: boolean;
+    } & Record<"clientX" | "clientY" | "deltaX" | "deltaY", number>;
+    for (const [field, value] of [
+      ["clientX", 10],
+      ["clientY", 10],
+      ["deltaX", 0],
+      ["deltaY", 50],
+    ] as const) {
+      Object.defineProperty(ev, field, { value });
+    }
+    spa.surface.host.dispatchEvent(ev as unknown as Parameters<
+      (typeof spa.surface.host)["dispatchEvent"]
+    >[0]);
+
+    // wheel_updates_offset: the delta clamps into the range and the
+    // stored offset moves by it
+    expect(select(app.getState(), OFFSET_PATH)).toEqual([0, 50]);
+    // the page must not scroll: the surface preventDefaults the wheel
+    expect(ev.defaultPrevented).toBe(true);
   });
 });
 

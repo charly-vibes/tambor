@@ -44,6 +44,13 @@ export interface TamborEvent {
   readonly pointerType?: PointerType;
   readonly key?: string;
   readonly data?: string;
+  // Wheel delta of a scroll event, in view units per wheel tick. The
+  // corpus scroll event carries a position but no delta
+  // (components-scrollview's header records the gap), so the
+  // integration layer defines the transport: an input surface forwards
+  // its raw wheel deltas here and the scrollview's wheel rules consume
+  // them. Events of every other kind leave it unset.
+  readonly delta?: Vec2;
 }
 
 // The one pointer shape every device normalises onto
