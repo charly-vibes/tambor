@@ -41,6 +41,14 @@ interface Scenario {
   readonly setupOf?: PointOf;
   readonly ops: number;
   readonly warmupOps: number;
+  /** drawn button texts cycled instead of the view-space points
+   * (tambor-54j.17): the in-process replay measures labels at
+   * text.length (defaultMeasure) while the bundle configures real
+   * text metrics, so a non-first button's replay point can fall
+   * inside the drawn first button's box — scenarios whose no-op guard
+   * distinguishes the ops click the drawn button's live DOM box
+   * (the drive.ts clickDrawnText ground truth) instead */
+  readonly drawnOps?: readonly string[];
 }
 
 // The first visible row's toggle checkbox (list-head-stable position).
@@ -202,6 +210,49 @@ export const SCENARIOS: readonly Scenario[] = [
     demoId: "dashboard-derived",
     pointsOf: [buttonText("Seed")],
     ops: 6,
+    warmupOps: 1,
+  },
+  {
+    id: "log-stream-naive-append",
+    // unbounded ingest: after warmup + 12 ops the naive corpus holds
+    // 13 × 250 = 3250 lines — and all of them are drawn (the memory
+    // growth the BZ5 row predicts); a dropped append would leave the
+    // count short
+    expectedDrawn: 3300,
+    expectedText: "all 3250",
+    app: "log stream (bench demo, dist/spa.js)",
+    demoId: "log-stream",
+    pointsOf: [buttonText("Append 250")],
+    drawnOps: ["Append 250"],
+    ops: 12,
+    warmupOps: 1,
+  },
+  {
+    id: "log-stream-ring-append",
+    // the candidate: the ring keeps only the newest 2000 of the 3250
+    // ingested lines (oldest dropped) and draws a fixed-height window —
+    // the kept count is the no-op guard
+    expectedText: "kept 2000",
+    app: "log stream (bench demo, dist/spa.js)",
+    demoId: "log-stream",
+    pointsOf: [buttonText("Ring append 250")],
+    drawnOps: ["Ring append 250"],
+    ops: 12,
+    warmupOps: 1,
+  },
+  {
+    id: "log-stream-search",
+    // the Search all / Search ring cycle (ingest-then-search): warmup
+    // + 6 cycles each — naive corpus 1750 lines, ring 1500 (ids 0..1499,
+    // error every 10th id) — so the last op's outcome line reads 150
+    // ring matches; a dropped append or a mis-scanned corpus would
+    // change the count
+    expectedText: "matches 150 of error",
+    app: "log stream (bench demo, dist/spa.js)",
+    demoId: "log-stream",
+    pointsOf: [buttonText("Search all"), buttonText("Search ring")],
+    drawnOps: ["Search all", "Search ring"],
+    ops: 12,
     warmupOps: 1,
   },
   {
