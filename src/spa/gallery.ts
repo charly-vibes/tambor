@@ -30,6 +30,7 @@ import { createDashboardDerivedApp } from "../examples/bench/dashboard-derived.t
 import { createReviewFaultsApp } from "../examples/bench/review-faults.ts";
 import { createLogStreamApp } from "../examples/bench/log-stream.ts";
 import { createStreamDashboardApp } from "../examples/bench/stream-dashboard.ts";
+import { createSpreadsheetApp } from "../examples/bench/spreadsheet.ts";
 import type { Elem } from "../views/model.ts";
 import { VIEWPORT } from "./viewport.ts";
 
@@ -231,5 +232,12 @@ export const DEMOS: readonly DemoDef[] = [
     blurb:
       "bench stream — 500 tickers with sparklines and a top-of-book line fed by a simulated quote stream: Stream naive dispatches one intent per message (a full re-derive each), Stream frame folds the whole 80-message burst into one update — same final state, one repaint.",
     create: createStreamDashboardApp,
+  },
+  {
+    id: "spreadsheet",
+    title: "spreadsheet",
+    blurb:
+      "bench spreadsheet — a 1M-cell logical grid (10000×100) with 100k defined cells: 10k literals plus 90k three-ref formulas. Seed builds the dependency index; Edit naive recomputes every formula after each edit, Edit graph recomputes only the edited cell's transitive dependents — same final state (the status line's edits counter and values checksum guard it), measured per edit.",
+    create: createSpreadsheetApp,
   },
 ];

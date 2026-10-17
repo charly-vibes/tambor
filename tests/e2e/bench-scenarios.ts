@@ -12,7 +12,10 @@
 //   build/bump, review-faults build/faults, and the BZ1 stream
 //   dashboard trio (bz1-build, bz1-stream-naive, bz1-stream-frame —
 //   the per-message-dispatch baseline vs the frame-coalesced
-//   candidate, tambor-54j.13).
+//   candidate, tambor-54j.13) and the BZ7 spreadsheet trio (bz7-build,
+//   bz7-edit-naive, bz7-edit-graph — the full-recompute baseline vs
+//   the dependency-graph candidate over the same literal edits,
+//   tambor-54j.19).
 // Rationale: the ops are cycled, so a run's samples are labelled by
 //   position in the cycle in the samples array (cycle order, per run) —
 //   keyed-table-ops grows the table within a run (Append 1k), bounded
@@ -304,6 +307,49 @@ export const SCENARIOS: readonly Scenario[] = [
     app: "dashboard derived (bench demo, dist/spa.js)",
     demoId: "dashboard-derived",
     pointsOf: [buttonText("Bump"), buttonText("Bump 100")],
+    setupOf: buttonText("Seed"),
+    ops: 12,
+    warmupOps: 1,
+  },
+  {
+    id: "bz7-build",
+    // the seeded sheet draws its 24×10 window over the 1M logical grid
+    // and the status line pins the defined-formula count — a silently
+    // dropped seed would leave the window all empty markers
+    expectedDrawn: 240,
+    expectedText: "formulas 90000",
+    app: "spreadsheet (bench demo, dist/spa.js)",
+    demoId: "spreadsheet",
+    pointsOf: [buttonText("Seed")],
+    ops: 6,
+    warmupOps: 1,
+  },
+  {
+    id: "bz7-edit-naive",
+    // the §4.3 hazard: after warmup + 12 timed edits the counter reads
+    // 13 and the values checksum matches the graph scenario's exactly —
+    // a dropped edit or a misrecompute changes the line
+    expectedDrawn: 240,
+    expectedText: "edits 13 sum 160480317064",
+    app: "spreadsheet (bench demo, dist/spa.js)",
+    demoId: "spreadsheet",
+    pointsOf: [buttonText("Edit naive")],
+    drawnOps: ["Edit naive"],
+    setupOf: buttonText("Seed"),
+    ops: 12,
+    warmupOps: 1,
+  },
+  {
+    id: "bz7-edit-graph",
+    // the candidate: the same 13 edits, dependency-graph recompute —
+    // the same checksum must be on the line (naive-vs-graph state
+    // equality is the correctness gate on the measured ops)
+    expectedDrawn: 240,
+    expectedText: "edits 13 sum 160480317064",
+    app: "spreadsheet (bench demo, dist/spa.js)",
+    demoId: "spreadsheet",
+    pointsOf: [buttonText("Edit graph")],
+    drawnOps: ["Edit graph"],
     setupOf: buttonText("Seed"),
     ops: 12,
     warmupOps: 1,
