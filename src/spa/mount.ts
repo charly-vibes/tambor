@@ -54,6 +54,7 @@ import {
 } from "./focus.ts";
 import { VIEWPORT } from "./viewport.ts";
 import { dispatch } from "../events/dispatch.ts";
+import { phaseTimers } from "../events/phase-timers.ts";
 import {
   clipboard,
   mouseUp,
@@ -94,10 +95,25 @@ function createTodoApp(): App {
 // wire so the surface's own wheel listener (tambor-gov) can feed the
 // same route.
 function wireSurface(backend: DomBackend, app: App): (ev: TamborEvent) => void {
+  // Phase-timer seams (tambor-54j.1, opt-in): derive is accumulated
+  // over both view derivations of the wire (the one feeding the route
+  // and the one feeding the draw), handler is the routing plus the
+  // intent application, and the dom draw attributes reconcile_layout
+  // and closes the record. All seam calls are no-ops while the timers
+  // are off.
   const route = (ev: TamborEvent): void => {
-    const intents = dispatch(app.view(), ev);
+    phaseTimers.begin(ev.type);
+    phaseTimers.startSpan("derive");
+    const view = app.view();
+    phaseTimers.endSpan();
+    phaseTimers.startSpan("handler");
+    const intents = dispatch(view, ev);
     if (intents.length > 0) app.dispatch(intents);
-    backend.draw(app.view());
+    phaseTimers.endSpan();
+    phaseTimers.startSpan("derive");
+    const drawn = app.view();
+    phaseTimers.endSpan();
+    backend.draw(drawn);
   };
   backend.subscribe(route);
   return route;

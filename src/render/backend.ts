@@ -20,6 +20,7 @@
 
 import { dispatch } from "../events/dispatch.ts";
 import type { TamborEvent } from "../events/event.ts";
+import { phaseTimers } from "../events/phase-timers.ts";
 import {
   defaultHandler,
   type EffectContext,
@@ -133,10 +134,22 @@ export class Runtime {
   }
 
   // Route one forwarded event: dispatch → intents → handler batch.
+  // Phase-timer seams (tambor-54j.1, opt-in): derive is the view
+  // re-derivation feeding the route, handler is the routing plus the
+  // intent application; the record closes at the backend's draw. All
+  // seam calls are no-ops while the timers are off.
   send(event: TamborEvent): void {
     if (!this.opts.view) return;
-    const intents = dispatch(this.render(), event);
-    if (intents.length === 0) return;
+    phaseTimers.begin(event.type);
+    phaseTimers.startSpan("derive");
+    const view = this.render();
+    phaseTimers.endSpan();
+    phaseTimers.startSpan("handler");
+    const intents = dispatch(view, event);
+    if (intents.length === 0) {
+      phaseTimers.endSpan();
+      return;
+    }
     const ctx: EffectContext = {
       backend: {
         containerSize: this.containerSize(),
@@ -145,6 +158,7 @@ export class Runtime {
     };
     const handler = this.opts.handler ?? defaultHandler;
     this.state = handler(this.state, intents, ctx);
+    phaseTimers.endSpan();
   }
 }
 

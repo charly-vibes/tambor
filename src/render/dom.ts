@@ -29,6 +29,7 @@ import {
 } from "./backend.ts";
 import { SimElement, type ElementLike, type SimEvent } from "./domsim.ts";
 import { normalizeDOMEvent } from "./input.ts";
+import { phaseTimers } from "../events/phase-timers.ts";
 import type { AnyDraw } from "./primitives.ts";
 import {
   type BuildCtx,
@@ -96,10 +97,18 @@ export class DomBackend implements BackendContract {
   }
 
   // draw(view): rebuild the element tree under the root.
+  // Phase-timer seam (tambor-54j.1, opt-in): the rebuild is the
+  // reconcile/layout side of a draw and closes the record; the paint
+  // phase reads 0 here — the dom backend produces elements, the
+  // browser paints after the call (see phase-timers.ts header). The
+  // seam calls are no-ops while the timers are off.
   draw(view: AnyDraw): void {
     this.drawCount++;
+    phaseTimers.startSpan("reconcile_layout");
     this.root.children.length = 0;
     this.build(view, this.root);
+    phaseTimers.endSpan();
+    phaseTimers.finishDraw();
   }
 
   drawView(): void {

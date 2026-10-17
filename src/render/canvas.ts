@@ -48,6 +48,7 @@ import {
 } from "./image.ts";
 import { type SimCanvas, type SimEvent } from "./domsim.ts";
 import { normalizeDOMEvent } from "./input.ts";
+import { phaseTimers } from "../events/phase-timers.ts";
 import { accessibilityTree, type A11yNode } from "./a11y.ts";
 import type { AnyDraw } from "./primitives.ts";
 import { PAINTERS, type CanvasNode } from "./canvas-painters.ts";
@@ -120,10 +121,18 @@ export class CanvasBackend implements BackendContract {
   // clears first (two draws of the same view produce identical
   // pixels, draw_deterministic).
   draw(view: AnyDraw): void {
+    // Phase-timer seams (tambor-54j.1, opt-in): the buffer clear and
+    // matrix set are the reconcile/layout side of a draw, the
+    // rasterization (including the safe-area clip and the a11y tree
+    // derivation) is the paint side; the record closes here. All seam
+    // calls are no-ops while the timers are off.
     this.last = view;
+    this.drawCount++;
+    phaseTimers.startSpan("reconcile_layout");
     this.image.clear();
     this.painter.setMatrix(matScale(IDENTITY, this.dpr, this.dpr));
-    this.drawCount++;
+    phaseTimers.endSpan();
+    phaseTimers.startSpan("paint");
     this.painter.save();
     const insets = this.insets;
     if (insets) {
@@ -141,6 +150,8 @@ export class CanvasBackend implements BackendContract {
     this.paintTree(view);
     this.painter.restore();
     this.a11y = accessibilityTree(view);
+    phaseTimers.endSpan();
+    phaseTimers.finishDraw();
   }
 
   drawView(): void {

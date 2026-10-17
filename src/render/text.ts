@@ -32,6 +32,7 @@ import {
 } from "./backend.ts";
 import { matApply, matRotate, matScale, matTranslate, IDENTITY, type Mat } from "./image.ts";
 import type { AnyDraw } from "./primitives.ts";
+import { phaseTimers } from "../events/phase-timers.ts";
 
 export interface TextBackendOptions extends RuntimeOptions {
   /** the container size in cells */
@@ -74,11 +75,20 @@ export class TextBackend implements BackendContract {
   }
 
   // draw(view): paint the tree into a fresh cell grid.
+  // Phase-timer seams (tambor-54j.1, opt-in): the grid allocation is
+  // the reconcile/layout side of a draw, the cell painting is the
+  // paint side; the record closes here. Seam calls are no-ops while
+  // the timers are off.
   draw(view: AnyDraw): void {
     this.drawCount++;
+    phaseTimers.startSpan("reconcile_layout");
     const [w, h] = this.containerSize;
     this.grid = Array.from({ length: h }, () => Array.from({ length: w }, () => " "));
+    phaseTimers.endSpan();
+    phaseTimers.startSpan("paint");
     this.paint(view, { matrix: IDENTITY, clip: null });
+    phaseTimers.endSpan();
+    phaseTimers.finishDraw();
   }
 
   drawView(): void {
