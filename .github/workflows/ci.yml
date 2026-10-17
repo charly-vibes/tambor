@@ -140,6 +140,7 @@ jobs:
         # PROBE (tambor-ci-249): -vvv + XML listing to diagnose the CI-only
         # "adapter ingest failed: Malformed response: empty run output" (249).
         run: |
+          npx vitest run --reporter=junit --outputFile=target/probe-junit.xml -- tests/domhost.test.ts 2>&1 | tail -5 >&2; echo "probe: manual vitest exit=$?" >&2; ls -la target/probe-junit.xml 2>&1 | head -2 >&2 || echo "probe: manual xml MISSING" >&2
           code=0
           testaruda exec -vvv || code=$?
           echo "probe: exec exit=$code" >&2
