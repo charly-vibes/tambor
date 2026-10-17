@@ -182,3 +182,4 @@ describe("spa-mount — request-focus effect and focus context (tambor-e5n)", ()
     expect((seen as { focus?: unknown }).focus).toEqual(NEXT_TEXT_PATH);
   });
 });
+

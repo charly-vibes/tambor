@@ -24,13 +24,21 @@ export interface SimRect {
 }
 
 // The DOM-ish events the backends listen for: pointer input, keyboard
-// input and clipboard paste.
+// input and clipboard paste. The modifier flags and the button bitmask
+// are optional raw passthroughs (tambor-hyw): the input normaliser
+// threads them onto the corpus event's mods/down so components can
+// tell Ctrl+A from plain a and drag from hover.
 export interface SimEvent {
   type: "pointerdown" | "pointermove" | "pointerup" | "keydown" | "paste";
   clientX?: number | undefined;
   clientY?: number | undefined;
   key?: string | undefined;
   text?: string | undefined;
+  ctrlKey?: boolean | undefined;
+  metaKey?: boolean | undefined;
+  shiftKey?: boolean | undefined;
+  altKey?: boolean | undefined;
+  buttons?: number | undefined;
 }
 
 type Listener = (ev: SimEvent) => void;

@@ -157,7 +157,7 @@ export function textarea(props: TextareaProps): Elem {
     ["mouse-down", (...args) => onMouseDown(c, args)],
     ["mouse-move", (...args) => onMouseMove(c, args)],
     ["mouse-up", (...args) => onMouseUp(c, args)],
-    ["key-press", (key) => onKeyPress(c, key)],
+    ["key-press", (key, mods) => onKeyPress(c, key, mods)],
     ["clipboard", (...args) => onClipboard(c, args)],
   ], frame) as Elem;
 }

@@ -116,10 +116,31 @@ export function onMouseUp(c: TextareaCtx, args: readonly unknown[]): IntentList 
 // keys_need_focus: an unfocused textarea returns no effects for
 // key-press or clipboard events. key_map: the named keys map to
 // their effects, any string inserts text, any other key is ignored.
-export function onKeyPress(c: TextareaCtx, key: unknown): IntentList {
+// A ctrl/cmd-modified key is not text (tambor-hyw): the named keys
+// still apply, but the default insert branch drops modified keys so
+// Ctrl+A/Z reach the component as distinct no-op events instead of
+// typing an a/z into the text.
+export function onKeyPress(c: TextareaCtx, key: unknown, mods?: unknown): IntentList {
   if (!c.focused) return [];
-  const tp = c.props.textPath;
-  const ep = c.props.extraPath;
+  const modified = isModified(mods);
+  const effect = namedKeyEffect(key, c.props.textPath, c.props.extraPath);
+  if (effect !== null) return effect;
+  if (!modified && typeof key === "string") return [["insert-text", key, c.props.textPath, c.props.extraPath]];
+  return [];
+}
+
+// A ctrl/cmd-modified key is not text (tambor-hyw): the named keys
+// still apply, but the default insert branch drops modified keys so
+// Ctrl+A/Z reach the component as distinct no-op events instead of
+// typing an a/z into the text.
+function isModified(mods: unknown): boolean {
+  return Array.isArray(mods)
+    && (mods as readonly string[]).some((m) => m === "ctrl" || m === "meta");
+}
+
+// key_map: the named keys map to their effects; any other key falls
+// through to the default text-insert branch (null).
+function namedKeyEffect(key: unknown, tp: unknown, ep: unknown): IntentList | null {
   switch (key) {
     case "up":
       return [["previous-line", tp, ep]];
@@ -134,8 +155,7 @@ export function onKeyPress(c: TextareaCtx, key: unknown): IntentList {
     case "backspace":
       return [["delete-backward", tp, ep]];
     default:
-      if (typeof key === "string") return [["insert-text", key, tp, ep]];
-      return [];
+      return null;
   }
 }
 

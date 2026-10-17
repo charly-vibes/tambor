@@ -18,7 +18,11 @@
 //   registered on the dispatcher (it sets the ::context/focus state
 //   and focuses the surface host), and the focus state is merged into
 //   the view context (spaFocusView) so textareas see their focused
-//   state.
+//   state. Input hardening (tambor-hyw) is surface wiring too: the
+//   keydowns the app handles preventDefault (the page does not
+//   scroll), pointer gestures capture the pointer and deliver a
+//   synthetic mouse-up on cancel/leave/lost-capture so no down state
+//   sticks, and IME composition text inserts like a paste.
 // Rationale: openspec/specs/example-todo/spec.md is the design authority,
 //   with routeClick (backends.ts) as the host-side routing shape: the
 //   host dispatches the event and hands the intent list to the app's
@@ -50,7 +54,13 @@ import {
 } from "./focus.ts";
 import { VIEWPORT } from "./viewport.ts";
 import { dispatch } from "../events/dispatch.ts";
-import { scroll, type TamborEvent } from "../events/event.ts";
+import {
+  clipboard,
+  mouseUp,
+  scroll,
+  type TamborEvent,
+} from "../events/event.ts";
+import { MODIFIER_KEYS, normalizeKey } from "../render/input.ts";
 
 export interface SpaHandle {
   readonly backend: DomBackend;
@@ -120,6 +130,91 @@ function wireWheel(surface: RealDomElement, route: (ev: TamborEvent) => void): v
         { delta: [e.deltaX ?? 0, e.deltaY ?? 0] },
       ),
     );
+  });
+}
+
+// The raw device position in view space — the surface-host bounding-rect
+// origin removed, the same translation wheel forwarding uses.
+function viewPos(surface: RealDomElement, e: { clientX?: number; clientY?: number }): Vec2 {
+  const r = surface.host.getBoundingClientRect();
+  return [(e.clientX ?? 0) - r.x, (e.clientY ?? 0) - r.y];
+}
+
+// Key guard (tambor-hyw): keys the app handles — every keydown that
+// forwards a corpus event (arrows, space, backspace, printable keys,
+// multi-char IME keys) and every modified combo — preventDefault so the
+// page does not scroll and the browser does not eat the shortcut. A
+// modifier key alone produces no corpus event and stays unprevented.
+function wireKeyGuard(surface: RealDomElement): void {
+  surface.host.addEventListener("keydown", (raw) => {
+    const e = raw as {
+      key?: unknown;
+      ctrlKey?: boolean;
+      metaKey?: boolean;
+      altKey?: boolean;
+      preventDefault(): void;
+    };
+    const key = e.key;
+    if (typeof key !== "string") return;
+    const modified = e.ctrlKey === true || e.metaKey === true || e.altKey === true;
+    const forwarded = normalizeKey(key) !== null
+      || (key.length > 1 && !MODIFIER_KEYS.includes(key)
+        && key !== "Unidentified" && key !== "Process" && key !== "Dead");
+    if (forwarded || modified) e.preventDefault();
+  });
+}
+
+// Pointer capture and cancel (tambor-hyw): a pointerdown captures the
+// pointer when the host can (so a drag leaving the surface keeps its
+// moves), and every way a gesture can die without a pointerup —
+// pointercancel, or the pointer leaving the surface when capture is
+// unavailable, or the capture being lost mid-drag — delivers the
+// synthetic mouse-up so no component's down state sticks. The
+// synthetic mouse-up goes through the backend's deliver — the same
+// path every real forwarded event takes (subscribers + routing), not
+// a side door.
+function wirePointerCapture(surface: RealDomElement, deliver: (ev: TamborEvent) => void): void {
+  const host = surface.host;
+  let mdown = false;
+  let lastPos: Vec2 = [0, 0];
+  const release = (): void => {
+    if (!mdown) return;
+    mdown = false;
+    deliver(mouseUp(lastPos));
+  };
+  host.addEventListener("pointerdown", (raw) => {
+    const e = raw as { clientX?: number; clientY?: number; pointerId?: unknown };
+    mdown = true;
+    lastPos = viewPos(surface, e);
+    try {
+      if (typeof (host as { setPointerCapture?: unknown }).setPointerCapture === "function"
+        && typeof e.pointerId === "number"
+      ) {
+        (host as unknown as { setPointerCapture(id: number): void }).setPointerCapture(e.pointerId);
+      }
+    } catch {
+      // a capture failure must not break the pointer flow
+    }
+  });
+  host.addEventListener("pointermove", (raw) => {
+    lastPos = viewPos(surface, raw as { clientX?: number; clientY?: number });
+  });
+  host.addEventListener("pointerup", () => {
+    mdown = false;
+  });
+  host.addEventListener("pointercancel", release);
+  host.addEventListener("pointerleave", release);
+  host.addEventListener("lostpointercapture", release);
+}
+
+// IME composition (tambor-hyw): the committed text arrives as a
+// compositionend with the data string — route it as paste-like
+// insertion (the clipboard shape the textarea rules speak), the same
+// way the multi-char keydown path does.
+function wireIme(surface: RealDomElement, deliver: (ev: TamborEvent) => void): void {
+  surface.host.addEventListener("compositionend", (raw) => {
+    const data = (raw as { data?: unknown }).data;
+    if (typeof data === "string" && data.length > 0) deliver(clipboard(data));
   });
 }
 
@@ -193,6 +288,23 @@ function wireFocus(surface: RealDomElement): void {
   setFocusSurface({ focus: () => surface.host.focus?.() });
 }
 
+// Surface wiring: every raw-DOM seam hangs off the surface element —
+// wheel forwarding (tambor-gov), input hardening (tambor-hyw: handled
+// keys preventDefault, pointer gestures get capture/cancel and mouse-up
+// delivery, IME composition inserts text) and the focus plumbing
+// (tambor-e5n).
+function wireSurfaceInput(
+  surface: RealDomElement,
+  route: (ev: TamborEvent) => void,
+  backend: DomBackend,
+): void {
+  wireWheel(surface, route);
+  wireKeyGuard(surface);
+  wirePointerCapture(surface, backend.deliver.bind(backend));
+  wireIme(surface, backend.deliver.bind(backend));
+  wireFocus(surface);
+}
+
 export function mountDemo(
   doc: HostDoc,
   container: HostElement,
@@ -217,8 +329,7 @@ export function mountDemo(
 
   const surface = attachInputSurface(backend, root);
 
-  wireWheel(surface, route);
-  wireFocus(surface);
+  wireSurfaceInput(surface, route, backend);
   backend.draw(app.view());
 
   return {

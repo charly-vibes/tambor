@@ -115,3 +115,17 @@ it("p_next_line: cursor becomes 3 then 5", () => {
   const atFour = harnessState("ab\ncd", { cursor: 4 }, TEXT_PATH);
   expect(send(atFour, keyPress("down")).state["textarea-state"].cursor).toBe(5);
 });
+
+// A ctrl/cmd-modified printable key is not text (tambor-hyw): the
+// default insert branch drops modified keys, so Ctrl+A/Z reach the
+// component as distinct no-op key-presses instead of typing a/z.
+it("a ctrl-modified printable key inserts nothing; the plain key still inserts", () => {
+  const focused = harnessState("hello", { cursor: 2 }, TEXT_PATH);
+  const modified = send(focused, keyPress("a", { mods: ["ctrl"] }));
+  expect(modified.intents).toEqual([]);
+  expect(modified.state.text).toBe("hello");
+
+  const plain = harnessState("hello", { cursor: 2 }, TEXT_PATH);
+  const unmodified = send(plain, keyPress("a"));
+  expect(unmodified.intents).toContainEqual(["insert-text", "a", TEXT_PATH, EXTRA_PATH]);
+});

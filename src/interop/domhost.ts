@@ -61,11 +61,18 @@ export interface HostElement {
 }
 
 // A real DOM event, read structurally (pointer/keyboard/clipboard).
+// The modifier flags and button bitmask pass through so the input
+// normaliser can build the corpus event's mods/down (tambor-hyw).
 interface RawDomEvent {
   type?: unknown;
   clientX?: unknown;
   clientY?: unknown;
   key?: unknown;
+  ctrlKey?: unknown;
+  metaKey?: unknown;
+  shiftKey?: unknown;
+  altKey?: unknown;
+  buttons?: unknown;
   clipboardData?: { getData(type: string): string } | null;
 }
 
@@ -75,6 +82,10 @@ function num(v: unknown): number | undefined {
 
 function str(v: unknown): string | undefined {
   return typeof v === "string" ? v : undefined;
+}
+
+function bool(v: unknown): boolean | undefined {
+  return typeof v === "boolean" ? v : undefined;
 }
 
 // Narrow a real event's type string to the SimEvent union — the
@@ -198,6 +209,11 @@ export class RealDomElement {
         clientX: num(ev.clientX),
         clientY: num(ev.clientY),
         key: str(ev.key),
+        ctrlKey: bool(ev.ctrlKey),
+        metaKey: bool(ev.metaKey),
+        shiftKey: bool(ev.shiftKey),
+        altKey: bool(ev.altKey),
+        buttons: num(ev.buttons),
         ...(ev.clipboardData ? { text: ev.clipboardData.getData("text") } : {}),
       });
     };
