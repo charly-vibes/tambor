@@ -1,5 +1,7 @@
-// Purpose: the B1/B2 benchmark scenarios (tambor-yx8 + tambor-1jz) —
-//   keyed-table-build, keyed-table-ops, todomvc-ops, run through the
+// Purpose: the bench-core benchmark scenarios (tambor-yx8, tambor-1jz,
+//   tambor-ibh, tambor-bkg) — keyed-table-build, keyed-table-ops,
+//   todomvc-ops, form-200-focus, turtle-20k-draw, turtle-20k-recolor,
+//   time-travel-10k-build, time-travel-10k-ops, run through the
 //   real gallery SPA bundle in a real, CPU-throttled Chromium, emitting
 //   tambor-bench/1 JSON via the bench-stats contract. Follows the pilot
 //   spec (pilot-todo.bench.ts) pattern exactly: fresh page per run,
@@ -164,6 +166,30 @@ const SCENARIOS: readonly Scenario[] = [
     pointsOf: [buttonText("Recolor red")],
     setupOf: buttonText("Draw 20k"),
     ops: 10,
+    warmupOps: 1,
+  },
+  {
+    id: "time-travel-10k-build",
+    expectedDrawn: 10000,
+    app: "time travel 10k (bench demo, dist/spa.js)",
+    demoId: "time-travel-10k",
+    pointsOf: [buttonText("Build 10k")],
+    ops: 6,
+    warmupOps: 1,
+  },
+  {
+    id: "time-travel-10k-ops",
+    app: "time travel 10k (bench demo, dist/spa.js)",
+    demoId: "time-travel-10k",
+    // scrub 5k ↔ 10k and undo-one cycled: each op re-derives the whole
+    // visible prefix (5k–10k labels) — the honest whole-view measure
+    pointsOf: [
+      buttonText("Scrub to 5k"),
+      buttonText("Scrub to 10k"),
+      buttonText("Undo one"),
+    ],
+    setupOf: buttonText("Build 10k"),
+    ops: 12,
     warmupOps: 1,
   },
 ];

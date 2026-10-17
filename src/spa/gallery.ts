@@ -24,6 +24,7 @@ import { createKeyedTableApp } from "../examples/bench/keyed-table.ts";
 import { createTurtle20kApp } from "../examples/bench/turtle-20k.ts";
 import { createTodoBenchApp } from "../examples/bench/todomvc.ts";
 import { createForm200App } from "../examples/bench/form-200.ts";
+import { createTimeTravel10kApp } from "../examples/bench/time-travel-10k.ts";
 import type { Elem } from "../views/model.ts";
 import { VIEWPORT } from "./viewport.ts";
 
@@ -183,5 +184,12 @@ export const DEMOS: readonly DemoDef[] = [
     blurb:
       "bench form — 200 labeled fields over plain state: every interaction re-derives the whole view (the honest weak-spot measurement).",
     create: createForm200App,
+  },
+  {
+    id: "time-travel-10k",
+    title: "time-travel-10k",
+    blurb:
+      "bench time travel — a 10k-step log over plain state: Build 10k, Scrub to 5k/10k and Undo one move the cursor as ordinary update intents (the log is never rewritten).",
+    create: createTimeTravel10kApp,
   },
 ];
