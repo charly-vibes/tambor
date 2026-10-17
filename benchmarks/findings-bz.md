@@ -295,4 +295,105 @@ candidate above is the response the data points at. Flagged as the
 BZ2 follow-up.
 
 Provenance: lane tambor-54j.14 · app + scenarios + results in-tree ·
+
+---
+
+## BZ7 — Spreadsheet (tambor-54j.19, lane feat/bz7-spreadsheet)
+
+App: `src/examples/bench/spreadsheet.ts` (+ the pure model half
+`src/examples/bench/spreadsheet-sheet.ts`) — demo `spreadsheet` in the
+gallery SPA; scenarios `bz7-build`, `bz7-edit-naive`, `bz7-edit-graph`
+in `tests/e2e/bench-scenarios.ts`; results
+`benchmarks/results/bz7-*.json`.
+
+The model: a **1M-cell logical grid** (10 000 × 100) whose defined
+cells are a sparse plain-data map — 10 000 literals in column A plus
+**90 000 three-ref formulas** in columns B..J (`=A4+A5+A6` shape: every
+formula sums the three clamped neighbours of the previous column, so
+the formula grid is a DAG with fan-out 3 per column and the whole
+sheet is one wide pyramid). Only the first 24 × 10 window is drawn
+(the keyed-table viewport pattern — the 1M is the logical model, never
+DOM). State is plain data: `cells` (contents), `values` (computed),
+`deps` (the reverse dependency index, built once at seed time —
+editing a literal never changes its outgoing refs) and an `edits`
+counter. Both timed ops apply the **same** literal edit (+3 to the
+cycled row, rows 1..13 — the drawn window) and leave the **same**
+final state; the drawn status line pins `edits 13 sum 160480317064` —
+a dropped edit, a misroute or a misrecompute changes it (and
+`tests/bench-spreadsheet.test.ts` pins naive-vs-graph deep equality,
+the closure property against an independently rebuilt index, and
+evaluator correctness against hand-computed convolution weights).
+Chrome 156.0.8078.4, CPU throttled ×4, 5 runs × 12 timed ops (+1
+untimed warmup) per scenario, production bundle.
+
+### Expected-vs-actual failure of the naive mode — CONFIRMED (T)
+
+The BZ7 row predicts "recomputing everything" as the hazard. Measured
+(median per timed op, CPU ×4):
+
+| scenario | median ms | p25 / p75 | p90 |
+|---|---|---|---|
+| bz7-build (Seed: 100k cells + 90k-eval sweep + dep index) | 1 900 | 1 866 / 1 927 | 1 971 |
+| bz7-edit-naive (full recompute per edit) | **1 633** | 1 616 / 1 665 | 1 683 |
+| bz7-edit-graph (dependency-graph recompute) | **1 401** | 1 383 / 1 433 | 1 453 |
+
+The naive per-op recompute is **flat across the run** (first-third
+median 1 633, last-third 1 633): it re-sweeps all 90 000 formulas
+every edit regardless of what the edit touched — the hazard is
+constant, not growing, because the sheet's defined size is fixed. The
+unthrottled in-page split (playwright profile, no throttle): the
+naive op costs ~125 ms and the graph op ~70 ms per click — the
+90 000-eval sweep is the only term that differs.
+
+### Candidate: dependency graph over derived paths — ADOPTED (T)
+
+The candidate (the §4.3 "dependency graph over derived paths", cf. B9
+notebook §4.4) recomputes only the edited cell's transitive dependents:
+BFS over the reverse dep index collects the closure (54–100 cells for
+rows 1..13 — edges span one column, so the closure is a widening
+triangle, not the whole sheet), then evaluates it in column order
+(topological). Same final state as the full sweep — deep-equality
+pinned in the unit tests, and the bench's `expectedText` checksum is
+**identical across both scenarios** (`edits 13 sum 160480317064`), so
+the measured ops are verified equivalent, not merely faster.
+
+The win, 233 ms/op median (1 633 → 1 401, −14%), is exactly the
+recompute term: it is the **only** per-op cost that scales with
+formula count. Unthrottled, the naive sweep evaluates all 90 000
+formulas per edit (~55 ms in-page) while the closure walk evaluates
+54–100 (~0.1 ms); the rest of the op is a shared floor (the plain-data
+state copy of the 100k-entry cells/values maps + the click wire — see
+the harness finding below) that both strategies pay. The candidate is
+therefore flat in the formula count while the naive sweep grows
+linearly with it — a sheet with 10× the defined formulas would
+multiply only the naive term. Adoption is on data, and the closure
+discipline costs nothing in correctness — both ops leave bit-identical
+state.
+
+### Harness finding surfaced by this lane (O/T — follow-up flagged)
+
+Profiling the ops with a no-op blank click (outside any handler)
+showed the **click-wire floor itself scales with the app's state
+size**: 18–27 ms per blank click on an empty sheet, 247–254 ms on the
+seeded 100k-cell sheet — unthrottled, with no repaint involved (the
+paint wait is a separate ~25–35 ms). The event router's click path
+therefore walks (or materialises) something proportional to the
+defined cells on every pointer event, app work or not. This dilutes
+every large-state app's per-op median (the BZ4/BZ6/BZ7 rows all sit on
+large plain state) and is worth a dedicated lane: it is corpus
+machinery (`event-bubble`/hit-testing), not bench-harness wiring, so
+it was not touched here.
+
+### SLO reading (D)
+
+Against a spreadsheet interaction bar of "edit → settle under one
+frame budget" the naive mode fails decisively at any realistic
+defined-cell count: 1 633 ms/op at 90k formulas (CPU ×4), scaling
+linearly with the formula count. The adopted candidate holds 1 401
+ms/op at the same model — of which ~1 100 ms is the shared click-wire
+floor + state copy, i.e. the recompute itself is ~300 ms throttled and
+stays flat as formulas grow. With the corpus click-path fix
+(flag above) the same app would sit near the todo app's 83 ms floor.
+
+Provenance: lane tambor-54j.19 · app + scenarios + results in-tree ·
 grades as marked.

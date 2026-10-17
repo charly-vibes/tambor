@@ -31,6 +31,7 @@ import { createReviewFaultsApp } from "../examples/bench/review-faults.ts";
 import { createLogStreamApp } from "../examples/bench/log-stream.ts";
 import { createStreamDashboardApp } from "../examples/bench/stream-dashboard.ts";
 import { createPlotsApp } from "../examples/bench/plots.ts";
+import { createSpreadsheetApp } from "../examples/bench/spreadsheet.ts";
 import type { Elem } from "../views/model.ts";
 import { VIEWPORT } from "./viewport.ts";
 
@@ -239,5 +240,12 @@ export const DEMOS: readonly DemoDef[] = [
     blurb:
       "bench plots — two linked charts over one 100k-point domain (zoom + pan): Pan naive re-derives the window decimation from the raw points and copies them per op, Pan tx slices the precomputed band index — same drawn geometry, different work shape.",
     create: createPlotsApp,
+  },
+  {
+    id: "spreadsheet",
+    title: "spreadsheet",
+    blurb:
+      "bench spreadsheet — a 1M-cell logical grid (10000×100) with 100k defined cells: 10k literals plus 90k three-ref formulas. Seed builds the dependency index; Edit naive recomputes every formula after each edit, Edit graph recomputes only the edited cell's transitive dependents — same final state (the status line's edits counter and values checksum guard it), measured per edit.",
+    create: createSpreadsheetApp,
   },
 ];

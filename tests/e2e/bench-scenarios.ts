@@ -3,71 +3,29 @@
 //   tests/e2e/bench-apps.bench.ts
 //   (the harness lives there; this file holds only what varies per
 //   scenario: id, demo, op points, setup op, op counts).
-// Responsibilities: the Scenario shape (with the expectedDrawn /
-//   expectedText "the op actually happened" checks), the view-point
-//   resolvers (button text, first visible todo row, form label — fixed
-//   control-row / list-head positions), and SCENARIOS: keyed-table
-//   build/ops, todomvc-ops, form-200-focus, turtle-20k draw/recolor,
-//   save-restore-5k, time-travel-10k build/ops, dashboard-derived
-//   build/bump, review-faults build/faults, and the BZ1 stream
-//   dashboard trio (bz1-build, bz1-stream-naive, bz1-stream-frame —
-//   the per-message-dispatch baseline vs the frame-coalesced
-//   candidate, tambor-54j.13).
+// Responsibilities: the Scenario shape + the view-point resolvers
+//   (button text, first visible todo row, form label — fixed
+//   control-row / list-head positions) live in
+//   bench-scenarios-shared.ts; this file holds the keyed-table,
+//   todomvc, form-200, turtle-20k, save-restore-5k, time-travel-10k,
+//   dashboard-derived, review-faults and log-stream rows, and
+//   re-exports SCENARIOS with the BZ rows (bench-scenarios-bz.ts —
+//   split out here to keep every registry file under the gate's file
+//   limit WITHOUT changing any scenario id; test names are contract
+//   bindings).
 // Rationale: the ops are cycled, so a run's samples are labelled by
 //   position in the cycle in the samples array (cycle order, per run) —
-//   keyed-table-ops grows the table within a run (Append 1k), bounded
-//   by the fresh page per run; save-restore-5k holds 5k plain items
-//   steady (Save/Restore cycle — serialise/parse, no tree walk). The
-//   registry is data, not machinery, so the bench harness stays a
-//   single loop; the split keeps both files under the gate's file
-//   limit without changing any scenario id (test names are contract
-//   bindings).
 
-import type { Elem } from "../../src/views/model.ts";
-import { buttonPoint, pointWhere, type ViewPoint } from "./drive.ts";
+import {
+  type Scenario,
+  buttonText,
+  firstCheckbox,
+  firstDeleteX,
+  labelText,
+} from "./bench-scenarios-shared.ts";
+import { SCENARIOS_BZ } from "./bench-scenarios-bz.ts";
 
-// A view-point resolver: the fresh in-process view the page's initial
-// view equals (pure views over plain state).
-type PointOf = (view: Elem) => ViewPoint;
-
-interface Scenario {
-  /** minimum drawn-descendant count the op must produce — a no-op op
-   * (state update silently dropped) would measure overhead only */
-  readonly expectedDrawn?: number;
-  /** drawn text the ops must leave in the demo — the count/checksum
-   * form of the same no-op guard for summary-line apps */
-  readonly expectedText?: string;
-  readonly id: string;
-  readonly app: string;
-  readonly demoId: string;
-  readonly pointsOf: readonly PointOf[];
-  readonly setupOf?: PointOf;
-  readonly ops: number;
-  readonly warmupOps: number;
-  /** drawn button texts cycled instead of the view-space points
-   * (tambor-54j.17/.13): the in-process replay measures labels at
-   * text.length (defaultMeasure) while the bundle configures real
-   * text metrics, so a non-first button's replay point can fall
-   * inside the drawn first button's box — scenarios whose no-op guard
-   * distinguishes the ops click the drawn button's live DOM box
-   * (the drive.ts clickDrawnText ground truth) instead */
-  readonly drawnOps?: readonly string[];
-}
-
-// The first visible row's toggle checkbox (list-head-stable position).
-const firstCheckbox: PointOf = (view) =>
-  pointWhere(view, (f) => f.underHandler && f.node.type === "checkbox");
-
-// The first visible row's delete X (list-head-stable position).
-const firstDeleteX: PointOf = (view) =>
-  pointWhere(view, (f) => f.underHandler && f.node.type === "path");
-
-// The op button with the given drawn text (fixed control-row position).
-const buttonText = (text: string): PointOf => (view) => buttonPoint(view, text);
-
-// A drawn label by its exact text (the form's field labels).
-const labelText = (text: string): PointOf => (view) =>
-  pointWhere(view, (f) => f.node.type === "label" && f.node.text === text);
+export type { Scenario } from "./bench-scenarios-shared.ts";
 
 export const SCENARIOS: readonly Scenario[] = [
   {
@@ -259,114 +217,6 @@ export const SCENARIOS: readonly Scenario[] = [
     warmupOps: 1,
   },
   {
-    id: "bz1-build",
-    // the built dashboard draws its 500 ticker rows — a silently
-    // dropped build would leave the stream empty
-    expectedDrawn: 500,
-    app: "stream dashboard (bench demo, dist/spa.js)",
-    demoId: "stream-dashboard",
-    pointsOf: [buttonText("Build 500")],
-    ops: 6,
-    warmupOps: 1,
-  },
-  {
-    id: "bz1-stream-naive",
-    // one dispatch PER message (80 per op): after warmup + 12 timed
-    // ops the summary line reads 13 × 80 = 1040 messages delivered —
-    // a dropped or duplicated message changes it
-    expectedText: "msgs 1040",
-    app: "stream dashboard (bench demo, dist/spa.js)",
-    demoId: "stream-dashboard",
-    pointsOf: [buttonText("Stream naive")],
-    drawnOps: ["Stream naive"],
-    setupOf: buttonText("Build 500"),
-    ops: 12,
-    warmupOps: 1,
-  },
-  {
-    id: "bz1-stream-frame",
-    // the coalesced candidate: the same 80-message burst folded into
-    // ONE update intent, so the same 1040 msgs must be on the line
-    expectedText: "msgs 1040",
-    app: "stream dashboard (bench demo, dist/spa.js)",
-    demoId: "stream-dashboard",
-    pointsOf: [buttonText("Stream frame")],
-    drawnOps: ["Stream frame"],
-    setupOf: buttonText("Build 500"),
-    ops: 12,
-    warmupOps: 1,
-  },
-  {
-    id: "bz2-plots-build",
-    // the load builds 100k points + the two full-domain band indexes
-    // and draws the initial 800-band window per chart — 1600 real path
-    // nodes; a silently dropped load would leave the charts empty
-    expectedDrawn: 1600,
-    expectedText: "pts 100000",
-    app: "interactive plots (bench demo, dist/spa.js)",
-    demoId: "plots",
-    pointsOf: [buttonText("Load 100k")],
-    ops: 6,
-    warmupOps: 1,
-  },
-  {
-    id: "bz2-pan-naive",
-    // the §4.3 BZ2 hazard: every pan copies the 40k window and
-    // re-derives its decimation from the raw points, both charts —
-    // warmup + 12 timed ops (13 × 10k steps over the 60k slideable
-    // range) wrap to a deterministic win 10000 (the full-line no-op
-    // guard: a dropped or misrouted pan leaves win 0 w 40000 pans 0)
-    expectedText: "win 10000 w 40000 pans 13",
-    app: "interactive plots (bench demo, dist/spa.js)",
-    demoId: "plots",
-    pointsOf: [buttonText("Pan naive")],
-    drawnOps: ["Pan naive"],
-    setupOf: buttonText("Load 100k"),
-    ops: 12,
-    warmupOps: 1,
-  },
-  {
-    id: "bz2-pan-tx",
-    // the candidate: the same 13-step pan cycle, but the drawn bands
-    // are a slice of the precomputed index (data by reference, pan as
-    // transform) — the same full line must appear
-    expectedText: "win 10000 w 40000 pans 13",
-    app: "interactive plots (bench demo, dist/spa.js)",
-    demoId: "plots",
-    pointsOf: [buttonText("Pan tx")],
-    drawnOps: ["Pan tx"],
-    setupOf: buttonText("Load 100k"),
-    ops: 12,
-    warmupOps: 1,
-  },
-  {
-    id: "bz2-zoom-naive",
-    // zoom halves the window (floored at 10k) and the naive op
-    // re-derives the denser decimation from the raw points each op —
-    // warmup + 12 timed ops floor at the guarded w 10000 (the full
-    // line: a dropped zoom would leave w 40000)
-    expectedText: "win 0 w 10000 pans 13",
-    app: "interactive plots (bench demo, dist/spa.js)",
-    demoId: "plots",
-    pointsOf: [buttonText("Zoom naive")],
-    drawnOps: ["Zoom naive"],
-    setupOf: buttonText("Load 100k"),
-    ops: 12,
-    warmupOps: 1,
-  },
-  {
-    id: "bz2-zoom-tx",
-    // the candidate zoom: the same floor, bands sliced from the index
-    expectedText: "win 0 w 10000 pans 13",
-    app: "interactive plots (bench demo, dist/spa.js)",
-    demoId: "plots",
-    pointsOf: [buttonText("Zoom tx")],
-    drawnOps: ["Zoom tx"],
-    setupOf: buttonText("Load 100k"),
-    ops: 12,
-    warmupOps: 1,
-  },
-  {
     id: "dashboard-bump",
     // the count tile still reads 500 after the Bump / Bump 100 cycle —
     // every timed op re-derives all ~20 tiles from the bumped series
@@ -378,4 +228,5 @@ export const SCENARIOS: readonly Scenario[] = [
     ops: 12,
     warmupOps: 1,
   },
+  ...SCENARIOS_BZ,
 ];
