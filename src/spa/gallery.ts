@@ -27,6 +27,7 @@ import { createForm200App } from "../examples/bench/form-200.ts";
 import { createTimeTravel10kApp } from "../examples/bench/time-travel-10k.ts";
 import { createSaveRestore5kApp } from "../examples/bench/save-restore-5k.ts";
 import { createDashboardDerivedApp } from "../examples/bench/dashboard-derived.ts";
+import { createReviewFaultsApp } from "../examples/bench/review-faults.ts";
 import type { Elem } from "../views/model.ts";
 import { VIEWPORT } from "./viewport.ts";
 
@@ -207,5 +208,10 @@ export const DEMOS: readonly DemoDef[] = [
     blurb:
       "bench dashboard — ~20 derived tiles over one 500-number series: Seed, Bump and Bump 100 are ordinary update intents, and every bump re-derives every tile (no memo, no computed — the honest cost of many derived values).",
     create: createDashboardDerivedApp,
+    id: "review-faults",
+    title: "review-faults",
+    blurb:
+      "bench faults — a 200-item review session (draft → submitted → acked/rejected): duplicate, stale and lost acks are injected as ordinary update intents; echoed ids and typed outcomes keep the queue consistent.",
+    create: createReviewFaultsApp,
   },
 ];
