@@ -123,7 +123,10 @@ describe("spreadsheet bench app — evaluator", () => {
 });
 
 describe("spreadsheet bench app — the two recompute strategies", () => {
-  it("leaves naive and graph in the SAME state after a 13-edit cycle", () => {
+  // 26 whole-sheet recompute passes (naive + graph over 90k formulas)
+  // — over vitest's 5s default whenever the full 90-worker suite runs
+  // in parallel; the budget is per-test, the semantic gate unchanged
+  it("leaves naive and graph in the SAME state after a 13-edit cycle", { timeout: 30_000 }, () => {
     const naive = cycle(13, editNaive);
     const graph = cycle(13, editGraph);
     expect(graph.values).toEqual(naive.values);
