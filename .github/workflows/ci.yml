@@ -150,10 +150,23 @@ jobs:
           cmd = json.dumps({"command":"run-args","params":{"selected":ids}}) + "\n"
           out = subprocess.run(['testaruda-adapter-typescript'], input=cmd, capture_output=True, text=True)
           ra = json.loads(out.stdout.strip().splitlines()[-1])['result']['runner_args']
-          p = subprocess.run(ra, capture_output=True, text=True)
-          print('probe3: filters=', len(ra)-5, 'exit=', p.returncode)
-          print('probe3: stdout tail:', p.stdout[-200:].replace('\n',' | '))
-          print('probe3: stderr tail:', p.stderr[-200:].replace('\n',' | '))
+          import subprocess as sp, os, subprocess
+          print('probe3: node:', sp.run(['node','--version'],capture_output=True,text=True).stdout.strip())
+          print('probe3: npx:', sp.run(['npx','--version'],capture_output=True,text=True).stdout.strip())
+          for frac in (1.0, 0.5, 0.25, 0.1):
+              n = max(1, int(len(ids)*frac))
+              cmd2 = json.dumps({"command":"run-args","params":{"selected":ids[:n]}}) + "\n"
+              out2 = subprocess.run(['testaruda-adapter-typescript'], input=cmd2, capture_output=True, text=True)
+              ra2 = json.loads(out2.stdout.strip().splitlines()[-1])['result']['runner_args']
+              if frac == 1.0:
+                  ra2 = [a for a in ra2 if a != '--outputFile=target/test-results.xml'] + ['--outputFile=target/probe-full.xml']
+              else:
+                  ra2 = [a for a in ra2 if a != '--outputFile=target/test-results.xml'] + ['--outputFile=target/probe-frac.xml']
+              p = subprocess.run(ra2, capture_output=True, text=True)
+              print('probe3: frac', frac, 'filters=', len(ra2)-5, 'exit=', p.returncode, 'out', len(p.stdout), 'err', len(p.stderr))
+              if p.returncode != 0:
+                  print('probe3: stdout tail:', repr(p.stdout[-300:]))
+                  print('probe3: stderr tail:', repr(p.stderr[-300:]))
           import os
           print('probe3: xml exists:', os.path.exists('target/test-results.xml'))
           PYEOF
