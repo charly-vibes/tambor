@@ -66,14 +66,16 @@ jobs:
           # Adapters may already exist when the cargo cache (which includes
           # ~/.cargo/bin) is restored — cargo install refuses to overwrite
           # without --force (first CI run after a cache save failed this way,
-          # run 37949866581). Guard on presence: the cache key hashes
-          # versions.ddl.toml, so a pin bump rotates the cache and rebuilds.
-          if ! testaruda-adapter-typescript --version >/dev/null 2>&1 \
-            || ! testaruda-adapter-clojure --version >/dev/null 2>&1; then
-            cargo install --locked --quiet \
-              --git https://github.com/charly-vibes/testaruda.git --rev eb7f44e \
-              adapter-typescript adapter-clojure
-          fi
+          # run 37949866581). The restore-keys fallback can restore a cache
+          # saved under an OLDER pin, so presence alone is not freshness:
+          # drop the binaries and rebuild from the pinned rev every run
+          # (tambor-ci-249 — a stale v0.5.5 adapter-typescript reintroduced
+          # the exit-249 empty-output failure after the pin bump).
+          rm -f ~/.cargo/bin/testaruda-adapter-typescript \
+                ~/.cargo/bin/testaruda-adapter-clojure
+          cargo install --locked --quiet \
+            --git https://github.com/charly-vibes/testaruda.git --rev eb7f44e \
+            adapter-typescript adapter-clojure
           testaruda-adapter-typescript --version 2>/dev/null || true
           testaruda-adapter-clojure --version 2>/dev/null || true
 
