@@ -91,6 +91,30 @@ function eventCtor(): new (type: string, init?: { cancelable?: boolean }) => unk
   return ctor as new (type: string, init?: { cancelable?: boolean }) => unknown;
 }
 
+describe("spa-mount — async applies re-render (tambor-a45)", () => {
+  it("a dispatch outside the event wire re-draws the view", () => {
+    const doc = hostDoc();
+    const container = doc.createElement("div");
+    doc.body.appendChild(container);
+    // a label whose text is the state count — async applies (the logo
+    // worker reply) mutate the state outside any DOM event, and the
+    // mount must re-render them the same way it renders routed intents
+    const app = makeApp({
+      view: (state) =>
+        label(`count=${(state as { n: number }).n}`),
+      state: { n: 0 },
+    });
+    const spa = mountDemo(doc, container, () => app);
+    expect(container.textContent).toContain("count=0");
+
+    // no DOM event involved: the async apply goes through the app's own
+    // dispatch (the run-applied path), and the drawn DOM must follow
+    app.dispatch([["set", [["keypath", "n"]], 7]]);
+    expect(container.textContent).toContain("count=7");
+    expect(spa.root).toBeDefined();
+  });
+});
+
 describe("spa-mount — wheel forwarding (tambor-gov)", () => {
   it("a wheel event on the surface routes into the scrollview and updates the offset", () => {
     const doc = hostDoc();

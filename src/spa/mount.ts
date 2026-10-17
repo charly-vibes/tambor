@@ -61,6 +61,7 @@ import {
   scroll,
   type TamborEvent,
 } from "../events/event.ts";
+import type { IntentList } from "../core.ts";
 import { MODIFIER_KEYS, normalizeKey } from "../render/input.ts";
 
 export interface SpaHandle {
@@ -101,6 +102,17 @@ function wireSurface(backend: DomBackend, app: App): (ev: TamborEvent) => void {
   // intent application, and the dom draw attributes reconcile_layout
   // and closes the record. All seam calls are no-ops while the timers
   // are off.
+  // The draw seam: the route draws the event-routed batch itself; async
+  // applies (the logo worker reply routes through the demo's own
+  // dispatch OUTSIDE the event wire — tambor-a45) draw through the
+  // wrapper. `routed` keeps the event path single-draw.
+  let routed = false;
+  const rawDispatch = app.dispatch;
+  app.dispatch = (batch, ...rest: unknown[]): undefined => {
+    const applied = rawDispatch(batch, ...rest);
+    if (!routed) backend.draw(app.view());
+    return applied;
+  };
   const route = (ev: TamborEvent): void => {
     phaseTimers.begin(ev.type);
     phaseTimers.startSpan("derive");
@@ -108,7 +120,12 @@ function wireSurface(backend: DomBackend, app: App): (ev: TamborEvent) => void {
     phaseTimers.endSpan();
     phaseTimers.startSpan("handler");
     const intents = dispatch(view, ev);
-    if (intents.length > 0) app.dispatch(intents);
+    routed = true;
+    try {
+      if (intents.length > 0) app.dispatch(intents);
+    } finally {
+      routed = false;
+    }
     phaseTimers.endSpan();
     phaseTimers.startSpan("derive");
     const drawn = app.view();

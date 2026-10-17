@@ -154,15 +154,11 @@ export function createLogoApp(): App {
   // dispatch the worker's reply back through the same per-app seam
   const hooks: { current: RunHooks } = { current: { launch: () => {}, stop: () => {} } };
   const opsApp = makeOpsApp({ state: logoState(), registry: logoRegistry(hooks, runner.worker) });
-  hooks.current = {
-    launch: (req: RunRequest) => {
-      void runner.run(req).then((resp) => {
-        opsApp.dispatch([["run-applied", resp]]);
-      });
-    },
-    stop: () => runner.terminate(),
-  };
-  return {
+  // the app object is built before the hooks so the async worker reply
+  // can route through the demo's OWN dispatch (the host-visible apply
+  // path the mount wraps for re-render — tambor-a45): the reply applies
+  // outside the event wire, and only a public dispatch re-draws it.
+  const app: App = {
     view: () => logoView(opsApp.getState() as LogoState, {}),
     dispatch: (batch, ...rest) => {
       void rest;
@@ -170,6 +166,16 @@ export function createLogoApp(): App {
     },
     getState: () => opsApp.getState(),
   };
+  hooks.current = {
+    launch: (req: RunRequest) => {
+      void runner.run(req).then(
+        (resp) => app.dispatch([["run-applied", resp]]),
+        () => app.dispatch([["run-applied", null]]),
+      );
+    },
+    stop: () => runner.terminate(),
+  };
+  return app;
 }
 
 function emptyWorld(): World {
