@@ -3,18 +3,30 @@
 //   core: todoApp rendered through DomBackend onto the real-DOM host,
 //   with input routed through the corpus event router.
 // Responsibilities: verify that mounting (1) renders the todo example
-//   as real, selectable text in the live document (labels → spans), and
+//   as real, selectable text in the live document (labels → spans),
 //   (2) a real pointer click on the "complete" filter toggle routes
 //   through the corpus router (toggle_sets_filter) and re-renders the
-//   filtered list into the document.
+//   filtered list into the document, and (tambor-e5n) (3) the SPA
+//   registers the corpus request-focus effect — a synthetic dispatch
+//   through the mounted app sets the focus state the textarea handlers
+//   emit against and focuses the input surface, and the app's view
+//   context carries that focus state (focus_ctx).
 // Rationale: openspec/specs/example-todo/spec.md stays the design
 //   authority — the SPA changes no app semantics; it is the mounting
 //   plumbing the demo runs through (backend_portable, dom backend).
+//   The request-focus pin is synthetic on purpose: native click focus
+//   (a real <textarea> focusing itself) already passes and proves
+//   nothing about the programmatic restoration path.
 
 import { describe, expect, it } from "vitest";
 
-import { mountSpa } from "../src/spa/mount.ts";
-import { todoApp, todoState } from "../src/examples/todo/todo.ts";
+import { mountDemo, mountSpa } from "../src/spa/mount.ts";
+import { spaFocusView } from "../src/spa/focus.ts";
+import { makeApp, lookupEffect } from "../src/effects/dispatch.ts";
+import { select } from "../src/effects/paths.ts";
+import { FOCUS_PATH } from "../src/app/top.ts";
+import { label } from "../src/views/model.ts";
+import { todoApp, todoState, NEXT_TEXT_PATH } from "../src/examples/todo/todo.ts";
 import { toggleOptionOf, centreOf } from "./helpers/appview.ts";
 import type { HostDoc } from "../src/interop/domhost.ts";
 
@@ -67,5 +79,49 @@ describe("spa-mount — todo example in a live document", () => {
     expect(text).not.toContain("first");
     expect(text).not.toContain("second");
     expect(text).toContain("third");
+  });
+});
+
+describe("spa-mount — request-focus effect and focus context (tambor-e5n)", () => {
+  it("registers request-focus; a synthetic dispatch sets focus state and focuses the surface", () => {
+    const doc = hostDoc();
+    const container = doc.createElement("div");
+    doc.body.appendChild(container);
+    const spa = mountSpa(doc, container);
+
+    // the SPA registers the corpus effect the textarea handlers emit
+    expect(lookupEffect("request-focus")).toBeTypeOf("function");
+
+    // synthetic dispatch through the mounted app (not a native click):
+    // the effect sets the focus state the handlers emit against ...
+    spa.app.dispatch(["request-focus", NEXT_TEXT_PATH]);
+    expect(select(spa.app.getState(), FOCUS_PATH)).toEqual(NEXT_TEXT_PATH);
+
+    // ... and focuses the current surface so keydown/paste flow
+    const documentRef = doc as unknown as { activeElement?: unknown };
+    expect(documentRef.activeElement).toBe(spa.surface.host);
+  });
+
+  it("exposes the focus state in the app's view context", () => {
+    const doc = hostDoc();
+    const container = doc.createElement("div");
+    doc.body.appendChild(container);
+    let seen: unknown = null;
+    // the app is built the SPA way: makeApp + the mount's focus view
+    // wrapper (createTodoApp's shape), mounted through mountDemo
+    const app = makeApp({
+      view: spaFocusView((_state, context) => {
+        seen = context;
+        return label("x");
+      }),
+      state: {},
+      backend: { containerSize: [100, 100] as const },
+    });
+    mountDemo(doc, container, () => app);
+
+    app.dispatch(["request-focus", NEXT_TEXT_PATH]);
+    app.view();
+
+    expect((seen as { focus?: unknown }).focus).toEqual(NEXT_TEXT_PATH);
   });
 });

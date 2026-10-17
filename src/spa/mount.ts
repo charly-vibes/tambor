@@ -9,7 +9,13 @@
 //   the tree re-draws from app.view(). The first draw lands before any
 //   event; the input surface IS the drawn root (tambor-huu): real
 //   <button>/<span> children bubble their pointer events up to it, so
-//   a separate canvas would only ever see synthetic hits.
+//   a separate canvas would only ever see synthetic hits. The mount
+//   also owns the SPA focus plumbing (tambor-e5n, spa/focus.ts): the
+//   corpus request-focus effect the textarea handlers emit is
+//   registered on the dispatcher (it sets the ::context/focus state
+//   and focuses the surface host), and the focus state is merged into
+//   the view context (spaFocusView) so textareas see their focused
+//   state.
 // Rationale: openspec/specs/example-todo/spec.md is the design authority,
 //   with routeClick (backends.ts) as the host-side routing shape: the
 //   host dispatches the event and hands the intent list to the app's
@@ -34,6 +40,11 @@ import {
 } from "../interop/domhost.ts";
 import { todoApp, todoState, type TodoState } from "../examples/todo/todo.ts";
 import { makeApp, type App } from "../effects/dispatch.ts";
+import {
+  registerSpaFocus,
+  setFocusSurface,
+  spaFocusView,
+} from "./focus.ts";
 import { VIEWPORT } from "./viewport.ts";
 import { dispatch } from "../events/dispatch.ts";
 import type { TamborEvent } from "../events/event.ts";
@@ -51,10 +62,14 @@ export interface SpaHandle {
 // The registry-aware app wire (makeApp): defeffect effects like
 // add-todo apply; the backend is carried so the render context sees
 // the container size.
+// The focus entry is merged into the context the view sees (tambor-e5n):
+// makeApp only injects the container size, so the mount wraps the view
+// with the SPA's focus-context merge (focus_ctx) — the todoApp view
+// reads context.focus for the textareas' focused state.
 function createTodoApp(): App {
   return makeApp({
-    view: (state, context) =>
-      todoApp(state as TodoState, context as { focus?: unknown }),
+    view: spaFocusView((state, context) =>
+      todoApp(state as TodoState, context as { focus?: unknown })),
     state: todoState(),
     backend: { containerSize: VIEWPORT },
   });
@@ -131,6 +146,16 @@ export function domMeasure(doc: HostDoc): (text: string, font?: Font | null) => 
 // One gallery demo mount: the same wire as mountSpa, over any demo's
 // app factory (tambor-cie.2). The corpus semantics live in the demo
 // view + state; this is mounting plumbing only.
+// Focus plumbing (tambor-e5n): register the corpus request-focus
+// effect (textarea handlers emit it; without this the dispatcher drops
+// it as unknown) and point it at this mount's surface — the registry
+// is global, so the ref is per-mount and cleared on unmount; the
+// surface capability is DOM focus, carried by the host element.
+function wireFocus(surface: RealDomElement): void {
+  registerSpaFocus();
+  setFocusSurface({ focus: () => surface.host.focus?.() });
+}
+
 export function mountDemo(
   doc: HostDoc,
   container: HostElement,
@@ -155,6 +180,7 @@ export function mountDemo(
 
   const surface = attachInputSurface(backend, root);
 
+  wireFocus(surface);
   backend.draw(app.view());
 
   return {
@@ -165,6 +191,7 @@ export function mountDemo(
     unmount: () => {
       // surface == root (tambor-huu): one host element to remove
       container.removeChild(root.host);
+      setFocusSurface(null);
     },
   };
 }

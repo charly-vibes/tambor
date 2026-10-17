@@ -52,6 +52,10 @@ export interface HostElement {
   addEventListener(type: string, fn: (ev: unknown) => void): void;
   removeEventListener(type: string, fn: (ev: unknown) => void): void;
   dispatchEvent(ev: unknown): boolean;
+  // DOM focus: the input surface (tambor-huu tabindex) takes keyboard
+  // focus through the host element (request-focus, tambor-e5n); the
+  // structural interface stays DOM-free so it is optional
+  focus?(): void;
   getBoundingClientRect(): { x: number; y: number; width: number; height: number };
   querySelectorAll(selectors: string): ArrayLike<HostElement> & Iterable<HostElement>;
 }
