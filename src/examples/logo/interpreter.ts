@@ -12,7 +12,9 @@
 //   definitions applied first when late is on, then every command re-run
 //   (the step budget is a parameter: the Worker boundary runs with a
 //   kill-sized budget, the in-thread fallback keeps the bounded one —
-//   tambor-y9d.10); the EXAMPLES library and the procText re-load helper.
+//   tambor-y9d.10; the budget counts executed tokens AND every repeat
+//   iteration, so an empty body still consumes proportionally to N —
+//   tambor-mgb); the EXAMPLES library and the procText re-load helper.
 // Rationale: the wanna-chat session demo (insights/dynamic-environment.md,
 //   "Core idea realised in the Logo demo") is the design authority for
 //   the fold semantics; this port changes presentation only. Demo-local
@@ -174,7 +176,14 @@ const COMMANDS: Readonly<Record<string, CmdHandler>> = {
   repeat: ({ P, env, w, depth }) => {
     const n = num(expr(P, env));
     const body = readBlock(P);
-    for (let k = 0; k < n; k++) execReader({ t: body, i: 0 }, env, w, depth);
+    for (let k = 0; k < n; k++) {
+      // every iteration consumes budget even when the body is empty —
+      // counting only executed tokens let `repeat N []` run unbounded
+      // (tambor-mgb)
+      w.steps++;
+      if (w.steps > w.budget) throw new Error("too many steps — infinite loop?");
+      execReader({ t: body, i: 0 }, env, w, depth);
+    }
   },
   if: ({ P, env, w, depth }) => {
     const c = expr(P, env);

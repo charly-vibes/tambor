@@ -3,8 +3,11 @@
 //   wanna-chat session demo.
 // Responsibilities: pin the trace counts of the five example programs,
 //   late binding (definitions applied first, commands re-run) changing
-//   the drawing, and the three error families (unknown command,
-//   recursion too deep, too many steps) thrown by derive.
+//   the drawing, and the four error families (unknown command,
+//   recursion too deep, too many steps, non-finite number) thrown by
+//   derive; plus the tambor-mgb edge cases — an empty repeat body still
+//   consuming the step budget, unspaced operators tokenizing as
+//   separate tokens (a leading minus stays with its number).
 // Rationale: openspec/specs/interop-model/spec.md governs the seam the
 //   demo mounts through; the interpreter itself is demo-local logic
 //   with no corpus semantics — these tests are the port of the session
@@ -14,6 +17,7 @@
 import { describe, expect, it } from "vitest";
 
 import { derive, EXAMPLES } from "../src/examples/logo/interpreter.ts";
+import { tokenize } from "../src/examples/logo/expr.ts";
 
 describe("logo-interpreter — the world is a fold over entries", () => {
   it("draws the example programs with the pinned trace counts", () => {
@@ -46,5 +50,50 @@ describe("logo-interpreter — the world is a fold over entries", () => {
     expect(() =>
       derive([{ text: "repeat 99999 [repeat 99999 [fd 1]]" }], false),
     ).toThrow(/too many steps/);
+  });
+
+  it("rejects a non-finite number as a typed error (tambor-mgb)", () => {
+    // fd 1 / 0 used to poison the turtle with Infinity → invalid SVG path
+    // data; the corpus convention is a typed error (the scrollview div0
+    // fallback of 0 is only sensible for scrollbars), so every numeric
+    // coercion rejects non-finite values
+    expect(() => derive([{ text: "fd 1 / 0" }], false)).toThrow(/finite/);
+    expect(() => derive([{ text: "rt 1 / 0" }], false)).toThrow(/finite/);
+  });
+});
+
+describe("logo-interpreter — tambor-mgb edge cases", () => {
+  it("an empty repeat body still consumes the step budget proportionally to N", () => {
+    // steps were counted per executed token, so an empty body ran N
+    // iterations for free — 100000 (≫ the 30000 budget) must be rejected
+    expect(() => derive([{ text: "repeat 100000 []" }], false)).toThrow(
+      /too many steps/,
+    );
+    // a small empty repeat stays legal and draws nothing
+    const w = derive([{ text: "repeat 100 []" }], false);
+    expect(w.trace.length).toBe(0);
+    expect(w.x).toBe(0);
+    expect(w.y).toBe(0);
+  });
+
+  it("tokenizes unspaced operator runs as separate tokens", () => {
+    expect(tokenize("fd 10+5")).toEqual(["fd", "10", "+", "5"]);
+    expect(tokenize("rt 360/5")).toEqual(["rt", "360", "/", "5"]);
+    expect(tokenize(":n*2")).toEqual([":n", "*", "2"]);
+    // the negative-number reading is pinned: a leading minus (not
+    // preceded by a token character) stays with its number — subtraction
+    // only splits when the minus follows a token character
+    expect(tokenize("fd -5")).toEqual(["fd", "-5"]);
+    expect(tokenize("fd 10-5")).toEqual(["fd", "10", "-", "5"]);
+  });
+
+  it("runs programs written with unspaced operators", () => {
+    const fd = derive([{ text: "fd 10+5" }], false);
+    expect(fd.y).toBe(15);
+    const rt = derive([{ text: "rt 360/5" }], false);
+    expect(rt.hd).toBe(72);
+    // the misleading case: :n*2 used to read as the variable ":n*2"
+    const proc = derive([{ text: "to t :n\n fd :n*2\nend\nt 3" }], false);
+    expect(proc.y).toBe(6);
   });
 });

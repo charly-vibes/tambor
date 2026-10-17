@@ -2,11 +2,15 @@
 //   demo (tambor-y9d.2) — pure text → tokens and token-stream → value
 //   machinery, with no world or state access.
 // Responsibilities: tokenize (comment stripping, bracket splitting,
+//   operator splitting — unspaced operator runs become separate tokens
+//   while a leading minus stays with its number, tambor-mgb;
 //   lowercasing); stripDefs (skip `to … end` bodies — registration
 //   happens in the fold, not during execution); defsOf (collect the
 //   `to name :params body end` definitions of one entry); readBlock
 //   (balanced-bracket block reader); the expression grammar expr/sum/
-//   term/fac with :variable lookup and truthy-number coercion.
+//   term/fac with :variable lookup and truthy-number coercion; num —
+//   the numeric coercion that rejects non-finite values as a typed
+//   error (tambor-mgb).
 // Rationale: the wanna-chat session demo is the design authority for
 //   the grammar (insights/dynamic-environment.md); this port changes
 //   presentation only. Demo-local logic — no corpus semantics live
@@ -19,12 +23,19 @@ export interface Reader {
 
 export type Env = Readonly<Record<string, number>>;
 
-// Tokenize: strip comments, split brackets onto their own tokens,
-// lowercase, drop empties.
+// Tokenize: strip comments, split brackets onto their own tokens, split
+// operator runs onto their own tokens (standard Logo tokenizer behavior,
+// tambor-mgb: `10+5`, `360/5`, `:n*2` read as three tokens each),
+// lowercase, drop empties. A minus preceded by a token character is
+// subtraction and splits; a leading minus is a negative number and stays
+// with its digits (`fd -5` keeps `-5` whole) — the negative-number vs
+// subtraction ambiguity resolves to the pinned prefix reading.
 export function tokenize(src: string): readonly string[] {
   return src
     .replace(/;.*$/gm, "")
     .replace(/[[\]()]/g, " $& ")
+    .replace(/([+*/<>=])/g, " $1 ")
+    .replace(/(?<=\S)-/g, " - ")
     .toLowerCase()
     .split(/\s+/)
     .filter(Boolean);
@@ -92,9 +103,15 @@ export function readBlock(P: Reader): readonly string[] {
 }
 
 // Arithmetic contexts coerce the boolean comparison result truthily
-// (true = 1, false = 0) — the original's loose typing, made explicit.
+// (true = 1, false = 0) — the original's loose typing, made explicit —
+// and reject non-finite values as a typed error (tambor-mgb): a
+// division by zero (or any other non-finite result) must never poison
+// the turtle with Infinity/NaN and corrupt the SVG path data; every
+// number entering the world flows through this coercion.
 export function num(v: number | boolean): number {
-  return typeof v === "number" ? v : v ? 1 : 0;
+  const n = typeof v === "number" ? v : v ? 1 : 0;
+  if (!Number.isFinite(n)) throw new Error("a finite number was expected, got " + String(n));
+  return n;
 }
 
 // Expression grammar: expr = sum ((<|>|=) sum)?; sum = term ((+|-) term)*;
