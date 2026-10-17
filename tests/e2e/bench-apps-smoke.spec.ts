@@ -15,6 +15,9 @@ test.describe("bench apps smoke (real browser)", () => {
   test("keyed-table Build 1000 draws the rows", async ({ page }) => {
     await open(page);
     await navTo(page, "keyed-table");
+    // the demo starts at zero rows — building them is the measured op
+    // (keyedTableState); a click on the drawn button does the build
+    await clickDrawnText(page, "Build 1000");
 
     await expect
       .poll(async () => page.locator("#demo *").count(), { timeout: 10_000 })
