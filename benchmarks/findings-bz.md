@@ -206,3 +206,93 @@ corpus 3250).
 
 Provenance: lane tambor-54j.17 · app + scenarios + results in-tree ·
 grades as marked.
+
+## BZ2 — Interactive plots (tambor-54j.14, lane feat/bz2-plots)
+
+App: `src/examples/bench/plot-points.ts` (+ the view half
+`src/examples/bench/plots.ts`) — demo `plots` in the gallery SPA;
+scenarios `bz2-plots-build`, `bz2-pan-naive`, `bz2-pan-tx`,
+`bz2-zoom-naive`, `bz2-zoom-tx` in `tests/e2e/bench-scenarios.ts`;
+results `benchmarks/results/bz2-*.json`.
+
+App shape: two LINKED charts (series A blue, series B red) over one
+100k-point shared x domain (`plot-points.ts` — both charts read the
+SAME array, no per-chart copy); the window is 40k points, one pan
+slides 10k, zoom halves (floor 10k). Charts draw the standard
+decimated line: per-band min/max verticals on a fixed 50-point band
+grid — 800 bands/chart at w 40000, 200/chart at the 10k floor. Chrome
+156.0.8078.4, CPU throttled ×4, 5 runs × 12 ops per scenario (+1
+untimed warmup op), production bundle; 13 clicks per run ⇒ the summary
+line reads `win 10000 w 40000 pans 13` (pan) / `win 0 w 10000 pans 13`
+(zoom) — the expectedText no-op guards, full-line pinned.
+
+### Expected-vs-actual failure of the naive mode — NOT CONFIRMED (T)
+
+The BZ2 row predicts "re-deriving while panning; copying point data"
+fails. Measured (median per timed op, CPU ×4, per-cycle medians flat
+within noise in every scenario):
+
+| scenario | op work (data side) | median ms | p90 ms |
+|---|---|---|---|
+| bz2-plots-build (Load: 100k points + 2 full-domain indexes + first draw) | 100k makePoint + 2×100k index pass | 645 | 717 |
+| bz2-pan-naive (copy 40k window + re-derive 2×800 bands) | 3.3 ms* | 606 | 755 |
+| bz2-pan-tx (slice 2×800 index bands, by reference) | 0.03 ms* | 617 | 734 |
+| bz2-zoom-naive (copy + re-derive 2×200 bands) | 0.8 ms* | 183 | 243 |
+| bz2-zoom-tx (slice 2×200 index bands) | 0.03 ms* | 183 | 237 |
+
+\* in-process node timings, unthrottled (×4 ⇒ ≈13 ms throttled).
+
+The predicted failure does NOT show: naive and transform pan are the
+same median (606 vs 617 ms — the 3 ms data-side delta is 13 ms at ×4,
+beneath the ±100 ms run noise), and zoom is likewise flat (183 vs
+183 ms). Why: a tambor dispatch re-derives the whole view and redraws
+the whole decimated chart on EVERY op regardless of how the state got
+there, so the op cost is the drawn tree, not the data pass. The drawn
+tree is the scaling law: pan draws 1600 path nodes/op (2 charts × 800
+bands) → ≈606 ms; zoom draws 400 → ≈183 ms — a 3.3× cost ratio for a
+4× drawn-node ratio. Even the Load op's 18.6 ms of data work is
+invisible under the 645 ms first draw.
+
+### Candidate: precomputed band index + pan/zoom as transform + data by reference — CORRECT, but NOT the perf lever on this wire (T/D)
+
+Built and pinned: the index (one 2×100k pass at Load) makes pan/zoom a
+slice of small band objects that stay BY REFERENCE — the 100k points
+are never touched, never copied, memory flat; the naive ≡ transform
+drawn-geometry identity is a contract test (tests/bench-plots.test.ts,
+the BZ1 "same final state, different shape" pattern). The data says
+adopt it for correctness and cost-shape (3.3 ms → 0.03 ms data-side,
+naive's 40k window copy gone), but honestly: on this wire it buys
+nothing visible, because the per-op cost is the re-derive + re-draw
+the framework performs anyway. Adopted as the app's built mode.
+
+### Candidate: canvas layer taking data by reference — POINTED AT BY THE DATA, rejected for scope (D on T data)
+
+This lane's numbers are the evidence the §4.8 canvas-seam candidate
+needs: the op cost scales with drawn nodes (1600 → 606 ms, 400 → 183
+ms), not with data size (3 ms of pass noise-level). A canvas layer
+taking the points by reference would remove the per-op DOM re-write of
+1600 nodes entirely — the one lever that could move pan toward
+pointer-rate (60+ Hz). Rejected for this lane's scope: it needs the
+§4.8 canvas seam (turtle's seg-normalization path is the nearest
+precedent) and would remove the drawn chart from the measured wire
+entirely (the BZ1 sparkline note's objection applies).
+
+### Candidate: decimation — ADOPTED, it is what makes 100k points buildable at all (T)
+
+100k drawn path nodes is not a chart, it is the failure mode (turtle's
+20k is already a stress test). The 50-point band grid decimates to
+1600 drawn nodes with pinned per-band min/max correctness against an
+independent recomputation. The zoom cycle doubles the drawn density at
+the floor (200 bands/chart over 10k points = 50 points per band) at
+183 ms/op — decimation is what keeps zoom bounded.
+
+### Brush + pointer-rate pan — not built (U/D)
+
+Brush and true pointer-drag pan (60+ Hz event streams) need a drag
+chain the click-op harness does not replay; at the measured 606 ms/op,
+a 60 Hz pan stream would queue ≈36 frames/op — the canvas-layer
+candidate above is the response the data points at. Flagged as the
+BZ2 follow-up.
+
+Provenance: lane tambor-54j.14 · app + scenarios + results in-tree ·
+grades as marked.

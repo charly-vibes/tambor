@@ -297,6 +297,76 @@ export const SCENARIOS: readonly Scenario[] = [
     warmupOps: 1,
   },
   {
+    id: "bz2-plots-build",
+    // the load builds 100k points + the two full-domain band indexes
+    // and draws the initial 800-band window per chart — 1600 real path
+    // nodes; a silently dropped load would leave the charts empty
+    expectedDrawn: 1600,
+    expectedText: "pts 100000",
+    app: "interactive plots (bench demo, dist/spa.js)",
+    demoId: "plots",
+    pointsOf: [buttonText("Load 100k")],
+    ops: 6,
+    warmupOps: 1,
+  },
+  {
+    id: "bz2-pan-naive",
+    // the §4.3 BZ2 hazard: every pan copies the 40k window and
+    // re-derives its decimation from the raw points, both charts —
+    // warmup + 12 timed ops (13 × 10k steps over the 60k slideable
+    // range) wrap to a deterministic win 10000 (the full-line no-op
+    // guard: a dropped or misrouted pan leaves win 0 w 40000 pans 0)
+    expectedText: "win 10000 w 40000 pans 13",
+    app: "interactive plots (bench demo, dist/spa.js)",
+    demoId: "plots",
+    pointsOf: [buttonText("Pan naive")],
+    drawnOps: ["Pan naive"],
+    setupOf: buttonText("Load 100k"),
+    ops: 12,
+    warmupOps: 1,
+  },
+  {
+    id: "bz2-pan-tx",
+    // the candidate: the same 13-step pan cycle, but the drawn bands
+    // are a slice of the precomputed index (data by reference, pan as
+    // transform) — the same full line must appear
+    expectedText: "win 10000 w 40000 pans 13",
+    app: "interactive plots (bench demo, dist/spa.js)",
+    demoId: "plots",
+    pointsOf: [buttonText("Pan tx")],
+    drawnOps: ["Pan tx"],
+    setupOf: buttonText("Load 100k"),
+    ops: 12,
+    warmupOps: 1,
+  },
+  {
+    id: "bz2-zoom-naive",
+    // zoom halves the window (floored at 10k) and the naive op
+    // re-derives the denser decimation from the raw points each op —
+    // warmup + 12 timed ops floor at the guarded w 10000 (the full
+    // line: a dropped zoom would leave w 40000)
+    expectedText: "win 0 w 10000 pans 13",
+    app: "interactive plots (bench demo, dist/spa.js)",
+    demoId: "plots",
+    pointsOf: [buttonText("Zoom naive")],
+    drawnOps: ["Zoom naive"],
+    setupOf: buttonText("Load 100k"),
+    ops: 12,
+    warmupOps: 1,
+  },
+  {
+    id: "bz2-zoom-tx",
+    // the candidate zoom: the same floor, bands sliced from the index
+    expectedText: "win 0 w 10000 pans 13",
+    app: "interactive plots (bench demo, dist/spa.js)",
+    demoId: "plots",
+    pointsOf: [buttonText("Zoom tx")],
+    drawnOps: ["Zoom tx"],
+    setupOf: buttonText("Load 100k"),
+    ops: 12,
+    warmupOps: 1,
+  },
+  {
     id: "dashboard-bump",
     // the count tile still reads 500 after the Bump / Bump 100 cycle —
     // every timed op re-derives all ~20 tiles from the bumped series

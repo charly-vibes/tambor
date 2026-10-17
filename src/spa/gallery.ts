@@ -30,6 +30,7 @@ import { createDashboardDerivedApp } from "../examples/bench/dashboard-derived.t
 import { createReviewFaultsApp } from "../examples/bench/review-faults.ts";
 import { createLogStreamApp } from "../examples/bench/log-stream.ts";
 import { createStreamDashboardApp } from "../examples/bench/stream-dashboard.ts";
+import { createPlotsApp } from "../examples/bench/plots.ts";
 import type { Elem } from "../views/model.ts";
 import { VIEWPORT } from "./viewport.ts";
 
@@ -231,5 +232,12 @@ export const DEMOS: readonly DemoDef[] = [
     blurb:
       "bench stream — 500 tickers with sparklines and a top-of-book line fed by a simulated quote stream: Stream naive dispatches one intent per message (a full re-derive each), Stream frame folds the whole 80-message burst into one update — same final state, one repaint.",
     create: createStreamDashboardApp,
+  },
+  {
+    id: "plots",
+    title: "plots",
+    blurb:
+      "bench plots — two linked charts over one 100k-point domain (zoom + pan): Pan naive re-derives the window decimation from the raw points and copies them per op, Pan tx slices the precomputed band index — same drawn geometry, different work shape.",
+    create: createPlotsApp,
   },
 ];
