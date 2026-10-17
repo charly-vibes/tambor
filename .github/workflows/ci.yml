@@ -140,7 +140,23 @@ jobs:
         # PROBE (tambor-ci-249): -vvv + XML listing to diagnose the CI-only
         # "adapter ingest failed: Malformed response: empty run output" (249).
         run: |
-          npx vitest run --reporter=junit --outputFile=target/probe-junit.xml -- tests/domhost.test.ts 2>&1 | tail -5 >&2; echo "probe: manual vitest exit=$?" >&2; ls -la target/probe-junit.xml 2>&1 | head -2 >&2 || echo "probe: manual xml MISSING" >&2
+          # PROBE 3: replicate the engine's exact runner invocation and capture
+          # vitest's stdout/stderr/exit directly.
+          printf '{"command":"discover"}\n' | testaruda-adapter-typescript > /tmp/probe-discover.json 2>/dev/null || true
+          python3 - <<'PYEOF' 2>&1 | tail -6 >&2 || true
+          import json, subprocess
+          d = json.load(open('/tmp/probe-discover.json'))
+          ids = [i['node_id'] for i in d['result']]
+          cmd = json.dumps({"command":"run-args","params":{"selected":ids}}) + "\n"
+          out = subprocess.run(['testaruda-adapter-typescript'], input=cmd, capture_output=True, text=True)
+          ra = json.loads(out.stdout.strip().splitlines()[-1])['result']['runner_args']
+          p = subprocess.run(ra, capture_output=True, text=True)
+          print('probe3: filters=', len(ra)-5, 'exit=', p.returncode)
+          print('probe3: stdout tail:', p.stdout[-200:].replace('\n',' | '))
+          print('probe3: stderr tail:', p.stderr[-200:].replace('\n',' | '))
+          import os
+          print('probe3: xml exists:', os.path.exists('target/test-results.xml'))
+          PYEOF
           code=0
           testaruda exec -vvv || code=$?
           echo "probe: exec exit=$code" >&2
