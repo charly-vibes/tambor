@@ -28,6 +28,7 @@ import { createTimeTravel10kApp } from "../examples/bench/time-travel-10k.ts";
 import { createSaveRestore5kApp } from "../examples/bench/save-restore-5k.ts";
 import { createDashboardDerivedApp } from "../examples/bench/dashboard-derived.ts";
 import { createReviewFaultsApp } from "../examples/bench/review-faults.ts";
+import { createLogStreamApp } from "../examples/bench/log-stream.ts";
 import type { Elem } from "../views/model.ts";
 import { VIEWPORT } from "./viewport.ts";
 
@@ -208,6 +209,13 @@ export const DEMOS: readonly DemoDef[] = [
     blurb:
       "bench dashboard — ~20 derived tiles over one 500-number series: Seed, Bump and Bump 100 are ordinary update intents, and every bump re-derives every tile (no memo, no computed — the honest cost of many derived values).",
     create: createDashboardDerivedApp,
+  },
+  {
+    id: "log-stream",
+    title: "log-stream",
+    blurb:
+      "bench log stream — simulated log batches (100k lines/min): naive Append 250 (unbounded ingest), the bounded Ring append 250 candidate, and main-thread Search all / Search ring over the plain state.",
+    create: createLogStreamApp,
   },
   {
     id: "review-faults",

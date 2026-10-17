@@ -25,6 +25,7 @@
 
 import { expect, test, type Page } from "@playwright/test";
 import {
+  clickDrawnText,
   clickView,
   demoView,
   navTo,
@@ -132,6 +133,21 @@ test.describe("benchmark scenarios (bench apps)", () => {
         });
         const page = await context.newPage();
 
+        // The op click wire (tambor-54j.17): a scenario declaring
+        // drawnOps clicks the drawn button's live DOM box — the replay
+        // measure (text.length) diverges from the bundle's real text
+        // metrics, so a non-first button's replay point can land inside
+        // the drawn first button. Everything else keeps the view-space
+        // point wire.
+        const clickOp =
+          scenario.drawnOps === undefined
+            ? (i: number) => clickView(page, points[i % points.length] as ViewPoint)
+            : (i: number) =>
+                clickDrawnText(
+                  page,
+                  scenario.drawnOps![i % scenario.drawnOps!.length] as string,
+                );
+
         // Navigate unthrottled (page load is not the measured op), then
         // apply the CPU throttle — pinned into the result below — so it
         // covers exactly the timed ops.
@@ -148,14 +164,13 @@ test.describe("benchmark scenarios (bench apps)", () => {
 
         // warmup: untimed ops settle JIT + first-layout costs
         for (let i = 0; i < scenario.warmupOps; i++) {
-          await clickView(page, points[i % points.length] as ViewPoint);
+          await clickOp(i);
           await settlePaint(page);
         }
 
         for (let op = 0; op < scenario.ops; op++) {
-          const point = points[op % points.length] as ViewPoint;
           const t0 = p.hrtime.bigint();
-          await clickView(page, point);
+          await clickOp(op);
           await settlePaint(page);
           const ms = Number(p.hrtime.bigint() - t0) / 1e6;
           samples.push(ms);
