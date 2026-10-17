@@ -19,6 +19,16 @@ exclude = [
 [roles.test]
 paths = ["tests/**", "**/*_test.*", "spec/**"]
 
+# Test-role thresholds (tambor-54j.4, following the testaruda repo's
+# identical adjustment): pure contract validators under tests/ (e.g.
+# bench-stats.ts field checkers) are boolean-heavy by nature — the
+# default cyclomatic_max=3 / cognitive_max=5 forces boolean expressions
+# to be shredded below readability. Everything else stays at default.
+
+[thresholds.test]
+cyclomatic_max = 5
+cognitive_max = 6
+
 [roles.library]
 paths = ["pkg/**", "lib/**"]
 

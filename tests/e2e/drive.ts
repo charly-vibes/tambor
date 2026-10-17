@@ -62,9 +62,12 @@ export function optionPoint(view: Elem, text: string): ViewPoint {
   return centreOf(found);
 }
 
-// The fixture stage: the surface canvas every pointer event must land on.
+// The fixture stage: the event surface the SPA attaches input to. Since
+// tambor-huu the surface IS the drawn root (a real <div> the backend
+// emitted), not a detached <canvas> — pointer events land on the drawn
+// elements themselves.
 export function stage(page: Page): Locator {
-  return page.locator("#demo > canvas");
+  return page.locator("#demo > div");
 }
 
 // The stage's page-space box, translated by a view-space point.
@@ -73,7 +76,7 @@ export async function at(
   p: ViewPoint,
 ): Promise<{ x: number; y: number }> {
   const box = await stage(page).boundingBox();
-  if (box === null) throw new Error("stage canvas has no box");
+  if (box === null) throw new Error("stage root has no box");
   return { x: box.x + p[0], y: box.y + p[1] };
 }
 
