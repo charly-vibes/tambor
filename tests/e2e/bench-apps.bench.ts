@@ -133,7 +133,8 @@ test.describe("benchmark scenarios (bench apps)", () => {
         });
         const page = await context.newPage();
 
-        // The op click wire (tambor-54j.17): a scenario declaring
+        // The op click wire (tambor-54j.13/.17, the same genuine gap
+        // both lanes filed): a scenario declaring
         // drawnOps clicks the drawn button's live DOM box — the replay
         // measure (text.length) diverges from the bundle's real text
         // metrics, so a non-first button's replay point can land inside

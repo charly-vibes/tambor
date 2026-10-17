@@ -8,6 +8,87 @@ derived / **U** unverified convention. Raw JSON lives in
 
 ---
 
+## BZ1 — Streaming finance dashboard (tambor-54j.13, lane feat/bz1-dashboard)
+
+App: `src/examples/bench/stream-dashboard.ts` (+ the pure data half
+`src/examples/bench/stream-tickers.ts`) — demo `stream-dashboard` in
+the gallery SPA; scenarios `bz1-build`, `bz1-stream-naive`,
+`bz1-stream-frame` in `tests/e2e/bench-scenarios.ts`; results
+`benchmarks/results/bz1-*.json`.
+
+Simulated stream: 500 tickers (deterministic syms/prices), each row
+drawn with price, change-vs-open and an 8-level text-block sparkline
+over a bounded 24-point history ring; a top-5-by-|change| book line
+(full sort per derivation); 80-message bursts (BURST — one 60 fps
+frame's worth of the row's ≈5k msg/s). Chrome 156.0.8078.4, CPU
+throttled ×4, 3 runs × 12 ops per scenario
+(+1 untimed warmup op each), production bundle. 13 bursts per run ⇒
+the summary line reads `msgs 1040` — the expectedText no-op guard.
+
+### Expected-vs-actual failure of the naive mode — CONFIRMED (T)
+
+The BZ1 row predicts "one dispatch + full re-derive per message".
+Measured (median per timed op, CPU ×4):
+
+| scenario | median ms | p90 ms | mean ms |
+|---|---|---|---|
+| bz1-build (one 500-row derive + draw) | 370 | 400 | 370 |
+| bz1-stream-naive (80 dispatches / op) | **7 812** | 9 626 | 8 155 |
+| bz1-stream-frame (1 dispatch / op) | **383** | 439 | 398 |
+
+The naive pump (`naivePump`) calls `app.dispatch` once per message —
+each dispatch schedules its own repaint, so per click the wire pays
+80 full view derivations (drawn rAF repaints) plus, through the
+mount's dispatch wrapper, 80 synchronous full draws, on top of the
+route's own two derivations and draw. Net: **~20.4× the frame-coalesced
+op** (7 812 / 383), ≈98 ms per message-dispatch vs ≈4.8 ms per message
+amortised in the frame op. The frame op costs the same as bz1-build
+(383 vs 370 ms — one derive + one draw of the 500-row view), i.e.
+coalescing reduces the burst's view cost to a single frame's worth.
+
+Both modes leave IDENTICAL state — `applyBurst(s, k) ≡ k sequential
+applyOneMsg` applications is a pinned contract
+(tests/bench-stream-dashboard.test.ts) — so the delta is dispatch
+shape, not data divergence. The naive number is not a strawman: the
+pump is the natural per-message wiring (`route` per incoming quote),
+exactly what an uncoalesced websocket handler does.
+
+### H2 verdict
+
+H2 ("event-rate workloads need coalescing to one dispatch per frame;
+the rAF guard may defer without coalescing") — **supported at BZ1
+scale (T)**. The rAF guard coalesces nothing here: 80 queued repaint
+callbacks each re-derive; the guard defers, it does not dedupe.
+
+### Candidates not built in this lane (D/O)
+
+- **Canvas sparklines** (§4.8 canvas layer taking data by reference):
+  rejected for scope — the text-block sparkline already makes each
+  row a real drawn node (the per-row view cost the bench measures);
+  a canvas layer would remove the rows from the measured wire
+  entirely and needs the §4.8 canvas-seam component first.
+- **Per-row memo**: unnecessary at this scale once coalescing lands —
+  the frame op re-derives all 500 rows once per frame for 436 ms;
+  per-row memo is the follow-up if the frame cost itself must drop
+  (BZ4's memoised derived paths lane covers the mechanism).
+
+### Harness notes (genuine gaps, minimal fixes)
+
+- `gallery.html` fixture nav now carries `overflow-x: auto` — with 13
+  demos the nav overflows the 800px fixture viewport; Playwright's
+  click on a fully-offscreen nav button scrolled the PAGE right and
+  put the pinned stage (x=8) offscreen-left, so every scripted stage
+  click missed (found by the bz1-stream-naive op clicks, all no-ops).
+  The nav scrolls within itself; the page and the stage origin never
+  move (a flex-wrap variant was tried first and rejected: the extra
+  nav rows pushed the tall logo demo's controls below the fold and
+  broke its mobile-380 Clear-world click).
+- `bench-apps.bench.ts` gains the `drawnOps` op-click wire (same gap
+  the log-stream lane filed): the in-process replay measures labels at
+  `text.length` while the bundle configures real text metrics, so the
+  non-first buttons' replay points ("Stream naive" at x≈40) landed
+  inside the drawn "Build 500" button — scenarios declare `drawnOps`
+  to click the drawn button's live DOM box instead.
 ## BZ5 — Log/metrics streaming (tambor-54j.17, lane feat/bz5-logstream)
 
 App: `src/examples/bench/log-stream.ts` — demo `log-stream` in the
