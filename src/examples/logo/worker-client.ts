@@ -15,9 +15,12 @@
 // Rationale: per the typed-outcome lens (wanna) the boundary never freezes —
 //   the caller gets a typed answer either way. Graceful degradation keeps
 //   the jsdom/node demo harnesses (no Worker global) on today's sync
-//   behavior. esbuild bundles worker.ts out of the
-//   new Worker(new URL("./worker.ts", import.meta.url)) pattern, so the
-//   browser artifact carries the killable worker with no extra build step.
+//   behavior. build:spa emits the worker as a second bundled entry
+//   (dist/worker.js, tambor-amb) and the client constructs the Worker
+//   against that emitted asset name relative to the bundled spa.js — a
+//   Pages deploy carries the killable worker instead of 404-ing it into
+//   the silent fallback; the onerror downgrade stays as the safety net
+//   for any future deploy that ships the SPA without the worker chunk.
 
 import { STEP_BUDGET } from "./interpreter.ts";
 import { runProgram, type RunRequest, type RunResponse } from "./worker-main.ts";
@@ -55,7 +58,9 @@ export function makeWorkerRunner(W: WorkerCtor, URLC: URLCtor): LogoRunner | nul
     // import.meta.url is the bundler-resolved module address; reached
     // structurally (the ES2022 lib has no ImportMeta.url declaration)
     const here = (import.meta as unknown as { url: string }).url;
-    w = new W(new URLC("./worker.ts", here), { type: "module" });
+    // the asset name build:spa emits (dist/worker.js) — reached relative
+    // to the bundler-resolved spa.js address so it resolves on Pages too
+    w = new W(new URLC("./worker.js", here), { type: "module" });
   } catch {
     return null; // construction can fail even where Worker exists
   }
