@@ -3,8 +3,10 @@
 // Responsibilities: assert that the DOM emission composites like the canvas
 //   backend: the root anchors its subtree (position:relative), every emitted
 //   element is absolutely positioned at its containing origin so bare groups
-//   SUPERIMPOSE children at the same origin (canvas semantics), and translate
-//   wrappers place their subtree at (x, y).
+//   SUPERIMPOSE children at the same origin (canvas semantics), translate
+//   wrappers place their subtree at (x, y), and the with-color ink threads to
+//   text spans (style.color) while fill-mode wrappers paint a background over
+//   a non-zero extent (tambor-2jz).
 // Rationale: jsdom has no layout engine, so the overdraw bug the Playwright
 //   pass caught in a real browser is only reachable structurally — as style
 //   contracts on the emitted elements. A missing position on any builder
@@ -69,6 +71,33 @@ describe("dom backend layout parity (tambor-0rp)", () => {
     const rect = wrap.children[0]!;
     expect(rect.style["position"]).toBe("absolute");
     expect(rect.style["width"]).toBe("10px");
+  });
+
+  // Ink threading (tambor-2jz): with-color must reach the text inside it —
+  // canvas paints text with the current fill color, so a with-color-wrapped
+  // span carries style.color (selected-row blue, hover gray, gray
+  // no-selection text otherwise never show in the DOM backend).
+  it("threads the with-color ink to a wrapped text span as style.color", () => {
+    const backend = new DomBackend({ containerSize: [300, 300] });
+    backend.draw(withColor([0, 0, 1], label("selected")));
+    const wrap = backend.root.children[0]!;
+    const span = wrap.children[0]!;
+    expect(span.tagName.toLowerCase()).toBe("span");
+    expect(span.style["color"]).toBe("rgba(0, 0, 255, 1)");
+  });
+
+  // Fill extent (tambor-2jz): canvas fill-mode with-color paints the whole
+  // clip extent — a DOM wrapper with auto size has zero extent, so its
+  // background paints nothing (the audit finding: no element had both a
+  // background and non-zero width). A non-stroke fill wrapper covers its
+  // containing origin with width/height 100%.
+  it("gives a fill-mode with-color wrapper a background over non-zero extent", () => {
+    const backend = new DomBackend({ containerSize: [300, 300] });
+    backend.draw(withColor([1, 0, 0], rectangle(10, 5)));
+    const wrap = backend.root.children[0]!;
+    expect(wrap.style["background"]).toBe("rgba(255, 0, 0, 1)");
+    expect(wrap.style["width"]).toBe("100%");
+    expect(wrap.style["height"]).toBe("100%");
   });
 
   // primitive_set parity (tambor-0rp round 3): path and arc DRAW on the

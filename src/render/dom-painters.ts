@@ -60,6 +60,12 @@ export interface BuildCtx {
   // — primitive_set parity: path and arc draw on EVERY backend).
   stroke?: string | undefined;
   strokeWidth?: number | undefined;
+  // The inherited text ink (canvas fillStyle semantics, tambor-2jz):
+  // with-color threads it for the subtree; text spans (labels) consume
+  // it as style.color — canvas paints text with the current fill color,
+  // so selected-row blue, hover gray and gray no-selection text show on
+  // the DOM backend too.
+  ink?: string | undefined;
 }
 export type DomPainter = (ctx: BuildCtx, node: DomNode, parent: ElementLike) => void;
 
@@ -80,9 +86,15 @@ export function buildChildrenOf(ctx: BuildCtx, node: DomNode, parent: ElementLik
   parent.appendChild(el);
 }
 
-export function buildLabel(_ctx: BuildCtx, node: DomNode, parent: ElementLike): void {
-  const el = _ctx.make("span");
+export function buildLabel(ctx: BuildCtx, node: DomNode, parent: ElementLike): void {
+  const el = ctx.make("span");
   atOrigin(el);
+  // text ink (tambor-2jz): the threaded with-color ink paints the span
+  // (canvas fillStyle semantics); a label's own color, when the draw tree
+  // carries one, paints it directly. No color inherits — the span stays
+  // whatever the host cascade gives it.
+  const ink = ctx.ink ?? nodeColor(node);
+  if (ink) el.style["color"] = ink;
   // Corpus spaces are LAYOUT: centredLabel pads with space runs to centre
   // text in its measured box (counter_label_width et al) — the measure
   // counts every space, so the DOM must render them (white-space:pre;
@@ -146,8 +158,8 @@ export function buildTranslate(ctx: BuildCtx, node: DomNode, parent: ElementLike
   parent.appendChild(el);
 }
 
-// rotate/scale/scissor contribute an (empty) box; the color paints
-// the wrapper's background.
+// rotate/scale/scissor contribute an (empty) box; the color paints the
+// wrapper's background over the full extent (tambor-2jz).
 // with-style: the mode governs how DESCENDANTS paint (canvas setStyle
 // semantics) — thread it through the mutable ctx for the subtree.
 export function buildWithStyle(ctx: BuildCtx, node: DomNode, parent: ElementLike): void {
@@ -165,17 +177,31 @@ export function buildWrapperWithColor(ctx: BuildCtx, node: DomNode, parent: Elem
   atOrigin(el);
   const color = nodeColor(node);
   const style = ctx.style ?? "fill";
-  // the stroke ink threads for the subtree (svg path/arc read it) — the
-  // canvas counterpart is setStyle: with-color sets the stroke color
+  // the stroke ink threads for the subtree (svg path/arc read it) and the
+  // text ink threads to spans (tambor-2jz) — the canvas counterpart is
+  // setStyle: with-color sets the fill and stroke color
   const prevStroke = ctx.stroke;
-  if (color) ctx.stroke = color;
-  if (color && style !== "stroke") el.style["background"] = color;
+  const prevInk = ctx.ink;
+  if (color) {
+    ctx.stroke = color;
+    ctx.ink = color;
+  }
+  if (color && style !== "stroke") {
+    el.style["background"] = color;
+    // canvas fill paints the whole clip extent — an auto-sized wrapper has
+    // zero extent, so the background would paint nothing (tambor-2jz audit:
+    // no element had both a background and non-zero width). The wrapper
+    // covers its containing origin (the nearest positioned ancestor).
+    el.style["width"] = "100%";
+    el.style["height"] = "100%";
+  }
   if (color && (style === "stroke" || style === "stroke-and-fill")) {
     el.style["border"] = `1px solid ${color}`;
     el.style["box-sizing"] = "border-box";
   }
   for (const child of node.drawables ?? []) ctx.build(child, el);
   ctx.stroke = prevStroke;
+  ctx.ink = prevInk;
   parent.appendChild(el);
 }
 
