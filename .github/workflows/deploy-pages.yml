@@ -57,11 +57,22 @@ jobs:
           test -s ai/llms.txt
           test "$(ls ai/specs | wc -l)" -eq "$(ls -1 openspec/specs | wc -l)"
 
+      - name: Stage site assets
+        # Only what the site serves: index.html + the built bundle (and the
+        # logo worker it fetches) + generated AI docs. Never node_modules,
+        # tests, or specs — the whole repo must not become the site.
+        run: |
+          rm -rf _pages && mkdir -p _pages/dist
+          cp index.html _pages/
+          cp dist/* _pages/dist/
+          cp -r ai _pages/ai
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # Site root: index.html at top level + the built bundle under dist/.
-          path: '.'
+          # _pages/ is the artifact root, so index.html stays at the site's
+          # base path and ./dist/spa.js resolves as index.html expects.
+          path: '_pages'
 
       - id: deployment
         name: Deploy to GitHub Pages
