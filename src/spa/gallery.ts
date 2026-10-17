@@ -208,6 +208,8 @@ export const DEMOS: readonly DemoDef[] = [
     blurb:
       "bench dashboard — ~20 derived tiles over one 500-number series: Seed, Bump and Bump 100 are ordinary update intents, and every bump re-derives every tile (no memo, no computed — the honest cost of many derived values).",
     create: createDashboardDerivedApp,
+  },
+  {
     id: "review-faults",
     title: "review-faults",
     blurb:
