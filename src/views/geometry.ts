@@ -7,8 +7,12 @@
 //   pure functions (bounds_total, container_bounds_max), containers
 //   reduce to the max of child origin plus size (container_bounds_max),
 //   and set_size_single_child governs setWidth/setHeight. Split from
-//   model.ts so the model stays a thin hub (tambor-272). No behavior
-//   beyond the corpus.
+//   model.ts so the model stays a thin hub (tambor-272). bounds() is
+//   memoised in a WeakMap keyed on immutable nodes (tambor-54j.2) —
+//   nodes are deep-frozen at construction (immutable_nodes) so their
+//   bounds never change; the memo is semantics-invisible (identical
+//   outputs, tests/view-bounds-memo.test.ts) and private to this module
+//   (no public API change). No behavior beyond the corpus.
 
 import {
   isGroup,
@@ -113,15 +117,45 @@ const SIZES: Readonly<Record<string, SizeFn>> = {
   "checkbox": (n) => groupBounds([checkboxDraw((n as { checked: boolean }).checked)]),
 };
 
-// The [width, height] of an elem's bounds with respect to its origin
-// (bounds_total: finite and non-negative for every node, nil is
-// [0, 0]).
-export function bounds(elem: Elem): Vec2 {
-  if (elem == null) return [0, 0];
-  if (isGroup(elem)) return groupBounds(elem);
+// Compute (no cache read): the bounds_total reduction per node type.
+function computeBounds(elem: Node): Vec2 {
   const f = SIZES[elem.type];
   if (f === undefined) throw new Error(`unreachable node type: ${elem.type}`);
   return f(elem);
+}
+
+// WeakMap memoisation of bounds() keyed on the node object
+// (tambor-54j.2). Freshness guard: only frozen nodes are cached — every
+// constructor deep-freezes (immutable_nodes), so frozen == immutable;
+// an unfrozen (mutable) surface bypasses the cache so in-place
+// mutation stays visible. IMMUTABLE_VERIFIED records already-probed
+// nodes so the frozenness check (O(own props) — significant on large
+// frozen groups) runs once per node, not on every call.
+const BOUNDS_CACHE = new WeakMap<object, Vec2>();
+const IMMUTABLE_VERIFIED = new WeakSet<object>();
+
+function cacheable(elem: object): boolean {
+  if (IMMUTABLE_VERIFIED.has(elem)) return true;
+  if (Object.isFrozen(elem)) {
+    IMMUTABLE_VERIFIED.add(elem);
+    return true;
+  }
+  return false;
+}
+
+// The [width, height] of an elem's bounds with respect to its origin
+// (bounds_total: finite and non-negative for every node, nil is
+// [0, 0]). Repeat calls on the same immutable node return the cached
+// value; the memo is invisible to results and dispatch.
+export function bounds(elem: Elem): Vec2 {
+  if (elem == null) return [0, 0];
+  if (cacheable(elem)) {
+    const cached = BOUNDS_CACHE.get(elem);
+    if (cached !== undefined) return cached;
+  }
+  const computed = isGroup(elem) ? groupBounds(elem) : computeBounds(elem);
+  if (cacheable(elem)) BOUNDS_CACHE.set(elem, computed);
+  return computed;
 }
 
 export function width(elem: Elem): number {
