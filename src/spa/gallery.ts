@@ -34,6 +34,7 @@ import { createPlotsApp } from "../examples/bench/plots.ts";
 import { createSpreadsheetApp } from "../examples/bench/spreadsheet.ts";
 import { createWhiteboardApp } from "../examples/bench/whiteboard.ts";
 import { createTrackerApp } from "../examples/bench/tracker.ts";
+import { createEnvironmentApp } from "../examples/bench/environment.ts";
 import type { Elem } from "../views/model.ts";
 import { VIEWPORT } from "./viewport.ts";
 
@@ -263,5 +264,12 @@ export const DEMOS: readonly DemoDef[] = [
     blurb:
       "bench tracker — a Jira-like board over 5000 issues in five columns: Move naive derives + draws every issue row per op while Move window draws only the visible 8×5 slice; Filter naive rescans all issues per toggle while Filter memo reads the maintained column indexes; Opt edit applies the optimistic write and settles the clean ack — all ordinary update intents guarded by one status line.",
     create: createTrackerApp,
+  },
+  {
+    id: "environment",
+    title: "environment",
+    blurb:
+      "bench environment — a Smalltalk-like inspector over 100k logical objects with a 4096-entry edit history: Edit naive re-folds every window entry per op, Edit fold re-folds only the edited entry; Rewind replay rebuilds the world by folding the whole history, Rewind ckpt restores the nearest checkpoint snapshot — same final state (the status line's counters and window checksum guard it).",
+    create: createEnvironmentApp,
   },
 ];
