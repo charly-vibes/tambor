@@ -20,6 +20,7 @@ import { makeApp, type App } from "../effects/dispatch.ts";
 import type { Path } from "../effects/paths.ts";
 import { todoApp, todoState, type TodoState } from "../examples/todo/todo.ts";
 import { createLogoApp } from "../examples/logo/logo.ts";
+import { createNotebookApp } from "../examples/notebook/notebook.ts";
 import { createKeyedTableApp } from "../examples/bench/keyed-table.ts";
 import { createTurtle20kApp } from "../examples/bench/turtle-20k.ts";
 import { createTodoBenchApp } from "../examples/bench/todomvc.ts";
@@ -166,6 +167,13 @@ export const DEMOS: readonly DemoDef[] = [
     blurb:
       "example.logo — the world is never stored: world = fold(entries[0..cursor]). Run programs, rewind with the slider, redefine a procedure for late binding.",
     create: createLogoDemo,
+  },
+  {
+    id: "notebook",
+    title: "notebook",
+    blurb:
+      "example.notebook — reactive cells as a dependency graph: dependencies are inferred from identifiers, edits and slider moves re-run only the transitive dependents (mode toggle for full), evaluation runs in a killable Worker, no eval. Try +200 chained, then move the chain slider in both modes.",
+    create: createNotebookApp,
   },
   {
     id: "keyed-table",
