@@ -57,7 +57,7 @@ export interface NotebookHooks {
 
 // Launch one run: bump runId, record pending, hand the request to the
 // runner. The reply applies later through ["run-applied", resp].
-function launch(
+export function launch(
   s: NotebookState,
   hooks: { current: NotebookHooks },
   dirty: readonly number[] | null,
@@ -95,7 +95,7 @@ function seqIndexOf(path: unknown): number | null {
 
 // A text edit: apply the editing intent, then re-run the edited cell
 // (clearing its moved slider value — the artifact's edit rule).
-function applyEdit(
+export function applyEdit(
   s: NotebookState,
   effect: Intent,
   hooks: { current: NotebookHooks },
@@ -112,7 +112,7 @@ function applyEdit(
 
 // A slider move: apply the update builtin, then re-run that slider's
 // cell (the only dirty seed — the incremental contraction).
-function applySliderMove(
+export function applySliderMove(
   s: NotebookState,
   effect: Intent,
   ctx: EffectContext,
@@ -157,91 +157,7 @@ function markKilled(s: NotebookState): NotebookState {
   return { ...s, out, pending: null };
 }
 
-// One dispatched effect through the notebook's handler vocabulary.
-function applyOne(
-  s: NotebookState,
-  effect: Intent,
-  ctx: EffectContext,
-  hooks: { current: NotebookHooks },
-): NotebookState {
-  const type = effect[0];
-  switch (type) {
-    case "insert-text":
-    case "insert-newline":
-    case "delete-backward":
-      return applyEdit(s, effect, hooks);
-    case "backward-char":
-    case "forward-char":
-    case "previous-line":
-    case "next-line":
-      return applyTextareaIntents(s, [effect]).state as NotebookState;
-    case "run-applied":
-      return applyRunReply(s, effect[1] as NotebookRunResponse);
-    case "mode":
-      return { ...s, mode: s.mode === "full" ? "incremental" : "full" };
-    case "add":
-      return launch(appendCell(s), hooks, null, addedOf("add", s));
-    case "chain":
-      return launch(chainCells(s), hooks, null, addedOf("chain", s));
-    case "chain-bump": {
-      // one +1 step on the chain base's slider path — the same intent
-      // shape a slider gesture produces (update the sliders map, launch
-      // with only the slider's cell dirty)
-      const id = s.chainBase;
-      if (id === null) return s;
-      const cur = s.sliders[id] ?? s.info[id]?.input?.[3] ?? 0;
-      const bumped = { ...s, sliders: { ...s.sliders, [id]: Math.min(100, cur + 1) } };
-      return launch(bumped, hooks, [id], []);
-    }
-    case "fan":
-      return launch(fanCells(s), hooks, null, addedOf("fan", s));
-    case "heavy":
-      return launch(heavyCells(s), hooks, null, addedOf("heavy", s));
-    case "kill":
-      hooks.current.kill();
-      return s;
-    case "reset":
-      return notebookState();
-    default:
-      if (type === "update" && isSliderNumPath(effect[1])) {
-        return applySliderMove(s, effect, ctx, hooks);
-      }
-      return defaultHandler(s, [effect], ctx) as NotebookState;
-  }
-}
 
-// The makeApp handler: one effect per call (dispatch applies batches
-// effect-by-effect).
-function notebookHandler(hooks: { current: NotebookHooks }): Handler {
-  return (state, effects, ctx) => {
-    let s = state as NotebookState;
-    for (const effect of effects) s = applyOne(s, effect, ctx, hooks);
-    return s;
-  };
-}
-
-// The demo app on the corpus wire: registry-aware makeApp + the SPA
-// focus context (the textareas' focused state), with the Worker-backed
-// runner wired through the hooks cell (worker replies route through the
-// demo's OWN dispatch so the mount re-draws them — tambor-a45). The
-// runner is injectable for tests (the default is the real one).
-export function createNotebookApp(runner: NotebookRunner = makeNotebookRunner()): App {
-  const hooks: { current: NotebookHooks } = { current: { launch: () => {}, kill: () => {} } };
-  const app = makeApp({
-    view: spaFocusView((state, context) =>
-      notebookView(state as NotebookState, context as { focus?: unknown })),
-    state: notebookState(),
-    handler: notebookHandler(hooks),
-    backend: { containerSize: VIEWPORT },
-  });
-  hooks.current = {
-    launch: (req: NotebookRunRequest) => {
-      runner.run(req).then(
-        (resp) => app.dispatch([["run-applied", resp]]),
-        () => app.dispatch([["run-applied", { id: req.id, ok: false, message: "notebook worker failed" }]]),
-      );
-    },
-    kill: () => runner.kill(),
-  };
-  return app;
-}
+// The demo app wire lives on the intents side of the seam; re-exported
+// here so the gallery and tests keep one import path.
+export { createNotebookApp } from "./notebook-intents.ts";

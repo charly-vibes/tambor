@@ -40,14 +40,6 @@ const OPS: Readonly<Record<string, (a: number, b: number) => number>> = {
   "%": (a, b) => a % b,
   "^": Math.pow,
 };
-const PREC: Readonly<Record<string, number>> = {
-  "+": 1,
-  "-": 1,
-  "*": 2,
-  "/": 2,
-  "%": 2,
-  "^": 3,
-};
 
 // The elementwise math functions (F1): broadcast over arrays.
 const F1: Readonly<Record<string, (x: number) => number>> = {
@@ -71,7 +63,9 @@ function map1(f: (x: number) => number, a: number | Float64Array): number | Floa
 }
 
 // The binary zip: scalar/scalar is scalar; an array operand broadcasts
-// the other side; two arrays must match length.
+// the other side; two arrays must match length. Length checking and
+// element addressing live in the zipXxx helpers (pretender script
+// thresholds — keep the branches out of the hot loop's owner).
 function zip(
   f: (a: number, b: number) => number,
   a: number | Float64Array,
@@ -80,17 +74,43 @@ function zip(
   const sa = !(a instanceof Float64Array);
   const sb = !(b instanceof Float64Array);
   if (sa && sb) return f(a, b);
-  if (!sa && !sb && (a as Float64Array).length !== (b as Float64Array).length) {
-    throw new Error(`length mismatch ${(a as Float64Array).length} vs ${(b as Float64Array).length}`);
-  }
-  const n = sa ? (b as Float64Array).length : (a instanceof Float64Array ? a.length : 1);
+  checkZipLengths(a, b, sa, sb);
+  const n = zipLength(a, b, sa);
   const r = new Float64Array(n);
   for (let i = 0; i < n; i++) {
-    const x = sa ? (a as number) : ((a as Float64Array)[i] as number);
-    const y = sb ? (b as number) : ((b as Float64Array)[i] as number);
-    r[i] = f(x, y);
+    r[i] = f(zipAt(a, i, sa), zipAt(b, i, sb));
   }
   return r;
+}
+
+// Two array operands must match element counts (the broadcast error).
+function checkZipLengths(
+  a: number | Float64Array,
+  b: number | Float64Array,
+  sa: boolean,
+  sb: boolean,
+): void {
+  if (!sa && !sb && (a as Float64Array).length !== (b as Float64Array).length) {
+    throw new Error(
+      `length mismatch ${(a as Float64Array).length} vs ${(b as Float64Array).length}`,
+    );
+  }
+}
+
+// The zip's element count: the array side's length when one operand is
+// an array; the scalar-broadcast path defaults to length 1.
+function zipLength(
+  a: number | Float64Array,
+  b: number | Float64Array,
+  sa: boolean,
+): number {
+  if (sa) return (b as Float64Array).length;
+  return a instanceof Float64Array ? a.length : 1;
+}
+
+// One zip element: the scalar operand broadcasts unchanged.
+function zipAt(v: number | Float64Array, i: number, scalar: boolean): number {
+  return scalar ? (v as number) : ((v as Float64Array)[i] as number);
 }
 
 // The array reduction core.
@@ -152,84 +172,6 @@ export function isBuiltin(name: string): boolean {
   return name in F1 || name in FN;
 }
 
-// The tokenizer: numbers, identifiers, operators and parens; anything
-// else is a per-cell parse error (unexpected <char>).
-export function tokenize(s: string): readonly string[] {
-  const t: string[] = [];
-  const re = /\s*(\d+\.?\d*(?:e[+-]?\d+)?|[A-Za-z_]\w*|[-+*/^%(),])/gy;
-  let m: RegExpExecArray | null;
-  let last = 0;
-  while ((m = re.exec(s)) !== null) {
-    t.push(m[1] ?? "");
-    last = re.lastIndex;
-  }
-  const rest = s.slice(last).trim();
-  if (rest) throw new Error(`unexpected ${rest[0]}`);
-  return t;
-}
-
-// The Pratt parser over the token stream (the artifact's expr/unary/
-// atom shape): binary precedence climbing, unary minus, calls and
-// parens. Every malformed stream throws a per-cell parse error.
-export function parse(tokens: readonly string[]): Ast {
-  let i = 0;
-  const at = (): string | undefined => tokens[i];
-  const expr = (minp: number): Ast => {
-    let l = unary();
-    for (;;) {
-      const o = at();
-      const p = o === undefined ? undefined : PREC[o];
-      if (o === undefined || p === undefined || p < minp) break;
-      i++;
-      l = { t: "bin", o, l, r: expr(o === "^" ? p : p + 1) };
-    }
-    return l;
-  };
-  const unary = (): Ast => {
-    if (at() === "-") {
-      i++;
-      return { t: "neg", e: expr(3) };
-    }
-    return atom();
-  };
-  const atom = (): Ast => {
-    const k = tokens[i];
-    i++;
-    if (k === undefined) throw new Error("expression ended early");
-    if (/^\d/.test(k)) return { t: "num", v: Number(k) };
-    if (/^[A-Za-z_]/.test(k)) {
-      if (at() !== "(") return { t: "id", n: k };
-      i++;
-      const args: Ast[] = [];
-      if (at() === ")") i++;
-      else {
-        for (;;) {
-          args.push(expr(1));
-          if (at() === ",") {
-            i++;
-            continue;
-          }
-          if (at() === ")") {
-            i++;
-            break;
-          }
-          throw new Error("expected , or )");
-        }
-      }
-      return { t: "call", f: k, args };
-    }
-    if (k === "(") {
-      const e = expr(1);
-      if (tokens[i] !== ")") throw new Error("missing )");
-      i++;
-      return e;
-    }
-    throw new Error(`unexpected ${k}`);
-  };
-  const e = expr(1);
-  if (i < tokens.length) throw new Error(`unexpected ${tokens[i]}`);
-  return e;
-}
 
 // The identifiers an AST reads, in order (dependency inference).
 export function idsOf(n: Ast): readonly string[] {

@@ -4,9 +4,8 @@
 //   order, and incremental evaluation that re-runs only the transitive
 //   dependents of the dirty set (plus previously-errored cells) while
 //   untouched values are reused BY IDENTITY. Ported from the chat-repo
-//   artifact (docs/reference/chat-repo-cold-read/artifacts/
-//   tambor-notebook.html.txt); tambor's real model/views/effects replace
-//   the mini-port's DOM layer.
+//   artifact; tambor's real model/views/effects replace the mini-port's
+//   DOM layer.
 // Responsibilities: the Cell/Val/OutEntry/CellInfo shapes; analyze
 //   (per-cell parse, reads inference, name/defs map, cycle and
 //   duplicate-definition reporting, slider-input validation); the
@@ -22,7 +21,8 @@
 //   app merge a Worker reply without losing the identity reuse the
 //   incremental contract pins.
 
-import { ev, idsOf, isBuiltin, parse, tokenize, type Ast } from "./notebook-eval.ts";
+import { ev, idsOf, isBuiltin, type Ast } from "./notebook-eval.ts";
+import { parse, tokenize } from "./notebook-parse.ts";
 
 // A notebook cell: a stable id and its source text.
 export interface Cell {
@@ -231,10 +231,10 @@ function evalCell(
 }
 
 // runAll: analyze, close the affected set, evaluate in topological
-// order (reusing prev BY IDENTITY outside the affected set), then
-// error every cell that never produced an entry. `ran` counts real
-// evaluations; `touched` lists every id whose entry is fresh this run
-// (the identity-reuse complement — the Worker merge's contract).
+// order (reusing prev BY IDENTITY outside the affected set), then error
+// every cell that never produced an entry. `ran` counts real
+// evaluations; `touched` is the identity-reuse complement (the merge
+// contract).
 export function runAll(
   cells: readonly Cell[],
   sliders: Readonly<Record<number, number>>,
@@ -260,20 +260,41 @@ export function runAll(
   for (const id of order) {
     const inf = info[id];
     if (inf === undefined) continue;
-    if (aff.has(id) || prev[id] === undefined) {
+    const p = prev[id];
+    if (!aff.has(id) && p !== undefined) {
+      reuseCell(id, p, out, reused);
+    } else {
       ran++;
       out[id] = evalCell(id, inf, asts[id] ?? null, sliders, look);
-    } else {
-      const p = prev[id];
-      if (p !== undefined) out[id] = p;
-      reused.add(id);
     }
     const v = out[id]?.v;
     if (inf.name !== null && v !== undefined) vals[inf.name] = v;
   }
+  fillMissingOut(cells, info, out);
+  const touched = cells.map((c) => c.id).filter((id) => !reused.has(id));
+  return { out, info, touched, ran, ms: clock().now() - t0 };
+}
+
+// An untouched cell keeps its previous entry BY IDENTITY (the
+// incremental contract) and is marked reused for the touched report.
+function reuseCell(
+  id: number,
+  p: OutEntry,
+  out: Record<number, OutEntry>,
+  reused: Set<number>,
+): void {
+  out[id] = p;
+  reused.add(id);
+}
+
+// Cells the topological pass never reached get their per-cell error or
+// a "not run" marker.
+function fillMissingOut(
+  cells: readonly Cell[],
+  info: Readonly<Record<number, CellInfo>>,
+  out: Record<number, OutEntry>,
+): void {
   for (const c of cells) {
     if (!(c.id in out)) out[c.id] = { err: info[c.id]?.err ?? "not run" };
   }
-  const touched = cells.map((c) => c.id).filter((id) => !reused.has(id));
-  return { out, info, touched, ran, ms: clock().now() - t0 };
 }
