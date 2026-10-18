@@ -228,5 +228,29 @@ export const SCENARIOS: readonly Scenario[] = [
     ops: 12,
     warmupOps: 1,
   },
+  {
+    id: "notebook-chain-200",
+    // the B9 reactive notebook (tambor-54j.9): setup builds the 200-cell
+    // dependency chain (full run → ran 209/209); every timed op is one
+    // +1 step on the chain base's slider path (the same intent shape a
+    // slider gesture produces — update the sliders map, launch with only
+    // the slider's cell dirty), so each op re-runs exactly the 201-cell
+    // dependent closure through the killable Worker: the stats line
+    // reading ran 201/209 (not 209/209) is the misroute guard — a
+    // dropped or misrouted op leaves the full-run count and fails
+    // loudly. Both clicks ride the drawn-DOM ground truth (drawnOps/
+    // drawnSetup): the demo's title/stats labels above the control row
+    // replay taller-unit-measured than the bundle's real metrics, so
+    // view-space points land off the drawn buttons (the SIDE BAND
+    // replay-divergence finding, tambor-54j.17).
+    expectedText: "ran 201/209",
+    app: "notebook (bench demo, dist/spa.js)",
+    demoId: "notebook",
+    pointsOf: [buttonText("+1 chain")],
+    drawnOps: ["+1 chain"],
+    drawnSetup: "+200 chained",
+    ops: 12,
+    warmupOps: 1,
+  },
   ...SCENARIOS_BZ,
 ];

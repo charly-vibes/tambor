@@ -84,3 +84,59 @@ maintenance property + the named pointer-move meter), component at
   anti-goal honored); moves re-register through `hitIndexMove`, which
   preserves the item's original position so the topmost rule never
   changes under moves.
+
+## B9 — reactive notebook (tambor-54j.9)
+
+Meter: `tests/e2e/bench-apps.bench.ts` scenario `notebook-chain-200`
+(declared in `tests/e2e/bench-scenarios.ts`), raw JSON at
+`benchmarks/results/notebook-chain-200.json`. App:
+`src/examples/notebook/` (core `notebook-core.ts` + `notebook-eval.ts`,
+killable Worker boundary `worker-main.ts`/`worker.ts`/
+`worker-client.ts`, demo `notebook.ts`/`notebook-state.ts`/
+`notebook-view.ts`), contracts `tests/notebook-core.test.ts` (21),
+`tests/notebook-worker.test.ts` (6), `tests/notebook-app.test.ts` (20),
+fault paths `tests/e2e/notebook.spec.ts` (4 behaviors × desktop/380px).
+Run 2026-10-18, chrome 156.0.8078.4, commit 5500ae3.
+
+### Measured
+
+| Probe | Result |
+|---|---|
+| Incremental re-run count (contract, `tests/notebook-core.test.ts`) | slider move on the 8-cell demo re-runs **3** (slider, dependent, its plot); the freq slider re-runs **6** — untouched values reused **by identity** (`out[2] === full.out[2]`) |
+| Full vs incremental ran on the 209-cell notebook | full run **209/209**; every chain-slider move in incremental mode **ran 201/209** (the bench's `expectedText` misroute guard) |
+| 200-cell chain slider→paint, CPU ×4 | median **814.7 ms**, p25/p75 767.3/861.0, p90 906.0 (n=180; todo-add floor on the same run: 83.3 ms) |
+| 200k-point budget (in-process) | `linspace(0, 6.283, 200000)` + `sum(sin(xs * 3))` well under the 2 s contract bound (~tens of ms unthrottled) |
+| Worker kill (node worker_threads + browser e2e) | a 201-cell/1M-point-array run spins off-thread with **no reply and no main-thread block**; `terminate()` stops it mid-flight with **no late reply**; the killed run reports the typed `killed` error per cell and the notebook stays usable — the next run **respawns** the worker and the full pass re-evaluates the killed cells (previously-errored re-run), recovering all values |
+
+### Reading
+
+- The 815 ms/op median is dominated by the **honest whole-view
+  redraw**: every op re-derives and re-draws all 209 cards (~1.5k drawn
+  nodes) on top of the 201-cell Worker round trip — the todo-add floor
+  on the same machine/run is 83 ms, so the notebook's per-op cost is
+  ~10× the empty-app floor at 209 cards. That is the B9 point: the
+  EXECUTION is incremental (201 of 209 cells, identity-preserved
+  values), the DRAW is whole-view — the same derive-everything shape
+  the form-200 row measures, now with a dependency-graph execution
+  under it.
+- The kill switch is a round trip, not end-of-life: `kill()`
+  terminates, resolves in-flight runs as the typed killed failure, and
+  the next run lazily respawns a fresh Worker (the Logo boundary's
+  one-way stop extended for a notebook that must stay editable).
+- Harness note: the scenario clicks ride the drawn-DOM ground truth
+  (`drawnOps` + a new `drawnSetup` field, the tambor-54j.17 SIDE BAND
+  mechanism) — the demo's title/stats labels replay at unit measure
+  above the control row, so view-space points land off the drawn
+  buttons.
+
+### Test shape notes
+
+- The identity-reuse merge lives in `applyRunReply`
+  (`notebook.ts`): a Worker reply merges **by `touched`** (the
+  core's not-reused set), so the main thread keeps the previous entry
+  OBJECTS for untouched cells even though the boundary clones every
+  reply — the app-level half of the incremental contract.
+- Textarea editing intents route through the per-app handler via
+  `applyTextareaIntents` (the todo/new-todo wire leaves `insert-text`
+  unapplied on the makeApp path — the recorded typing finding); text
+  changes mark the cell dirty and launch, cursor moves launch nothing.

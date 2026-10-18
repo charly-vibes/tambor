@@ -162,32 +162,41 @@ function card(s: NotebookState, c: Cell, idx: number, focus: unknown): Elem {
   return verticalLayout(rows) as Elem;
 }
 
-// The stats bar: ran/total, compute ms, the mode toggle.
+// The stats bar: ran/total, compute ms, the mode toggle (the button
+// label stays short so the row fits the drawn root's 300px width).
 function statsRow(s: NotebookState): Elem {
   const st = s.stats;
   return horizontalLayout([
     labelNode(`ran ${st.ran}/${st.total} cells · ${st.ms.toFixed(1)} ms`),
     spacer(5, 0),
-    fxButton(`Mode: ${s.mode}`, "mode"),
+    fxButton(`Mode: ${s.mode === "full" ? "full" : "inc"}`, "mode"),
   ]) as Elem;
 }
 
-// The control row: the structural ops, the heavy kill target, the kill
-// switch and Reset.
-function controlsRow(): Elem {
-  return horizontalLayout([
-    fxButton("+ cell", "add"),
-    spacer(5, 0),
-    fxButton("+200 chained", "chain"),
-    spacer(5, 0),
-    fxButton("+200 fan-out", "fan"),
-    spacer(5, 0),
-    fxButton("+100 heavy", "heavy"),
-    spacer(5, 0),
-    fxButton("Kill", "kill"),
-    spacer(5, 0),
-    fxButton("Reset", "reset"),
-  ]) as Elem;
+// The control rows: the structural ops, the chain bump, the heavy kill
+// target, the kill switch and Reset — split across three short rows so
+// every button stays inside the drawn root's 300px width (the mobile
+// reach constraint the fixture's viewport pins).
+function controlsRows(): Elem[] {
+  return [
+    horizontalLayout([
+      fxButton("+ cell", "add"),
+      spacer(5, 0),
+      fxButton("+200 chained", "chain"),
+      spacer(5, 0),
+      fxButton("+1 chain", "chain-bump"),
+    ]) as Elem,
+    horizontalLayout([
+      fxButton("+200 fan-out", "fan"),
+      spacer(5, 0),
+      fxButton("+200 heavy", "heavy"),
+    ]) as Elem,
+    horizontalLayout([
+      fxButton("Kill", "kill"),
+      spacer(5, 0),
+      fxButton("Reset", "reset"),
+    ]) as Elem,
+  ];
 }
 
 // The notebook view: title, stats, controls, one card per cell, and the
@@ -198,7 +207,7 @@ export function notebookView(s: NotebookState, context: { focus?: unknown } = {}
   const body: Elem[] = [
     labelNode(NOTEBOOK_TITLE),
     statsRow(s),
-    controlsRow(),
+    ...controlsRows(),
     ...(s.err.length > 0 ? [labelNode(s.err)] : []),
     ...cards,
   ];

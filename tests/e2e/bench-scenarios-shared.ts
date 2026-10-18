@@ -42,6 +42,11 @@ export interface Scenario {
    * distinguishes the ops click the drawn button's live DOM box
    * (the drive.ts clickDrawnText ground truth) instead */
   readonly drawnOps?: readonly string[];
+  /** the drawn button text of the untimed setup op, clicked through the
+   * same live-DOM box ground truth as drawnOps (tambor-54j.9: scenarios
+   * whose setup button sits behind labels whose replay height diverges
+   * from the bundle's real text metrics) */
+  readonly drawnSetup?: string;
 }
 
 // The first visible row's toggle checkbox (list-head-stable position).

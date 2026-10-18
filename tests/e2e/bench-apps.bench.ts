@@ -157,8 +157,14 @@ test.describe("benchmark scenarios (bench apps)", () => {
         const cdp = await context.newCDPSession(page);
         await cdp.send("Emulation.setCPUThrottlingRate", { rate: CPU_RATE });
 
-        // The untimed setup op (the state the scenario measures ops over).
-        if (setup !== undefined) {
+        // The untimed setup op (the state the scenario measures ops
+        // over); a drawnSetup scenario clicks the drawn button's live
+        // DOM box — the same ground truth drawnOps uses (the replay
+        // measure diverges from the bundle's real text metrics).
+        if (scenario.drawnSetup !== undefined) {
+          await clickDrawnText(page, scenario.drawnSetup);
+          await settlePaint(page);
+        } else if (setup !== undefined) {
           await clickView(page, setup);
           await settlePaint(page);
         }

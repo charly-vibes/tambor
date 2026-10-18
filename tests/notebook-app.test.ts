@@ -209,12 +209,34 @@ describe("notebook app — the structural ops", () => {
     expect(s.pending?.added).toHaveLength(200);
   });
 
-  it("+100 heavy appends the kill target's 101 cells", () => {
+  it("+100 heavy appends the kill target's cells", () => {
     const app = createNotebookApp(silentRunner);
     send(app, ["heavy"]);
     const s = app.getState() as NotebookState;
-    expect(s.cells).toHaveLength(109);
-    expect(s.pending?.added).toHaveLength(101);
+    expect(s.cells).toHaveLength(209);
+    expect(s.pending?.added).toHaveLength(201);
+  });
+
+  it("+1 chain bumps the chain base through its slider path and launches dirty", async () => {
+    const app = createNotebookApp();
+    send(app, ["chain"]);
+    await settle(); // the full-run reply: the chain's info is known
+    const s0 = app.getState() as NotebookState;
+    const base = s0.chainBase;
+    expect(base).not.toBeNull();
+    expect(s0.sliders[base as number] ?? s0.info[base as number]?.input?.[3]).toBe(1);
+    send(app, ["chain-bump"]);
+    const s = app.getState() as NotebookState;
+    expect(s.sliders[base as number]).toBe(2);
+    expect(s.pending?.dirty).toEqual([base]);
+    expect(s.pending?.added).toEqual([]);
+  });
+
+  it("+1 chain before any chain is a no-op", () => {
+    const app = createNotebookApp(silentRunner);
+    const before = app.getState() as NotebookState;
+    send(app, ["chain-bump"]);
+    expect(app.getState()).toBe(before);
   });
 
   it("the mode toggle flips without launching", () => {

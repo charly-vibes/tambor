@@ -183,6 +183,16 @@ function applyOne(
       return launch(appendCell(s), hooks, null, addedOf("add", s));
     case "chain":
       return launch(chainCells(s), hooks, null, addedOf("chain", s));
+    case "chain-bump": {
+      // one +1 step on the chain base's slider path — the same intent
+      // shape a slider gesture produces (update the sliders map, launch
+      // with only the slider's cell dirty)
+      const id = s.chainBase;
+      if (id === null) return s;
+      const cur = s.sliders[id] ?? s.info[id]?.input?.[3] ?? 0;
+      const bumped = { ...s, sliders: { ...s.sliders, [id]: Math.min(100, cur + 1) } };
+      return launch(bumped, hooks, [id], []);
+    }
     case "fan":
       return launch(fanCells(s), hooks, null, addedOf("fan", s));
     case "heavy":

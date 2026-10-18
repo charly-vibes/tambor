@@ -66,6 +66,7 @@ export interface NotebookState {
   readonly runId: number;
   readonly pending: PendingRun | null;
   readonly err: string;
+  readonly chainBase: number | null;
   readonly "::extra": Readonly<Record<string, unknown>>;
 }
 
@@ -127,6 +128,7 @@ export function notebookState(): NotebookState {
     runId: 0,
     pending: null,
     err: "",
+    chainBase: null,
     "::extra": {},
   };
 }
@@ -146,15 +148,16 @@ function addedIds(s: NotebookState, count: number): readonly number[] {
 }
 
 // +200 chained: one slider feeding a 200-cell dependency chain — the
-// bench scenario's shape (a move re-runs all 201 dependents).
+// bench scenario's shape (a move re-runs all 201 dependents). The base
+// slider's range leaves headroom for the +1 chain op's 13 bumps.
 export function chainCells(s: NotebookState): NotebookState {
   const n = s.nextId;
-  const batch: Cell[] = [{ id: n, src: `ch${n}_base = slider(0, 10, 1, 1)` }];
+  const batch: Cell[] = [{ id: n, src: `ch${n}_base = slider(0, 100, 1, 1)` }];
   for (let k = 1; k <= 200; k++) {
     const prev = k === 1 ? `ch${n}_base` : `ch${n}_${k - 1}`;
     batch.push({ id: n + k, src: `ch${n}_${k} = ${prev} + 1` });
   }
-  return { ...s, cells: [...s.cells, ...batch], nextId: n + 201 };
+  return { ...s, cells: [...s.cells, ...batch], nextId: n + 201, chainBase: n };
 }
 
 // +200 fan-out: 200 cells each summing sin(xs * k) off the demo's xs.
@@ -167,15 +170,15 @@ export function fanCells(s: NotebookState): NotebookState {
   return { ...s, cells: [...s.cells, ...batch], nextId: n + 200 };
 }
 
-// +100 heavy: a 1M-point array feeding 100 reduction cells — the
+// +200 heavy: a 1M-point array feeding 200 reduction cells — the
 // long-running run the kill switch exists for (seconds of work).
 export function heavyCells(s: NotebookState): NotebookState {
   const n = s.nextId;
   const batch: Cell[] = [{ id: n, src: `hx${n} = range(0, 1000000)` }];
-  for (let k = 1; k <= 100; k++) {
+  for (let k = 1; k <= 200; k++) {
     batch.push({ id: n + k, src: `hh${n}_${k} = sum(sin(hx${n} * ${k}))` });
   }
-  return { ...s, cells: [...s.cells, ...batch], nextId: n + 101 };
+  return { ...s, cells: [...s.cells, ...batch], nextId: n + 201 };
 }
 
 // The added ids of each append op (the kill marking's fallback set).
@@ -188,6 +191,6 @@ export function addedOf(op: "add" | "chain" | "fan" | "heavy", s: NotebookState)
     case "fan":
       return addedIds(s, 200);
     case "heavy":
-      return addedIds(s, 101);
+      return addedIds(s, 201);
   }
 }
