@@ -85,3 +85,13 @@ export function cachedRender(c: ComponentCall, resolve: () => unknown): unknown 
 export function clearRenderCache(): void {
   renderCache.clear();
 }
+
+// Diagnostic introspection for the soak/profile meter (tambor-54j.11):
+// how many props keys are retained, across how many component names.
+// component-cache.ts sits outside the public barrel — this is not an
+// app-facing API change.
+export function renderCacheStats(): { components: number; entries: number } {
+  let entries = 0;
+  for (const byProps of renderCache.values()) entries += byProps.size;
+  return { components: renderCache.size, entries };
+}
