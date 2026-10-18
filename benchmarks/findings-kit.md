@@ -47,3 +47,40 @@ quiet-machine numbers below, run 2026-10-18).
   parallel-worker jitter. The deterministic flatness proof is the entry
   plateau; a real leak (unbounded retention) would retain hundreds of MB
   and trip the guard.
+
+## I12 — spatial hit-test index (tambor-54j.10)
+
+Meter: `tests/spatial-index.test.ts` (equivalence property + move
+maintenance property + the named pointer-move meter), component at
+`src/model/spatial-index.ts`. Run 2026-10-18, quiet machine.
+
+### Measured
+
+| Probe | Result |
+|---|---|
+| Pointer-move meter, 10k-shape scene (100×100 grid of overlapping 14×14 rects), bucket query | median **2.4 µs**, p90 **2.4 µs** — the recorded 2 ms bound has ~830× headroom |
+| Same queries, linear reverse walk reference | O(n) per query by construction (the baseline the index removes; hitLinearRef kept as the equivalence oracle) |
+| Equivalence property (fast-check, 200 runs × ≤40 points) | hitAt == hitLinearRef on every point, including boundary/half-open edges and no-hit cases |
+| Move-maintenance property (60 runs, up to 5 moves, 36-point sweep each) | index == fresh linear walk of the moved scene after re-registration |
+
+### Verdict
+
+- **Adopted as a reusable internal accelerator** (`src/model/spatial-index.ts`):
+  grid buckets + original-position topmost rule, byte-identical to the
+  dispatch walk's reverse-scan-first semantics ("last containing wins" =
+  "greatest original position" — the generalization of whiteboard's
+  max-id rule to arbitrary item order). Half-open containment
+  (hit_half_open) preserved and pinned.
+- **Router wiring deliberately NOT done** (same verdict as BZ3 wave 3):
+  the shared ~300 ms click-wire/derive floor dominates at 10k, and the
+  dispatch tree is a translated element tree, not a flat scene — wiring
+  the index under `dispatchGroup` changes the hot path every app pays
+  for. Recorded trigger condition: a real app profile where linear
+  pointer-move over the drawn tree is the visible bottleneck (i.e. after
+  tambor-8xm drops the wire floor). The BZ3 whiteboard keeps its
+  app-local index (whiteboard-index.ts), which this component now
+  generalizes; app-local copies may migrate to it opportunistically.
+- Item contract: items carry their own bbox geometry (rectangles only,
+  anti-goal honored); moves re-register through `hitIndexMove`, which
+  preserves the item's original position so the topmost rule never
+  changes under moves.
