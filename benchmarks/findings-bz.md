@@ -397,3 +397,136 @@ stays flat as formulas grow. With the corpus click-path fix
 
 Provenance: lane tambor-54j.19 · app + scenarios + results in-tree ·
 grades as marked.
+
+---
+
+## BZ3 — Whiteboard (tambor-54j.15, lane feat/bz3-whiteboard)
+
+App: `src/examples/bench/whiteboard.ts` (+ the pure scene-data half
+`src/examples/bench/whiteboard-scene.ts`) — demo `whiteboard` in the
+gallery SPA; scenarios `bz3-seed`, `bz3-drag-naive`, `bz3-drag-log`,
+`bz3-drag-grid`, `bz3-undo`, `bz3-resize`, `bz3-cursor-naive`,
+`bz3-cursor-frame` in `tests/e2e/bench-scenarios-bz.ts`; results
+`benchmarks/results/bz3-*.json`.
+
+Scene: 10k shapes on a 12px grid over a 1200×1200 world (sizes 24–30px,
+so tiling is gap-free), drawn as the ~700-shape viewport window at
+world (500,500) — real rectangle nodes, re-derived from the full 10k
+array on every dispatch. Every op is an ordinary update intent; the
+summary line `shapes 10000 drags D resizes R undos U msgs M sum S`
+guards each scenario (checksum is an exact integer fold over the
+scene — identical across variants, pinned
+`tests/bench-whiteboard.test.ts`). Drags consume one probe per click
+from a fixed 16-probe list (a run never exhausts a probe's coverage).
+Chrome 156.0.8078.4, CPU throttled ×4, 5 runs × 12 timed ops (+1
+untimed warmup) per scenario, production bundle.
+
+### Expected-vs-actual: O(n) copies per op — CONFIRMED, small at 10k (T)
+
+The BZ3 row predicts "O(n) array copies" as the drag/undo hazard. The
+naive drag checkpoints the whole scene (a per-object deep copy of all
+10k shapes) onto the undo stack per op; the candidate records ONE old
+rect. Measured (median per timed op, CPU ×4):
+
+| scenario | median ms | p25 / p75 | p90 |
+|---|---|---|---|
+| bz3-seed (10k scene + bucket index + ~700-rect draw) | 345 | 315 / 368 | 383 |
+| bz3-drag-naive (snapshot history) | **313** | 299 / 330 | 369 |
+| bz3-drag-log (op-log history) | **300** | 284 / 331 | 365 |
+| bz3-drag-grid (op-log + maintained bucket index) | **314** | 296 / 332 | 367 |
+| bz3-undo (drag+undo cycle, op-log) | 311 | 288 / 333 | 386 |
+| bz3-resize (linear hit-test + grow + op-log) | 310 | 294 / 340 | 377 |
+| bz3-cursor-naive (80 dispatches / op) | **6 505** | 6 419 / 6 589 | 6 695 |
+| bz3-cursor-frame (1 folded dispatch / op) | **300** | 284 / 332 | 354 |
+
+The snapshot term is real but small at this scale: **+13 ms/op median
+(313 vs 300, +4.4%)**, flat across the run (first-third 314, last-third
+315 — the copy cost is O(scene), not O(history)). All drag variants
+leave IDENTICAL state — `dragNaive ≡ dragLog ≡ dragGrid` after 13 ops
+is deep-equality-pinned, and the checksum on every drag scenario's
+guard line is the same value — so the delta is pure work shape. The
+shared floor is ~300 ms/op: the click wire + the full-scene view
+re-derive (~700 rects walked from 10k) + the draw, paid by every
+scenario including the folded cursor burst.
+
+### Hit-testing: linear 10k vs grid-bucket — NOT a per-op cost at this scale (T, the 54j.10 evidence)
+
+The row's second hazard, "linear hit-testing", is **not confirmed as an
+end-to-end per-op cost at 10k shapes**: the grid-bucket variant
+(one ~50-cell lookup, <200 members, maintained through the drag) is
+**not faster** than the linear 10k scan — 314 vs 300 ms, i.e. the
+index's per-drag re-registration ≈ cancels its hit-test saving, and
+both deltas sit inside the p25–p75 overlap. In-process, a 10k-shape
+containment scan is tens of µs — under 5% of a click op even throttled
+×4. The hit-testing cost that actually scales in this corpus is the
+**event router's click-path walk over the drawn surface**, which the
+BZ7 lane already measured scaling with app size (18–27 ms empty →
+247–254 ms at 100k cells) — a whiteboard's per-click floor (~300 ms at
+10k scene + ~700 drawn nodes) is the same finding, not the app-level
+scan. **For tambor-54j.10 (spatial-index component)**: (a) the evidence
+here says an app-level spatial index pays for itself only when
+hit-testing runs per pointer-move sample (hover/drag at 60 Hz), not on
+discrete click ops; (b) the index must be maintained THROUGH edits
+(`indexMove` re-registers the moved shape — the maintenance term is
+what cancelled the win); (c) the bench pair (bz3-drag-log vs
+bz3-drag-grid) plus `hitLinear`/`hitIndex` in whiteboard-scene.ts is
+the ready-made baseline for that lane's measurements.
+
+### Candidate: persistent collections (cherry seam) — REJECTED on data at 10k (D on T data)
+
+The op-log candidate already removes the per-op scene copy; what
+remains is the ONE immutable rebuild of the 10k shapes array every
+variant pays (the move's `map`, the log-undo's restore `map`). A
+persistent collection would make that O(log n), but the rebuild term
+is **not measurable against the ~300 ms shared floor** (log ≡ grid ≡
+frame within noise), and the snapshot term it would also remove is
++13 ms/op — a 4% win that a persistent-structure dependency and its
+interop cost would buy. Rejected at 10k shapes; the data does say the
+copy slope is O(scene), so the verdict flips if scenes grow ~10× or if
+undo becomes an interactive-latency-critical path with the click-wire
+floor fixed.
+
+### Candidate: scene-vs-interaction layers — POINTED AT BY THE DATA, not built (D on T data)
+
+The folded cursor burst costs exactly the drag floor (300 vs 300 ms):
+even though cursors touch 8 tiny markers, the whole ~700-rect scene is
+re-derived and redrawn because the view is one pure function of one
+state — the interaction layer (cursors) is fused with the scene layer.
+A scene/interaction split (redraw cursors without re-deriving shapes)
+would cut the folded op below the floor by the scene-derive term, but
+that needs component-level memoization/layer support the corpus does
+not have yet — recorded as the candidate's evidence, not built here.
+
+### Candidate: coalesced remote cursors — ADOPTED, the BZ1 prior reproduces (T)
+
+One dispatch per cursor message over the 80-message burst costs
+**6 505 ms/op; folding the burst into ONE update intent costs 300 ms —
+21.7×**, matching BZ1's 20.4× per-message-dispatch prior on a different
+app shape (here the per-message work is a full ~700-rect scene
+re-derive + draw, flat across the run: 6 566 → 6 515 first/last third).
+Both ops leave identical state (`naiveMsgOp ≡ frameOp` fold is
+deep-equality-pinned; `msgs 1040` + the untouched-scene checksum guard
+both scenarios). Coalescing to one dispatch per frame is the adopted
+shape for any remote-cursor/multiplayer feed on this corpus.
+
+### Native text-input bridge — not exercised (U)
+
+The §4.3 candidate list's native text-input bridge addresses text
+annotation on whiteboards; this row's ops (drag, resize, undo, remote
+cursors) never touch text input, so the candidate was not built and
+carries no data from this lane.
+
+### SLO reading (D)
+
+Against a whiteboard interaction bar of "drag settles under one frame
+budget", the measured floor (~300 ms/op at CPU ×4, of which the
+BZ7-flagged click-wire walk is a large shared share) fails the bar on
+this corpus regardless of strategy — but the FAILURES the §4.3 row
+predicted are stratified: per-message cursor dispatch is catastrophic
+(6.5 s/op, 21.7×), scene snapshots cost +4% per op at 10k and grow
+linearly, and app-level linear hit-testing is free at this scale. The
+corpus-level lever remains the click-wire/derive floor (54j.10's
+neighbour), not the app-level data-structure choices, at 10k shapes.
+
+Provenance: lane tambor-54j.15 · app + scenarios + results in-tree ·
+grades as marked.

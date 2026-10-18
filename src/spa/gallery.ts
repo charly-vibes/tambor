@@ -32,6 +32,7 @@ import { createLogStreamApp } from "../examples/bench/log-stream.ts";
 import { createStreamDashboardApp } from "../examples/bench/stream-dashboard.ts";
 import { createPlotsApp } from "../examples/bench/plots.ts";
 import { createSpreadsheetApp } from "../examples/bench/spreadsheet.ts";
+import { createWhiteboardApp } from "../examples/bench/whiteboard.ts";
 import type { Elem } from "../views/model.ts";
 import { VIEWPORT } from "./viewport.ts";
 
@@ -247,5 +248,12 @@ export const DEMOS: readonly DemoDef[] = [
     blurb:
       "bench spreadsheet — a 1M-cell logical grid (10000×100) with 100k defined cells: 10k literals plus 90k three-ref formulas. Seed builds the dependency index; Edit naive recomputes every formula after each edit, Edit graph recomputes only the edited cell's transitive dependents — same final state (the status line's edits counter and values checksum guard it), measured per edit.",
     create: createSpreadsheetApp,
+  },
+  {
+    id: "whiteboard",
+    title: "whiteboard",
+    blurb:
+      "bench whiteboard — a 10k-shape scene (drag, resize, undo, remote cursors): Drag naive checkpoints the whole scene per op, Drag log records one old rect, Drag grid hit-tests through a maintained bucket index; Cursor naive dispatches one update per message, Cursor frame folds the 80-move burst into one — same final state (the summary line's counters and checksum guard it).",
+    create: createWhiteboardApp,
   },
 ];
