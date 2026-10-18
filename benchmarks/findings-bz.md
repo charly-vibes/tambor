@@ -529,4 +529,100 @@ corpus-level lever remains the click-wire/derive floor (54j.10's
 neighbour), not the app-level data-structure choices, at 10k shapes.
 
 Provenance: lane tambor-54j.15 · app + scenarios + results in-tree ·
+## BZ4 — Jira-like tracker (tambor-54j.16, lane feat/bz4-tracker)
+
+App: `src/examples/bench/tracker.ts` (+ the pure model half
+`src/examples/bench/tracker-board.ts`) — demo `tracker` in the gallery
+SPA; scenarios `bz4-build`, `bz4-move-naive`, `bz4-move-window`,
+`bz4-filter-naive`, `bz4-filter-memo`, `bz4-edit` in
+`tests/e2e/bench-scenarios-bz.ts`; results
+`benchmarks/results/bz4-*.json`.
+
+Board: 5 000 issues in five columns (1 000 each), 2 500 open,
+seeded deterministically (`issue i` in column i % 5, open when i is
+even). Drag-drop is simulated as the move-one op the harness replays
+as a click (issue `moves % 5000` one column right); the filter toggles
+"open only"; the optimistic edit applies the local write and settles
+the clean ack in one op. Per-column id indexes (`columns`,
+`openCols`) are memoised derived paths living IN state (the
+spreadsheet's dependency-index precedent), maintained incrementally by
+every mutating op. One status line
+(`tracker … cols … open … moves … edits … filter … rev …`) is the
+no-op guard; its per-column counts, counters and revision checksum
+change exactly when an op lands. Chrome 156.0.8078.4, CPU throttled
+×4, 5 runs × 12 ops per scenario (+1 untimed warmup), production
+bundle. 13 ops per run ⇒ `moves 13` / `edits 13` / odd-toggle
+`filter open` on the line.
+
+### Expected-vs-actual failure of the naive board — CONFIRMED (T)
+
+The BZ4 row predicts "rendering every row" as the hazard. Measured
+(median per timed op, CPU ×4):
+
+| scenario | drawn rows/op | median ms | p90 ms | mean ms |
+|---|---|---|---|---|
+| bz4-build (one seed + window draw) | 40 | 67 | 67 | 64 |
+| bz4-move-naive (move + draw ALL rows) | **5 000** | **1 408** | 1 765 | 1 479 |
+| bz4-move-window (move + window draw) | 40 | **67** | 67 | 65 |
+| bz4-filter-naive (toggle + full rescan) | 40 | 66.6 | 67 | 64 |
+| bz4-filter-memo (toggle + memo read) | 40 | 66.5 | 67 | 63 |
+| bz4-edit (optimistic edit + reconcile) | 40 | 66.6 | 67 | 66 |
+
+The virtual-window candidate is **21.2× the naive board op**
+(1 408 / 67) — the naive op draws all 5 000 issue rows per click and
+the delta over the window op is ~1 341 ms of pure draw cost, stable
+across cycle positions (1 312–1 738 ms). The window op costs the same
+as the build op (67 vs 67 ms — one derive + one draw of the 40-row
+board), i.e. the virtual list reduces the move's view cost to a
+single frame's worth, exactly the keyed-table precedent's prediction.
+
+Correctness is pinned, not eyeballed: after the same 13-move cycle the
+naive and window boards are deep-equal on every state field (the
+contract test also pins that the naive full draw, window-sliced, IS
+the candidate's draw, and the identical `cols 999 1000 1000 1001 1000
+open 2500 moves 13` guard line), so the delta is draw shape, not data
+divergence.
+
+### Candidate: memoised derived paths for filters — NOT the perf lever at 5k (T), adopted structurally (D)
+
+The BZ4 row predicts "recomputed filters" as a hazard. Measured: the
+naive toggle rescans all 5 000 issues per op (a single bucketing pass,
+~5 000 pushes) and the memo toggle reads the maintained indexes
+(zero recompute) — **66.57 vs 66.52 ms median, a 0.05 ms delta
+(< 0.1%), inside run-to-run noise**. The recomputed filter is not
+measurable on this wire at 5k issues: the fixed ~66 ms per-op cost is
+the double view derive + drawn-DOM sync of the board itself, and a
+single-pass O(n) scan over plain data is ~0.3 ms throttled. The §4.3
+hazard is real asymptotically but only at issue counts (or scan
+complexities) far above this bench's 5k — at 5k the DRAW, not the
+recompute, is the cost.
+
+Verdict: the memo indexes are adopted anyway (they are what bounds
+every mutating op to the two touched boundary entries — the
+incremental-maintenance contract is pinned), but the lane rejects the
+claim that memoising the filter is the BZ4 perf lever on this wire.
+The lever is the virtual list.
+
+### Candidate: optimistic edits + clean-ack reconcile — MEASURED (T); conflict outcomes DEFERRED (U)
+
+`bz4-edit` measures the optimistic write + ack settle at 66.6 ms —
+identical to the window-board baseline (the edit's model work is two
+title computations + one version bump, sub-millisecond; the measured
+cost is the board derive + draw). The clean-ack wire is pinned by
+contract tests (title settles to `issue <id> r<version>`, revision
+checksum moves, indexes untouched). The §4.3 candidate "wanna outcomes
+for conflicts" — what the board shows when the server ack DISAGREES
+with the optimistic state — is OUT of harness scope and is deferred to
+the wanna tracker; this bench pins only the conflict-free path.
+
+### Harness notes (genuine gaps, minimal fixes)
+
+None new: the sextet runs entirely on the existing wire (drawnOps
+op-clicks, `setupOf` Seed, expectedText/expectedDrawn guards). One
+lane-local correction: the first expectedText draft spliced two
+non-adjacent segments of the status line ("cols … moves 13"),
+asserting text that cannot appear contiguously — fixed to a contiguous
+segment before any data was recorded.
+
+Provenance: lane tambor-54j.16 · app + scenarios + results in-tree ·
 grades as marked.

@@ -33,6 +33,7 @@ import { createStreamDashboardApp } from "../examples/bench/stream-dashboard.ts"
 import { createPlotsApp } from "../examples/bench/plots.ts";
 import { createSpreadsheetApp } from "../examples/bench/spreadsheet.ts";
 import { createWhiteboardApp } from "../examples/bench/whiteboard.ts";
+import { createTrackerApp } from "../examples/bench/tracker.ts";
 import type { Elem } from "../views/model.ts";
 import { VIEWPORT } from "./viewport.ts";
 
@@ -255,5 +256,12 @@ export const DEMOS: readonly DemoDef[] = [
     blurb:
       "bench whiteboard — a 10k-shape scene (drag, resize, undo, remote cursors): Drag naive checkpoints the whole scene per op, Drag log records one old rect, Drag grid hit-tests through a maintained bucket index; Cursor naive dispatches one update per message, Cursor frame folds the 80-move burst into one — same final state (the summary line's counters and checksum guard it).",
     create: createWhiteboardApp,
+  },
+  {
+    id: "tracker",
+    title: "tracker",
+    blurb:
+      "bench tracker — a Jira-like board over 5000 issues in five columns: Move naive derives + draws every issue row per op while Move window draws only the visible 8×5 slice; Filter naive rescans all issues per toggle while Filter memo reads the maintained column indexes; Opt edit applies the optimistic write and settles the clean ack — all ordinary update intents guarded by one status line.",
+    create: createTrackerApp,
   },
 ];
