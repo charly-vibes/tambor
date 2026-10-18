@@ -626,3 +626,127 @@ segment before any data was recorded.
 
 Provenance: lane tambor-54j.16 · app + scenarios + results in-tree ·
 grades as marked.
+
+## BZ6 — Smalltalk-like environment (tambor-54j.18, lane feat/bz6-environment)
+
+App: `src/examples/bench/environment.ts` (+ the pure model half
+`src/examples/bench/environment-model.ts`) — demo `environment` in the
+gallery SPA; scenarios `bz6-build`, `bz6-edit-naive`, `bz6-edit-fold`,
+`bz6-rewind-replay`, `bz6-rewind-ckpt` in
+`tests/e2e/bench-scenarios-bz.ts`; results
+`benchmarks/results/bz6-*.json`.
+
+Environment: 100 000 logical objects in a sparse id→object table (the
+spreadsheet's viewport pattern — the 24-entry inspector window is all
+that is drawn), each object an 8-ivar plain record; one folded summary
+line per window entry (the logo demo's fold-per-repaint pattern, at
+inspector scale). The edit history is an IMPLICIT log — entry n edits
+object `n % 100000`'s field `n % 8` by +3, a pure function of n — so
+replay re-applies every entry honestly without storing 100k entries.
+Seed builds the table + a 4 096-entry history with checkpoint
+snapshots (immutable table references) every 1 024 entries. All four
+timed ops are ordinary update intents guarded by one status line
+(`objs … hist … rewinds … sum …`): the checksum covers the window's
+folded lines, untouched by the timed edits, so every strategy pair
+must read the SAME line. Contract tests
+(`tests/bench-environment.test.ts`) pin naive≡fold and
+replay≡ckpt state equality plus both probes' round-trip property.
+Chrome 156.0.8078.4, CPU throttled ×4, 5 runs × 12 ops per scenario
+(+1 untimed warmup), production bundle.
+
+### Expected-vs-actual failure of the naive environment — SPLIT VERDICT (T)
+
+The §4.3 row predicts "re-folding all entries each repaint (as the
+Logo demo does)" as the failure, with huge trees and long history as
+the stress. Measured (median per timed op, CPU ×4):
+
+| scenario | op | median ms | p90 ms | mean ms |
+|---|---|---|---|---|
+| bz6-build (seed 100k + 4096-entry history) | one seed | 175.2 | 233.4 | — |
+| bz6-edit-naive (edit + re-fold ALL 24 entries) | edit | 83.23 | 84.15 | 81.13 |
+| bz6-edit-fold (edit + re-fold 1 entry) | edit | 83.22 | 84.24 | 80.86 |
+| bz6-rewind-replay (probe = fold whole world from empty) | rewind | 99.81 | 118.77 | 99.30 |
+| bz6-rewind-ckpt (probe = checkpoint restore + 1024-entry replay) | rewind | 83.17 | 84.28 | 80.57 |
+
+The prediction is CONFIRMED for the rewind path and REJECTED for the
+edit path at this window size:
+
+- **Rewind (long history): confirmed.** The logo-pattern probe —
+  rebuild the world by folding `entries[0..tip]` from empty, 100k
+  object allocations included — costs **99.8 ms vs 83.2 ms** for the
+  checkpointed restore (**1.20×, +16.6 ms median**), with a fatter
+  tail (p90 118.8 vs 84.3; max 213.7 vs 100.4 — the allocation churn
+  shows up as GC). The checkpointed restore sits exactly at the
+  measured draw floor (83.2 ms — the same median every non-rewind op
+  reads), i.e. its model work (one shared-snapshot restore + a
+  1024-entry replay) is fully hidden under the repaint; the naive
+  probe's whole-world fold is not. Checkpoints here are FREE to
+  maintain per the plain-data rule (an immutable Map reference), so
+  the candidate wins its measured comparison outright.
+- **Edit (re-fold-all vs incremental): rejected on data.** Re-folding
+  all 24 window entries per edit vs only the edited entry's fold:
+  **83.23 vs 83.22 ms median — a 0.01 ms delta (< 0.02%), inside
+  run-to-run noise** (means 81.13 vs 80.86). At a 24-entry window the
+  fold is ~24 × 8 field prints ≈ microseconds — the measured op is
+  the copy-on-write table update + the double view derive + drawn-DOM
+  sync, exactly the BZ4 finding's shape (the draw, not the recompute,
+  is the cost). The §4.3 hazard is real only where the folded surface
+  is the WHOLE environment (the logo demo folds every log entry every
+  repaint); a windowed inspector never re-folds more than it draws.
+
+### Candidates evaluated on the §4.3 row
+
+- **Checkpointed rewind — ADOPTED (T).** Measured above: restores the
+  probe target from a shared immutable snapshot + replays ≤ 1 024
+  entries; ends at the exact pre-probe state (contract-pinned round
+  trip). The one caveat the data surfaces: under plain-data rules the
+  checkpoint's VALUE is avoiding 100k allocations + 3 072 skipped
+  entries, not avoiding table copying (the restore still materialises
+  a fresh 100k-entry table — a persistent/cherry-style structure that
+  also removed the copy would attack the remaining floor, out of
+  this lane's scope).
+- **Incremental fold — REJECTED as the measurable lever at 24 rows
+  (T); adopted structurally anyway (D).** The cache is what bounds
+  every edit op to ONE fold recomputation (the contract the next
+  window size or a full-environment fold would need), and it keeps
+  the drawn window correct by construction — but the measured delta
+  at this scale is noise, so the lane rejects the claim that it is
+  BZ6's perf lever on this wire. The lever with data behind it is
+  the checkpointed rewind.
+- **Lazy tree — REJECTED on scope + data (U/D).** A lazily-materialised
+  object tree attacks the 100k-table cost the build op pays once
+  (175 ms untimed setup) and the copy-on-write per edit — but the
+  timed interactions never touch more than the window (24 entries),
+  so there is no measured scenario in which laziness changes a
+  median; the sparse-table-plus-window pattern already achieves the
+  viewport effect without it.
+- **Worker with kill switch — REJECTED on scope (U), logo precedent
+  recorded.** The harness measures in-process dispatch→paint clicks
+  (the logo kill-switch worker exists for genuinely off-thread
+  interpretation, src/examples/logo/worker*.ts); none of the §4.3
+  BZ6 ops (field edit, fold, checkpoint restore) is an off-thread
+  candidate — they are all bounded table work the main thread must
+  see through the plain-data state. Building a Worker wire for an op
+  with no measured main-thread overrun would be scaffolding, not
+  measurement.
+
+### Harness notes (genuine gaps, minimal fixes)
+
+None new: the quintet runs entirely on the existing wire (drawnOps
+op-clicks, `setupOf` Seed 100k, expectedText/expectedDrawn guards).
+One lane-local shape note: the environment window's NODE count is
+identical seeded and empty (the 24 entries draw either way), so
+bz6-build's no-op guard is its expectedText line, with expectedDrawn
+set as a catastrophic-empty floor (35).
+
+### Registry-size flag (for the orchestrator)
+
+`tests/e2e/bench-scenarios-bz.ts` is now 465 lines — over the
+pretender `file_lines` 400 (test-role) gate. Per the ticket the rows
+were added to `-bz.ts` rather than splitting the registry a third
+time; the split (e.g. `bench-scenarios-bz2.ts` holding the newest
+wave's rows, ids unchanged) is left to the orchestrator. Scenario ids
+above are the contract bindings and are unchanged by any such split.
+
+Provenance: lane tambor-54j.18 · app + scenarios + results in-tree ·
+grades as marked.
