@@ -48,22 +48,13 @@ import {
 } from "../interop/domhost.ts";
 import { todoApp, todoState, type TodoState } from "../examples/todo/todo.ts";
 import { makeApp, type App } from "../effects/dispatch.ts";
-import {
-  registerSpaFocus,
-  setFocusSurface,
-  spaFocusView,
-} from "./focus.ts";
+import { setFocusSurface, spaFocusView } from "./focus.ts";
 import { VIEWPORT } from "./viewport.ts";
 import { dispatch } from "../events/dispatch.ts";
 import { phaseTimers } from "../events/phase-timers.ts";
-import {
-  clipboard,
-  mouseUp,
-  scroll,
-  type TamborEvent,
-} from "../events/event.ts";
+import { type TamborEvent } from "../events/event.ts";
 import type { IntentList } from "../core.ts";
-import { MODIFIER_KEYS, normalizeKey } from "../render/input.ts";
+import { wireSurfaceInput } from "./surface-input.ts";
 
 export interface SpaHandle {
   readonly backend: DomBackend;
@@ -91,165 +82,84 @@ function createTodoApp(): App {
   });
 }
 
+// Route-time view cache (tambor-8xm): the drawn tree is reused while
+// the state is unchanged. State changes only through dispatch, so
+// app.getState() identity is the invalidation signal — a derivation
+// happens only on a change, and the phase-timer derive span still
+// opens/closes per route (a cache hit records a ~zero span).
+function viewCache(app: App): () => Elem {
+  let cache: { state: unknown; view: Elem } | null = null;
+  return () => {
+    const state = app.getState();
+    if (cache !== null && cache.state === state) return cache.view;
+    const view = app.view();
+    cache = { state, view };
+    return view;
+  };
+}
+
+// The re-render wrapper (tambor-a45): async applies route through the
+// demo's own dispatch OUTSIDE the event wire, so every non-routed
+// dispatch re-draws from the cached view; the route's own draw stays
+// single (setRouted(true) around the routed apply).
+function wireRerender(
+  backend: DomBackend,
+  app: App,
+  viewFor: () => Elem,
+): { setRouted(routed: boolean): void } {
+  let routed = false;
+  const rawDispatch = app.dispatch;
+  app.dispatch = (batch, ...rest: unknown[]): undefined => {
+    const applied = rawDispatch(batch, ...rest);
+    if (!routed) backend.draw(viewFor());
+    return applied;
+  };
+  return { setRouted: (routedNow: boolean) => void (routed = routedNow) };
+}
+
 // One forwarded event = one corpus wire round trip, the routeClick
 // shape: route through the event router, hand the intents to the
 // registry-aware dispatcher, re-draw from the app view. Returns the
 // wire so the surface's own wheel listener (tambor-gov) can feed the
 // same route.
-function wireSurface(backend: DomBackend, app: App): (ev: TamborEvent) => void {
+interface Wire {
+  route(ev: TamborEvent): void;
+  viewFor(): Elem;
+}
+
+function wireSurface(backend: DomBackend, app: App): Wire {
   // Phase-timer seams (tambor-54j.1, opt-in): derive is accumulated
-  // over both view derivations of the wire (the one feeding the route
-  // and the one feeding the draw), handler is the routing plus the
-  // intent application, and the dom draw attributes reconcile_layout
-  // and closes the record. All seam calls are no-ops while the timers
-  // are off.
-  // The draw seam: the route draws the event-routed batch itself; async
-  // applies (the logo worker reply routes through the demo's own
-  // dispatch OUTSIDE the event wire — tambor-a45) draw through the
-  // wrapper. `routed` keeps the event path single-draw.
-  let routed = false;
-  const rawDispatch = app.dispatch;
-  app.dispatch = (batch, ...rest: unknown[]): undefined => {
-    const applied = rawDispatch(batch, ...rest);
-    if (!routed) backend.draw(app.view());
-    return applied;
-  };
+  // over the view derivations of the wire (a cache hit records a ~zero
+  // span), handler is the routing plus the intent application, and the
+  // dom draw attributes reconcile_layout and closes the record. All
+  // seam calls are no-ops while the timers are off.
+  const viewFor = viewCache(app);
+  const rerender = wireRerender(backend, app, viewFor);
   const route = (ev: TamborEvent): void => {
     phaseTimers.begin(ev.type);
     phaseTimers.startSpan("derive");
-    const view = app.view();
+    const view = viewFor();
     phaseTimers.endSpan();
     phaseTimers.startSpan("handler");
     const intents = dispatch(view, ev);
-    routed = true;
+    rerender.setRouted(true);
     try {
       if (intents.length > 0) app.dispatch(intents);
     } finally {
-      routed = false;
+      rerender.setRouted(false);
     }
     phaseTimers.endSpan();
+    // Empty intents changed nothing (event_pure — the same
+    // empty_batch_noop shape the headless wire pins): no re-derivation,
+    // no draw, so the wire floor stops scaling with app state.
+    if (intents.length === 0) return;
     phaseTimers.startSpan("derive");
-    const drawn = app.view();
+    const drawn = viewFor();
     phaseTimers.endSpan();
     backend.draw(drawn);
   };
   backend.subscribe(route);
-  return route;
-}
-
-// Wheel forwarding (tambor-gov): backend-render's input_forwarded says
-// raw wheel events are normalised and forwarded, but the backend
-// attaches no wheel listener, so the SPA surface registers its own on
-// the drawn root. The raw wheel becomes the corpus scroll event (the
-// event-model kind the wheel rules run on), carrying the raw deltas on
-// the event's delta field — the transport components-scrollview's
-// header delegates to the integration — at the cursor position
-// translated into view space the same way normalizeDOMEvent does it.
-// preventDefault so the page itself does not scroll; the mount owns
-// the delta, the wheel rules in the scrollview consume it.
-function wireWheel(surface: RealDomElement, route: (ev: TamborEvent) => void): void {
-  surface.host.addEventListener("wheel", (raw) => {
-    const e = raw as {
-      clientX?: number;
-      clientY?: number;
-      deltaX?: number;
-      deltaY?: number;
-      preventDefault(): void;
-    };
-    e.preventDefault();
-    const r = surface.host.getBoundingClientRect();
-    route(
-      scroll(
-        [(e.clientX ?? 0) - r.x, (e.clientY ?? 0) - r.y],
-        { delta: [e.deltaX ?? 0, e.deltaY ?? 0] },
-      ),
-    );
-  });
-}
-
-// The raw device position in view space — the surface-host bounding-rect
-// origin removed, the same translation wheel forwarding uses.
-function viewPos(surface: RealDomElement, e: { clientX?: number; clientY?: number }): Vec2 {
-  const r = surface.host.getBoundingClientRect();
-  return [(e.clientX ?? 0) - r.x, (e.clientY ?? 0) - r.y];
-}
-
-// Key guard (tambor-hyw): keys the app handles — every keydown that
-// forwards a corpus event (arrows, space, backspace, printable keys,
-// multi-char IME keys) and every modified combo — preventDefault so the
-// page does not scroll and the browser does not eat the shortcut. A
-// modifier key alone produces no corpus event and stays unprevented.
-function wireKeyGuard(surface: RealDomElement): void {
-  surface.host.addEventListener("keydown", (raw) => {
-    const e = raw as {
-      key?: unknown;
-      ctrlKey?: boolean;
-      metaKey?: boolean;
-      altKey?: boolean;
-      preventDefault(): void;
-    };
-    const key = e.key;
-    if (typeof key !== "string") return;
-    const modified = e.ctrlKey === true || e.metaKey === true || e.altKey === true;
-    const forwarded = normalizeKey(key) !== null
-      || (key.length > 1 && !MODIFIER_KEYS.includes(key)
-        && key !== "Unidentified" && key !== "Process" && key !== "Dead");
-    if (forwarded || modified) e.preventDefault();
-  });
-}
-
-// Pointer capture and cancel (tambor-hyw): a pointerdown captures the
-// pointer when the host can (so a drag leaving the surface keeps its
-// moves), and every way a gesture can die without a pointerup —
-// pointercancel, or the pointer leaving the surface when capture is
-// unavailable, or the capture being lost mid-drag — delivers the
-// synthetic mouse-up so no component's down state sticks. The
-// synthetic mouse-up goes through the backend's deliver — the same
-// path every real forwarded event takes (subscribers + routing), not
-// a side door.
-function wirePointerCapture(surface: RealDomElement, deliver: (ev: TamborEvent) => void): void {
-  const host = surface.host;
-  let mdown = false;
-  let lastPos: Vec2 = [0, 0];
-  const release = (): void => {
-    if (!mdown) return;
-    mdown = false;
-    deliver(mouseUp(lastPos));
-  };
-  host.addEventListener("pointerdown", (raw) => {
-    const e = raw as { clientX?: number; clientY?: number; pointerId?: unknown };
-    mdown = true;
-    lastPos = viewPos(surface, e);
-    try {
-      if (typeof (host as { setPointerCapture?: unknown }).setPointerCapture === "function"
-        && typeof e.pointerId === "number"
-      ) {
-        (host as unknown as { setPointerCapture(id: number): void }).setPointerCapture(e.pointerId);
-      }
-    } catch {
-      // a capture failure must not break the pointer flow
-    }
-  });
-  host.addEventListener("pointermove", (raw) => {
-    lastPos = viewPos(surface, raw as { clientX?: number; clientY?: number });
-  });
-  host.addEventListener("pointerup", () => {
-    mdown = false;
-  });
-  host.addEventListener("pointercancel", release);
-  host.addEventListener("pointerleave", release);
-  host.addEventListener("lostpointercapture", release);
-}
-
-// IME composition (tambor-hyw): the committed text arrives as a
-// compositionend with the data string — route it as paste-like
-// insertion (the clipboard shape the textarea rules speak), the same
-// way the multi-char keydown path does.
-function wireIme(surface: RealDomElement, deliver: (ev: TamborEvent) => void): void {
-  surface.host.addEventListener("compositionend", (raw) => {
-    const data = (raw as { data?: unknown }).data;
-    if (typeof data === "string" && data.length > 0) deliver(clipboard(data));
-  });
+  return { route, viewFor };
 }
 
 // The input surface IS the drawn root (tambor-huu): pointer events on
@@ -309,34 +219,15 @@ export function domMeasure(doc: HostDoc): (text: string, font?: Font | null) => 
   }
 }
 
-// One gallery demo mount: the same wire as mountSpa, over any demo's
-// app factory (tambor-cie.2). The corpus semantics live in the demo
-// view + state; this is mounting plumbing only.
-// Focus plumbing (tambor-e5n): register the corpus request-focus
-// effect (textarea handlers emit it; without this the dispatcher drops
-// it as unknown) and point it at this mount's surface — the registry
-// is global, so the ref is per-mount and cleared on unmount; the
-// surface capability is DOM focus, carried by the host element.
-function wireFocus(surface: RealDomElement): void {
-  registerSpaFocus();
-  setFocusSurface({ focus: () => surface.host.focus?.() });
-}
-
-// Surface wiring: every raw-DOM seam hangs off the surface element —
-// wheel forwarding (tambor-gov), input hardening (tambor-hyw: handled
-// keys preventDefault, pointer gestures get capture/cancel and mouse-up
-// delivery, IME composition inserts text) and the focus plumbing
-// (tambor-e5n).
-function wireSurfaceInput(
-  surface: RealDomElement,
-  route: (ev: TamborEvent) => void,
-  backend: DomBackend,
-): void {
-  wireWheel(surface, route);
-  wireKeyGuard(surface);
-  wirePointerCapture(surface, backend.deliver.bind(backend));
-  wireIme(surface, backend.deliver.bind(backend));
-  wireFocus(surface);
+// The demo backend: the real-DOM factory plus real font metrics
+// (tambor-0rp) — measure with the font the emitted spans inherit (16px
+// system-ui); jsdom falls back to the unit measure.
+function demoBackend(doc: HostDoc): DomBackend {
+  return new DomBackend({
+    createElement: realDomFactory(doc),
+    containerSize: VIEWPORT,
+    measure: domMeasure(doc),
+  });
 }
 
 export function mountDemo(
@@ -345,14 +236,9 @@ export function mountDemo(
   create: () => App,
 ): SpaHandle {
   const app = create();
-  const backend = new DomBackend({
-    createElement: realDomFactory(doc),
-    containerSize: VIEWPORT,
-    // Real font metrics (tambor-0rp): measure with the font the emitted
-    // spans inherit (16px system-ui); jsdom falls back to unit measure.
-    measure: domMeasure(doc),
-  });
-  const route = wireSurface(backend, app);
+  const backend = demoBackend(doc);
+  const wire = wireSurface(backend, app);
+  const route = wire.route;
 
   const root = backend.root as RealDomElement;
   container.appendChild(root.host);
@@ -364,7 +250,9 @@ export function mountDemo(
   // Root height tracks the drawn extent per draw (tambor-8yn, extent.ts).
   wireExtentSizing(backend, root.host);
 
-  backend.draw(app.view());
+  // The initial draw shares the wire's view cache: one derivation for
+  // mount + first route (tambor-8xm).
+  backend.draw(wire.viewFor());
 
   return {
     backend,
