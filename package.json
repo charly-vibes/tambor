@@ -36,7 +36,7 @@
     "test": "vitest run",
     "build": "tsc -p tsconfig.build.json",
     "prepack": "npm run build",
-    "build:spa": "esbuild src/spa/main.ts --bundle --format=esm --outfile=dist/spa.js && esbuild src/examples/logo/worker.ts --bundle --format=esm --outfile=dist/worker.js",
+    "build:spa": "esbuild src/spa/main.ts --bundle --format=esm --outfile=dist/spa.js && esbuild src/examples/logo/worker.ts --bundle --format=esm --outfile=dist/worker.js && esbuild src/examples/notebook/worker.ts --bundle --format=esm --outfile=dist/notebook-worker.js",
     "bench": "node benchmarks/run.mjs"
   },
   "devDependencies": {
