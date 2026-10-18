@@ -5,9 +5,13 @@
 //   contract bindings; the harness selects rows by id).
 // Responsibilities: the BZ1 stream-dashboard trio (tambor-54j.13), the
 //   BZ2 interactive-plots quintet (tambor-54j.14 — pan/zoom naive vs
-//   pan/zoom-as-transform over a decimated 100k domain), and the BZ7
+//   pan/zoom-as-transform over a decimated 100k domain), the BZ7
 //   spreadsheet trio (tambor-54j.19 — the full-recompute baseline vs
-//   the dependency-graph candidate over the same literal edits).
+//   the dependency-graph candidate over the same literal edits), and
+//   the BZ3 whiteboard octet (tambor-54j.15 — drag/resize/undo over a
+//   10k-shape scene: snapshot vs op-log undo history, linear vs
+//   grid-bucket hit-testing, and the per-message vs folded remote-
+//   cursor burst).
 // Rationale: the ops are cycled, so a run's samples are labelled by
 //   position in the cycle in the samples array (cycle order, per run);
 //   each row carries its own expectedText/expectedDrawn no-op guard so
@@ -166,6 +170,125 @@ export const SCENARIOS_BZ: readonly Scenario[] = [
     pointsOf: [buttonText("Edit graph")],
     drawnOps: ["Edit graph"],
     setupOf: buttonText("Seed"),
+    ops: 12,
+    warmupOps: 1,
+  },
+  {
+    id: "bz3-seed",
+    // the seeded scene draws its ~700-shape viewport window and the
+    // status line pins the scene size + the bucket-index build — a
+    // silently dropped seed would leave the scene empty
+    expectedDrawn: 600,
+    expectedText: "shapes 10000 drags 0 resizes 0 undos 0 msgs 0 sum 613514927",
+    app: "whiteboard (bench demo, dist/spa.js)",
+    demoId: "whiteboard",
+    pointsOf: [buttonText("Seed 10k")],
+    ops: 6,
+    warmupOps: 1,
+  },
+  {
+    id: "bz3-drag-naive",
+    // the §4.3 hazard pair: every drag linear-scans the 10k scene for
+    // the probe AND checkpoints the whole scene (a deep copy) onto the
+    // undo stack — warmup + 12 timed drags read drags 13 and the moved
+    // checksum (identical across all three drag variants)
+    expectedDrawn: 600,
+    expectedText: "shapes 10000 drags 13 resizes 0 undos 0 msgs 0 sum 613515889",
+    app: "whiteboard (bench demo, dist/spa.js)",
+    demoId: "whiteboard",
+    pointsOf: [buttonText("Drag naive")],
+    drawnOps: ["Drag naive"],
+    setupOf: buttonText("Seed 10k"),
+    ops: 12,
+    warmupOps: 1,
+  },
+  {
+    id: "bz3-drag-log",
+    // the undo candidate: the same linear hit-test and move, but the
+    // history records ONE old rect per drag — the same full line must
+    // appear (naive ≡ log ≡ grid state is the pinned correctness gate)
+    expectedDrawn: 600,
+    expectedText: "shapes 10000 drags 13 resizes 0 undos 0 msgs 0 sum 613515889",
+    app: "whiteboard (bench demo, dist/spa.js)",
+    demoId: "whiteboard",
+    pointsOf: [buttonText("Drag log")],
+    drawnOps: ["Drag log"],
+    setupOf: buttonText("Seed 10k"),
+    ops: 12,
+    warmupOps: 1,
+  },
+  {
+    id: "bz3-drag-grid",
+    // the 54j.10 seam: the same drag, hit-tested through the
+    // maintained grid-bucket index instead of the linear 10k scan —
+    // the same full line must appear
+    expectedDrawn: 600,
+    expectedText: "shapes 10000 drags 13 resizes 0 undos 0 msgs 0 sum 613515889",
+    app: "whiteboard (bench demo, dist/spa.js)",
+    demoId: "whiteboard",
+    pointsOf: [buttonText("Drag grid")],
+    drawnOps: ["Drag grid"],
+    setupOf: buttonText("Seed 10k"),
+    ops: 12,
+    warmupOps: 1,
+  },
+  {
+    id: "bz3-undo",
+    // the undo interaction: the ops cycle drag+undo, so the run ends
+    // drags 7 / undos 6 with the cycle's trailing drag un-undone — its
+    // displaced shape IS the deterministic checksum on the line (a
+    // dropped undo would read undos 0; a wrong restore changes the sum)
+    expectedDrawn: 600,
+    expectedText: "shapes 10000 drags 7 resizes 0 undos 6 msgs 0 sum 613515001",
+    app: "whiteboard (bench demo, dist/spa.js)",
+    demoId: "whiteboard",
+    pointsOf: [buttonText("Drag log")],
+    drawnOps: ["Drag log", "Undo"],
+    setupOf: buttonText("Seed 10k"),
+    ops: 12,
+    warmupOps: 1,
+  },
+  {
+    id: "bz3-resize",
+    // the §4.3 resize op: linear hit-test + grow the hit shape + the
+    // op-log entry — 13 resizes read resizes 13 and the grown checksum
+    expectedDrawn: 600,
+    expectedText: "shapes 10000 drags 0 resizes 13 undos 0 msgs 0 sum 613515694",
+    app: "whiteboard (bench demo, dist/spa.js)",
+    demoId: "whiteboard",
+    pointsOf: [buttonText("Resize one")],
+    drawnOps: ["Resize one"],
+    setupOf: buttonText("Seed 10k"),
+    ops: 12,
+    warmupOps: 1,
+  },
+  {
+    id: "bz3-cursor-naive",
+    // the §4.3 remote-cursor hazard at BZ1's burst scale: one dispatch
+    // PER cursor message (80 per op) — after warmup + 12 timed ops the
+    // line reads msgs 1040 and the UNTOUCHED scene checksum (a dropped
+    // message changes the count; a scene mutation changes the sum)
+    expectedDrawn: 600,
+    expectedText: "shapes 10000 drags 0 resizes 0 undos 0 msgs 1040 sum 613514927",
+    app: "whiteboard (bench demo, dist/spa.js)",
+    demoId: "whiteboard",
+    pointsOf: [buttonText("Cursor naive")],
+    drawnOps: ["Cursor naive"],
+    setupOf: buttonText("Seed 10k"),
+    ops: 12,
+    warmupOps: 1,
+  },
+  {
+    id: "bz3-cursor-frame",
+    // the candidate: the same 80-message burst folded into ONE update
+    // intent — the same msgs 1040 + untouched-scene line must appear
+    expectedDrawn: 600,
+    expectedText: "shapes 10000 drags 0 resizes 0 undos 0 msgs 1040 sum 613514927",
+    app: "whiteboard (bench demo, dist/spa.js)",
+    demoId: "whiteboard",
+    pointsOf: [buttonText("Cursor frame")],
+    drawnOps: ["Cursor frame"],
+    setupOf: buttonText("Seed 10k"),
     ops: 12,
     warmupOps: 1,
   },
