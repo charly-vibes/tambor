@@ -58,7 +58,7 @@ function cycle(k: number, op: (s: Sheet) => Sheet): Sheet {
   return sheet;
 }
 
-describe("spreadsheet bench app — seeded shape", () => {
+describe("spreadsheet bench app — seeded shape", { timeout: 30_000 }, () => {
   const sheet = seedSheet();
 
   it("seeds 10000 literals and 90000 formulas over the 1M logical grid", () => {
@@ -72,7 +72,10 @@ describe("spreadsheet bench app — seeded shape", () => {
     expect(SHEET_ROWS * LOGICAL_COLS).toBe(1_000_000);
   });
 
-  it("gives every defined cell a value and every edge a dep entry", () => {
+  // walks all 100k defined cells + dep edges — over vitest's 5s
+  // default whenever the machine is loaded (90-worker suite); the
+  // semantic gate is unchanged
+  it("gives every defined cell a value and every edge a dep entry", { timeout: 30_000 }, () => {
     expect(Object.keys(sheet.values).length).toBe(100000);
     for (const [cell, content] of Object.entries(sheet.cells)) {
       for (const ref of refsOf(content)) {
@@ -122,10 +125,11 @@ describe("spreadsheet bench app — evaluator", () => {
   });
 });
 
-describe("spreadsheet bench app — the two recompute strategies", () => {
-  // 26 whole-sheet recompute passes (naive + graph over 90k formulas)
-  // — over vitest's 5s default whenever the full 90-worker suite runs
-  // in parallel; the budget is per-test, the semantic gate unchanged
+describe("spreadsheet bench app — the two recompute strategies", { timeout: 30_000 }, () => {
+  // The 100k-cell seed + evaluator walks and the 26 whole-sheet recompute
+// passes all exceed vitest's 5s default whenever the machine is loaded
+// (the 90-worker parallel suite); the budgets live on the describes, the
+// semantic gates are unchanged.
   it("leaves naive and graph in the SAME state after a 13-edit cycle", { timeout: 30_000 }, () => {
     const naive = cycle(13, editNaive);
     const graph = cycle(13, editGraph);
