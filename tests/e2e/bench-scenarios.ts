@@ -252,5 +252,20 @@ export const SCENARIOS: readonly Scenario[] = [
     ops: 12,
     warmupOps: 1,
   },
+  {
+    id: "virt-list-10k-whole",
+    // the failing-before meter (tambor-54j.8.2): every timed op is one
+    // +1-row scroll whose draw is the honest whole-view redraw of all
+    // 10k rows — the readout still reads drawn 10000, so a dropped or
+    // mode-flipped op fails loudly
+    expectedDrawn: 10000,
+    expectedText: "drawn 10000",
+    app: "virtual list (bench demo, dist/spa.js)",
+    demoId: "virtual-list",
+    pointsOf: [buttonText("Scroll down")],
+    setupOf: buttonText("Draw all 10k"),
+    ops: 12,
+    warmupOps: 1,
+  },
   ...SCENARIOS_BZ,
 ];

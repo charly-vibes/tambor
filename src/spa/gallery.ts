@@ -35,6 +35,7 @@ import { createPlotsApp } from "../examples/bench/plots.ts";
 import { createSpreadsheetApp } from "../examples/bench/spreadsheet.ts";
 import { createWhiteboardApp } from "../examples/bench/whiteboard.ts";
 import { createTrackerApp } from "../examples/bench/tracker.ts";
+import { createVirtualListApp } from "../examples/bench/virtual-list.ts";
 import { createEnvironmentApp } from "../examples/bench/environment.ts";
 import type { Elem } from "../views/model.ts";
 import { VIEWPORT } from "./viewport.ts";
@@ -272,6 +273,13 @@ export const DEMOS: readonly DemoDef[] = [
     blurb:
       "bench tracker — a Jira-like board over 5000 issues in five columns: Move naive derives + draws every issue row per op while Move window draws only the visible 8×5 slice; Filter naive rescans all issues per toggle while Filter memo reads the maintained column indexes; Opt edit applies the optimistic write and settles the clean ack — all ordinary update intents guarded by one status line.",
     create: createTrackerApp,
+  },
+  {
+    id: "virtual-list",
+    title: "virtual-list",
+    blurb:
+      "bench virtual list — a 10k-row list over summaries (count + offset; rows derive from the index): Draw all 10k redraws the whole view per scroll op, Window 10k draws only the visible window through components.virtual-list — same scroll op, different draw strategy.",
+    create: createVirtualListApp,
   },
   {
     id: "environment",
