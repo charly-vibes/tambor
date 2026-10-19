@@ -5,7 +5,7 @@ Grades: O observed · T tested · D derived · U unverified. Status: holds · co
 | ID | Claim | Grade | Source entity | Status |
 |---|---|---|---|---|
 | C01 | wanna submit returns `recorded`/`duplicate`/`stale`/`unavailable`/`unknown_effect` | O | E02 | holds |
-| C02 | The seven "wanna principles" | D | E02 | open (I02) |
+| C02 | The seven "wanna principles" | D | E02 | holds — synthesis confirmed, each principle now tied to a wanna spec/doc line (I02 resolved 2026-10-19, see insights/wanna.md); demo labels committed/refreshed/retired/applied/not_applied are real typed kinds, `resumed` invented (D) |
 | C03 | wanna's reuse decision is "narrow"; distribution `wanna-zbn` may not proceed | O | E02 | holds |
 | C04 | wanna is headless (no DOM/authorization) | O | E02 | holds |
 | C05 | publishable candidates `composition-shell`, `review-indexeddb`; additive 0.1→0.3 | O | E02 | holds (not re-read) |

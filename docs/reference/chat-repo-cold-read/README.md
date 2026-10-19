@@ -22,7 +22,7 @@ The session produced three single-file demos (review session, Logo world, reacti
 1. **The demos do not use the real tambor library.** The sandbox had no bundler and no network, so the demos embed a ~40-line re-implementation of tambor's *model*. See [`log/failures-and-errors.md`](log/failures-and-errors.md) F01.
 2. **Neither demo has been opened in a real browser.** Only the Logo interpreter's logic was tested (in Node). See F05.
 3. **The benchmark programme is a plan with hypotheses — nothing has been benchmarked.** See `docs/benchmarks-and-findings.md` §2 and §4.7.
-4. **The "wanna principles" in demo 1 are the assistant's synthesis**, not an official list. See F03.
+4. **The "wanna principles" in demo 1 are the assistant's synthesis**, not an official list. See F03 (resolved: each principle now carries a wanna spec/doc citation — `insights/wanna.md`).
 5. **Two factual slips were found and corrected** while writing this repo (language count; an unchecked claim). See F08.
 
 ## Map

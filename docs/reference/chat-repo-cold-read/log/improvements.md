@@ -5,7 +5,7 @@ Priority: **P1** do first · **P2** next · **P3** later. Each has an acceptance
 | ID | P | Improvement | Acceptance check | Addresses |
 |---|---|---|---|---|
 | I01 | P1 | Bundle the real tambor (esbuild or equivalent) and rebuild both demos on its modules | demos import tambor sources; embedded mini-core deleted; both still pass I03 | F01 |
-| I02 | P1 | Tie each of the 7 principles and each outcome label to a wanna spec/doc line; mark invented labels | every principle has a file:line citation or is removed | F03 |
+| I02 | P1 | ~~Tie each of the 7 principles and each outcome label to a wanna spec/doc line; mark invented labels~~ — **done 2026-10-19** (wanna-1n3): all 7 principles have wanna file:line citations; labels committed/refreshed/retired/applied/not_applied are real typed kinds, `resumed` marked invented | every principle has a file:line citation or is removed — met (insights/wanna.md) | F03 |
 | I03 | P1 | Browser-test both demos (e.g. Playwright): fault injection paths, restart, slider drag, textarea focus, dark mode, 380 px width | scripted run passes; screenshots reviewed | F05 |
 | I04 | P2 | Runtime keyword tables (EN/ES) in the Logo demo; seed from power-turtle's Spanish CSV; fix `termiar-llenado`, add `color`/`repeat`; verify dialect words against a reference | Spanish programs run; reviewer sign-off by a Spanish speaker | F08, P6–P8 |
 | I05 | P2 | Logo: halo/inspector (`select-path` effect), Worker + terminate for the interpreter, lessons as markdown slides with cursor | infinite loop is killable; lesson step = cursor | dynamic-environment |

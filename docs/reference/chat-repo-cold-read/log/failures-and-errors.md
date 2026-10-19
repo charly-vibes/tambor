@@ -14,10 +14,10 @@ Format: **what happened → impact → cause → fix/mitigation**. Status: `open
 - **Fix:** replaced with a uniform rule (any logged outcome lights `typed` and `rec`; others light via their tag) via edits on the first publish.
 - **Lesson:** caught by re-reading, not by a test.
 
-## F03 — "wanna principles" are synthesis; outcome names partly invented  · open
+## F03 — "wanna principles" are synthesis; outcome names partly invented  · fixed (2026-10-19)
 - **What:** the seven principles and outcome labels such as `committed`, `refreshed`, `retired`, `resumed` are the assistant's. Only five submit outcomes are from wanna's docs.
 - **Impact:** a reader could attribute them to wanna.
-- **Fix:** labelled D in `insights/wanna.md`; I02 ties each to a spec line.
+- **Fix:** labelled D in `insights/wanna.md`; I02 ties each to a spec line. **Resolved (wanna-1n3):** all 7 principles carry wanna file:line citations; committed/refreshed/retired/applied/not_applied are real typed kinds, only `resumed` is invented (marked D in insights/wanna.md).
 
 ## F04 — Demo 2 first draft had code smells  · fixed
 - **What:** `derive` was reassigned after declaration; a dead `withDefs` stub remained.
