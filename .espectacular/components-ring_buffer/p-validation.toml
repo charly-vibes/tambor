@@ -1,0 +1,14 @@
+archetype = "PF"
+authored_with = "0.12.0"
+derived_from = "p_validation@0cc472a96a70"
+description = "each construction throws TypeError"
+falsifiability_class = "safety"
+id = "p-validation"
+status = "active"
+superseded_by = ""
+
+[[tests.shell]]
+command = "tools/scaffold-check.sh components-ring_buffer p-validation"
+
+[[tests.vitest]]
+flags = "--testNamePattern=p_validation"
