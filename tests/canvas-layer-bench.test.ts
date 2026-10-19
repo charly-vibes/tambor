@@ -132,7 +132,11 @@ test("the load op (fresh data reference) re-rasterizes exactly once, then is cac
   expect(imageBufOf(layeredChartView(state)) === after).toBe(true); // now cached
 });
 
-test("paired meter: interleaved arms, fresh state per sample (recorded, unasserted)", () => {
+// the meter runs ~7 s solo and trips vitest's 5 s default under
+// parallel load (the tambor-8nt wave-3 lesson: budget compute-heavy
+// bench tests generously, per-test whack-a-mole is the wrong
+// granularity)
+test("paired meter: interleaved arms, fresh state per sample (recorded, unasserted)", { timeout: 30_000 }, () => {
   const backend = new CanvasBackend({ containerSize: [640, 480] });
   const SAMPLES = 3;
   const perArm: { layered: number[]; naive: number[] } = { layered: [], naive: [] };
