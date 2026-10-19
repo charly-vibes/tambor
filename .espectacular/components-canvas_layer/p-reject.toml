@@ -1,0 +1,14 @@
+archetype = "PF"
+authored_with = "0.12.0"
+derived_from = "p_reject@a9b8397f596f"
+description = "each derive throws TypeError"
+falsifiability_class = "safety"
+id = "p-reject"
+status = "active"
+superseded_by = ""
+
+[[tests.shell]]
+command = "tools/scaffold-check.sh components-canvas_layer p-reject"
+
+[[tests.vitest]]
+flags = "--testNamePattern=p_reject"

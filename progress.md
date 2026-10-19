@@ -1,0 +1,6 @@
+- read pattern files (virtual_list, memo spec+tests, findings-kit, plot-points, canvas painter/image, interop)
+- design: canvas_layer = identity-keyed raster cache (WeakMap on data ref) → single image node; raster seam reuses PAINTERS + Painter (DOM-free)
+- ah + spk CLIs available
+- canvas_layer component + raster seam + tests green (8)
+- bench app + meter green; ratio ~0.19 (4.2-4.5ms vs 22-23ms per op, 12k primitives)
+- spec authored (28 specs), 7 contracts synced, ah check clean, docs stamped

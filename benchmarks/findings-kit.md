@@ -303,3 +303,75 @@ label derive, not above trivial renders elsewhere.
   semantics (the closure contract test exercises exactly that path),
   and no benchmark rigging — the null browser result is recorded
   alongside the positive meter rather than massaged.
+
+## K3 — canvas layer taking data by reference (tambor-54j.8.3)
+
+Meter: `tests/canvas-layer-bench.test.ts` (paired in-process meter,
+interleaved arms, fresh seed per sample — the J8 meter honesty rules
+apply) plus the deterministic tripwires in the same file. Component:
+`src/components/canvas_layer/` (layer factory + DOM-free raster seam),
+public through the interop barrel; corpus
+`openspec/specs/components-canvas_layer/spec.md` (7 contracts, wired
+vitest patterns in `.espectacular/components-canvas_layer/`).
+
+### Measured
+
+| Meter | before | after | delta |
+|---|---|---|---|
+| Paired meter, 12-op pan cycle over 12k drawn path primitives (one per point, BZ2 band-chart shape), 3 interleaved samples, quiet machine, 2026-10-19 | naive 19.5–23.2 ms/op | layered 3.7–4.5 ms/op | **ratio 0.16–0.19 (5–6×), stable across four runs** |
+| Drawn-node budget (deterministic, machine-independent) | naive per-op view carries **12 002 drawn primitives** (>10k — the fails-before wire, the BZ2 scaling law) | layered per-op view carries **exactly 1 image node** | the acceptance floor |
+| Draw-once (deterministic) | chartBody invoked **once per op** unlayered | invoked **exactly once across the whole 12-op cycle** layered (the raster object is identical across the cycle) | the identity rule at bench scale |
+| Drawn-output parity (deterministic) | — | the cached raster equals a fresh rasterization of the same subtree (pixel-equal) | drawn DOM unchanged by the layer |
+| Load op (fresh data reference) | — | one re-derive + re-rasterize, then cached | the invalidation cost is paid exactly once per reference |
+
+### Verdict
+
+- **Adopted as the public canvas-layer component** — the §4.8 canvas
+  seam candidate the BZ2 lane pointed at and rejected for scope: an
+  opt-in wrapper whose state holds the big data BY REFERENCE, drawn
+  through a raster/cache path so the drawn-tree derivation is skipped
+  for that subtree. API mirrors memo (`memo(build)` →
+  `canvasLayer({width, height, draw})` returns a render function called
+  per derive with the data object; one WeakMap per layer keyed on the
+  data reference). It does NOT replace decimation in the BZ2 app — it is
+  the public seam the plots app (or any app) can adopt.
+- **The win is the per-op drawn work, asserted deterministically**: the
+  failing-before arm re-derives >10k drawn primitives and re-paints them
+  every op; the pass-after arm derives one image node and replays one
+  raster (backend drawImage). The wall-clock paired ratio (0.16–0.19 on
+  a quiet machine) is recorded, not asserted — the J8 lesson (meter
+  honesty note) holds: machine-independent tripwires carry the claim,
+  the ratio is context.
+- **Raster replay is honest about what it costs**: the first derive of a
+  data reference pays one subtree derivation + rasterization (the same
+  primitive_set traversal the backend's draw performs, ~33 ms at 12k
+  paths) — a data-invalidating op (load) pays it once, and a pan/zoom
+  op never does. The pan translate sits OUTSIDE the layer, so the drawn
+  pixels still move while the raster replays — no benchmark rigging.
+- **Two structural findings landed with the component**:
+  1. **The resolver leaf rule** (`src/model/component.ts`): the
+     component-model resolver treated typed arrays (ArrayBuffer views)
+     as plain containers — walking an ImageBuffer's 2.88M index entries
+     exploded to ~4.3 GB and seconds per derive the moment a raster
+     buffer flowed through a component body. Typed arrays are now leaf
+     values (`isContainer` guard); contract-pinned by the component-wire
+     test in `tests/components-canvas_layer.test.ts`.
+  2. **Never `expect(buffer).toBe(other)`**: vitest's toBe machinery on
+     two ImageBuffer objects takes **~56 s** (11.5 MB buffer) even on a
+     PASSING assertion. Reference identity must be asserted via a
+     boolean (`expect(a === b).toBe(true)`) — the bench tests note this
+     inline.
+- **Why the layer is a function, not a defui component call** (the memo
+  precedent): a defui call routes its props through the render cache's
+  canonical serialization key — measured 40 ms/op with a 12k-point
+  array in props — which would re-pay the serialization cost the seam
+  exists to remove, every op. The WeakMap hit is one lookup.
+- **Backend seam precedent**: the DOM-free raster seam reuses the
+  backend's own painters (canvas-painters PAINTERS dispatch + headless
+  Painter into ImageBuffer), mirroring the membrane `Cached` image
+  wrapper (skia.clj:1584-1635, insights/membrane.md §3.2) — the
+  rasterization target is the module's own buffer, no window, no DOM.
+- Anti-goal held: the layer is opt-in and does not touch decimation or
+  the BZ2 app's built mode; no benchmark-specific fast paths (the bench
+  app drives its pan op through the ordinary dispatcher wire, pinned by
+  a contract test).

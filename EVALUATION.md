@@ -39,7 +39,7 @@ Cherry stands in for CLJS semantics (persistent collections, Keyword objects). T
 What would count as a "big adapter": converting state per render, wrapping every component, or mirroring node classes. The design avoids all three.
 
 ## Spec changes
-New `interop.model` (19 constraints, 19 properties). `tambor.md` gains `host_agnostic`. `path.derivation` lists the macro and explicit tiers. The corpus now carries <!-- stamp:spec-count -->27 specs<!-- /stamp:spec-count --> (lint, graph, compile and model-check clean; this report was written when the corpus had 22).
+New `interop.model` (19 constraints, 19 properties). `tambor.md` gains `host_agnostic`. `path.derivation` lists the macro and explicit tiers. The corpus now carries <!-- stamp:spec-count -->28 specs<!-- /stamp:spec-count --> (lint, graph, compile and model-check clean; this report was written when the corpus had 22).
 
 ## Not verified
 - **Macro path-walker.** I only proved that squint macros work. Porting Membrane's `path-replace` (a few hundred lines, may depend on Specter at expansion time) is unproven. Spike it first.

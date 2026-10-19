@@ -1,0 +1,14 @@
+archetype = "PF"
+authored_with = "0.12.0"
+derived_from = "p_ref_hit@f2f8c08bf288"
+description = "the wrapped subtree is derived once and both derives carry the identical cached raster"
+falsifiability_class = "safety"
+id = "p-ref-hit"
+status = "active"
+superseded_by = ""
+
+[[tests.shell]]
+command = "tools/scaffold-check.sh components-canvas_layer p-ref-hit"
+
+[[tests.vitest]]
+flags = "--testNamePattern=p_ref_hit"

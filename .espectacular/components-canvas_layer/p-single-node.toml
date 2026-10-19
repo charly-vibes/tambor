@@ -1,0 +1,14 @@
+archetype = "PF"
+authored_with = "0.12.0"
+derived_from = "p_single_node@c007ff5132e0"
+description = "the view is exactly one image node whose data is the cached raster buffer"
+falsifiability_class = "safety"
+id = "p-single-node"
+status = "active"
+superseded_by = ""
+
+[[tests.shell]]
+command = "tools/scaffold-check.sh components-canvas_layer p-single-node"
+
+[[tests.vitest]]
+flags = "--testNamePattern=p_single_node"
