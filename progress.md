@@ -4,3 +4,5 @@
 - canvas_layer component + raster seam + tests green (8)
 - bench app + meter green; ratio ~0.19 (4.2-4.5ms vs 22-23ms per op, 12k primitives)
 - spec authored (28 specs), 7 contracts synced, ah check clean, docs stamped
+- tsc strict clean (EventElem import, path variadic, ImageNode seam, resolver leaf); scaffold artifacts compiled; emit/core-split pass
+- findings-kit updated with both meter regimes (quiet 0.16-0.19, loaded 0.64-0.66)

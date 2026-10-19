@@ -318,7 +318,7 @@ vitest patterns in `.espectacular/components-canvas_layer/`).
 
 | Meter | before | after | delta |
 |---|---|---|---|
-| Paired meter, 12-op pan cycle over 12k drawn path primitives (one per point, BZ2 band-chart shape), 3 interleaved samples, quiet machine, 2026-10-19 | naive 19.5–23.2 ms/op | layered 3.7–4.5 ms/op | **ratio 0.16–0.19 (5–6×), stable across four runs** |
+| Paired meter, 12-op pan cycle over 12k drawn path primitives (one per point, BZ2 band-chart shape), 3 interleaved samples | quiet machine (first runs): naive 19.5–23.2 ms/op, layered 3.7–4.5 ms/op — **ratio 0.16–0.19 (5–6×), stable across four runs**. Loaded machine (same session, other lanes building — both arms inflate): naive 26.5–28 ms/op, layered 17–18 ms/op — ratio 0.64–0.66. The layer's per-op cost is ONE 11.5 MB drawImage (memory-bandwidth bound — it degrades most under contention); the naive arm's is 12k derives + 12k painter dispatches (CPU-bound) | |
 | Drawn-node budget (deterministic, machine-independent) | naive per-op view carries **12 002 drawn primitives** (>10k — the fails-before wire, the BZ2 scaling law) | layered per-op view carries **exactly 1 image node** | the acceptance floor |
 | Draw-once (deterministic) | chartBody invoked **once per op** unlayered | invoked **exactly once across the whole 12-op cycle** layered (the raster object is identical across the cycle) | the identity rule at bench scale |
 | Drawn-output parity (deterministic) | — | the cached raster equals a fresh rasterization of the same subtree (pixel-equal) | drawn DOM unchanged by the layer |
@@ -338,10 +338,14 @@ vitest patterns in `.espectacular/components-canvas_layer/`).
 - **The win is the per-op drawn work, asserted deterministically**: the
   failing-before arm re-derives >10k drawn primitives and re-paints them
   every op; the pass-after arm derives one image node and replays one
-  raster (backend drawImage). The wall-clock paired ratio (0.16–0.19 on
-  a quiet machine) is recorded, not asserted — the J8 lesson (meter
-  honesty note) holds: machine-independent tripwires carry the claim,
-  the ratio is context.
+  raster (backend drawImage). The wall-clock paired ratio (0.16–0.19
+  quiet, 0.64–0.66 loaded — see the table) is recorded, not asserted —
+  the J8 lesson (meter honesty note) holds: machine-independent
+  tripwires carry the claim, the ratio is context. The loaded-regime
+  degradation is itself informative: the layer's per-op cost is one
+  buffer copy, so it is the arm a memory-bandwidth-starved machine
+  hurts most — on a loaded host the deterministic drawn-node budget,
+  not the wall clock, is what the adoption case rests on.
 - **Raster replay is honest about what it costs**: the first derive of a
   data reference pays one subtree derivation + rasterization (the same
   primitive_set traversal the backend's draw performs, ~33 ms at 12k
