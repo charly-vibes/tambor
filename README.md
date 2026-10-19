@@ -49,10 +49,6 @@ app.view(); // re-render this — it is a pure function of the new state
 Run the SPA locally:
 
     npm ci
-    npm run build:spa        # esbuild → dist/spa.js (<!-- stamp:bundle-size -->208.8 kB<!-- /stamp:bundle-size -->, ESM, no runtime deps)
-||||||| 21cd520
-    npm run build:spa        # esbuild → dist/spa.js (<!-- stamp:bundle-size -->208.7 kB<!-- /stamp:bundle-size -->, ESM, no runtime deps)
-=======
     npm run build:spa        # esbuild → dist/spa.js (<!-- stamp:bundle-size -->211.0 kB<!-- /stamp:bundle-size -->, ESM, no runtime deps)
     npx serve .              # then open http://localhost:3000
 
@@ -88,7 +84,7 @@ as the base for a port.
 
 ## Repository layout
 
-    openspec/specs/    the spec corpus (<!-- stamp:spec-count -->28<!-- /stamp:spec-count --> corpus specs — edit here, gates enforce the rest)
+    openspec/specs/    the spec corpus (<!-- stamp:spec-count -->29<!-- /stamp:spec-count --> corpus specs — edit here, gates enforce the rest)
     src/               strict-TypeScript implementation (core is DOM-free)
     src/spa/           browser entry + mount (only DOM-touching files)
     tests/             vitest suite
@@ -112,7 +108,7 @@ The full loop for a spec change:
     ah sync                         # derive/refresh contracts
     # 2. wire any new contract: append [[tests.shell]] scaffold binding
     #    (copy the pattern from an existing .espectacular/<spec>/*.toml)
-    ah check --run-tests            # verify all <!-- stamp:contract-count -->357 contracts<!-- /stamp:contract-count -->
+    ah check --run-tests            # verify all <!-- stamp:contract-count -->364 contracts<!-- /stamp:contract-count -->
 
 Enforcement (hard gates in `lefthook.yml`, mirrored in CI):
 

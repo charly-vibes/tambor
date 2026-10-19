@@ -379,8 +379,7 @@ vitest patterns in `.espectacular/components-canvas_layer/`).
   the BZ2 app's built mode; no benchmark-specific fast paths (the bench
   app drives its pan op through the ordinary dispatcher wire, pinned by
   a contract test).
-||||||| 21cd520
-=======
+
 ## RB — bounded-series ring-buffer store (tambor-54j.8.5)
 
 The public promotion of the BZ5 candidate: `src/components/ring_buffer/
