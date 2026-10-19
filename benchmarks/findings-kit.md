@@ -261,7 +261,7 @@ public through the interop barrel; corpus
 
 | Meter | before | after | delta |
 |---|---|---|---|
-| In-process paired meter (derive + sim-DOM draw per op, keyed-table op cycle, seed 1000 rows) | 6.8–8.5 ms/op | 5.3 ms/op | **ratio 0.63–0.78 (−22–37%)**, stable across three runs on different load states |
+| In-process paired meter (derive + sim-DOM draw per op, keyed-table op cycle, seed 1000 rows) | 6.8–8.5 ms/op | 5.3 ms/op | **ratio 0.63–0.78 (−22–37%)**, stable across three runs on different load states. **Meter honesty note (2026-10-19, CI run 39282222146 post-mortem):** that ratio came from the original *sequential* two-arm meter, which post-hoc analysis showed biases whole arms (arm-order/JIT warmth: CI-shaped 2-core runs measured 0.77–1.00) and never reseeded state (appendRows grew the table 1000→~9700 across samples, diluting the win toward the draw floor, ratio ~1.0). The meter now interleaves arms and reseeds per sample; its steady-state ratio is environment-dependent (~0.5–0.7 quiet, ~1.0 loaded) and is printed unasserted. The *asserted* tripwire is the deterministic fresh-identity derive count (replace 100 / swap 0 / remove 0 / append 1000) — machine-independent, and the win the corpus contract (`p_identity_hit`) already pins at unit scale. The −22–37% claim above should be read as quiet-machine evidence, not a guaranteed floor |
 | Browser `keyed-table-ops` (back-to-back stash pair, same load — todo-add floor 66.26 / 66.13 ms) | 216.40 ms | 216.66 ms | **unchanged** (within noise; the floor check says the load was identical, so this is a real null, not a load artifact) |
 | `keyed-table-build` after memo (drawn-output guard, expectedDrawn 1000) | — | passes | drawn DOM unchanged by memo |
 
