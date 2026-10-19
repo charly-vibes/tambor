@@ -235,7 +235,18 @@ Residuals / follow-up candidates:
 - The notebook-chain-200 card stack (B9, 814.7 ms median) is the next
   candidate consumer: its whole-view redraw is the same shape at 209
   heterogeneous cards.
-||||||| b0de073
+- **Post-merge contract edge (2026-10-19, orchestrator)**: the pre-push
+  `p-drawn` contract flaked (~25% solo) — an intersect-then-pad oracle
+  NaNs when the intersection is EMPTY (viewport inside a row gap or
+  boundary-aligned: `expected[0]` on `[]`). The component's pad-around-gap
+  behavior is spec-compliant (`empty_window_zero` scopes to degenerate
+  inputs; `overscan_pads_window` pins the pad), so the fix is the oracle:
+  an interval scan (rows whose start sits in the viewport interval widened
+  by one pitch per pad row — `intervalWindow` helper), exact in all three
+  regimes. Corpus sharpened with the `overscan_pads_empty` invariant +
+  `p_gap_pad` property; the flake only bites when raw `row-height` 0
+  makes the test's oy transform land in a gap with `vh` fitting inside
+  it — rare enough to pass ~2000 hunts, common enough to block a push.
 ## J8 — subtree memo above expensive derives (tambor-54j.8.4)
 
 Meters: `tests/memo-keyed-table.test.ts` (paired in-process meter, both
