@@ -56,7 +56,7 @@ jobs:
         with:
           tool: espectacular@0.12.0,pretender@0.7.0,testaruda@0.5.5
 
-      - name: Install testaruda adapters (DDL §4 pins — adapter fix eb7f44e)
+      - name: Install testaruda adapters (DDL §4 pins — adapter fixes 65e44d7, eb7f44e, 5deee0b)
         # The testaruda release tarballs only bundle the core binary +
         # adapter-rust/adapter-python; tambor needs adapter-typescript (the
         # default adapter for the vitest stack) and adapter-clojure (the
@@ -74,7 +74,7 @@ jobs:
           rm -f ~/.cargo/bin/testaruda-adapter-typescript \
                 ~/.cargo/bin/testaruda-adapter-clojure
           cargo install --locked --quiet \
-            --git https://github.com/charly-vibes/testaruda.git --rev eb7f44e \
+            --git https://github.com/charly-vibes/testaruda.git --rev 5deee0b \
             adapter-typescript adapter-clojure
           testaruda-adapter-typescript --version 2>/dev/null || true
           testaruda-adapter-clojure --version 2>/dev/null || true
