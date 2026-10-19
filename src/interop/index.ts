@@ -23,3 +23,10 @@ export { label, vstack, type LabelNode, type VStackNode } from "./views.ts";
 export { concatPath, each, filterNav, nthNav } from "./paths.ts";
 export { defui } from "./defui.ts";
 export { memo, type Memoized } from "../components/memo/memo.ts";
+export {
+  appendSeries,
+  boundedSeries,
+  foldSeries,
+  newestSeries,
+  type BoundedSeries,
+} from "../components/ring_buffer/ring_buffer.ts";
