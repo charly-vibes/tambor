@@ -20,6 +20,8 @@
 //   absolute medians land in benchmarks/findings-kit.md.
 
 import { expect, test } from "vitest";
+// @ts-expect-error node:perf_hooks has no type declarations here
+import { performance } from "node:perf_hooks";
 import {
   buildRows,
   keyedTableState,
@@ -68,7 +70,10 @@ function keyedTableViewMemo(state: KeyedTableState): Elem {
 function median(xs: readonly number[]): number {
   const s = [...xs].sort((a, b) => a - b);
   const n = s.length;
-  return n % 2 === 1 ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2;
+  const mid = Math.floor(n / 2);
+  return n % 2 === 1
+    ? (s[mid] as number)
+    : ((s[mid - 1] as number) + (s[mid] as number)) / 2;
 }
 
 // One arm: seed 1000 rows, run the op cycle measuring the full op
@@ -83,7 +88,7 @@ function runArm(
   backend.draw(view({ rows }));
   const samples: number[] = [];
   for (let i = 0; i < warmups + measures; i++) {
-    const next = OPS[i % OPS.length](rows);
+    const next = OPS[i % OPS.length]!(rows);
     const t0 = performance.now();
     const drawn = view({ rows: next });
     backend.draw(drawn);

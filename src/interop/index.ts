@@ -22,3 +22,4 @@ export { makeOpsApp, type OpsApp, type OpsAppOptions } from "./app.ts";
 export { label, vstack, type LabelNode, type VStackNode } from "./views.ts";
 export { concatPath, each, filterNav, nthNav } from "./paths.ts";
 export { defui } from "./defui.ts";
+export { memo, type Memoized } from "../components/memo/memo.ts";
