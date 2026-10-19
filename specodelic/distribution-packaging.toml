@@ -1,0 +1,31 @@
+source = "distribution.packaging"
+
+[[constraints]]
+id = "packable_metadata"
+kind = "invariant"
+expr = "package.json declares the package non-private at 0.x, carries a files allowlist limited to dist plus package metadata, and npm pack produces a charly-vibes-tambor-0.1.0 tarball containing only those files"
+traces_to = "[[distribution.packaging]]"
+
+[[constraints]]
+id = "declarations_emitted"
+kind = "invariant"
+expr = "tsc emit via the build config produces JavaScript and declaration files for the whole src tree, deriving solely from emit-side options, with every strict flag of the dev config inherited untouched and zero new build dependencies"
+traces_to = "[[distribution.packaging]]"
+
+[[constraints]]
+id = "clean_esm_import"
+kind = "invariant"
+expr = "installing the packed tarball into a pristine project resolves the root ESM entry and yields at least five named exports with no top-level side effects run at import"
+traces_to = "[[distribution.packaging]]"
+
+[[constraints]]
+id = "core_subpath_split"
+kind = "invariant"
+expr = "the exports map separates the DOM-free core subpath exporting model, paths, effect dispatch, events and layout from the spa and dom subpaths, and the core barrel imports no DOM-dependent module transitively"
+traces_to = "[[distribution.packaging]]"
+
+[[constraints]]
+id = "corpus_lint_current"
+kind = "invariant"
+expr = "the specodelic corpus linter exits zero on the deployed specs directory after the packaging change lands"
+traces_to = "[[distribution.packaging]]"

@@ -11,7 +11,9 @@
 /// opting in with **rust:** compiles as a real assertion instead
 /// (executable predicate fragment, specodelic.md Revision 15).
 macro_rules! todo_predicate {
-    ($reason:expr) => { todo!("{}", $reason) };
+    ($reason:expr) => {
+        todo!("{}", $reason)
+    };
 }
 
 // id: p_single_arg
@@ -19,7 +21,7 @@ macro_rules! todo_predicate {
 // predicate: both are rejected
 #[test]
 fn p_single_arg() {
-        todo_predicate!("both are rejected");
+    todo_predicate!("both are rejected");
 }
 
 // id: p_prop_path
@@ -27,7 +29,7 @@ fn p_single_arg() {
 // predicate: every prop has a path counterpart
 #[test]
 fn p_prop_path() {
-        todo_predicate!("every prop has a path counterpart");
+    todo_predicate!("every prop has a path counterpart");
 }
 
 // id: p_path_get
@@ -35,7 +37,7 @@ fn p_prop_path() {
 // predicate: select equals the prop value
 #[test]
 fn p_path_get() {
-        todo_predicate!("select equals the prop value");
+    todo_predicate!("select equals the prop value");
 }
 
 // id: p_implicit
@@ -43,7 +45,7 @@ fn p_path_get() {
 // predicate: extra, context and their paths are present
 #[test]
 fn p_implicit() {
-        todo_predicate!("extra, context and their paths are present");
+    todo_predicate!("extra, context and their paths are present");
 }
 
 // id: p_defaults
@@ -51,7 +53,7 @@ fn p_implicit() {
 // predicate: mouse-down returns data with a equal 42 and b nil
 #[test]
 fn p_defaults() {
-        todo_predicate!("mouse-down returns data with a equal 42 and b nil");
+    todo_predicate!("mouse-down returns data with a equal 42 and b nil");
 }
 
 // id: p_contextual
@@ -59,7 +61,7 @@ fn p_defaults() {
 // predicate: c is nil because context has no c, and with context c 13 it reads 13 with path context then c
 #[test]
 fn p_contextual() {
-        todo_predicate!("c is nil because context has no c, and with context c 13 it reads 13 with path context then c");
+    todo_predicate!("c is nil because context has no c, and with context c 13 it reads 13 with path context then c");
 }
 
 // id: p_as_map
@@ -67,7 +69,7 @@ fn p_contextual() {
 // predicate: the as map contains a 42, b 42 and extra
 #[test]
 fn p_as_map() {
-        todo_predicate!("the as map contains a 42, b 42 and extra");
+    todo_predicate!("the as map contains a 42, b 42 and extra");
 }
 
 // id: p_literal_call
@@ -75,7 +77,7 @@ fn p_as_map() {
 // predicate: the explicit path wins
 #[test]
 fn p_literal_call() {
-        todo_predicate!("the explicit path wins");
+    todo_predicate!("the explicit path wins");
 }
 
 // id: p_nonliteral
@@ -83,7 +85,7 @@ fn p_literal_call() {
 // predicate: a has path m then a and b falls back to extra
 #[test]
 fn p_nonliteral() {
-        todo_predicate!("a has path m then a and b falls back to extra");
+    todo_predicate!("a has path m then a and b falls back to extra");
 }
 
 // id: p_nonliteral_vals
@@ -91,7 +93,7 @@ fn p_nonliteral() {
 // predicate: has-default is 42 when absent, is-context is 13, all from the right source
 #[test]
 fn p_nonliteral_vals() {
-        todo_predicate!("has-default is 42 when absent, is-context is 13, all from the right source");
+    todo_predicate!("has-default is 42 when absent, is-context is 13, all from the right source");
 }
 
 // id: p_identity
@@ -99,7 +101,7 @@ fn p_nonliteral_vals() {
 // predicate: extra keys differ and are stable across renders
 #[test]
 fn p_identity() {
-        todo_predicate!("extra keys differ and are stable across renders");
+    todo_predicate!("extra keys differ and are stable across renders");
 }
 
 // id: p_render_pure
@@ -107,7 +109,7 @@ fn p_identity() {
 // predicate: outputs deep-equal
 #[test]
 fn p_render_pure() {
-        todo_predicate!("outputs deep-equal");
+    todo_predicate!("outputs deep-equal");
 }
 
 // id: p_cache
@@ -115,7 +117,7 @@ fn p_render_pure() {
 // predicate: second render reuses the first, and redefinition clears the cache
 #[test]
 fn p_cache() {
-        todo_predicate!("second render reuses the first, and redefinition clears the cache");
+    todo_predicate!("second render reuses the first, and redefinition clears the cache");
 }
 
 // id: p_forward
@@ -123,7 +125,7 @@ fn p_cache() {
 // predicate: the rendered view's handlers receive them
 #[test]
 fn p_forward() {
-        todo_predicate!("the rendered view's handlers receive them");
+    todo_predicate!("the rendered view's handlers receive them");
 }
 
 // id: p_clipboard
@@ -131,7 +133,7 @@ fn p_forward() {
 // predicate: the selected text effect is emitted
 #[test]
 fn p_clipboard() {
-        todo_predicate!("the selected text effect is emitted");
+    todo_predicate!("the selected text effect is emitted");
 }
 
 // id: p_sizing
@@ -139,7 +141,7 @@ fn p_clipboard() {
 // predicate: setWidth returns a component with the new width prop
 #[test]
 fn p_sizing() {
-        todo_predicate!("setWidth returns a component with the new width prop");
+    todo_predicate!("setWidth returns a component with the new width prop");
 }
 
 // id: p_recursive
@@ -147,6 +149,5 @@ fn p_sizing() {
 // predicate: the recursion renders to the data depth
 #[test]
 fn p_recursive() {
-        todo_predicate!("the recursion renders to the data depth");
+    todo_predicate!("the recursion renders to the data depth");
 }
-

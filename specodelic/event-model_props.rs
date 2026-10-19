@@ -13,7 +13,9 @@ use proptest::prelude::*;
 /// opting in with **rust:** compiles as a real assertion instead
 /// (executable predicate fragment, specodelic.md Revision 15).
 macro_rules! todo_predicate {
-    ($reason:expr) => { todo!("{}", $reason) };
+    ($reason:expr) => {
+        todo!("{}", $reason)
+    };
 }
 
 /// Generated strategies — one per generator named in the spec rows.
@@ -29,7 +31,6 @@ pub mod spec_gen {
     pub fn translate() -> impl Strategy<Value = String> {
         Just("translate".into())
     }
-
 }
 
 proptest! {
@@ -54,7 +55,7 @@ proptest! {
 // predicate: handler sees the point minus the sum of offsets
 #[test]
 fn p_coords() {
-        todo_predicate!("handler sees the point minus the sum of offsets");
+    todo_predicate!("handler sees the point minus the sum of offsets");
 }
 
 // id: p_first_match
@@ -62,7 +63,7 @@ fn p_coords() {
 // predicate: only the later sibling's intents are returned
 #[test]
 fn p_first_match() {
-        todo_predicate!("only the later sibling's intents are returned");
+    todo_predicate!("only the later sibling's intents are returned");
 }
 
 // id: p_down_terminal
@@ -70,7 +71,7 @@ fn p_first_match() {
 // predicate: only the outer handler fires
 #[test]
 fn p_down_terminal() {
-        todo_predicate!("only the outer handler fires");
+    todo_predicate!("only the outer handler fires");
 }
 
 // id: p_up_descends
@@ -78,7 +79,7 @@ fn p_down_terminal() {
 // predicate: the inner up handler fires
 #[test]
 fn p_up_descends() {
-        todo_predicate!("the inner up handler fires");
+    todo_predicate!("the inner up handler fires");
 }
 
 // id: p_outside
@@ -86,7 +87,7 @@ fn p_up_descends() {
 // predicate: result is empty
 #[test]
 fn p_outside() {
-        todo_predicate!("result is empty");
+    todo_predicate!("result is empty");
 }
 
 // id: p_key_concat
@@ -94,7 +95,7 @@ fn p_outside() {
 // predicate: the output is the three results in order
 #[test]
 fn p_key_concat() {
-        todo_predicate!("the output is the three results in order");
+    todo_predicate!("the output is the three results in order");
 }
 
 // id: p_global_move
@@ -102,7 +103,7 @@ fn p_key_concat() {
 // predicate: each receives its own local position and all fire
 #[test]
 fn p_global_move() {
-        todo_predicate!("each receives its own local position and all fire");
+    todo_predicate!("each receives its own local position and all fire");
 }
 
 // id: p_bubble
@@ -110,7 +111,7 @@ fn p_global_move() {
 // predicate: bubble runs exactly once per event
 #[test]
 fn p_bubble() {
-        todo_predicate!("bubble runs exactly once per event");
+    todo_predicate!("bubble runs exactly once per event");
 }
 
 // id: p_capability
@@ -118,7 +119,7 @@ fn p_bubble() {
 // predicate: the query matches whether any descendant handles the event
 #[test]
 fn p_capability() {
-        todo_predicate!("the query matches whether any descendant handles the event");
+    todo_predicate!("the query matches whether any descendant handles the event");
 }
 
 // id: p_button
@@ -126,7 +127,7 @@ fn p_capability() {
 // predicate: only a down inside returns on-click
 #[test]
 fn p_button() {
-        todo_predicate!("only a down inside returns on-click");
+    todo_predicate!("only a down inside returns on-click");
 }
 
 // id: p_event_pure
@@ -134,7 +135,7 @@ fn p_button() {
 // predicate: tree and state unchanged afterwards
 #[test]
 fn p_event_pure() {
-        todo_predicate!("tree and state unchanged afterwards");
+    todo_predicate!("tree and state unchanged afterwards");
 }
 
 // id: p_pointer
@@ -142,7 +143,7 @@ fn p_event_pure() {
 // predicate: all produce the same normalised shape
 #[test]
 fn p_pointer() {
-        todo_predicate!("all produce the same normalised shape");
+    todo_predicate!("all produce the same normalised shape");
 }
 
 // id: p_tap
@@ -150,6 +151,5 @@ fn p_pointer() {
 // predicate: classification matches the slop and time thresholds
 #[test]
 fn p_tap() {
-        todo_predicate!("classification matches the slop and time thresholds");
+    todo_predicate!("classification matches the slop and time thresholds");
 }
-

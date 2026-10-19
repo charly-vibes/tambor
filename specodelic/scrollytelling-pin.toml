@@ -3,31 +3,31 @@ source = "scrollytelling.pin"
 [[constraints]]
 id = "fixed_during_active"
 kind = "invariant"
-expr = "`∀ position within the Boundary: the target element's viewport-relative position is constant` — realized by [[components.pinned_panel.body_drawn_untranslated_when_active]]"
+expr = "`∀ position within the Boundary: the target element's viewport-relative position is constant` — realized by components.pinned_panel.body_drawn_untranslated_when_active (cross-file)"
 traces_to = "[[scrollytelling.pin]]"
 
 [[constraints]]
 id = "spacer_reserves_height"
 kind = "invariant"
-expr = "`ScrollSpacer height == the Pin's authored scroll duration, for the entire time the Pin is active` — realized by [[components.pinned_panel.spacer_matches_body_extent]] together with [[components.scrollview.range_formula]]"
+expr = "`ScrollSpacer height == the Pin's authored scroll duration, for the entire time the Pin is active` — realized by components.pinned_panel.spacer_matches_body_extent (cross-file) together with components.scrollview.range_formula (cross-file)"
 traces_to = "[[scrollytelling.pin]]"
 
 [[constraints]]
 id = "release_no_jump"
 kind = "invariant"
-expr = "`at Boundary end: the pin releases and control returns to native flow within the same frame, with no discontinuity in rendered position` — realized by [[components.pinned_panel.release_continuous]]"
+expr = "`at Boundary end: the pin releases and control returns to native flow within the same frame, with no discontinuity in rendered position` — realized by components.pinned_panel.release_continuous (cross-file)"
 traces_to = "[[scrollytelling.pin]]"
 
 [[constraints]]
 id = "spacer_recomputed_on_resize"
 kind = "invariant"
-expr = "`target element size changes after initialization ⟹ ScrollSpacer height is recomputed on the next onRefresh` — realized for free by [[components.pinned_panel.render_pure]] together with [[backend.render.resize_redraws]], since nothing is cached in the first place"
+expr = "`target element size changes after initialization ⟹ ScrollSpacer height is recomputed on the next onRefresh` — realized for free by components.pinned_panel.render_pure (cross-file) together with backend.render.resize_redraws (cross-file), since nothing is cached in the first place"
 traces_to = "[[scrollytelling.pin]]"
 
 [[constraints]]
 id = "nested_pin_priority"
 kind = "invariant"
-expr = "`∀ nested Pins: stacking order resolves by explicit priority, defaulting to document order when priority is unset` — realized by [[components.pinned_panel.nested_panel_priority]]"
+expr = "`∀ nested Pins: stacking order resolves by explicit priority, defaulting to document order when priority is unset` — realized by components.pinned_panel.nested_panel_priority (cross-file)"
 traces_to = "[[scrollytelling.pin]]"
 
 [[constraints]]

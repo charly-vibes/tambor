@@ -1,0 +1,14 @@
+archetype = "PF"
+authored_with = "0.12.0"
+derived_from = "p_no_deep@55873cd1204c"
+description = "each derives — build is called twice"
+falsifiability_class = "safety"
+id = "p-no-deep"
+status = "active"
+superseded_by = ""
+
+[[tests.shell]]
+command = "tools/scaffold-check.sh components-memo p-no-deep"
+
+[[tests.vitest]]
+flags = "--testNamePattern=p_no_deep"

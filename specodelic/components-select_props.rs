@@ -11,7 +11,9 @@
 /// opting in with **rust:** compiles as a real assertion instead
 /// (executable predicate fragment, specodelic.md Revision 15).
 macro_rules! todo_predicate {
-    ($reason:expr) => { todo!("{}", $reason) };
+    ($reason:expr) => {
+        todo!("{}", $reason)
+    };
 }
 
 // id: p_header_toggle
@@ -19,7 +21,7 @@ macro_rules! todo_predicate {
 // predicate: the effect flips open?
 #[test]
 fn p_header_toggle() {
-        todo_predicate!("the effect flips open?");
+    todo_predicate!("the effect flips open?");
 }
 
 // id: p_header_label
@@ -27,7 +29,7 @@ fn p_header_toggle() {
 // predicate: label is That, and with nil it is no selection
 #[test]
 fn p_header_label() {
-        todo_predicate!("label is That, and with nil it is no selection");
+    todo_predicate!("label is That, and with nil it is no selection");
 }
 
 // id: p_list_open
@@ -35,7 +37,7 @@ fn p_header_label() {
 // predicate: list nodes exist only when open
 #[test]
 fn p_list_open() {
-        todo_predicate!("list nodes exist only when open");
+    todo_predicate!("list nodes exist only when open");
 }
 
 // id: p_row_effect
@@ -43,7 +45,7 @@ fn p_list_open() {
 // predicate: effect is select with the selected path and that
 #[test]
 fn p_row_effect() {
-        todo_predicate!("effect is select with the selected path and that");
+    todo_predicate!("effect is select with the selected path and that");
 }
 
 // id: p_select_closes
@@ -51,7 +53,7 @@ fn p_row_effect() {
 // predicate: output is select then set open? false
 #[test]
 fn p_select_closes() {
-        todo_predicate!("output is select then set open? false");
+    todo_predicate!("output is select then set open? false");
 }
 
 // id: p_select_sets
@@ -59,7 +61,7 @@ fn p_select_closes() {
 // predicate: the selected path holds the value
 #[test]
 fn p_select_sets() {
-        todo_predicate!("the selected path holds the value");
+    todo_predicate!("the selected path holds the value");
 }
 
 // id: p_row_visuals
@@ -67,7 +69,7 @@ fn p_select_sets() {
 // predicate: fills and label colors match
 #[test]
 fn p_row_visuals() {
-        todo_predicate!("fills and label colors match");
+    todo_predicate!("fills and label colors match");
 }
 
 // id: p_geometry
@@ -75,7 +77,7 @@ fn p_row_visuals() {
 // predicate: row width equals max plus 24
 #[test]
 fn p_geometry() {
-        todo_predicate!("row width equals max plus 24");
+    todo_predicate!("row width equals max plus 24");
 }
 
 // id: p_row_hover
@@ -83,7 +85,7 @@ fn p_geometry() {
 // predicate: two distinct extra keys
 #[test]
 fn p_row_hover() {
-        todo_predicate!("two distinct extra keys");
+    todo_predicate!("two distinct extra keys");
 }
 
 // id: p_touch_rows
@@ -91,6 +93,5 @@ fn p_row_hover() {
 // predicate: row height is at least 44
 #[test]
 fn p_touch_rows() {
-        todo_predicate!("row height is at least 44");
+    todo_predicate!("row height is at least 44");
 }
-

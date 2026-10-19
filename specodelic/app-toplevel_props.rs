@@ -11,7 +11,9 @@
 /// opting in with **rust:** compiles as a real assertion instead
 /// (executable predicate fragment, specodelic.md Revision 15).
 macro_rules! todo_predicate {
-    ($reason:expr) => { todo!("{}", $reason) };
+    ($reason:expr) => {
+        todo!("{}", $reason)
+    };
 }
 
 // id: p_all_dispatched
@@ -19,7 +21,7 @@ macro_rules! todo_predicate {
 // predicate: the handler is called once per event
 #[test]
 fn p_all_dispatched() {
-        todo_predicate!("the handler is called once per event");
+    todo_predicate!("the handler is called once per event");
 }
 
 // id: p_global_move
@@ -27,7 +29,7 @@ fn p_all_dispatched() {
 // predicate: has-mouse-move-global is true
 #[test]
 fn p_global_move() {
-        todo_predicate!("has-mouse-move-global is true");
+    todo_predicate!("has-mouse-move-global is true");
 }
 
 // id: p_start_scroll
@@ -35,7 +37,7 @@ fn p_global_move() {
 // predicate: scroll-state holds the last one and the position
 #[test]
 fn p_start_scroll() {
-        todo_predicate!("scroll-state holds the last one and the position");
+    todo_predicate!("scroll-state holds the last one and the position");
 }
 
 // id: p_start_replaced
@@ -43,7 +45,7 @@ fn p_start_scroll() {
 // predicate: order is kept and no start-scroll intent survives
 #[test]
 fn p_start_replaced() {
-        todo_predicate!("order is kept and no start-scroll intent survives");
+    todo_predicate!("order is kept and no start-scroll intent survives");
 }
 
 // id: p_scroll_drag
@@ -51,7 +53,7 @@ fn p_start_replaced() {
 // predicate: the function receives [3, 7]
 #[test]
 fn p_scroll_drag() {
-        todo_predicate!("the function receives [3, 7]");
+    todo_predicate!("the function receives [3, 7]");
 }
 
 // id: p_scroll_release
@@ -59,7 +61,7 @@ fn p_scroll_drag() {
 // predicate: the only effect is set scroll-state to nil
 #[test]
 fn p_scroll_release() {
-        todo_predicate!("the only effect is set scroll-state to nil");
+    todo_predicate!("the only effect is set scroll-state to nil");
 }
 
 // id: p_click_away
@@ -67,7 +69,7 @@ fn p_scroll_release() {
 // predicate: the effect sets focus to nil
 #[test]
 fn p_click_away() {
-        todo_predicate!("the effect sets focus to nil");
+    todo_predicate!("the effect sets focus to nil");
 }
 
 // id: p_focus_kept
@@ -75,7 +77,7 @@ fn p_click_away() {
 // predicate: focus is untouched
 #[test]
 fn p_focus_kept() {
-        todo_predicate!("focus is untouched");
+    todo_predicate!("focus is untouched");
 }
 
 // id: p_namespaces
@@ -83,7 +85,7 @@ fn p_focus_kept() {
 // predicate: reserved keys never collide with user keys
 #[test]
 fn p_namespaces() {
-        todo_predicate!("reserved keys never collide with user keys");
+    todo_predicate!("reserved keys never collide with user keys");
 }
 
 // id: p_initial
@@ -91,7 +93,7 @@ fn p_namespaces() {
 // predicate: state equals an empty map
 #[test]
 fn p_initial() {
-        todo_predicate!("state equals an empty map");
+    todo_predicate!("state equals an empty map");
 }
 
 // id: p_drag_effect
@@ -99,7 +101,7 @@ fn p_initial() {
 // predicate: the set scroll-state effect is emitted
 #[test]
 fn p_drag_effect() {
-        todo_predicate!("the set scroll-state effect is emitted");
+    todo_predicate!("the set scroll-state effect is emitted");
 }
 
 // id: p_focus_effect
@@ -107,6 +109,5 @@ fn p_drag_effect() {
 // predicate: the set focus nil effect is emitted
 #[test]
 fn p_focus_effect() {
-        todo_predicate!("the set focus nil effect is emitted");
+    todo_predicate!("the set focus nil effect is emitted");
 }
-

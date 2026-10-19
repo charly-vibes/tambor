@@ -1,0 +1,14 @@
+archetype = "PF"
+authored_with = "0.12.0"
+derived_from = "p_writeback@fc5557c07a14"
+description = "the writeback preserves the untouched row's identity and the memoized sibling stays cached"
+falsifiability_class = "safety"
+id = "p-writeback"
+status = "active"
+superseded_by = ""
+
+[[tests.shell]]
+command = "tools/scaffold-check.sh components-memo p-writeback"
+
+[[tests.vitest]]
+flags = "--testNamePattern=p_writeback"

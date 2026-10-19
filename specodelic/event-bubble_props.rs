@@ -11,7 +11,9 @@
 /// opting in with **rust:** compiles as a real assertion instead
 /// (executable predicate fragment, specodelic.md Revision 15).
 macro_rules! todo_predicate {
-    ($reason:expr) => { todo!("{}", $reason) };
+    ($reason:expr) => {
+        todo!("{}", $reason)
+    };
 }
 
 // id: p_intercept
@@ -19,7 +21,9 @@ macro_rules! todo_predicate {
 // predicate: a request-focus intent becomes the set-focus intent from the textarea example
 #[test]
 fn p_intercept() {
-        todo_predicate!("a request-focus intent becomes the set-focus intent from the textarea example");
+    todo_predicate!(
+        "a request-focus intent becomes the set-focus intent from the textarea example"
+    );
 }
 
 // id: p_args
@@ -27,7 +31,7 @@ fn p_intercept() {
 // predicate: the handler is called with exactly path and value
 #[test]
 fn p_args() {
-        todo_predicate!("the handler is called with exactly path and value");
+    todo_predicate!("the handler is called with exactly path and value");
 }
 
 // id: p_pass
@@ -35,7 +39,7 @@ fn p_args() {
 // predicate: non-matching intents keep identity and order
 #[test]
 fn p_pass() {
-        todo_predicate!("non-matching intents keep identity and order");
+    todo_predicate!("non-matching intents keep identity and order");
 }
 
 // id: p_expand
@@ -43,7 +47,7 @@ fn p_pass() {
 // predicate: both appear in place of the original
 #[test]
 fn p_expand() {
-        todo_predicate!("both appear in place of the original");
+    todo_predicate!("both appear in place of the original");
 }
 
 // id: p_innermost
@@ -51,7 +55,7 @@ fn p_expand() {
 // predicate: the inner one rewrites it first and the outer never sees the original
 #[test]
 fn p_innermost() {
-        todo_predicate!("the inner one rewrites it first and the outer never sees the original");
+    todo_predicate!("the inner one rewrites it first and the outer never sees the original");
 }
 
 // id: p_middleware
@@ -59,7 +63,7 @@ fn p_innermost() {
 // predicate: enter with non-empty default effects returns add-todo then set next-todo-text to empty, any other key returns the default effects
 #[test]
 fn p_middleware() {
-        todo_predicate!("enter with non-empty default effects returns add-todo then set next-todo-text to empty, any other key returns the default effects");
+    todo_predicate!("enter with non-empty default effects returns add-todo then set next-todo-text to empty, any other key returns the default effects");
 }
 
 // id: p_wrap_order
@@ -67,7 +71,7 @@ fn p_middleware() {
 // predicate: the first pair wraps the second
 #[test]
 fn p_wrap_order() {
-        todo_predicate!("the first pair wraps the second");
+    todo_predicate!("the first pair wraps the second");
 }
 
 // id: p_multi
@@ -75,7 +79,7 @@ fn p_wrap_order() {
 // predicate: equals three nested single-pair nodes
 #[test]
 fn p_multi() {
-        todo_predicate!("equals three nested single-pair nodes");
+    todo_predicate!("equals three nested single-pair nodes");
 }
 
 // id: p_raw_bubble
@@ -83,7 +87,7 @@ fn p_multi() {
 // predicate: result is empty
 #[test]
 fn p_raw_bubble() {
-        todo_predicate!("result is empty");
+    todo_predicate!("result is empty");
 }
 
 // id: p_builtin
@@ -91,6 +95,5 @@ fn p_raw_bubble() {
 // predicate: the wrapper replaces it with the set-membership update and the original never reaches the dispatcher
 #[test]
 fn p_builtin() {
-        todo_predicate!("the wrapper replaces it with the set-membership update and the original never reaches the dispatcher");
+    todo_predicate!("the wrapper replaces it with the set-membership update and the original never reaches the dispatcher");
 }
-
