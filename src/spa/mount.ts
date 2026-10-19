@@ -37,7 +37,7 @@
 
 import { DomBackend } from "../render/dom.ts";
 import { measureUnit } from "../render/backend.ts";
-import { type Elem, type Vec2 } from "../views/model.ts";
+import { type Elem, type Vec2, translate } from "../views/model.ts";
 import { wireExtentSizing } from "./extent.ts";
 import type { Font } from "../render/backend.ts";
 import {
@@ -47,7 +47,7 @@ import {
   type HostElement,
 } from "../interop/domhost.ts";
 import { todoApp, todoState, type TodoState } from "../examples/todo/todo.ts";
-import { makeApp, type App } from "../effects/dispatch.ts";
+import { makeApp, type App, type Effect, type LaneStore } from "../effects/dispatch.ts";
 import { setFocusSurface, spaFocusView } from "./focus.ts";
 import { VIEWPORT } from "./viewport.ts";
 import { dispatch } from "../events/dispatch.ts";
@@ -87,6 +87,31 @@ function createTodoApp(): App {
 // app.getState() identity is the invalidation signal — a derivation
 // happens only on a change, and the phase-timer derive span still
 // opens/closes per route (a cache hit records a ~zero span).
+// The lane transform (tambor-54j.3 Phase 2): the wire draws every tree
+// — cached or freshly derived — under the lane's pan/scroll offset as
+// a translate wrapper (BZ2 pan-as-transform promoted to a seam). The
+// lane keys are "pan" and "scroll", each a Vec2 ([x, y]) or {x, y};
+// absent or non-conforming entries contribute zero. At identity the
+// tree is returned unwrapped so apps that never touch the lane draw
+// exactly as before.
+function laneTransform(lane: LaneStore): Vec2 {
+  let x = 0;
+  let y = 0;
+  for (const key of ["pan", "scroll"]) {
+    const v: unknown = lane[key];
+    if (Array.isArray(v)) {
+      const a = v as unknown[];
+      if (typeof a[0] === "number") x += a[0];
+      if (typeof a[1] === "number") y += a[1];
+    } else if (v !== null && typeof v === "object" && "x" in v) {
+      const o = v as { x?: unknown; y?: unknown };
+      x += typeof o.x === "number" ? o.x : 0;
+      y += typeof o.y === "number" ? o.y : 0;
+    }
+  }
+  return [x, y];
+}
+
 function viewCache(app: App): () => Elem {
   let cache: { state: unknown; view: Elem } | null = null;
   return () => {
@@ -98,20 +123,60 @@ function viewCache(app: App): () => Elem {
   };
 }
 
+// The lane transform wrapper (interaction-lane): every draw — cached
+// or freshly derived — carries the lane's pan/scroll offset, so the
+// lane wins on position while state wins on structure; at identity
+// the tree passes through unwrapped. Shared by the wire route's lane
+// draw, the state draw and the rerender path.
+function laneWrap(app: App): (tree: Elem) => Elem {
+  return (tree) => {
+    const [x, y] = laneTransform(app.getLane());
+    return x === 0 && y === 0 ? tree : translate(x, y, tree);
+  };
+}
+
+// The wire's draw tail — what a routed batch costs after its intents
+// are applied. Empty intents changed nothing (event_pure — the same
+// empty_batch_noop shape the headless wire pins): no re-derivation, no
+// draw. A lane-only batch (interaction-lane lane_draw_no_derive): the
+// state identity is unchanged, so the cached tree is still valid —
+// draw it under the lane transform (usually the 60 Hz pan delta) with
+// NO re-derivation. Any state effect: one derivation + one draw.
+function wireDrawTail(
+  backend: DomBackend,
+  viewFor: () => Elem,
+  wrap: (tree: Elem) => Elem,
+  intents: readonly Effect[],
+): void {
+  if (intents.length === 0) return;
+  if (intents.every((effect) => effect[0] === "lane")) {
+    backend.draw(wrap(viewFor()));
+    return;
+  }
+  phaseTimers.startSpan("derive");
+  const drawn = viewFor();
+  phaseTimers.endSpan();
+  backend.draw(wrap(drawn));
+}
+
 // The re-render wrapper (tambor-a45): async applies route through the
 // demo's own dispatch OUTSIDE the event wire, so every non-routed
 // dispatch re-draws from the cached view; the route's own draw stays
-// single (setRouted(true) around the routed apply).
+// single (setRouted(true) around the routed apply). A lane-only async
+// dispatch draws the cached tree under the transform too: no repaint
+// was scheduled, and the state identity makes viewFor a cache hit —
+// no re-derivation (lane_draw_no_derive).
 function wireRerender(
   backend: DomBackend,
   app: App,
   viewFor: () => Elem,
 ): { setRouted(routed: boolean): void } {
+  const wrap = laneWrap(app);
   let routed = false;
   const rawDispatch = app.dispatch;
   app.dispatch = (batch, ...rest: unknown[]): undefined => {
     const applied = rawDispatch(batch, ...rest);
-    if (!routed) backend.draw(viewFor());
+    if (!routed) backend.draw(wrap(viewFor()));
     return applied;
   };
   return { setRouted: (routedNow: boolean) => void (routed = routedNow) };
@@ -134,6 +199,7 @@ function wireSurface(backend: DomBackend, app: App): Wire {
   // dom draw attributes reconcile_layout and closes the record. All
   // seam calls are no-ops while the timers are off.
   const viewFor = viewCache(app);
+  const wrap = laneWrap(app);
   const rerender = wireRerender(backend, app, viewFor);
   const route = (ev: TamborEvent): void => {
     phaseTimers.begin(ev.type);
@@ -149,14 +215,7 @@ function wireSurface(backend: DomBackend, app: App): Wire {
       rerender.setRouted(false);
     }
     phaseTimers.endSpan();
-    // Empty intents changed nothing (event_pure — the same
-    // empty_batch_noop shape the headless wire pins): no re-derivation,
-    // no draw, so the wire floor stops scaling with app state.
-    if (intents.length === 0) return;
-    phaseTimers.startSpan("derive");
-    const drawn = viewFor();
-    phaseTimers.endSpan();
-    backend.draw(drawn);
+    wireDrawTail(backend, viewFor, wrap, intents);
   };
   backend.subscribe(route);
   return { route, viewFor };

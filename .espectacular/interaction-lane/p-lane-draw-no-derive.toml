@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.12.0"
+derived_from = "p_lane_draw_no_derive@30ee8ea84866"
+description = "each event costs zero derivations and exactly one draw of the cached tree, wrapped in the lane transform"
+falsifiability_class = "safety"
+id = "p-lane-draw-no-derive"
+status = "active"
+superseded_by = ""
+
+[[tests.vitest]]
+flags = "--testNamePattern=p_lane_draw_no_derive"

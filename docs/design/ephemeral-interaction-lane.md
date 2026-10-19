@@ -68,14 +68,21 @@ No work; recorded so the plan doesn't re-invent it.
   persistent state is unchanged does NOT invalidate the 8xm view cache
   (identity unchanged) and does NOT go through `backend.draw(tree)`.
 
-### Phase 2 — lane-aware draw boundary (corpus, transform first)
+### Phase 2 — lane-aware draw boundary (corpus, transform first) — LANDED
 
 New surface: a lane-only batch invokes a transform draw — the already-derived
 (cached) tree re-drawn under the lane's pan/scroll transform, at cost ∝ moved
 pixels, not tree size. This is the BZ2 "pan-as-transform" verdict promoted to
-a corpus seam. Drag overlay (cached tree + dragged shape re-drawn on top) is
-Phase 4. Spec home: a new `interaction-lane` spec plus a backend-render delta
-for the draw boundary.
+a corpus seam. Landed: `laneTransform` + the `wrap` seam in `src/spa/mount.ts`
+(route path skips the re-derive for lane-only batches and draws the cached
+tree under the transform; the wireRerender async path wraps every draw, so a
+state change mid-interaction keeps the lane's position — lane wins on
+position, state wins on structure). Spec: `lane_draw_no_derive` +
+`lane_transform_drawn` in the interaction-lane spec (draw-boundary
+constraints live there, not backend-render — the boundary is SPA-wire
+plumbing; the backend port is unchanged). Tests: tests/spa-lane-draw.test.ts
+(4 contracts). Drag overlay (cached tree + dragged shape re-drawn on top) is
+Phase 4.
 
 ### Phase 3 — replay test + 60 Hz benchmark
 

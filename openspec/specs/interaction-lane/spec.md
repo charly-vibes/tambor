@@ -23,9 +23,17 @@ lane-typed changes no state, so scheduling a repaint for it would be a
 re-derivation per 60 Hz event — the exemption is scoped to lane-only
 batches; any state effect in the batch repaints exactly once as usual
 (single_repaint in effect-dispatch is untouched for state batches).
-The lane's draw path (transform/overlay re-draw without a full tree
-derive) lands in a later phase; this spec pins the store, the effect
-semantics, the reachability seam and the repaint exemption.
+The draw boundary (Phase 2): the mount wire re-draws the
+already-derived cached tree for a lane-only batch — zero
+re-derivations, one transform draw — and every wire draw (cached or
+freshly derived, routed or async re-render) carries the lane's
+pan/scroll offset as a translate wrapper, so a state change
+mid-interaction keeps the lane's position (lane wins on position,
+state wins on structure; the BZ2 pan-as-transform verdict promoted to
+a corpus seam). Drag overlay (cached tree + dragged shape re-drawn on
+top) is Phase 4. The draw-boundary constraints live here rather than
+in backend-render because the boundary is SPA-wire plumbing — the
+backend port (draw/measure/subscribe) is unchanged.
 
 ## Constraints
 
@@ -35,6 +43,8 @@ semantics, the reachability seam and the repaint exemption.
 | lane_update_semantics | invariant | the effect ["lane", key, updateFn] sets lane[key] to updateFn applied to the previous lane[key] value | [[interaction.lane]] |
 | lane_ctx_reachable | invariant | the lane store is reachable from every effect application through the effect context under the "lane" key, per app — two apps on one page hold two distinct lane stores | [[interaction.lane]] |
 | lane_batch_no_repaint | invariant | a batch whose effects are all lane-typed schedules no repaint, and any batch containing a state effect repaints exactly once as usual | [[interaction.lane]] |
+| lane_draw_no_derive | invariant | a routed batch whose effects are all lane-typed re-draws the already-derived cached tree with no view re-derivation, and any batch containing a state effect re-derives exactly once as usual | [[interaction.lane]] |
+| lane_transform_drawn | invariant | every wire draw — cached or freshly derived, routed or async re-render — applies the lane's pan/scroll offset as a translate over the drawn tree, and an app whose lane holds no offset draws the tree unwrapped | [[interaction.lane]] |
 
 ## Model
 
@@ -49,6 +59,7 @@ semantics, the reachability seam and the repaint exemption.
 |----|------|----|-------|
 | t_write | untouched | held | [[interaction.lane.lane_update_semantics]] |
 | t_stay | held | held | [[interaction.lane.lane_outside_state]] |
+| t_lane_draw | held | held | [[interaction.lane.lane_draw_no_derive]] |
 
 ## Properties
 
@@ -59,6 +70,8 @@ semantics, the reachability seam and the repaint exemption.
 | p_ctx_lane | unit | [[interaction.lane.lane_ctx_reachable]] | two apps driven concurrently | each app's lane is distinct and both are visible in the ctx their handlers receive |
 | p_no_repaint | unit | [[interaction.lane.lane_batch_no_repaint]] | lane-only batches | no repaint is scheduled for the batch |
 | p_mixed_batch | unit | [[interaction.lane.lane_batch_no_repaint]] | a batch carrying a lane effect and a state update | the state changes, the lane changes, and exactly one repaint is scheduled |
+| p_lane_draw_no_derive | unit | [[interaction.lane.lane_draw_no_derive]] | a routed lane-only pointer-move stream | each event costs zero derivations and exactly one draw of the cached tree, wrapped in the lane transform |
+| p_lane_transform_drawn | unit | [[interaction.lane.lane_transform_drawn]] | a lane-only pan followed by a state change, and a state change with an empty lane | the state draw carries the lane's pan translate; with no lane offset the drawn tree is unwrapped |
 
 ## Requirements
 
@@ -96,3 +109,15 @@ Every property row is verified by exactly one dedicated test;
 - **WHEN** a batch carrying a lane effect and a state update
 - **THEN** the state changes, the lane changes, and exactly one repaint is scheduled
 - **VERIFIES** [[interaction.lane.p_mixed_batch]]
+
+#### Scenario: p_lane_draw_no_derive
+
+- **WHEN** a routed lane-only pointer-move stream
+- **THEN** each event costs zero derivations and exactly one draw of the cached tree, wrapped in the lane transform
+- **VERIFIES** [[interaction.lane.p_lane_draw_no_derive]]
+
+#### Scenario: p_lane_transform_drawn
+
+- **WHEN** a lane-only pan followed by a state change, and a state change with an empty lane
+- **THEN** the state draw carries the lane's pan translate; with no lane offset the drawn tree is unwrapped
+- **VERIFIES** [[interaction.lane.p_lane_transform_drawn]]
