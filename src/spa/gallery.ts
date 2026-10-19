@@ -278,7 +278,7 @@ export const DEMOS: readonly DemoDef[] = [
     id: "virtual-list",
     title: "virtual-list",
     blurb:
-      "bench virtual list — a 10k-row list over summaries (count + offset; rows derive from the index): Draw all 10k redraws the whole view per scroll op, Window 10k draws only the visible window through components.virtual-list — same scroll op, different draw strategy.",
+      "bench virtual list — a 10k-row list over summaries (count + offset; rows derive from the index): Draw all 10k redraws the whole view per scroll op, Window 10k draws only the visible window through components.virtual_list — same scroll op, different draw strategy.",
     create: createVirtualListApp,
   },
   {
