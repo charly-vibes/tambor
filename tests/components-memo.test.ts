@@ -28,7 +28,7 @@ interface Row {
 }
 
 describe("memo identity invalidation", () => {
-  it("same key object → cached subtree, build called once", () => {
+  it("p_identity_hit: same key object → cached subtree, build called once", () => {
     const row: Row = { id: 1, label: "a" };
     let builds = 0;
     const node = memo((r: Row) => {
@@ -41,7 +41,7 @@ describe("memo identity invalidation", () => {
     expect(second).toBe(first);
   });
 
-  it("state change (fresh key object) → re-derive with the new key", () => {
+  it("p_invalidate: state change (fresh key object) → re-derive with the new key", () => {
     let builds = 0;
     const node = memo((r: Row) => {
       builds++;
@@ -57,7 +57,7 @@ describe("memo identity invalidation", () => {
     expect(node(after)).toBe(node(after));
   });
 
-  it("unchanged sibling slice → skipped (structural sharing hits)", () => {
+  it("p_sibling_share: unchanged sibling slice → skipped (structural sharing hits)", () => {
     let builds = 0;
     const node = memo((r: Row) => {
       builds++;
@@ -75,7 +75,7 @@ describe("memo identity invalidation", () => {
     expect(builds).toBe(3);
   });
 
-  it("structurally equal but distinct key → re-derive (identity, not deep equality)", () => {
+  it("p_no_deep: structurally equal but distinct key → re-derive (identity, not deep equality)", () => {
     let builds = 0;
     const node = memo((r: Row) => {
       builds++;
@@ -86,7 +86,7 @@ describe("memo identity invalidation", () => {
     expect(builds).toBe(2);
   });
 
-  it("object-key-only: a primitive key is rejected loudly", () => {
+  it("p_keys_only: object-key-only — a primitive key is rejected loudly", () => {
     const node = memo((k: object) => String(k));
     expect(() => node(1 as unknown as object)).toThrow(TypeError);
     expect(() => node("x" as unknown as object)).toThrow(TypeError);
@@ -95,7 +95,7 @@ describe("memo identity invalidation", () => {
 });
 
 describe("memo × cell-writeback closure", () => {
-  it("a memoized subtree's writeback closure routes through dispatch and survives sibling changes", () => {
+  it("p_writeback: a memoized subtree's writeback closure routes through dispatch and survives sibling changes", () => {
     // The writeback shape: the subtree carries a handler closing over
     // its key (the row) that writes back through the dispatcher — the
     // cell-writeback pattern. Memo must not break it: the cached
@@ -149,7 +149,7 @@ describe("memo × cell-writeback closure", () => {
     void nodeB0;
   });
 
-  it("the cached writeback is dispatchable data, re-derivable at any render", () => {
+  it("p_pure: the cached subtree is dispatchable data, re-derivable at any render", () => {
     // the memoized subtree is plain view data: deriving it twice for
     // the same key yields the same node, so the route-time cache and
     // the draw path see an ordinary elem (no hidden render-time state).
