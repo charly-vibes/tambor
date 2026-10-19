@@ -23,3 +23,11 @@ export { label, vstack, type LabelNode, type VStackNode } from "./views.ts";
 export { concatPath, each, filterNav, nthNav } from "./paths.ts";
 export { defui } from "./defui.ts";
 export { memo, type Memoized } from "../components/memo/memo.ts";
+export {
+  canvasLayer,
+  canvasLayerView,
+  cachedRaster,
+  rasterize,
+  bufferEquals,
+  type LayerDraw,
+} from "../components/canvas_layer/index.ts";
