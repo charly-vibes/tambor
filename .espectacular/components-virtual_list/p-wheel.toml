@@ -1,0 +1,14 @@
+archetype = "PF"
+authored_with = "0.12.0"
+derived_from = "p_wheel@58cb1d5f7550"
+description = "first updates to 50, second returns nothing"
+falsifiability_class = "safety"
+id = "p-wheel"
+status = "active"
+superseded_by = ""
+
+[[tests.shell]]
+command = "tools/scaffold-check.sh components-virtual_list p-wheel"
+
+[[tests.vitest]]
+flags = "--testNamePattern=p_wheel"

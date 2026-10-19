@@ -11,7 +11,9 @@
 /// opting in with **rust:** compiles as a real assertion instead
 /// (executable predicate fragment, specodelic.md Revision 15).
 macro_rules! todo_predicate {
-    ($reason:expr) => { todo!("{}", $reason) };
+    ($reason:expr) => {
+        todo!("{}", $reason)
+    };
 }
 
 // id: p_focus_path
@@ -19,7 +21,7 @@ macro_rules! todo_predicate {
 // predicate: requesting focus on one leaves the other unfocused
 #[test]
 fn p_focus_path() {
-        todo_predicate!("requesting focus on one leaves the other unfocused");
+    todo_predicate!("requesting focus on one leaves the other unfocused");
 }
 
 // id: p_request_focus
@@ -27,7 +29,7 @@ fn p_focus_path() {
 // predicate: inside returns request-focus first, empty returns nothing
 #[test]
 fn p_request_focus() {
-        todo_predicate!("inside returns request-focus first, empty returns nothing");
+    todo_predicate!("inside returns request-focus first, empty returns nothing");
 }
 
 // id: p_keys_focus
@@ -35,7 +37,7 @@ fn p_request_focus() {
 // predicate: no effects
 #[test]
 fn p_keys_focus() {
-        todo_predicate!("no effects");
+    todo_predicate!("no effects");
 }
 
 // id: p_key_map
@@ -43,7 +45,7 @@ fn p_keys_focus() {
 // predicate: each yields its effect and others yield none
 #[test]
 fn p_key_map() {
-        todo_predicate!("each yields its effect and others yield none");
+    todo_predicate!("each yields its effect and others yield none");
 }
 
 // id: p_insert
@@ -51,7 +53,7 @@ fn p_key_map() {
 // predicate: hello becomes heXYllo cursor 4, and nil gives XY
 #[test]
 fn p_insert() {
-        todo_predicate!("hello becomes heXYllo cursor 4, and nil gives XY");
+    todo_predicate!("hello becomes heXYllo cursor 4, and nil gives XY");
 }
 
 // id: p_insert_sel
@@ -59,7 +61,7 @@ fn p_insert() {
 // predicate: text becomes hZo cursor 2 selection nil
 #[test]
 fn p_insert_sel() {
-        todo_predicate!("text becomes hZo cursor 2 selection nil");
+    todo_predicate!("text becomes hZo cursor 2 selection nil");
 }
 
 // id: p_delete
@@ -67,7 +69,7 @@ fn p_insert_sel() {
 // predicate: no change at 0, one char removed at 3, range removed with a selection
 #[test]
 fn p_delete() {
-        todo_predicate!("no change at 0, one char removed at 3, range removed with a selection");
+    todo_predicate!("no change at 0, one char removed at 3, range removed with a selection");
 }
 
 // id: p_cursor
@@ -75,7 +77,7 @@ fn p_delete() {
 // predicate: 0 <= cursor <= len(text)
 #[test]
 fn p_cursor() {
-        todo_predicate!("0 <= cursor <= len(text)");
+    todo_predicate!("0 <= cursor <= len(text)");
 }
 
 // id: p_prev_line
@@ -83,7 +85,7 @@ fn p_cursor() {
 // predicate: cursor becomes 2 and the selection is cleared
 #[test]
 fn p_prev_line() {
-        todo_predicate!("cursor becomes 2 and the selection is cleared");
+    todo_predicate!("cursor becomes 2 and the selection is cleared");
 }
 
 // id: p_next_line
@@ -91,7 +93,7 @@ fn p_prev_line() {
 // predicate: cursor becomes 3 then 5
 #[test]
 fn p_next_line() {
-        todo_predicate!("cursor becomes 3 then 5");
+    todo_predicate!("cursor becomes 3 then 5");
 }
 
 // id: p_down_cursor
@@ -99,7 +101,7 @@ fn p_next_line() {
 // predicate: cursor, mpos and down-pos are set and selection is nil
 #[test]
 fn p_down_cursor() {
-        todo_predicate!("cursor, mpos and down-pos are set and selection is nil");
+    todo_predicate!("cursor, mpos and down-pos are set and selection is nil");
 }
 
 // id: p_drag
@@ -107,7 +109,7 @@ fn p_down_cursor() {
 // predicate: mpos is set only with down-pos
 #[test]
 fn p_drag() {
-        todo_predicate!("mpos is set only with down-pos");
+    todo_predicate!("mpos is set only with down-pos");
 }
 
 // id: p_finish_drag
@@ -115,7 +117,7 @@ fn p_drag() {
 // predicate: selection and cursor follow the rule and down-pos is nil
 #[test]
 fn p_finish_drag() {
-        todo_predicate!("selection and cursor follow the rule and down-pos is nil");
+    todo_predicate!("selection and cursor follow the rule and down-pos is nil");
 }
 
 // id: p_double_click
@@ -123,7 +125,7 @@ fn p_finish_drag() {
 // predicate: the first pair selects a word and the second does not
 #[test]
 fn p_double_click() {
-        todo_predicate!("the first pair selects a word and the second does not");
+    todo_predicate!("the first pair selects a word and the second does not");
 }
 
 // id: p_copy
@@ -131,7 +133,7 @@ fn p_double_click() {
 // predicate: text range or nothing
 #[test]
 fn p_copy() {
-        todo_predicate!("text range or nothing");
+    todo_predicate!("text range or nothing");
 }
 
 // id: p_cut
@@ -139,7 +141,7 @@ fn p_copy() {
 // predicate: text becomes hlo and the clipboard gets el
 #[test]
 fn p_cut() {
-        todo_predicate!("text becomes hlo and the clipboard gets el");
+    todo_predicate!("text becomes hlo and the clipboard gets el");
 }
 
 // id: p_paste
@@ -147,7 +149,7 @@ fn p_cut() {
 // predicate: insert-text or nothing
 #[test]
 fn p_paste() {
-        todo_predicate!("insert-text or nothing");
+    todo_predicate!("insert-text or nothing");
 }
 
 // id: p_state_split
@@ -155,7 +157,7 @@ fn p_paste() {
 // predicate: text paths point into app state and cursor paths into extra
 #[test]
 fn p_state_split() {
-        todo_predicate!("text paths point into app state and cursor paths into extra");
+    todo_predicate!("text paths point into app state and cursor paths into extra");
 }
 
 // id: p_border
@@ -163,7 +165,7 @@ fn p_state_split() {
 // predicate: bordered view is larger by 10 by 4 than its body and light has no stroke
 #[test]
 fn p_border() {
-        todo_predicate!("bordered view is larger by 10 by 4 than its body and light has no stroke");
+    todo_predicate!("bordered view is larger by 10 by 4 than its body and light has no stroke");
 }
 
 // id: p_selection_drawn
@@ -171,7 +173,7 @@ fn p_border() {
 // predicate: highlight and cursor nodes exist
 #[test]
 fn p_selection_drawn() {
-        todo_predicate!("highlight and cursor nodes exist");
+    todo_predicate!("highlight and cursor nodes exist");
 }
 
 // id: p_enter
@@ -179,7 +181,7 @@ fn p_selection_drawn() {
 // predicate: the insert-newline effect is returned so it can be replaced
 #[test]
 fn p_enter() {
-        todo_predicate!("the insert-newline effect is returned so it can be replaced");
+    todo_predicate!("the insert-newline effect is returned so it can be replaced");
 }
 
 // id: p_ime
@@ -187,6 +189,5 @@ fn p_enter() {
 // predicate: one insert-text at the end
 #[test]
 fn p_ime() {
-        todo_predicate!("one insert-text at the end");
+    todo_predicate!("one insert-text at the end");
 }
-

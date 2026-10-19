@@ -11,7 +11,9 @@
 /// opting in with **rust:** compiles as a real assertion instead
 /// (executable predicate fragment, specodelic.md Revision 15).
 macro_rules! todo_predicate {
-    ($reason:expr) => { todo!("{}", $reason) };
+    ($reason:expr) => {
+        todo!("{}", $reason)
+    };
 }
 
 // id: p_contextual_source
@@ -19,7 +21,7 @@ macro_rules! todo_predicate {
 // predicate: offset value equals `context.scroll`, never a call-site literal
 #[test]
 fn p_contextual_source() {
-        todo_predicate!("offset value equals `context.scroll`, never a call-site literal");
+    todo_predicate!("offset value equals `context.scroll`, never a call-site literal");
 }
 
 // id: p_activation
@@ -27,7 +29,7 @@ fn p_contextual_source() {
 // predicate: active exactly on `[start, end]`, inactive outside it
 #[test]
 fn p_activation() {
-        todo_predicate!("active exactly on `[start, end]`, inactive outside it");
+    todo_predicate!("active exactly on `[start, end]`, inactive outside it");
 }
 
 // id: p_fixed_position
@@ -35,7 +37,7 @@ fn p_activation() {
 // predicate: body's screen position is constant across every sampled offset
 #[test]
 fn p_fixed_position() {
-        todo_predicate!("body's screen position is constant across every sampled offset");
+    todo_predicate!("body's screen position is constant across every sampled offset");
 }
 
 // id: p_spacer_constant
@@ -43,7 +45,7 @@ fn p_fixed_position() {
 // predicate: total scrollview content height is unchanged by activation state
 #[test]
 fn p_spacer_constant() {
-        todo_predicate!("total scrollview content height is unchanged by activation state");
+    todo_predicate!("total scrollview content height is unchanged by activation state");
 }
 
 // id: p_no_jump
@@ -51,7 +53,7 @@ fn p_spacer_constant() {
 // predicate: screen position immediately before and after the step are equal
 #[test]
 fn p_no_jump() {
-        todo_predicate!("screen position immediately before and after the step are equal");
+    todo_predicate!("screen position immediately before and after the step are equal");
 }
 
 // id: p_nested_priority
@@ -59,7 +61,7 @@ fn p_no_jump() {
 // predicate: the later-in-tree panel paints on top
 #[test]
 fn p_nested_priority() {
-        todo_predicate!("the later-in-tree panel paints on top");
+    todo_predicate!("the later-in-tree panel paints on top");
 }
 
 // id: p_pure
@@ -67,6 +69,5 @@ fn p_nested_priority() {
 // predicate: identical output view value both times
 #[test]
 fn p_pure() {
-        todo_predicate!("identical output view value both times");
+    todo_predicate!("identical output view value both times");
 }
-

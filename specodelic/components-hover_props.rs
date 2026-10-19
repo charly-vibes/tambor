@@ -11,7 +11,9 @@
 /// opting in with **rust:** compiles as a real assertion instead
 /// (executable predicate fragment, specodelic.md Revision 15).
 macro_rules! todo_predicate {
-    ($reason:expr) => { todo!("{}", $reason) };
+    ($reason:expr) => {
+        todo!("{}", $reason)
+    };
 }
 
 // id: p_enter
@@ -19,7 +21,7 @@ macro_rules! todo_predicate {
 // predicate: the effect sets hover? to true
 #[test]
 fn p_enter() {
-        todo_predicate!("the effect sets hover? to true");
+    todo_predicate!("the effect sets hover? to true");
 }
 
 // id: p_leave
@@ -27,7 +29,7 @@ fn p_enter() {
 // predicate: each adds set hover? false to the child intents
 #[test]
 fn p_leave() {
-        todo_predicate!("each adds set hover? false to the child intents");
+    todo_predicate!("each adds set hover? false to the child intents");
 }
 
 // id: p_stay
@@ -35,7 +37,7 @@ fn p_leave() {
 // predicate: no hover effect is returned
 #[test]
 fn p_stay() {
-        todo_predicate!("no hover effect is returned");
+    todo_predicate!("no hover effect is returned");
 }
 
 // id: p_mouse_out
@@ -43,7 +45,7 @@ fn p_stay() {
 // predicate: callback intents follow the set false
 #[test]
 fn p_mouse_out() {
-        todo_predicate!("callback intents follow the set false");
+    todo_predicate!("callback intents follow the set false");
 }
 
 // id: p_button
@@ -51,7 +53,7 @@ fn p_mouse_out() {
 // predicate: pointer down inside returns the on-click result and up returns nothing
 #[test]
 fn p_button() {
-        todo_predicate!("pointer down inside returns the on-click result and up returns nothing");
+    todo_predicate!("pointer down inside returns the on-click result and up returns nothing");
 }
 
 // id: p_button_visual
@@ -59,7 +61,7 @@ fn p_button() {
 // predicate: only the hovered view contains the fill
 #[test]
 fn p_button_visual() {
-        todo_predicate!("only the hovered view contains the fill");
+    todo_predicate!("only the hovered view contains the fill");
 }
 
 // id: p_checkbox
@@ -67,7 +69,7 @@ fn p_button_visual() {
 // predicate: the effect is toggle with the checked path and applying it flips the value
 #[test]
 fn p_checkbox() {
-        todo_predicate!("the effect is toggle with the checked path and applying it flips the value");
+    todo_predicate!("the effect is toggle with the checked path and applying it flips the value");
 }
 
 // id: p_checkbox_view
@@ -75,7 +77,7 @@ fn p_checkbox() {
 // predicate: events return nothing
 #[test]
 fn p_checkbox_view() {
-        todo_predicate!("events return nothing");
+    todo_predicate!("events return nothing");
 }
 
 // id: p_touch_hover
@@ -83,6 +85,5 @@ fn p_checkbox_view() {
 // predicate: hover? is never set
 #[test]
 fn p_touch_hover() {
-        todo_predicate!("hover? is never set");
+    todo_predicate!("hover? is never set");
 }
-

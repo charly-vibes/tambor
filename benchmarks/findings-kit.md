@@ -140,3 +140,98 @@ Run 2026-10-18, chrome 156.0.8078.4, commit 5500ae3.
   `applyTextareaIntents` (the todo/new-todo wire leaves `insert-text`
   unapplied on the makeApp path — the recorded typing finding); text
   changes mark the cell dirty and launch, cursor moves launch nothing.
+
+## H7 — virtual list (tambor-54j.8.2)
+
+Meter: `tests/e2e/bench-apps.bench.ts` scenarios `virt-list-10k-whole`
+(failing-before) and `virt-list-10k-window` (after), declared in
+`tests/e2e/bench-scenarios.ts`, raw JSON at `benchmarks/results/`.
+App: `src/examples/bench/virtual-list.ts` (10k rows derived from the
+index — the state is the summary triple count + offset + mode; the row
+stream is never materialised). Component:
+`src/components/virtual_list/` (barrel `index.ts`, pure geometry
+`geometry.ts`, component `virtual_list.ts` composed over the
+scrollview assembly), public contracts
+`tests/components-virtual_list-geometry.test.ts` (6) +
+`tests/components-virtual_list-render.test.ts` (2) — fast-check
+properties over an independent O(count) intersection oracle, one per
+spec row of `openspec/specs/components-virtual_list/spec.md` — and
+bench-app contracts `tests/bench-virtual-list.test.ts` (7: window-vs-
+whole draw parity, readout pins, summary-only state, dispatcher wire).
+Whole-view baseline run 2026-10-19 (commit b0de073, the 54j.8.2 meter
+first-commit), windowed + HEAD re-run 2026-10-19 (commit d7d5b19),
+chrome 156.0.8078.4, CPU ×4 via `Emulation.setCPUThrottlingRate`,
+n=180 (15 runs × 12 ops) per scenario. Machine: loader-cpu-throttled
+Chromium; the todo-add floor rode both runs as the load control.
+
+### Measured
+
+| Probe | Result |
+|---|---|
+| 10k-row list, +1-row scroll op, whole-view redraw (failing-before) | median **1233.4 ms**, p25/p75 1148.6/1355.9, p90 1573.9 (n=180, commit d7d5b19; the original b0de073 baseline: median **1274.6 ms**, p90 1604.9 — the offset-units refactor to pixels left the draw work identical, parity confirmed) |
+| 10k-row list, the same +1-row op, windowed through `components.virtual_list` (after) | median **50.0 ms**, p25/p75 49.7/50.3, p90 50.5 (n=180, commit d7d5b19) |
+| Win ratio | **24.7×** the whole-view median; p90 31× |
+| Floor check | todo-add on the same run: 50.4 ms median (first run) / 66.6 ms (second, different machine load) — the windowed op sits **at the empty-app floor**: the scroll itself is now free; the residual cost is the click→dispatch→repaint frame |
+| Op-contract guard | `expectedText` "window from 13 at 13" passed on every run — the window really slid 13 rows (both readout lines are ratios of the row pitch, so they are metric-independent); whole-view's "drawn 10000" guard unchanged |
+| Windowing is real (drawn DOM) | whole-view draws 10 000 row labels per op (`expectedDrawn: 10000`); windowed draws only the visible window (in-process default metrics ~133 rows, bundle real metrics ~20) — the vitest parity contracts pin the windowed indices as a contiguous slice of the whole stream's positions, each at its arithmetic offset |
+| Offsets = pure fn of data + bounds | `rowOffset` / `contentExtent` / `windowFor` are closed-form arithmetic over declared row height + gap — no DOM measurement consulted (`offsets_arithmetic`, property-tested against the independent oracle) |
+| Windowed state | the summary record only — count, step, extent, offset, half-open window — never the item stream (`count_summary_state`, shape-tested: numeric fields only) |
+
+### Verdict
+
+PASS — the acceptance is a benchmark that failed before and passes
+after: 1274.6 → 50.0 ms median on the identical +1-row op, 10k rows,
+CPU ×4. The windowed mode's per-op cost is the empty-app floor, so
+windowing (not some cheaper repaint) is what pays: the op still
+re-derives the whole view's state (one offset update), but the drawn
+tree is the ~20-row window instead of the 10k-row stream. This is the
+tambor-superiority lever over membrane (virtualisation ABSENT in
+membrane's UI layer, scrollview clip-only — cold-read §3.2 M9) now
+landed as a PUBLIC component with contracts, not a bench-only trick.
+
+Adopted levers:
+
+- **Fixed row pitch arithmetic** — offsets are `i * (row-height +
+  gap)`; window bounds are closed-form over the offset. No DOM
+  measuring anywhere in the draw path. This is what makes the window a
+  pure function of data + bounds and the per-op work O(window).
+- **Component composition over the scrollview assembly** — the
+  virtual-list reuses the scrollview's clip gate, wheel rule, range
+  formula and scrollbar with the total set to `[viewport width,
+  extent]` (~40 lines of view code over tested machinery; the range/wheel
+  contract rows cite the scrollview rows directly).
+- **Extents as summaries** — an extent-sized spacer carries the scroll
+  range so the scrollbar/clip math never needs the item stream.
+- **Metric-independent readout guards** — the bench's expectedText is
+  derived from ratios of the row pitch (first window index, offset in
+  rows), so the op-contract guard survives the replay-vs-bundle text
+  metric divergence that forced `drawnSetup` elsewhere.
+
+Rejected levers:
+
+- **Row-height DOM measurement** — the obvious "measure one row then
+  multiply" needs a mounted row before first paint and re-measures on
+  font changes; the declared-pitch contract covers the kit's fixed-row
+  cases and keeps the geometry pure. Variable-row-height virtualisation
+  is explicitly out of scope (would reintroduce measurement).
+- **Canvas-level row culling** (draw only visible rows inside one big
+  translate) — rejected: it hides the windowing inside the renderer
+  instead of a public component, and the drawn DOM would still carry
+  the 10k nodes for the event layer.
+- **Overscan by default** — the component supports `overscan` (contract
+  tested: pads ±N clamped, reaches the tail past the end) but the bench
+  runs overscan 0 so the window bounds stay exactly the visible rows
+  (keeps the readout's `from` guard == the scrolled row).
+- **Keeping the raw stream in state with a drawn-index map** — rejected
+  outright: the acceptance requires summaries only; the app stores
+  count/offset/mode and pulls rows per index through the `row` renderer.
+
+Residuals / follow-up candidates:
+
+- Variable row heights (measured once, cached per range) — the natural
+  `.3` follow-up; needs a measure boundary that is not per-op DOM.
+- Horizontal windowing (columns) for grids — the component is a list;
+  a grid variant would window both axes over the same geometry.
+- The notebook-chain-200 card stack (B9, 814.7 ms median) is the next
+  candidate consumer: its whole-view redraw is the same shape at 209
+  heterogeneous cards.

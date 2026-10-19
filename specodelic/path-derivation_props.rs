@@ -11,7 +11,9 @@
 /// opting in with **rust:** compiles as a real assertion instead
 /// (executable predicate fragment, specodelic.md Revision 15).
 macro_rules! todo_predicate {
-    ($reason:expr) => { todo!("{}", $reason) };
+    ($reason:expr) => {
+        todo!("{}", $reason)
+    };
 }
 
 // id: p_every_binding
@@ -19,7 +21,7 @@ macro_rules! todo_predicate {
 // predicate: every bound name has a dollar path
 #[test]
 fn p_every_binding() {
-        todo_predicate!("every bound name has a dollar path");
+    todo_predicate!("every bound name has a dollar path");
 }
 
 // id: p_extract
@@ -27,7 +29,7 @@ fn p_every_binding() {
 // predicate: select by path equals the destructured value
 #[test]
 fn p_extract() {
-        todo_predicate!("select by path equals the destructured value");
+    todo_predicate!("select by path equals the destructured value");
 }
 
 // id: p_update
@@ -35,7 +37,7 @@ fn p_extract() {
 // predicate: after set the destructured name equals the test value
 #[test]
 fn p_update() {
-        todo_predicate!("after set the destructured name equals the test value");
+    todo_predicate!("after set the destructured name equals the test value");
 }
 
 // id: p_transform
@@ -43,7 +45,7 @@ fn p_update() {
 // predicate: the selected value is one more and nothing else changes
 #[test]
 fn p_transform() {
-        todo_predicate!("the selected value is one more and nothing else changes");
+    todo_predicate!("the selected value is one more and nothing else changes");
 }
 
 // id: p_compiles
@@ -51,7 +53,7 @@ fn p_transform() {
 // predicate: derivation never throws
 #[test]
 fn p_compiles() {
-        todo_predicate!("derivation never throws");
+    todo_predicate!("derivation never throws");
 }
 
 // id: p_rest
@@ -59,7 +61,7 @@ fn p_compiles() {
 // predicate: paths cover the remaining items
 #[test]
 fn p_rest() {
-        todo_predicate!("paths cover the remaining items");
+    todo_predicate!("paths cover the remaining items");
 }
 
 // id: p_map_iter
@@ -67,7 +69,7 @@ fn p_rest() {
 // predicate: the three laws hold and selected values are the set 1 and 2
 #[test]
 fn p_map_iter() {
-        todo_predicate!("the three laws hold and selected values are the set 1 and 2");
+    todo_predicate!("the three laws hold and selected values are the set 1 and 2");
 }
 
 // id: p_key_ro
@@ -75,7 +77,7 @@ fn p_map_iter() {
 // predicate: writing is refused
 #[test]
 fn p_key_ro() {
-        todo_predicate!("writing is refused");
+    todo_predicate!("writing is refused");
 }
 
 // id: p_pairs
@@ -83,7 +85,7 @@ fn p_key_ro() {
 // predicate: selected values are the set a, 1, b, 2
 #[test]
 fn p_pairs() {
-        todo_predicate!("selected values are the set a, 1, b, 2");
+    todo_predicate!("selected values are the set a, 1, b, 2");
 }
 
 // id: p_when_let
@@ -91,7 +93,7 @@ fn p_pairs() {
 // predicate: the first selects 1 and sets to obj a 2, the second yields no intents
 #[test]
 fn p_when_let() {
-        todo_predicate!("the first selects 1 and sets to obj a 2, the second yields no intents");
+    todo_predicate!("the first selects 1 and sets to obj a 2, the second yields no intents");
 }
 
 // id: p_if_let
@@ -99,7 +101,7 @@ fn p_when_let() {
 // predicate: then path selects 1, nil yields no then handlers, else path selects 1 on not-obj and sets to not-obj 2
 #[test]
 fn p_if_let() {
-        todo_predicate!("then path selects 1, nil yields no then handlers, else path selects 1 on not-obj and sets to not-obj 2");
+    todo_predicate!("then path selects 1, nil yields no then handlers, else path selects 1 on not-obj and sets to not-obj 2");
 }
 
 // id: p_shadow
@@ -107,7 +109,7 @@ fn p_if_let() {
 // predicate: dollar b still points into the first a
 #[test]
 fn p_shadow() {
-        todo_predicate!("dollar b still points into the first a");
+    todo_predicate!("dollar b still points into the first a");
 }
 
 // id: p_fn_shadow
@@ -115,7 +117,7 @@ fn p_shadow() {
 // predicate: the inner name is not replaced
 #[test]
 fn p_fn_shadow() {
-        todo_predicate!("the inner name is not replaced");
+    todo_predicate!("the inner name is not replaced");
 }
 
 // id: p_call_table
@@ -123,7 +125,7 @@ fn p_fn_shadow() {
 // predicate: the navigator list matches the table
 #[test]
 fn p_call_table() {
-        todo_predicate!("the navigator list matches the table");
+    todo_predicate!("the navigator list matches the table");
 }
 
 // id: p_get_default
@@ -131,7 +133,7 @@ fn p_call_table() {
 // predicate: reading an absent key gives 42
 #[test]
 fn p_get_default() {
-        todo_predicate!("reading an absent key gives 42");
+    todo_predicate!("reading an absent key gives 42");
 }
 
 // id: p_assoc
@@ -139,7 +141,7 @@ fn p_get_default() {
 // predicate: path equals the original map path
 #[test]
 fn p_assoc() {
-        todo_predicate!("path equals the original map path");
+    todo_predicate!("path equals the original map path");
 }
 
 // id: p_literal
@@ -147,7 +149,7 @@ fn p_assoc() {
 // predicate: path reads the literal and refuses writes
 #[test]
 fn p_literal() {
-        todo_predicate!("path reads the literal and refuses writes");
+    todo_predicate!("path reads the literal and refuses writes");
 }
 
 // id: p_opaque
@@ -155,7 +157,7 @@ fn p_literal() {
 // predicate: value readable and path write refused
 #[test]
 fn p_opaque() {
-        todo_predicate!("value readable and path write refused");
+    todo_predicate!("value readable and path write refused");
 }
 
 // id: p_filter_path
@@ -163,7 +165,7 @@ fn p_opaque() {
 // predicate: the item path of the second visible todo selects second, set and delete change only the original index 1
 #[test]
 fn p_filter_path() {
-        todo_predicate!("the item path of the second visible todo selects second, set and delete change only the original index 1");
+    todo_predicate!("the item path of the second visible todo selects second, set and delete change only the original index 1");
 }
 
 // id: p_unsupported
@@ -171,7 +173,7 @@ fn p_filter_path() {
 // predicate: each raises the documented error
 #[test]
 fn p_unsupported() {
-        todo_predicate!("each raises the documented error");
+    todo_predicate!("each raises the documented error");
 }
 
 // id: p_unbound
@@ -179,7 +181,7 @@ fn p_unsupported() {
 // predicate: the symbol is left alone
 #[test]
 fn p_unbound() {
-        todo_predicate!("the symbol is left alone");
+    todo_predicate!("the symbol is left alone");
 }
 
 // id: p_strategy
@@ -187,6 +189,5 @@ fn p_unbound() {
 // predicate: outputs are deep-equal
 #[test]
 fn p_strategy() {
-        todo_predicate!("outputs are deep-equal");
+    todo_predicate!("outputs are deep-equal");
 }
-

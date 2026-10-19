@@ -11,7 +11,9 @@
 /// opting in with **rust:** compiles as a real assertion instead
 /// (executable predicate fragment, specodelic.md Revision 15).
 macro_rules! todo_predicate {
-    ($reason:expr) => { todo!("{}", $reason) };
+    ($reason:expr) => {
+        todo!("{}", $reason)
+    };
 }
 
 // id: p_contract
@@ -19,7 +21,9 @@ macro_rules! todo_predicate {
 // predicate: each exposes draw, measureText, indexForPosition, copyToClipboard and subscribe
 #[test]
 fn p_contract() {
-        todo_predicate!("each exposes draw, measureText, indexForPosition, copyToClipboard and subscribe");
+    todo_predicate!(
+        "each exposes draw, measureText, indexForPosition, copyToClipboard and subscribe"
+    );
 }
 
 // id: p_primitives
@@ -27,7 +31,7 @@ fn p_contract() {
 // predicate: each draws and the unknown node draws its children
 #[test]
 fn p_primitives() {
-        todo_predicate!("each draws and the unknown node draws its children");
+    todo_predicate!("each draws and the unknown node draws its children");
 }
 
 // id: p_determinism
@@ -35,7 +39,7 @@ fn p_primitives() {
 // predicate: two draws produce equal pixels
 #[test]
 fn p_determinism() {
-        todo_predicate!("two draws produce equal pixels");
+    todo_predicate!("two draws produce equal pixels");
 }
 
 // id: p_stack
@@ -43,7 +47,7 @@ fn p_determinism() {
 // predicate: stack depth is 0 after draw
 #[test]
 fn p_stack() {
-        todo_predicate!("stack depth is 0 after draw");
+    todo_predicate!("stack depth is 0 after draw");
 }
 
 // id: p_index
@@ -51,7 +55,7 @@ fn p_stack() {
 // predicate: index is 0 at the left, 5 at the right and never decreases
 #[test]
 fn p_index() {
-        todo_predicate!("index is 0 at the left, 5 at the right and never decreases");
+    todo_predicate!("index is 0 at the left, 5 at the right and never decreases");
 }
 
 // id: p_clipboard
@@ -59,7 +63,7 @@ fn p_index() {
 // predicate: the clipboard gets hello and the paste arrives as a string
 #[test]
 fn p_clipboard() {
-        todo_predicate!("the clipboard gets hello and the paste arrives as a string");
+    todo_predicate!("the clipboard gets hello and the paste arrives as a string");
 }
 
 // id: p_headless
@@ -67,7 +71,7 @@ fn p_clipboard() {
 // predicate: an image of non-zero size is produced
 #[test]
 fn p_headless() {
-        todo_predicate!("an image of non-zero size is produced");
+    todo_predicate!("an image of non-zero size is produced");
 }
 
 // id: p_dpr
@@ -75,7 +79,7 @@ fn p_headless() {
 // predicate: backing size equals css size times dpr
 #[test]
 fn p_dpr() {
-        todo_predicate!("backing size equals css size times dpr");
+    todo_predicate!("backing size equals css size times dpr");
 }
 
 // id: p_resize
@@ -83,7 +87,7 @@ fn p_dpr() {
 // predicate: a redraw follows each resize with the new size in context
 #[test]
 fn p_resize() {
-        todo_predicate!("a redraw follows each resize with the new size in context");
+    todo_predicate!("a redraw follows each resize with the new size in context");
 }
 
 // id: p_input
@@ -91,7 +95,7 @@ fn p_resize() {
 // predicate: the router receives view-space coordinates
 #[test]
 fn p_input() {
-        todo_predicate!("the router receives view-space coordinates");
+    todo_predicate!("the router receives view-space coordinates");
 }
 
 // id: p_keys
@@ -99,7 +103,7 @@ fn p_input() {
 // predicate: a, A, enter, backspace, left and nothing
 #[test]
 fn p_keys() {
-        todo_predicate!("a, A, enter, backspace, left and nothing");
+    todo_predicate!("a, A, enter, backspace, left and nothing");
 }
 
 // id: p_touch_action
@@ -107,7 +111,7 @@ fn p_keys() {
 // predicate: computed touch-action is none
 #[test]
 fn p_touch_action() {
-        todo_predicate!("computed touch-action is none");
+    todo_predicate!("computed touch-action is none");
 }
 
 // id: p_raf
@@ -115,7 +119,7 @@ fn p_touch_action() {
 // predicate: one draw per frame
 #[test]
 fn p_raf() {
-        todo_predicate!("one draw per frame");
+    todo_predicate!("one draw per frame");
 }
 
 // id: p_swappable
@@ -123,7 +127,7 @@ fn p_raf() {
 // predicate: the same click yields the same effect list
 #[test]
 fn p_swappable() {
-        todo_predicate!("the same click yields the same effect list");
+    todo_predicate!("the same click yields the same effect list");
 }
 
 // id: p_text_metrics
@@ -131,7 +135,7 @@ fn p_swappable() {
 // predicate: a label of 5 characters measures 5 by 1
 #[test]
 fn p_text_metrics() {
-        todo_predicate!("a label of 5 characters measures 5 by 1");
+    todo_predicate!("a label of 5 characters measures 5 by 1");
 }
 
 // id: p_a11y
@@ -139,7 +143,7 @@ fn p_text_metrics() {
 // predicate: one accessible node per interactive node
 #[test]
 fn p_a11y() {
-        todo_predicate!("one accessible node per interactive node");
+    todo_predicate!("one accessible node per interactive node");
 }
 
 // id: p_safe_area
@@ -147,6 +151,5 @@ fn p_a11y() {
 // predicate: content stays inside the insets
 #[test]
 fn p_safe_area() {
-        todo_predicate!("content stays inside the insets");
+    todo_predicate!("content stays inside the insets");
 }
-

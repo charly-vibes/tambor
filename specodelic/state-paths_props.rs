@@ -11,7 +11,9 @@
 /// opting in with **rust:** compiles as a real assertion instead
 /// (executable predicate fragment, specodelic.md Revision 15).
 macro_rules! todo_predicate {
-    ($reason:expr) => { todo!("{}", $reason) };
+    ($reason:expr) => {
+        todo!("{}", $reason)
+    };
 }
 
 // id: p_select
@@ -19,7 +21,7 @@ macro_rules! todo_predicate {
 // predicate: select matches direct indexing
 #[test]
 fn p_select() {
-        todo_predicate!("select matches direct indexing");
+    todo_predicate!("select matches direct indexing");
 }
 
 // id: p_immut
@@ -27,7 +29,7 @@ fn p_select() {
 // predicate: input deep-equals its prior snapshot
 #[test]
 fn p_immut() {
-        todo_predicate!("input deep-equals its prior snapshot");
+    todo_predicate!("input deep-equals its prior snapshot");
 }
 
 // id: p_share
@@ -35,7 +37,7 @@ fn p_immut() {
 // predicate: sibling branches are reference-equal
 #[test]
 fn p_share() {
-        todo_predicate!("sibling branches are reference-equal");
+    todo_predicate!("sibling branches are reference-equal");
 }
 
 // id: p_nth
@@ -43,7 +45,7 @@ fn p_share() {
 // predicate: map entries written back keep a map
 #[test]
 fn p_nth() {
-        todo_predicate!("map entries written back keep a map");
+    todo_predicate!("map entries written back keep a map");
 }
 
 // id: p_entry
@@ -51,7 +53,7 @@ fn p_nth() {
 // predicate: nth(0) of the first entry selects the key and nth(1) the value
 #[test]
 fn p_entry() {
-        todo_predicate!("nth(0) of the first entry selects the key and nth(1) the value");
+    todo_predicate!("nth(0) of the first entry selects the key and nth(1) the value");
 }
 
 // id: p_filter_select
@@ -59,7 +61,7 @@ fn p_entry() {
 // predicate: the active filter selects exactly the incomplete todos
 #[test]
 fn p_filter_select() {
-        todo_predicate!("the active filter selects exactly the incomplete todos");
+    todo_predicate!("the active filter selects exactly the incomplete todos");
 }
 
 // id: p_filter_merge
@@ -67,7 +69,7 @@ fn p_filter_select() {
 // predicate: updating the second visible active todo changes original index 1
 #[test]
 fn p_filter_merge() {
-        todo_predicate!("updating the second visible active todo changes original index 1");
+    todo_predicate!("updating the second visible active todo changes original index 1");
 }
 
 // id: p_filter_delete
@@ -75,7 +77,7 @@ fn p_filter_merge() {
 // predicate: deleting the second visible active todo leaves first and third
 #[test]
 fn p_filter_delete() {
-        todo_predicate!("deleting the second visible active todo leaves first and third");
+    todo_predicate!("deleting the second visible active todo leaves first and third");
 }
 
 // id: p_take_drop
@@ -83,7 +85,7 @@ fn p_filter_delete() {
 // predicate: take and drop address disjoint covering ranges
 #[test]
 fn p_take_drop() {
-        todo_predicate!("take and drop address disjoint covering ranges");
+    todo_predicate!("take and drop address disjoint covering ranges");
 }
 
 // id: p_nil_val
@@ -91,7 +93,7 @@ fn p_take_drop() {
 // predicate: reads return the default
 #[test]
 fn p_nil_val() {
-        todo_predicate!("reads return the default");
+    todo_predicate!("reads return the default");
 }
 
 // id: p_keypath_list
@@ -99,7 +101,7 @@ fn p_nil_val() {
 // predicate: equals nested keypath steps
 #[test]
 fn p_keypath_list() {
-        todo_predicate!("equals nested keypath steps");
+    todo_predicate!("equals nested keypath steps");
 }
 
 // id: p_collect
@@ -107,7 +109,7 @@ fn p_keypath_list() {
 // predicate: the function is called with cursor, select-cursor, text in that order
 #[test]
 fn p_collect() {
-        todo_predicate!("the function is called with cursor, select-cursor, text in that order");
+    todo_predicate!("the function is called with cursor, select-cursor, text in that order");
 }
 
 // id: p_flatten
@@ -115,7 +117,7 @@ fn p_collect() {
 // predicate: selects equal the flat path
 #[test]
 fn p_flatten() {
-        todo_predicate!("selects equal the flat path");
+    todo_predicate!("selects equal the flat path");
 }
 
 // id: p_rest_args
@@ -123,7 +125,7 @@ fn p_flatten() {
 // predicate: round-trip is lossless
 #[test]
 fn p_rest_args() {
-        todo_predicate!("round-trip is lossless");
+    todo_predicate!("round-trip is lossless");
 }
 
 // id: p_delete
@@ -131,7 +133,7 @@ fn p_rest_args() {
 // predicate: key is absent or element is spliced
 #[test]
 fn p_delete() {
-        todo_predicate!("key is absent or element is spliced");
+    todo_predicate!("key is absent or element is spliced");
 }
 
 // id: p_special
@@ -139,7 +141,7 @@ fn p_delete() {
 // predicate: each addresses its documented location
 #[test]
 fn p_special() {
-        todo_predicate!("each addresses its documented location");
+    todo_predicate!("each addresses its documented location");
 }
 
 // id: p_ser
@@ -147,7 +149,7 @@ fn p_special() {
 // predicate: JSON round-trip is lossless for paths without a function predicate, and a keyword-style filter round-trips
 #[test]
 fn p_ser() {
-        todo_predicate!("JSON round-trip is lossless for paths without a function predicate, and a keyword-style filter round-trips");
+    todo_predicate!("JSON round-trip is lossless for paths without a function predicate, and a keyword-style filter round-trips");
 }
 
 // id: p_unknown
@@ -155,6 +157,5 @@ fn p_ser() {
 // predicate: an error naming it is raised
 #[test]
 fn p_unknown() {
-        todo_predicate!("an error naming it is raised");
+    todo_predicate!("an error naming it is raised");
 }
-

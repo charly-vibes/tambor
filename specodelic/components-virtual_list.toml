@@ -1,0 +1,49 @@
+source = "components.virtual_list"
+
+[[constraints]]
+id = "count_summary_state"
+kind = "invariant"
+expr = "the windowed state is the summary record — item count, row step, content extent, scroll offset and the half-open window bounds — with no item list in it; rows are pulled per index through the row renderer for the drawn window"
+traces_to = "[[components.virtual_list]]"
+
+[[constraints]]
+id = "offsets_arithmetic"
+kind = "invariant"
+expr = "row i sits at i * (row-height + gap) and the content extent is count * row-height + (count - 1) * gap, computed arithmetically with no DOM measurement consulted"
+traces_to = "[[components.virtual_list]]"
+
+[[constraints]]
+id = "window_half_open"
+kind = "invariant"
+expr = "the window [first, last) covers exactly the rows intersecting the viewport [oy, oy + vh) — row i spans [i * step, i * step + h) so it intersects exactly when oy - h < i * step < oy + vh"
+traces_to = "[[components.virtual_list]]"
+
+[[constraints]]
+id = "overscan_pads_window"
+kind = "invariant"
+expr = "the window is padded by the overscan rows on each side, clamped to [0, count]; scrolled past the content end the pad reaches back to the tail rows"
+traces_to = "[[components.virtual_list]]"
+
+[[constraints]]
+id = "range_formula"
+kind = "invariant"
+expr = "the maximum offset is max(0, extent - viewport height) and a scroll update clamps against it — the scrollview range rule over the content extent (components.scrollview.range_formula)"
+traces_to = "[[components.virtual_list]]"
+
+[[constraints]]
+id = "wheel_updates_offset"
+kind = "invariant"
+expr = "a scroll event over the viewport adds the wheel delta to the stored offset clamped to the range, and returns nothing when both axes are unchanged — the scrollview wheel rule (components.scrollview.wheel_updates_offset) over the content extent"
+traces_to = "[[components.virtual_list]]"
+
+[[constraints]]
+id = "drawn_window_only"
+kind = "invariant"
+expr = "the view draws exactly the window's rows, each placed at its arithmetic offset inside the body translated by the negated offset — no row outside the window is drawn"
+traces_to = "[[components.virtual_list]]"
+
+[[constraints]]
+id = "empty_window_zero"
+kind = "invariant"
+expr = "count 0, a non-positive viewport height or a non-positive row step yield the empty window, a zero extent and finite numbers, with nothing drawn"
+traces_to = "[[components.virtual_list]]"

@@ -11,7 +11,9 @@
 /// opting in with **rust:** compiles as a real assertion instead
 /// (executable predicate fragment, specodelic.md Revision 15).
 macro_rules! todo_predicate {
-    ($reason:expr) => { todo!("{}", $reason) };
+    ($reason:expr) => {
+        todo!("{}", $reason)
+    };
 }
 
 // id: p_default
@@ -19,7 +21,7 @@ macro_rules! todo_predicate {
 // predicate: offset equals [0, 0]
 #[test]
 fn p_default() {
-        todo_predicate!("offset equals [0, 0]");
+    todo_predicate!("offset equals [0, 0]");
 }
 
 // id: p_translate
@@ -27,7 +29,7 @@ fn p_default() {
 // predicate: body origin equals the negated offset
 #[test]
 fn p_translate() {
-        todo_predicate!("body origin equals the negated offset");
+    todo_predicate!("body origin equals the negated offset");
 }
 
 // id: p_range
@@ -35,7 +37,7 @@ fn p_translate() {
 // predicate: max offset is 300 and 0
 #[test]
 fn p_range() {
-        todo_predicate!("max offset is 300 and 0");
+    todo_predicate!("max offset is 300 and 0");
 }
 
 // id: p_wheel_child
@@ -43,7 +45,7 @@ fn p_range() {
 // predicate: the child's intents are returned
 #[test]
 fn p_wheel_child() {
-        todo_predicate!("the child's intents are returned");
+    todo_predicate!("the child's intents are returned");
 }
 
 // id: p_wheel
@@ -51,7 +53,7 @@ fn p_wheel_child() {
 // predicate: first updates to 50, second returns nothing
 #[test]
 fn p_wheel() {
-        todo_predicate!("first updates to 50, second returns nothing");
+    todo_predicate!("first updates to 50, second returns nothing");
 }
 
 // id: p_stale
@@ -59,7 +61,7 @@ fn p_wheel() {
 // predicate: render keeps it, the update clamps it
 #[test]
 fn p_stale() {
-        todo_predicate!("render keeps it, the update clamps it");
+    todo_predicate!("render keeps it, the update clamps it");
 }
 
 // id: p_bars
@@ -67,7 +69,7 @@ fn p_stale() {
 // predicate: exactly one bar is present at the right place
 #[test]
 fn p_bars() {
-        todo_predicate!("exactly one bar is present at the right place");
+    todo_predicate!("exactly one bar is present at the right place");
 }
 
 // id: p_thumb
@@ -75,7 +77,7 @@ fn p_bars() {
 // predicate: thumb spans 0.2 to 0.6 of the track
 #[test]
 fn p_thumb() {
-        todo_predicate!("thumb spans 0.2 to 0.6 of the track");
+    todo_predicate!("thumb spans 0.2 to 0.6 of the track");
 }
 
 // id: p_bar_drag
@@ -83,7 +85,7 @@ fn p_thumb() {
 // predicate: the function returns the set offset effect
 #[test]
 fn p_bar_drag() {
-        todo_predicate!("the function returns the set offset effect");
+    todo_predicate!("the function returns the set offset effect");
 }
 
 // id: p_div0
@@ -91,7 +93,7 @@ fn p_bar_drag() {
 // predicate: offset is 0 and finite
 #[test]
 fn p_div0() {
-        todo_predicate!("offset is 0 and finite");
+    todo_predicate!("offset is 0 and finite");
 }
 
 // id: p_clip
@@ -99,7 +101,7 @@ fn p_div0() {
 // predicate: no intents
 #[test]
 fn p_clip() {
-        todo_predicate!("no intents");
+    todo_predicate!("no intents");
 }
 
 // id: p_touch_scroll
@@ -107,7 +109,7 @@ fn p_clip() {
 // predicate: offset changes by 30 within range
 #[test]
 fn p_touch_scroll() {
-        todo_predicate!("offset changes by 30 within range");
+    todo_predicate!("offset changes by 30 within range");
 }
 
 // id: p_momentum
@@ -115,6 +117,5 @@ fn p_touch_scroll() {
 // predicate: offset keeps changing then settles, and is static under reduced motion
 #[test]
 fn p_momentum() {
-        todo_predicate!("offset keeps changing then settles, and is static under reduced motion");
+    todo_predicate!("offset keeps changing then settles, and is static under reduced motion");
 }
-

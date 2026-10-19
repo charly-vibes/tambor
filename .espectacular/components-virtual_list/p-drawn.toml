@@ -1,0 +1,14 @@
+archetype = "PF"
+authored_with = "0.12.0"
+derived_from = "p_drawn@33e5cd9598ee"
+description = "exactly the window's rows are drawn at their arithmetic offsets — a contiguous slice of the whole-list positions"
+falsifiability_class = "safety"
+id = "p-drawn"
+status = "active"
+superseded_by = ""
+
+[[tests.shell]]
+command = "tools/scaffold-check.sh components-virtual_list p-drawn"
+
+[[tests.vitest]]
+flags = "--testNamePattern=p_drawn"

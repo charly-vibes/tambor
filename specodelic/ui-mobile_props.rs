@@ -11,7 +11,9 @@
 /// opting in with **rust:** compiles as a real assertion instead
 /// (executable predicate fragment, specodelic.md Revision 15).
 macro_rules! todo_predicate {
-    ($reason:expr) => { todo!("{}", $reason) };
+    ($reason:expr) => {
+        todo!("{}", $reason)
+    };
 }
 
 // id: p_touch_map
@@ -19,7 +21,7 @@ macro_rules! todo_predicate {
 // predicate: the same effect as a mouse click is returned
 #[test]
 fn p_touch_map() {
-        todo_predicate!("the same effect as a mouse click is returned");
+    todo_predicate!("the same effect as a mouse click is returned");
 }
 
 // id: p_slop
@@ -27,7 +29,7 @@ fn p_touch_map() {
 // predicate: the delete effect fires while drawn bounds stay 10 by 10
 #[test]
 fn p_slop() {
-        todo_predicate!("the delete effect fires while drawn bounds stay 10 by 10");
+    todo_predicate!("the delete effect fires while drawn bounds stay 10 by 10");
 }
 
 // id: p_overlap
@@ -35,7 +37,7 @@ fn p_slop() {
 // predicate: a touch between them picks the nearer centre
 #[test]
 fn p_overlap() {
-        todo_predicate!("a touch between them picks the nearer centre");
+    todo_predicate!("a touch between them picks the nearer centre");
 }
 
 // id: p_reflow
@@ -43,7 +45,7 @@ fn p_overlap() {
 // predicate: layout is valid at every width
 #[test]
 fn p_reflow() {
-        todo_predicate!("layout is valid at every width");
+    todo_predicate!("layout is valid at every width");
 }
 
 // id: p_overflow
@@ -51,7 +53,7 @@ fn p_reflow() {
 // predicate: no node extends past the viewport
 #[test]
 fn p_overflow() {
-        todo_predicate!("no node extends past the viewport");
+    todo_predicate!("no node extends past the viewport");
 }
 
 // id: p_thumb
@@ -59,7 +61,7 @@ fn p_overflow() {
 // predicate: y of each is in the bottom third
 #[test]
 fn p_thumb() {
-        todo_predicate!("y of each is in the bottom third");
+    todo_predicate!("y of each is in the bottom third");
 }
 
 // id: p_gestures
@@ -67,7 +69,7 @@ fn p_thumb() {
 // predicate: each gesture emits its named intent
 #[test]
 fn p_gestures() {
-        todo_predicate!("each gesture emits its named intent");
+    todo_predicate!("each gesture emits its named intent");
 }
 
 // id: p_keyboard_bridge
@@ -75,7 +77,7 @@ fn p_gestures() {
 // predicate: insert, backspace and enter effects are emitted
 #[test]
 fn p_keyboard_bridge() {
-        todo_predicate!("insert, backspace and enter effects are emitted");
+    todo_predicate!("insert, backspace and enter effects are emitted");
 }
 
 // id: p_avoid
@@ -83,7 +85,7 @@ fn p_keyboard_bridge() {
 // predicate: the focused textarea is inside the visible area
 #[test]
 fn p_avoid() {
-        todo_predicate!("the focused textarea is inside the visible area");
+    todo_predicate!("the focused textarea is inside the visible area");
 }
 
 // id: p_handles
@@ -91,7 +93,7 @@ fn p_avoid() {
 // predicate: the word is selected and two handles exist
 #[test]
 fn p_handles() {
-        todo_predicate!("the word is selected and two handles exist");
+    todo_predicate!("the word is selected and two handles exist");
 }
 
 // id: p_rotate
@@ -99,7 +101,7 @@ fn p_handles() {
 // predicate: state is deep-equal after rotation
 #[test]
 fn p_rotate() {
-        todo_predicate!("state is deep-equal after rotation");
+    todo_predicate!("state is deep-equal after rotation");
 }
 
 // id: p_motion
@@ -107,7 +109,7 @@ fn p_rotate() {
 // predicate: no momentum frames are scheduled
 #[test]
 fn p_motion() {
-        todo_predicate!("no momentum frames are scheduled");
+    todo_predicate!("no momentum frames are scheduled");
 }
 
 // id: p_theme
@@ -115,7 +117,7 @@ fn p_motion() {
 // predicate: tokens resolve in each
 #[test]
 fn p_theme() {
-        todo_predicate!("tokens resolve in each");
+    todo_predicate!("tokens resolve in each");
 }
 
 // id: p_haptics
@@ -123,7 +125,7 @@ fn p_theme() {
 // predicate: no error either way
 #[test]
 fn p_haptics() {
-        todo_predicate!("no error either way");
+    todo_predicate!("no error either way");
 }
 
 // id: p_no_hover
@@ -131,6 +133,5 @@ fn p_haptics() {
 // predicate: hover? is never set
 #[test]
 fn p_no_hover() {
-        todo_predicate!("hover? is never set");
+    todo_predicate!("hover? is never set");
 }
-

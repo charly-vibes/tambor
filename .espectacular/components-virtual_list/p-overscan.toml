@@ -1,0 +1,14 @@
+archetype = "PF"
+authored_with = "0.12.0"
+derived_from = "p_overscan@f78bde9990c7"
+description = "the window extends by 2 rows each side, clamped, and reaches the tail past the end"
+falsifiability_class = "safety"
+id = "p-overscan"
+status = "active"
+superseded_by = ""
+
+[[tests.shell]]
+command = "tools/scaffold-check.sh components-virtual_list p-overscan"
+
+[[tests.vitest]]
+flags = "--testNamePattern=p_overscan"

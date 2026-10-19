@@ -11,7 +11,9 @@
 /// opting in with **rust:** compiles as a real assertion instead
 /// (executable predicate fragment, specodelic.md Revision 15).
 macro_rules! todo_predicate {
-    ($reason:expr) => { todo!("{}", $reason) };
+    ($reason:expr) => {
+        todo!("{}", $reason)
+    };
 }
 
 // id: p_row_layout
@@ -19,7 +21,7 @@ macro_rules! todo_predicate {
 // predicate: checkbox at origin [5, 5], then spacer, then label in order
 #[test]
 fn p_row_layout() {
-        todo_predicate!("checkbox at origin [5, 5], then spacer, then label in order");
+    todo_predicate!("checkbox at origin [5, 5], then spacer, then label in order");
 }
 
 // id: p_row_default
@@ -27,7 +29,7 @@ fn p_row_layout() {
 // predicate: the intent is update with the selected? path and not
 #[test]
 fn p_row_default() {
-        todo_predicate!("the intent is update with the selected? path and not");
+    todo_predicate!("the intent is update with the selected? path and not");
 }
 
 // id: p_intercept
@@ -35,7 +37,7 @@ fn p_row_default() {
 // predicate: tapping b yields add then remove, and the boolean path is never touched
 #[test]
 fn p_intercept() {
-        todo_predicate!("tapping b yields add then remove, and the boolean path is never touched");
+    todo_predicate!("tapping b yields add then remove, and the boolean path is never touched");
 }
 
 // id: p_filter
@@ -43,7 +45,7 @@ fn p_intercept() {
 // predicate: b shows B.md and a.txt does not match, t shows a.txt and notes
 #[test]
 fn p_filter() {
-        todo_predicate!("b shows B.md and a.txt does not match, t shows a.txt and notes");
+    todo_predicate!("b shows B.md and a.txt does not match, t shows a.txt and notes");
 }
 
 // id: p_defaults
@@ -51,7 +53,7 @@ fn p_filter() {
 // predicate: all names shown and the selected set is empty
 #[test]
 fn p_defaults() {
-        todo_predicate!("all names shown and the selected set is empty");
+    todo_predicate!("all names shown and the selected set is empty");
 }
 
 // id: p_membership
@@ -59,7 +61,7 @@ fn p_defaults() {
 // predicate: only that row is checked
 #[test]
 fn p_membership() {
-        todo_predicate!("only that row is checked");
+    todo_predicate!("only that row is checked");
 }
 
 // id: p_persist
@@ -67,7 +69,7 @@ fn p_membership() {
 // predicate: a.txt is still selected
 #[test]
 fn p_persist() {
-        todo_predicate!("a.txt is still selected");
+    todo_predicate!("a.txt is still selected");
 }
 
 // id: p_result
@@ -75,6 +77,5 @@ fn p_persist() {
 // predicate: the returned set equals the state set
 #[test]
 fn p_result() {
-        todo_predicate!("the returned set equals the state set");
+    todo_predicate!("the returned set equals the state set");
 }
-
