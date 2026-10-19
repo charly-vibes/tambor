@@ -24,6 +24,24 @@ export { concatPath, each, filterNav, nthNav } from "./paths.ts";
 export { defui } from "./defui.ts";
 export { memo, type Memoized } from "../components/memo/memo.ts";
 export {
+  TERMINATED_MESSAGE,
+  makeWorkerEffect,
+  makeWorkerEffectRunner,
+  type WorkerEffectClient,
+} from "../components/worker_effect/client.ts";
+export {
+  runWorkerEffect,
+  type WorkerEffectHandler,
+  type WorkerEffectRequest,
+  type WorkerEffectResponse,
+} from "../components/worker_effect/envelope.ts";
+export {
+  workerEffectHandler,
+  type WorkerEffectErrorEffect,
+  type WorkerEffectReplyEffect,
+  type WorkerEffectSpawnEffect,
+} from "../components/worker_effect/effect.ts";
+export {
   canvasLayer,
   cachedRaster,
   rasterize,
