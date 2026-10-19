@@ -52,9 +52,10 @@ Format: **what happened → impact → cause → fix/mitigation**. Status: `open
 ## F11 — Earlier insight files went stale  · fixed
 - `insights/squint-cherry.md` and `distribution.md` predated the updated tambor archive, which implemented/re-ran much of what they recommended. Fixed with update banners and `insights/tambor-latest.md`.
 
-## F12 — membrane source only partly read  · open
+## F12 — membrane source only partly read  · closed 2026-10-18 (I21, tambor-54j.12)
 - Read: README, two design posts, WebGL doc, a chat-log snippet, first ~1000 of 4549 lines of `ui.cljc`. Not read: `component.cljc`, backends, basic components. Claims about memoisation/virtualisation are therefore "not found", not "absent".
 - Search results for membrane were shallow and repetitive; primary pages were fetched instead.
+- **Resolved:** full clone of phronmophobic/membrane at HEAD read 2026-10-18 (`component.cljc` cache machinery, `basic_components.cljc`, `toolkit.cljc`, `present.cljc`, scrollview, backends java2d/skia/webgl/skija/ios). M8: subtree memoisation EXISTS (component cache + opt-in `Cached` images). M9: virtualisation ABSENT (scrollview clip-only). Evidence in insights/membrane.md + §3.2.
 
 ## F13 — Benchmark failure modes are hypotheses  · open
 - Beyond the emit check and Logo count parity, no tambor performance was measured. `docs/benchmarks-and-findings.md` §4.7 lists hypotheses with falsification tests. Fix: I15, I16.

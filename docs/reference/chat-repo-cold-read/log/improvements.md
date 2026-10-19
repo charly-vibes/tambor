@@ -38,4 +38,4 @@ Priority: **P1** do first · **P2** next · **P3** later. Each has an acceptance
 | I18 | P2 | Notebook: browser test, Worker evaluator with kill switch, incremental structural edits | 200 chained cells: slider→paint < 50 ms | B9, F14 |
 | I19 | P3 | Refresh `squint-cherry.md`/`distribution.md` once upstream settles | banners removed, text rewritten | F11 |
 | I20 | P2 | Run tambor's vitest suite and `pack-probe.sh` in a networked environment | green run recorded | F15 |
-| I21 | P3 | Read remaining membrane sources (`component.cljc`, backends, scrollview) | claims M8/M9 resolved | F12 |
+| I21 | P3 | ~~Read remaining membrane sources (`component.cljc`, backends, scrollview)~~ — **done 2026-10-18**: M8 resolved (args-keyed component cache + opt-in `Cached` draw images exist; no generic memo), M9 resolved (virtualisation absent; scrollview clip-only; viscous is a separate repo). See insights/membrane.md and benchmarks-and-findings.md §3.2 | M8/M9 now O with file:line evidence | F12 closed |

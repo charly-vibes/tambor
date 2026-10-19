@@ -28,7 +28,7 @@ Provenance: A01–A22 · E01–E15 · grades mixed (stated per row below).
 | Latest tambor's Logo interpreter reproduces the demo's counts (4, 5, 66, 720, 254) | ran here | **T** | §3.1 |
 | tambor's own test suite (vitest) | **not run** (no `node_modules`/network) | U | §3.1 |
 | tambor's squint/cherry/macro/`:advanced` re-run results | read from `EVALUATION.md`; not re-run | O (doc) | §3.1 |
-| membrane design & event/caching model | read (posts + part of source) | O | §3.2 |
+| membrane design & event/caching model | read (posts + remaining sources, 2026-10-18) | O | §3.2 |
 | Benchmarks B1–B8, BZ1–BZ7 | **designed, not built** | D | §4 |
 | Reactive notebook example (B9) | built; core tested in Node; UI not browser-tested | T / U | §4.4 |
 | Failure modes of tambor under load | **hypotheses** | D | §4.7 |
@@ -59,22 +59,25 @@ Provenance: A15, A16 · E12 · C21–C26.
 
 ### 3.2 membrane — how it manages the things benchmarks care about
 
-Sources: README, the two design posts, the WebGL doc, a community chat log, and the first ~1000 of 4549 lines of `membrane/ui.cljc`. **Not read:** `component.cljc`, backends, `basic-components` source.
+Sources: README, the two design posts, the WebGL doc, a community chat log, the first ~1000 of 4549 lines of `membrane/ui.cljc`, and — read in full later (I21 done, 2026-10-18) — `component.cljc`, `basic_components.cljc`, `toolkit.cljc`, `component/present.cljc`, and the backends (`java2d.clj`, `skia.clj`, `webgl.cljs`, `skija.clj`, `ios.clj`). The read landed upstream @ phronmophobic/membrane HEAD; line numbers below refer to that checkout.
 
 | Concern | What membrane does | Grade |
 |---|---|---|
 | Repaint | Event loop waits for input (≤0.5 s), repaints after each input callback; the view function is re-run in full, then drawn. No diffing is described. | O |
-| Caches | The backend binds image, font and draw caches during each repaint. | O |
-| Bounds | `bounds` is memoised (`memo1`): JVM = per-thread weak-keyed map; ClojureScript = plain `memoize` (no eviction). | O |
+| Caches | Backends bind image, font and draw caches per window during each repaint — concretely: skia window record carries `:image-cache`, `:font-cache`, `:draw-cache` (`java.util.WeakHashMap`, skia.clj:2308, cleared on window close :2412); ios keeps a single-entry draw cache replaced each frame (ios.clj:907); java2d has no draw cache (its `Cached` record is commented out, java2d.clj:532–551). | O |
+| Bounds | `bounds` is memoised (`memo1`, ui.cljc:365): JVM = per-thread weak-keyed map; ClojureScript = plain `memoize` (no eviction). Same JVM/CLJS asymmetry in `has-key-press`/`has-key-event`/`has-mouse-move-global` memos and `present` (component.cljc:1008–1029, present.cljc:19–38). | O |
 | Pointer events | Check element bounds, walk children from topmost, stop at the first handler returning intents. | O |
 | Key events | Delivered to *all* children and merged; "does anything handle keys?" queries traverse the whole tree. | O |
 | State | `defui` traces derived values back to arguments to produce references; nested updates via specter; incidental state (e.g. cursor) is stored in the normal application state. | O |
+| Component cache | Every `defui` gets a `<name>-render-cached!` that caches the rendered subtree in `component-cache` keyed on the component record itself — `[ui-name elem]` on JVM (WeakHashMap), `elem` on CLJS (`cache-lookup-or-miss`); all its protocol methods (bounds, children, key/mouse-event dispatch) route through it (component.cljc:944–956, 1147–1219). Cache key is *value equality of the args record*: a component whose args are unchanged between repaints reuses its whole rendered subtree. Invalidation: `::basis` bump via `reset-component-cache!` after every `defui` redefinition (component.cljc:962–981, 1267–1273); the basis is embedded in the top-level view map (1649, 1656). Same shape as tambor's `model/component-cache.ts` (name + props key, global Map, cleared on redefinition). | O |
+| Draw-level cache | Opt-in `ui/->Cached` wrapper: the backend rasterises the wrapped subtree once into an offscreen image keyed on `[drawable content-scale paint]` and blits thereafter — skia.clj:1584–1635, webgl.cljs:74–131 (unbounded atom), skija.clj:394–418, ios.clj:888–907; disabled in java2d. | O |
 | Large content | `scrollview` needs explicit scroll bounds (community log); app-level answer is `viscous`, an inspector built to run in constant space, time and screen space. | O |
 | Backends | Skia, Java2D, WebGL, virtual DOM, terminal. WebGL needs images preloaded with sizes and font layout info (one default font). | O |
 | Performance stance | Design first; fast benchmarks are explicitly not a current priority; author reports UIs feel responsive compared with a browser (a claim, not a measurement). | O |
-| Subtree memoisation / virtualisation | **Not found in what was read.** Absence in these pages is not absence in the code. | U |
+| Subtree memoisation | **Exists**, two layers: the args-keyed component render cache (component.cljc:1147–1159) and the opt-in backend `Cached` image wrapper (skia.clj:1584–1635). Nothing beyond these — no generic `memo` node, no automatic subtree suppression. | O |
+| Virtualisation | **Absent** in the UI layer: `scrollview` is clip-only — it draws the *full* drawable translated under a scissor (ui.cljc:3317–3412; draw impls java2d.clj:516–528, skia.clj:1290–1296); `basic_components` scrollview adds scrollbars around the full body (basic_components.cljc:537–643; test at :637–643 renders 100 labels with no windowing); no virtual/cull/on-screen logic found in `ui.cljc`, `component.cljc`, `basic_components.cljc`, `toolkit.cljc` or the backends. The constant space/time/screen-space windowing lives in the separate `phronmophobic/viscous` inspector repo, not membrane's UI. | O |
 
-Provenance: A18 · E13 · C27–C33, C38.
+Provenance: A18 · E13 · C27–C33, C38; I21 follow-up read (2026-10-18) adds C39–C41.
 
 ### 3.3 Where tambor already differs from, or mirrors, membrane (checked in tambor's code)
 
@@ -83,6 +86,7 @@ Provenance: A18 · E13 · C27–C33, C38.
 | tambor has a component-level render cache: `model/component-cache.ts`, a global `Map` keyed by component name then a string key from the props; cleared whenever any component is redefined; no eviction seen. | O/T (grep) |
 | tambor's `bounds()` (`views/geometry.ts`) is **not memoised**; `grep` for memo/WeakMap/cache in `views/` found nothing. | T |
 | Pointer dispatch forwards to children in reverse order, like membrane. | O |
+| membrane's component cache (component.cljc:1147–1159, args-record value equality, basis-bump on redefinition) mirrors tambor's `component-cache.ts` design — likely shared lineage, independently described. | O |
 | How the DOM backend reconciles updates (keyed diff or rebuild) | **U** — not read |
 
 Provenance: A19 · E12 · C34–C36.
@@ -160,7 +164,7 @@ Frame p95 ≤ 16.7 ms at the stated scale; BZ1 sustain 5k msg/s at 500 rows; BZ5
 | H1 | Per-dispatch cost grows linearly with view size; the knee is reached at ~10³–10⁴ nodes | D | B1/B3/B9 scaling curves |
 | H2 | Event-rate workloads (stream, pointer) need coalescing to one dispatch per frame; the existing rAF guard may defer without coalescing | D/U | BZ1 with message counter vs frames |
 | H3 | Immutable updates on large plain arrays are O(n) and dominate BZ3/BZ5 | D | BZ3 with/without cherry persistent data |
-| H4 | Missing subtree memoisation (beyond the component cache) dominates B3/B9 | D | B3/B9 with a `memo` node prototype |
+| H4 | Missing subtree memoisation (beyond the component cache) dominates B3/B9 — resolved for membrane too: beyond its component cache and opt-in `Cached` images it has no generic memo, so the gap is shared, not tambor-specific | D | B3/B9 with a `memo` node prototype |
 | H5 | Unmemoised `bounds` makes deep-tree hit-testing super-linear | D (code reading) | BZ3 hit-test microbench |
 | H6 | Component-cache key construction and memory growth hurt with large props | U | profile `cacheKey` on 10k-element props |
 | H7 | tambor wins B5/B6/B8 (time travel, serialisation, typed faults) | D | B5/B6/B8 against React/Vue/Elm |
@@ -176,10 +180,10 @@ Provenance: A17, A18, A19 · C34–C37.
 ---
 
 ## 5. Failures and limits (summary)
-Full list in [`../log/failures-and-errors.md`](../log/failures-and-errors.md). The ones that matter for this document: no measurements beyond small checks (F14); membrane source only partly read (F12); tambor's test suite and pinned TypeScript not run (F16); notebook and other demos not browser-tested (F05, F15); older insight files superseded by the updated tambor (F11).
+Full list in [`../log/failures-and-errors.md`](../log/failures-and-errors.md). The ones that matter for this document: no measurements beyond small checks (F14); ~~membrane source only partly read (F12)~~ resolved 2026-10-18; tambor's test suite and pinned TypeScript not run (F16); notebook and other demos not browser-tested (F05, F15); older insight files superseded by the updated tambor (F11).
 
 ## 6. Next steps (ordered)
 1. Add phase timers to tambor's dispatch (I15), then build B1/B3/B9 in a Playwright harness (I16).
 2. Prototype `memo`, memoised `bounds`, and a spatial index; re-measure (I11, I12, I17).
 3. Build BZ5 (logs) first — it needs no new components and tests ingest, bounded state and list size together.
-4. Read the remaining membrane sources (I21); run tambor's own tests in a full environment (I20).
+4. ~~Read the remaining membrane sources (I21)~~ — **done 2026-10-18** (§3.2 rows updated: component cache + draw-level `Cached` confirmed, virtualisation absent); run tambor's own tests in a full environment (I20).
