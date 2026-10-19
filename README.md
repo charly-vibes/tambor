@@ -84,7 +84,7 @@ as the base for a port.
 
 ## Repository layout
 
-    openspec/specs/    the spec corpus (<!-- stamp:spec-count -->29<!-- /stamp:spec-count --> corpus specs — edit here, gates enforce the rest)
+    openspec/specs/    the spec corpus (<!-- stamp:spec-count -->30<!-- /stamp:spec-count --> corpus specs — edit here, gates enforce the rest)
     src/               strict-TypeScript implementation (core is DOM-free)
     src/spa/           browser entry + mount (only DOM-touching files)
     tests/             vitest suite
@@ -108,7 +108,7 @@ The full loop for a spec change:
     ah sync                         # derive/refresh contracts
     # 2. wire any new contract: append [[tests.shell]] scaffold binding
     #    (copy the pattern from an existing .espectacular/<spec>/*.toml)
-    ah check --run-tests            # verify all <!-- stamp:contract-count -->364 contracts<!-- /stamp:contract-count -->
+    ah check --run-tests            # verify all <!-- stamp:contract-count -->372 contracts<!-- /stamp:contract-count -->
 
 Enforcement (hard gates in `lefthook.yml`, mirrored in CI):
 
