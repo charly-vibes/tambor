@@ -420,3 +420,54 @@ change) — 13 ingest-then-search ops ≈ 5 s of measured work against the
 spec's 5 s `toContainText` timeout. Pre-existing marginality, not a
 regression of this lane; left for the orchestrator to schedule (slower
 expect timeout or fewer ops).
+
+## WE — public worker effect (tambor-54j.8.6)
+
+The public promotion of the logo/notebook worker boundary precedent:
+`src/components/worker_effect/` (`envelope.ts` typed plain-data envelope
++ pure `runWorkerEffect`, `client.ts` WorkerLike-seam client with the
+optional terminate and lazy respawn, `effect.ts` the effect-dispatch
+bridge), corpus `openspec/specs/components-worker_effect/spec.md`
+(8 contracts), public through the interop barrel. The scope decision
+(BZ6) is followed exactly: no kill-switch-as-universal-mechanism — the
+only stop is the one optional `terminate()` on the client's own spawned
+worker (in-flight runs resolve as the typed terminated failure, the next
+run lazily respawns); typed result/error effects are in, spawn/reply/
+error shapes are plain effect data
+(`["worker-effect", handler, input]` → `["worker-effect-reply", id,
+value]` / `["worker-effect-error", id, message]`).
+
+### Measured
+
+The responsiveness contract, verified against a real Worker (node
+worker_threads against the esbuild-built harness,
+`tests/components-worker_effect.test.ts` p_wire): the same 1000 ms
+busy-loop, three runs each, main-wire 5 ms timer probes measuring the
+worst requested-vs-actual firing drift (5 ms requested):
+
+| arm | worst timer drift over the spin |
+|---|---|
+| blocking equivalent (same burn in-thread) | 996 ms ×3 |
+| worker effect (same spin off-thread) | 1 ms ×3 |
+
+The blocked run's drift covers ~the compute's whole duration (the wire
+stalls); the off-thread run's drift stays at timer-jitter scale — three
+orders of magnitude under — and the wire serves further requests during
+and after the spin (the test also asserts the reply's value lands and a
+second request answers). The test asserts the shape, not the exact
+numbers: in-thread drift ≥ 0.5× the compute, off-thread < 150 ms, and
+off-thread ×5 under the blocked run.
+
+### Verdict
+
+The worker boundary pays its way exactly where the B9 finding located it
+(findings-kit §B9): the cost is the serialization of the envelope, and
+the win is that nothing on the main wire feels a runaway compute. Honest
+caveats: single-machine node worker_threads runs (3× each arm), not a
+browser measurement — the browser Worker gets the same structure
+(structural WorkerLike seam, no lib.dom), but the absolute jitter
+numbers will differ; the 1 ms drift is node timer-jitter scale, so the
+contract asserts the two-orders-of-magnitude separation, not a specific
+value. Scope honesty: terminate is optional and end-of-the-boundary only
+— no universal kill-switch (BZ6 rejected that), and the in-thread
+fallback covers every host without a Worker at the same typed contract.
