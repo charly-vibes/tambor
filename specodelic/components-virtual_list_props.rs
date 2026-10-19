@@ -6,6 +6,8 @@
 //! block's assertion body; predicates not yet translated fail in
 //! `verify` via `todo_predicate!`, never at artifact emission.
 
+use proptest::prelude::*;
+
 /// Marker for predicates not yet translated to Rust: compiles here,
 /// panics when executed — execution is `verify`'s job. A predicate
 /// opting in with **rust:** compiles as a real assertion instead
@@ -14,6 +16,17 @@ macro_rules! todo_predicate {
     ($reason:expr) => {
         todo!("{}", $reason)
     };
+}
+
+/// Generated strategies — one per generator named in the spec rows.
+/// Each yields a String (the generator's name; executable
+/// fragments bind these directly — Revision 15).
+pub mod spec_gen {
+    use super::*;
+
+    pub fn gap() -> impl Strategy<Value = String> {
+        Just("gap".into())
+    }
 }
 
 // id: p_offsets
@@ -80,4 +93,14 @@ fn p_empty() {
 #[test]
 fn p_drawn() {
     todo_predicate!("exactly the window's rows are drawn at their arithmetic offsets — a contiguous slice of the whole-list positions");
+}
+
+proptest! {
+    // id: p_gap_pad
+    // generator: viewports that fit inside a row gap (boundary-aligned ends included) over overscan 0..3
+    // predicate: the pad hangs off the viewport edges — the adjacent rows within one pitch per pad row, clamped; overscan 0 yields the empty window
+    #[test]
+    fn p_gap_pad(v0 in spec_gen::gap()) {
+        todo_predicate!("the pad hangs off the viewport edges — the adjacent rows within one pitch per pad row, clamped; overscan 0 yields the empty window");
+    }
 }

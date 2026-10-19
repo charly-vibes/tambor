@@ -26,7 +26,11 @@ import {
 import { wheelIntents } from "../src/components/scrollview/scrollview.ts";
 import { scrollMax } from "../src/components/scrollview/geometry.ts";
 import type { Vec2 } from "../src/views/model.ts";
-import { intersecting, OFFSET_PATH } from "./helpers/virtual_list.ts";
+import {
+  intersecting,
+  intervalWindow,
+  OFFSET_PATH,
+} from "./helpers/virtual_list.ts";
 
 // --- generators ---------------------------------------------------------
 
@@ -131,6 +135,50 @@ it("p_overscan: overscan 2 over in-span offsets → the window extends by 2 rows
     first: 48,
     last: 50,
   });
+});
+
+// p_gap_pad — derives_from: components.virtual_list.overscan_pads_empty
+// generator: viewports that fit inside a row gap (no row intersects —
+//   gap-boundary-aligned ends included) over overscan 0..3
+// predicate: the pad hangs off the viewport edges — the adjacent rows
+//   within one pitch per pad row, clamped; overscan 0 yields the empty
+//   window. Never derived off an empty intersect set.
+it("p_gap_pad: gap-interior offsets → the pad hangs off the viewport edges, never off an empty set", () => {
+  // pinned explicitly: a viewport entirely inside the gap between rows
+  // 1 and 2 ([6, 9) between spans [5, 6) and [10, 11)) with overscan 1
+  // draws the rows adjacent on each side — rows 1 and 2
+  expect(windowFor(6, 3, 10, 1, 4, 1)).toEqual({ first: 1, last: 3 });
+  // a viewport exactly filling the gap ([6, 10), its end aligned on
+  // row 2's start): no row intersects and overscan 0 yields the empty
+  // window — the degenerate clamp, not a NaN hole
+  expect(windowFor(6, 4, 10, 1, 4, 0)).toEqual({ first: 0, last: 0 });
+  fc.assert(
+    fc.property(
+      fc.integer({ min: 3, max: 60 }),
+      fc.integer({ min: 1, max: 20 }),
+      fc.integer({ min: 1, max: 60 }),
+      fc.integer({ min: 0, max: 3 }),
+      fc.nat(4000),
+      (count, rowHeight, viewportH, overscan, raw) => {
+        const gap = viewportH + 1 + (raw % 20); // gap > viewport height
+        const pitch = rowHeight + gap;
+        const i = raw % (count - 1); // the gap after row i
+        // the offset inside that gap — boundary-aligned ends included
+        const r = Math.floor(raw / 7) % (gap - viewportH + 1);
+        const extent = contentExtent(count, rowHeight, gap);
+        const oy = Math.min(extent - 1, i * pitch + rowHeight + r);
+        const w = windowFor(oy, viewportH, count, rowHeight, gap, overscan);
+        // the independent interval scan (shared with the render oracle)
+        const want = intervalWindow(count, rowHeight, gap, oy, viewportH, overscan);
+        expect([w.first, w.last]).toEqual(
+          want.length === 0 ? [0, 0] : [want[0], (want[want.length - 1] as number) + 1],
+        );
+        // overscan ≥ 1 never leaves a blank viewport: the adjacent rows
+        // are drawn on each side (the pad never hangs off an empty set)
+        if (overscan >= 1) expect(want.length).toBeGreaterThan(0);
+      },
+    ),
+  );
 });
 
 // p_range — derives_from: components.virtual_list.range_formula

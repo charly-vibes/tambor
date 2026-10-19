@@ -101,3 +101,30 @@ export function intersecting(
   }
   return hits;
 }
+
+// The expected PADDED window as an independent interval scan: the rows
+// whose arithmetic start sits in the viewport interval widened by one
+// pitch per overscan row, open on both ends. Unlike intersect-then-pad
+// derivations this stays exact when the intersection is EMPTY (a
+// viewport inside a gap or aligned on a row boundary): the pad then
+// hangs off the viewport edges and yields the adjacent rows — the same
+// rule that reaches back to the tail rows past the content end
+// (components.virtual_list.overscan_pads_empty).
+export function intervalWindow(
+  count: number,
+  rowHeight: number,
+  gap: number,
+  oy: number,
+  vh: number,
+  overscan: number,
+): readonly number[] {
+  const pitch = rowHeight + gap;
+  const rows: number[] = [];
+  for (let i = 0; i < count; i++) {
+    const y = i * pitch;
+    if (y > oy - rowHeight - overscan * pitch && y < oy + vh + overscan * pitch) {
+      rows.push(i);
+    }
+  }
+  return rows;
+}

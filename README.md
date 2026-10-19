@@ -108,7 +108,7 @@ The full loop for a spec change:
     ah sync                         # derive/refresh contracts
     # 2. wire any new contract: append [[tests.shell]] scaffold binding
     #    (copy the pattern from an existing .espectacular/<spec>/*.toml)
-    ah check --run-tests            # verify all <!-- stamp:contract-count -->349 contracts<!-- /stamp:contract-count -->
+    ah check --run-tests            # verify all <!-- stamp:contract-count -->350 contracts<!-- /stamp:contract-count -->
 
 Enforcement (hard gates in `lefthook.yml`, mirrored in CI):
 

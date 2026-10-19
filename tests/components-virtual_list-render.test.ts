@@ -19,7 +19,12 @@ import {
   windowSummary,
 } from "../src/components/virtual_list/index.ts";
 import type { Vec2 } from "../src/views/model.ts";
-import { drawnRows, intersecting, vlCall, vlView } from "./helpers/virtual_list.ts";
+import {
+  drawnRows,
+  intervalWindow,
+  vlCall,
+  vlView,
+} from "./helpers/virtual_list.ts";
 
 // p_summary — derives_from: components.virtual_list.count_summary_state
 // generator: random extents and offsets
@@ -90,17 +95,13 @@ it("p_drawn: random offsets → exactly the window's rows are drawn at their ari
         const rows = drawnRows(
           vlView({ count, rowHeight: height, gap, overscan, offset, viewport: [300, viewportH] }),
         );
-        const expected = intersecting(count, height, gap, oy, viewportH);
-        const first = Math.max(0, (expected[0] as number) - overscan);
-        const last = Math.min(
-          count,
-          (expected[expected.length - 1] as number) + 1 + overscan,
-        );
-        // the drawn indices are exactly the clamped overscan window,
-        // contiguous — no row outside the window is drawn
-        expect(rows.map(([i]) => i)).toEqual(
-          Array.from({ length: Math.max(0, last - first) }, (_, j) => first + j),
-        );
+        // the expected window: the independent interval scan (see the
+        // helper — exact even when the intersection is empty, where an
+        // intersect-then-pad derivation would NaN on the empty set)
+        const want = intervalWindow(count, height, gap, oy, viewportH, overscan);
+        // the drawn indices are exactly that clamped window, contiguous
+        // — no row outside the window is drawn
+        expect(rows.map(([i]) => i)).toEqual(want);
         // each drawn row sits at its arithmetic offset
         for (const [i, y] of rows) {
           expect(y).toBe(i * (height + gap));

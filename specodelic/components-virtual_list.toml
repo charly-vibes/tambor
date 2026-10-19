@@ -25,6 +25,12 @@ expr = "the window is padded by the overscan rows on each side, clamped to [0, c
 traces_to = "[[components.virtual_list]]"
 
 [[constraints]]
+id = "overscan_pads_empty"
+kind = "invariant"
+expr = "an empty intersection — a viewport sitting inside a row gap or exactly aligned on a row boundary — does not void the pad: the padded window is the rows adjacent to the viewport edges, within one pitch per pad row on each side, clamped to [0, count]; the same rule that reaches back to the tail rows past the content end"
+traces_to = "[[components.virtual_list]]"
+
+[[constraints]]
 id = "range_formula"
 kind = "invariant"
 expr = "the maximum offset is max(0, extent - viewport height) and a scroll update clamps against it — the scrollview range rule over the content extent (components.scrollview.range_formula)"
