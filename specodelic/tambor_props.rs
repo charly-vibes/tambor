@@ -11,7 +11,9 @@
 /// opting in with **rust:** compiles as a real assertion instead
 /// (executable predicate fragment, specodelic.md Revision 15).
 macro_rules! todo_predicate {
-    ($reason:expr) => { todo!("{}", $reason) };
+    ($reason:expr) => {
+        todo!("{}", $reason)
+    };
 }
 
 // id: p_values
@@ -19,7 +21,7 @@ macro_rules! todo_predicate {
 // predicate: JSON round-trip of a view deep-equals the original, and its type is a member of the View union
 #[test]
 fn p_values() {
-        todo_predicate!("JSON round-trip of a view deep-equals the original, and its type is a member of the View union");
+    todo_predicate!("JSON round-trip of a view deep-equals the original, and its type is a member of the View union");
 }
 
 // id: p_pure
@@ -27,7 +29,7 @@ fn p_values() {
 // predicate: state is deep-equal before and after calling a handler
 #[test]
 fn p_pure() {
-        todo_predicate!("state is deep-equal before and after calling a handler");
+    todo_predicate!("state is deep-equal before and after calling a handler");
 }
 
 // id: p_headless
@@ -35,7 +37,7 @@ fn p_pure() {
 // predicate: import succeeds and bounds of a label tree is computed
 #[test]
 fn p_headless() {
-        todo_predicate!("import succeeds and bounds of a label tree is computed");
+    todo_predicate!("import succeeds and bounds of a label tree is computed");
 }
 
 // id: p_no_callbacks
@@ -43,7 +45,7 @@ fn p_headless() {
 // predicate: every state change appears as an effect in a returned list
 #[test]
 fn p_no_callbacks() {
-        todo_predicate!("every state change appears as an effect in a returned list");
+    todo_predicate!("every state change appears as an effect in a returned list");
 }
 
 // id: p_examples
@@ -51,7 +53,7 @@ fn p_no_callbacks() {
 // predicate: every scenario passes on each backend
 #[test]
 fn p_examples() {
-        todo_predicate!("every scenario passes on each backend");
+    todo_predicate!("every scenario passes on each backend");
 }
 
 // id: p_typescript
@@ -59,7 +61,7 @@ fn p_examples() {
 // predicate: tsc strict passes and declarations are emitted
 #[test]
 fn p_typescript() {
-        todo_predicate!("tsc strict passes and declarations are emitted");
+    todo_predicate!("tsc strict passes and declarations are emitted");
 }
 
 // id: p_host
@@ -67,7 +69,7 @@ fn p_typescript() {
 // predicate: the same effects result with no conversion calls
 #[test]
 fn p_host() {
-        todo_predicate!("the same effects result with no conversion calls");
+    todo_predicate!("the same effects result with no conversion calls");
 }
 
 // id: p_touch
@@ -75,6 +77,5 @@ fn p_host() {
 // predicate: every hit target is at least 44 by 44
 #[test]
 fn p_touch() {
-        todo_predicate!("every hit target is at least 44 by 44");
+    todo_predicate!("every hit target is at least 44 by 44");
 }
-

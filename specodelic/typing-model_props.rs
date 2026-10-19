@@ -11,7 +11,9 @@
 /// opting in with **rust:** compiles as a real assertion instead
 /// (executable predicate fragment, specodelic.md Revision 15).
 macro_rules! todo_predicate {
-    ($reason:expr) => { todo!("{}", $reason) };
+    ($reason:expr) => {
+        todo!("{}", $reason)
+    };
 }
 
 // id: p_strict
@@ -19,7 +21,7 @@ macro_rules! todo_predicate {
 // predicate: zero diagnostics
 #[test]
 fn p_strict() {
-        todo_predicate!("zero diagnostics");
+    todo_predicate!("zero diagnostics");
 }
 
 // id: p_no_any
@@ -27,7 +29,7 @@ fn p_strict() {
 // predicate: no exported symbol mentions any
 #[test]
 fn p_no_any() {
-        todo_predicate!("no exported symbol mentions any");
+    todo_predicate!("no exported symbol mentions any");
 }
 
 // id: p_core_dom
@@ -35,7 +37,7 @@ fn p_no_any() {
 // predicate: tsc reports an error
 #[test]
 fn p_core_dom() {
-        todo_predicate!("tsc reports an error");
+    todo_predicate!("tsc reports an error");
 }
 
 // id: p_union
@@ -43,7 +45,7 @@ fn p_core_dom() {
 // predicate: tsc reports an error on the never check
 #[test]
 fn p_union() {
-        todo_predicate!("tsc reports an error on the never check");
+    todo_predicate!("tsc reports an error on the never check");
 }
 
 // id: p_readonly
@@ -51,7 +53,7 @@ fn p_union() {
 // predicate: tsc reports an error
 #[test]
 fn p_readonly() {
-        todo_predicate!("tsc reports an error");
+    todo_predicate!("tsc reports an error");
 }
 
 // id: p_vec
@@ -59,7 +61,7 @@ fn p_readonly() {
 // predicate: both are errors
 #[test]
 fn p_vec() {
-        todo_predicate!("both are errors");
+    todo_predicate!("both are errors");
 }
 
 // id: p_path
@@ -67,7 +69,7 @@ fn p_vec() {
 // predicate: the result has type Path<S, B> and select returns B
 #[test]
 fn p_path() {
-        todo_predicate!("the result has type Path<S, B> and select returns B");
+    todo_predicate!("the result has type Path<S, B> and select returns B");
 }
 
 // id: p_mismatch
@@ -75,7 +77,7 @@ fn p_path() {
 // predicate: tsc reports an error
 #[test]
 fn p_mismatch() {
-        todo_predicate!("tsc reports an error");
+    todo_predicate!("tsc reports an error");
 }
 
 // id: p_navigators
@@ -83,7 +85,7 @@ fn p_mismatch() {
 // predicate: the inferred types match the documented table
 #[test]
 fn p_navigators() {
-        todo_predicate!("the inferred types match the documented table");
+    todo_predicate!("the inferred types match the documented table");
 }
 
 // id: p_dollar
@@ -91,7 +93,7 @@ fn p_navigators() {
 // predicate: the props type has dollar-num as Path<Root, number> and dollar-nums as Path<Root, number[]>, and omitting one errors
 #[test]
 fn p_dollar() {
-        todo_predicate!("the props type has dollar-num as Path<Root, number> and dollar-nums as Path<Root, number[]>, and omitting one errors");
+    todo_predicate!("the props type has dollar-num as Path<Root, number> and dollar-nums as Path<Root, number[]>, and omitting one errors");
 }
 
 // id: p_defaults
@@ -99,7 +101,7 @@ fn p_dollar() {
 // predicate: the call site may omit it and the body sees a defined value
 #[test]
 fn p_defaults() {
-        todo_predicate!("the call site may omit it and the body sees a defined value");
+    todo_predicate!("the call site may omit it and the body sees a defined value");
 }
 
 // id: p_context
@@ -107,7 +109,7 @@ fn p_defaults() {
 // predicate: the field is typed in every component
 #[test]
 fn p_context() {
-        todo_predicate!("the field is typed in every component");
+    todo_predicate!("the field is typed in every component");
 }
 
 // id: p_effect_union
@@ -115,7 +117,7 @@ fn p_context() {
 // predicate: it appears in the union with its argument types
 #[test]
 fn p_effect_union() {
-        todo_predicate!("it appears in the union with its argument types");
+    todo_predicate!("it appears in the union with its argument types");
 }
 
 // id: p_dispatch
@@ -123,7 +125,7 @@ fn p_effect_union() {
 // predicate: both are compile errors
 #[test]
 fn p_dispatch() {
-        todo_predicate!("both are compile errors");
+    todo_predicate!("both are compile errors");
 }
 
 // id: p_handlers
@@ -131,7 +133,7 @@ fn p_dispatch() {
 // predicate: tsc reports an error
 #[test]
 fn p_handlers() {
-        todo_predicate!("tsc reports an error");
+    todo_predicate!("tsc reports an error");
 }
 
 // id: p_intercept
@@ -139,7 +141,7 @@ fn p_handlers() {
 // predicate: tsc reports an error
 #[test]
 fn p_intercept() {
-        todo_predicate!("tsc reports an error");
+    todo_predicate!("tsc reports an error");
 }
 
 // id: p_generic
@@ -147,7 +149,7 @@ fn p_intercept() {
 // predicate: both are compile errors
 #[test]
 fn p_generic() {
-        todo_predicate!("both are compile errors");
+    todo_predicate!("both are compile errors");
 }
 
 // id: p_erased
@@ -155,7 +157,7 @@ fn p_generic() {
 // predicate: results are identical
 #[test]
 fn p_erased() {
-        todo_predicate!("results are identical");
+    todo_predicate!("results are identical");
 }
 
 // id: p_type_tests
@@ -163,7 +165,7 @@ fn p_erased() {
 // predicate: the CI type-test job fails
 #[test]
 fn p_type_tests() {
-        todo_predicate!("the CI type-test job fails");
+    todo_predicate!("the CI type-test job fails");
 }
 
 // id: p_esm
@@ -171,7 +173,7 @@ fn p_type_tests() {
 // predicate: unused components are absent from the bundle
 #[test]
 fn p_esm() {
-        todo_predicate!("unused components are absent from the bundle");
+    todo_predicate!("unused components are absent from the bundle");
 }
 
 // id: p_serialisable
@@ -179,6 +181,7 @@ fn p_esm() {
 // predicate: add-todo round-trips through JSON and the update effect is marked function-bearing
 #[test]
 fn p_serialisable() {
-        todo_predicate!("add-todo round-trips through JSON and the update effect is marked function-bearing");
+    todo_predicate!(
+        "add-todo round-trips through JSON and the update effect is marked function-bearing"
+    );
 }
-

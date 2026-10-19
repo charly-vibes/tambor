@@ -11,7 +11,9 @@
 /// opting in with **rust:** compiles as a real assertion instead
 /// (executable predicate fragment, specodelic.md Revision 15).
 macro_rules! todo_predicate {
-    ($reason:expr) => { todo!("{}", $reason) };
+    ($reason:expr) => {
+        todo!("{}", $reason)
+    };
 }
 
 // id: p_frozen
@@ -19,7 +21,7 @@ macro_rules! todo_predicate {
 // predicate: assigning to a node throws or is ignored
 #[test]
 fn p_frozen() {
-        todo_predicate!("assigning to a node throws or is ignored");
+    todo_predicate!("assigning to a node throws or is ignored");
 }
 
 // id: p_bounds
@@ -27,7 +29,7 @@ fn p_frozen() {
 // predicate: all bounds are finite and non-negative, and bounds(nil) equals [0, 0]
 #[test]
 fn p_bounds() {
-        todo_predicate!("all bounds are finite and non-negative, and bounds(nil) equals [0, 0]");
+    todo_predicate!("all bounds are finite and non-negative, and bounds(nil) equals [0, 0]");
 }
 
 // id: p_container
@@ -35,7 +37,7 @@ fn p_bounds() {
 // predicate: bounds equal the max of origin plus size
 #[test]
 fn p_container() {
-        todo_predicate!("bounds equal the max of origin plus size");
+    todo_predicate!("bounds equal the max of origin plus size");
 }
 
 // id: p_translate
@@ -43,7 +45,7 @@ fn p_container() {
 // predicate: origin equals [x, y] and bounds equal child bounds
 #[test]
 fn p_translate() {
-        todo_predicate!("origin equals [x, y] and bounds equal child bounds");
+    todo_predicate!("origin equals [x, y] and bounds equal child bounds");
 }
 
 // id: p_origin
@@ -51,7 +53,7 @@ fn p_translate() {
 // predicate: origin equals [0, 0]
 #[test]
 fn p_origin() {
-        todo_predicate!("origin equals [0, 0]");
+    todo_predicate!("origin equals [0, 0]");
 }
 
 // id: p_group
@@ -59,7 +61,7 @@ fn p_origin() {
 // predicate: children are the elements and nil members measure [0, 0]
 #[test]
 fn p_group() {
-        todo_predicate!("children are the elements and nil members measure [0, 0]");
+    todo_predicate!("children are the elements and nil members measure [0, 0]");
 }
 
 // id: p_roundtrip
@@ -67,7 +69,7 @@ fn p_group() {
 // predicate: makeNode(n, children(n)) deep-equals n
 #[test]
 fn p_roundtrip() {
-        todo_predicate!("makeNode(n, children(n)) deep-equals n");
+    todo_predicate!("makeNode(n, children(n)) deep-equals n");
 }
 
 // id: p_measure
@@ -75,7 +77,7 @@ fn p_roundtrip() {
 // predicate: label bounds equal the stub output
 #[test]
 fn p_measure() {
-        todo_predicate!("label bounds equal the stub output");
+    todo_predicate!("label bounds equal the stub output");
 }
 
 // id: p_button_bounds
@@ -83,7 +85,7 @@ fn p_measure() {
 // predicate: bounds equal label bounds plus [12, 12]
 #[test]
 fn p_button_bounds() {
-        todo_predicate!("bounds equal label bounds plus [12, 12]");
+    todo_predicate!("bounds equal label bounds plus [12, 12]");
 }
 
 // id: p_set_size
@@ -91,7 +93,7 @@ fn p_button_bounds() {
 // predicate: one child succeeds and two children throws
 #[test]
 fn p_set_size() {
-        todo_predicate!("one child succeeds and two children throws");
+    todo_predicate!("one child succeeds and two children throws");
 }
 
 // id: p_checkbox_geometry
@@ -99,7 +101,9 @@ fn p_set_size() {
 // predicate: bounds are 12 by 12 in both states and only the checked view has the check path
 #[test]
 fn p_checkbox_geometry() {
-        todo_predicate!("bounds are 12 by 12 in both states and only the checked view has the check path");
+    todo_predicate!(
+        "bounds are 12 by 12 in both states and only the checked view has the check path"
+    );
 }
 
 // id: p_style
@@ -107,6 +111,5 @@ fn p_checkbox_geometry() {
 // predicate: bounds equal the unwrapped bounds
 #[test]
 fn p_style() {
-        todo_predicate!("bounds equal the unwrapped bounds");
+    todo_predicate!("bounds equal the unwrapped bounds");
 }
-

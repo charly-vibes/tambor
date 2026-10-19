@@ -11,7 +11,9 @@
 /// opting in with **rust:** compiles as a real assertion instead
 /// (executable predicate fragment, specodelic.md Revision 15).
 macro_rules! todo_predicate {
-    ($reason:expr) => { todo!("{}", $reason) };
+    ($reason:expr) => {
+        todo!("{}", $reason)
+    };
 }
 
 // id: p_delete_x
@@ -19,7 +21,7 @@ macro_rules! todo_predicate {
 // predicate: two path nodes with width 3, red, endpoints as stated, and bounds [10, 10]
 #[test]
 fn p_delete_x() {
-        todo_predicate!("two path nodes with width 3, red, endpoints as stated, and bounds [10, 10]");
+    todo_predicate!("two path nodes with width 3, red, endpoints as stated, and bounds [10, 10]");
 }
 
 // id: p_item_layout
@@ -27,7 +29,7 @@ fn p_delete_x() {
 // predicate: x offsets are increasing in the stated order and the checkbox origin is [10, 4] relative to the row
 #[test]
 fn p_item_layout() {
-        todo_predicate!("x offsets are increasing in the stated order and the checkbox origin is [10, 4] relative to the row");
+    todo_predicate!("x offsets are increasing in the stated order and the checkbox origin is [10, 4] relative to the row");
 }
 
 // id: p_item_bindings
@@ -35,7 +37,7 @@ fn p_item_layout() {
 // predicate: checkbox is unchecked and textarea text is second, and the paths end in complete? and description
 #[test]
 fn p_item_bindings() {
-        todo_predicate!("checkbox is unchecked and textarea text is second, and the paths end in complete? and description");
+    todo_predicate!("checkbox is unchecked and textarea text is second, and the paths end in complete? and description");
 }
 
 // id: p_delete_emits
@@ -43,7 +45,7 @@ fn p_item_bindings() {
 // predicate: the first returns delete with the todo path and the second does not
 #[test]
 fn p_delete_emits() {
-        todo_predicate!("the first returns delete with the todo path and the second does not");
+    todo_predicate!("the first returns delete with the todo path and the second does not");
 }
 
 // id: p_delete
@@ -51,7 +53,7 @@ fn p_delete_emits() {
 // predicate: list becomes second, third
 #[test]
 fn p_delete() {
-        todo_predicate!("list becomes second, third");
+    todo_predicate!("list becomes second, third");
 }
 
 // id: p_complete
@@ -59,7 +61,7 @@ fn p_delete() {
 // predicate: only the second todo becomes complete
 #[test]
 fn p_complete() {
-        todo_predicate!("only the second todo becomes complete");
+    todo_predicate!("only the second todo becomes complete");
 }
 
 // id: p_spacing
@@ -67,7 +69,7 @@ fn p_complete() {
 // predicate: row offsets differ by row height plus 5 plus the gap
 #[test]
 fn p_spacing() {
-        todo_predicate!("row offsets differ by row height plus 5 plus the gap");
+    todo_predicate!("row offsets differ by row height plus 5 plus the gap");
 }
 
 // id: p_toggle_render
@@ -75,7 +77,7 @@ fn p_spacing() {
 // predicate: active is plain and the other two are gray and clickable
 #[test]
 fn p_toggle_render() {
-        todo_predicate!("active is plain and the other two are gray and clickable");
+    todo_predicate!("active is plain and the other two are gray and clickable");
 }
 
 // id: p_toggle
@@ -83,7 +85,7 @@ fn p_toggle_render() {
 // predicate: effect is set selected-filter to active, and a click on the selected label returns nothing
 #[test]
 fn p_toggle() {
-        todo_predicate!("effect is set selected-filter to active, and a click on the selected label returns nothing");
+    todo_predicate!("effect is set selected-filter to active, and a click on the selected label returns nothing");
 }
 
 // id: p_filter_default
@@ -91,7 +93,7 @@ fn p_toggle() {
 // predicate: the unfiltered option is selected and three rows render
 #[test]
 fn p_filter_default() {
-        todo_predicate!("the unfiltered option is selected and three rows render");
+    todo_predicate!("the unfiltered option is selected and three rows render");
 }
 
 // id: p_filter_fns
@@ -99,7 +101,7 @@ fn p_filter_default() {
 // predicate: unfiltered shows 3, active shows first and second, complete shows third
 #[test]
 fn p_filter_fns() {
-        todo_predicate!("unfiltered shows 3, active shows first and second, complete shows third");
+    todo_predicate!("unfiltered shows 3, active shows first and second, complete shows third");
 }
 
 // id: p_unknown_filter
@@ -107,7 +109,7 @@ fn p_filter_fns() {
 // predicate: three rows render
 #[test]
 fn p_unknown_filter() {
-        todo_predicate!("three rows render");
+    todo_predicate!("three rows render");
 }
 
 // id: p_filtered_paths
@@ -115,7 +117,7 @@ fn p_unknown_filter() {
 // predicate: original list becomes first, third
 #[test]
 fn p_filtered_paths() {
-        todo_predicate!("original list becomes first, third");
+    todo_predicate!("original list becomes first, third");
 }
 
 // id: p_filtered_toggle
@@ -123,7 +125,7 @@ fn p_filtered_paths() {
 // predicate: third becomes open and the next render under complete shows no rows
 #[test]
 fn p_filtered_toggle() {
-        todo_predicate!("third becomes open and the next render under complete shows no rows");
+    todo_predicate!("third becomes open and the next render under complete shows no rows");
 }
 
 // id: p_add_button
@@ -131,7 +133,7 @@ fn p_filtered_toggle() {
 // predicate: effects are add-todo with todos path and hello, then set next-todo-text to the empty string
 #[test]
 fn p_add_button() {
-        todo_predicate!("effects are add-todo with todos path and hello, then set next-todo-text to the empty string");
+    todo_predicate!("effects are add-todo with todos path and hello, then set next-todo-text to the empty string");
 }
 
 // id: p_add
@@ -139,7 +141,7 @@ fn p_add_button() {
 // predicate: list ends with description hello and complete? false
 #[test]
 fn p_add() {
-        todo_predicate!("list ends with description hello and complete? false");
+    todo_predicate!("list ends with description hello and complete? false");
 }
 
 // id: p_enter
@@ -147,7 +149,7 @@ fn p_add() {
 // predicate: effects equal those of the button
 #[test]
 fn p_enter() {
-        todo_predicate!("effects equal those of the button");
+    todo_predicate!("effects equal those of the button");
 }
 
 // id: p_enter_unfocused
@@ -155,7 +157,7 @@ fn p_enter() {
 // predicate: no effects
 #[test]
 fn p_enter_unfocused() {
-        todo_predicate!("no effects");
+    todo_predicate!("no effects");
 }
 
 // id: p_other_keys
@@ -163,7 +165,7 @@ fn p_enter_unfocused() {
 // predicate: the textarea default insert-text effect is returned
 #[test]
 fn p_other_keys() {
-        todo_predicate!("the textarea default insert-text effect is returned");
+    todo_predicate!("the textarea default insert-text effect is returned");
 }
 
 // id: p_new_todo_layout
@@ -171,7 +173,7 @@ fn p_other_keys() {
 // predicate: top row textarea origin is [10, 10] relative to the button's right edge and the toggle is below it
 #[test]
 fn p_new_todo_layout() {
-        todo_predicate!("top row textarea origin is [10, 10] relative to the button's right edge and the toggle is below it");
+    todo_predicate!("top row textarea origin is [10, 10] relative to the button's right edge and the toggle is below it");
 }
 
 // id: p_image
@@ -179,7 +181,7 @@ fn p_new_todo_layout() {
 // predicate: an image buffer of non-zero size is produced
 #[test]
 fn p_image() {
-        todo_predicate!("an image buffer of non-zero size is produced");
+    todo_predicate!("an image buffer of non-zero size is produced");
 }
 
 // id: p_portable
@@ -187,7 +189,7 @@ fn p_image() {
 // predicate: each renders the app and routes a click to the same effect
 #[test]
 fn p_portable() {
-        todo_predicate!("each renders the app and routes a click to the same effect");
+    todo_predicate!("each renders the app and routes a click to the same effect");
 }
 
 // id: p_todo_touch
@@ -195,6 +197,5 @@ fn p_portable() {
 // predicate: each hit area is at least 44 by 44 and the visual bounds are unchanged
 #[test]
 fn p_todo_touch() {
-        todo_predicate!("each hit area is at least 44 by 44 and the visual bounds are unchanged");
+    todo_predicate!("each hit area is at least 44 by 44 and the visual bounds are unchanged");
 }
-

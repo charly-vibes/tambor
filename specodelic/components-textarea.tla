@@ -28,9 +28,9 @@ Next ==
   \/ vpc = "selected" /\ vpc' = "focused"
   \* t_move: selected -> focused (guard: [[components.textarea.cursor_clamped]])
   \/ vpc = "selected" /\ vpc' = "focused"
-  \* t_blur: focused -> unfocused (guard: [[app.toplevel.click_away_blurs]])
+  \* t_blur: focused -> unfocused (guard: app.toplevel.click_away_blurs (cross-file))
   \/ vpc = "focused" /\ vpc' = "unfocused"
-  \* t_blur_selected: selected -> unfocused (guard: [[app.toplevel.click_away_blurs]])
+  \* t_blur_selected: selected -> unfocused (guard: app.toplevel.click_away_blurs (cross-file))
   \/ vpc = "selected" /\ vpc' = "unfocused"
   \* stuttering: guards are prose (uninterpreted) — a terminal
   \* state must not read as an engine-side deadlock

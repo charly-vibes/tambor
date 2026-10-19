@@ -11,7 +11,9 @@
 /// opting in with **rust:** compiles as a real assertion instead
 /// (executable predicate fragment, specodelic.md Revision 15).
 macro_rules! todo_predicate {
-    ($reason:expr) => { todo!("{}", $reason) };
+    ($reason:expr) => {
+        todo!("{}", $reason)
+    };
 }
 
 // id: p_layout
@@ -19,7 +21,7 @@ macro_rules! todo_predicate {
 // predicate: child 0 is the button and child 1 is the label with x offset greater than the button width
 #[test]
 fn p_layout() {
-        todo_predicate!("child 0 is the button and child 1 is the label with x offset greater than the button width");
+    todo_predicate!("child 0 is the button and child 1 is the label with x offset greater than the button width");
 }
 
 // id: p_more
@@ -27,7 +29,7 @@ fn p_layout() {
 // predicate: intents equal one counter-increment with the path to num
 #[test]
 fn p_more() {
-        todo_predicate!("intents equal one counter-increment with the path to num");
+    todo_predicate!("intents equal one counter-increment with the path to num");
 }
 
 // id: p_increment
@@ -35,7 +37,7 @@ fn p_more() {
 // predicate: state num becomes 11
 #[test]
 fn p_increment() {
-        todo_predicate!("state num becomes 11");
+    todo_predicate!("state num becomes 11");
 }
 
 // id: p_stack
@@ -43,7 +45,7 @@ fn p_increment() {
 // predicate: four rows, button first then three counters
 #[test]
 fn p_stack() {
-        todo_predicate!("four rows, button first then three counters");
+    todo_predicate!("four rows, button first then three counters");
 }
 
 // id: p_independent
@@ -51,7 +53,7 @@ fn p_stack() {
 // predicate: nums becomes 0, 2, 2
 #[test]
 fn p_independent() {
-        todo_predicate!("nums becomes 0, 2, 2");
+    todo_predicate!("nums becomes 0, 2, 2");
 }
 
 // id: p_add
@@ -59,7 +61,7 @@ fn p_independent() {
 // predicate: nums becomes 0, 1, 2, 0 and a fifth row appears
 #[test]
 fn p_add() {
-        todo_predicate!("nums becomes 0, 1, 2, 0 and a fifth row appears");
+    todo_predicate!("nums becomes 0, 1, 2, 0 and a fifth row appears");
 }
 
 // id: p_label
@@ -67,7 +69,7 @@ fn p_add() {
 // predicate: label text is 10
 #[test]
 fn p_label() {
-        todo_predicate!("label text is 10");
+    todo_predicate!("label text is 10");
 }
 
 // id: p_raw
@@ -75,7 +77,7 @@ fn p_label() {
 // predicate: the atom is 1 after one click and one repaint occurred
 #[test]
 fn p_raw() {
-        todo_predicate!("the atom is 1 after one click and one repaint occurred");
+    todo_predicate!("the atom is 1 after one click and one repaint occurred");
 }
 
 // id: p_touch
@@ -83,6 +85,5 @@ fn p_raw() {
 // predicate: hit area is at least 44 by 44
 #[test]
 fn p_touch() {
-        todo_predicate!("hit area is at least 44 by 44");
+    todo_predicate!("hit area is at least 44 by 44");
 }
-

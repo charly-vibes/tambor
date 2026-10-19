@@ -11,7 +11,9 @@
 /// opting in with **rust:** compiles as a real assertion instead
 /// (executable predicate fragment, specodelic.md Revision 15).
 macro_rules! todo_predicate {
-    ($reason:expr) => { todo!("{}", $reason) };
+    ($reason:expr) => {
+        todo!("{}", $reason)
+    };
 }
 
 // id: p_vstack
@@ -19,7 +21,7 @@ macro_rules! todo_predicate {
 // predicate: children are ordered with no vertical overlap, and sizes 10, 20, 30 give offsets 0, 11 and 32
 #[test]
 fn p_vstack() {
-        todo_predicate!("children are ordered with no vertical overlap, and sizes 10, 20, 30 give offsets 0, 11 and 32");
+    todo_predicate!("children are ordered with no vertical overlap, and sizes 10, 20, 30 give offsets 0, 11 and 32");
 }
 
 // id: p_hstack
@@ -27,7 +29,7 @@ fn p_vstack() {
 // predicate: no horizontal overlap, and widths 10, 20 give offsets 0 and 11
 #[test]
 fn p_hstack() {
-        todo_predicate!("no horizontal overlap, and widths 10, 20 give offsets 0 and 11");
+    todo_predicate!("no horizontal overlap, and widths 10, 20 give offsets 0 and 11");
 }
 
 // id: p_empty
@@ -35,7 +37,7 @@ fn p_hstack() {
 // predicate: result is nil and nothing throws
 #[test]
 fn p_empty() {
-        todo_predicate!("result is nil and nothing throws");
+    todo_predicate!("result is nil and nothing throws");
 }
 
 // id: p_spacer
@@ -43,7 +45,7 @@ fn p_empty() {
 // predicate: spacer(0, 5) between two rows pushes the second row down by 5 plus gaps
 #[test]
 fn p_spacer() {
-        todo_predicate!("spacer(0, 5) between two rows pushes the second row down by 5 plus gaps");
+    todo_predicate!("spacer(0, 5) between two rows pushes the second row down by 5 plus gaps");
 }
 
 // id: p_center
@@ -51,7 +53,7 @@ fn p_spacer() {
 // predicate: offsets equal half the free space
 #[test]
 fn p_center() {
-        todo_predicate!("offsets equal half the free space");
+    todo_predicate!("offsets equal half the free space");
 }
 
 // id: p_table
@@ -59,7 +61,7 @@ fn p_center() {
 // predicate: columns and rows align
 #[test]
 fn p_table() {
-        todo_predicate!("columns and rows align");
+    todo_predicate!("columns and rows align");
 }
 
 // id: p_stretch
@@ -67,7 +69,7 @@ fn p_table() {
 // predicate: no stretch node remains after resolution
 #[test]
 fn p_stretch() {
-        todo_predicate!("no stretch node remains after resolution");
+    todo_predicate!("no stretch node remains after resolution");
 }
 
 // id: p_layout_pure
@@ -75,7 +77,7 @@ fn p_stretch() {
 // predicate: layout runs with no DOM
 #[test]
 fn p_layout_pure() {
-        todo_predicate!("layout runs with no DOM");
+    todo_predicate!("layout runs with no DOM");
 }
 
 // id: p_reflow
@@ -83,6 +85,5 @@ fn p_layout_pure() {
 // predicate: the second layout differs and is not a cached copy of the first
 #[test]
 fn p_reflow() {
-        todo_predicate!("the second layout differs and is not a cached copy of the first");
+    todo_predicate!("the second layout differs and is not a cached copy of the first");
 }
-

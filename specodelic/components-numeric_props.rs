@@ -11,7 +11,9 @@
 /// opting in with **rust:** compiles as a real assertion instead
 /// (executable predicate fragment, specodelic.md Revision 15).
 macro_rules! todo_predicate {
-    ($reason:expr) => { todo!("{}", $reason) };
+    ($reason:expr) => {
+        todo!("{}", $reason)
+    };
 }
 
 // id: p_default
@@ -19,7 +21,7 @@ macro_rules! todo_predicate {
 // predicate: num is 0
 #[test]
 fn p_default() {
-        todo_predicate!("num is 0");
+    todo_predicate!("num is 0");
 }
 
 // id: p_dec
@@ -27,7 +29,7 @@ fn p_default() {
 // predicate: stays 3 then becomes 2
 #[test]
 fn p_dec() {
-        todo_predicate!("stays 3 then becomes 2");
+    todo_predicate!("stays 3 then becomes 2");
 }
 
 // id: p_inc
@@ -35,7 +37,7 @@ fn p_dec() {
 // predicate: stays 3 then becomes 4
 #[test]
 fn p_inc() {
-        todo_predicate!("stays 3 then becomes 4");
+    todo_predicate!("stays 3 then becomes 4");
 }
 
 // id: p_label_width
@@ -43,7 +45,7 @@ fn p_inc() {
 // predicate: centred area is at least 20
 #[test]
 fn p_label_width() {
-        todo_predicate!("centred area is at least 20");
+    todo_predicate!("centred area is at least 20");
 }
 
 // id: p_buttons
@@ -51,7 +53,7 @@ fn p_label_width() {
 // predicate: dec and inc effects carry path and limit
 #[test]
 fn p_buttons() {
-        todo_predicate!("dec and inc effects carry path and limit");
+    todo_predicate!("dec and inc effects carry path and limit");
 }
 
 // id: p_mapping
@@ -59,7 +61,7 @@ fn p_buttons() {
 // predicate: 12, 5 and 20
 #[test]
 fn p_mapping() {
-        todo_predicate!("12, 5 and 20");
+    todo_predicate!("12, 5 and 20");
 }
 
 // id: p_gesture
@@ -67,7 +69,7 @@ fn p_mapping() {
 // predicate: only the second updates
 #[test]
 fn p_gesture() {
-        todo_predicate!("only the second updates");
+    todo_predicate!("only the second updates");
 }
 
 // id: p_label
@@ -75,7 +77,7 @@ fn p_gesture() {
 // predicate: 3 and 3.14
 #[test]
 fn p_label() {
-        todo_predicate!("3 and 3.14");
+    todo_predicate!("3 and 3.14");
 }
 
 // id: p_fill
@@ -83,7 +85,7 @@ fn p_label() {
 // predicate: width is 15
 #[test]
 fn p_fill() {
-        todo_predicate!("width is 15");
+    todo_predicate!("width is 15");
 }
 
 // id: p_max_width
@@ -91,7 +93,7 @@ fn p_fill() {
 // predicate: 100
 #[test]
 fn p_max_width() {
-        todo_predicate!("100");
+    todo_predicate!("100");
 }
 
 // id: p_capture
@@ -99,6 +101,5 @@ fn p_max_width() {
 // predicate: updates continue until release
 #[test]
 fn p_capture() {
-        todo_predicate!("updates continue until release");
+    todo_predicate!("updates continue until release");
 }
-

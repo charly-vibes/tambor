@@ -1,0 +1,14 @@
+archetype = "PF"
+authored_with = "0.12.0"
+derived_from = "p_range@b9effce20313"
+description = "max offset is 4700 and 4400"
+falsifiability_class = "safety"
+id = "p-range"
+status = "active"
+superseded_by = ""
+
+[[tests.shell]]
+command = "tools/scaffold-check.sh components-virtual_list p-range"
+
+[[tests.vitest]]
+flags = "--testNamePattern=p_range"

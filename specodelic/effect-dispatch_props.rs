@@ -11,7 +11,9 @@
 /// opting in with **rust:** compiles as a real assertion instead
 /// (executable predicate fragment, specodelic.md Revision 15).
 macro_rules! todo_predicate {
-    ($reason:expr) => { todo!("{}", $reason) };
+    ($reason:expr) => {
+        todo!("{}", $reason)
+    };
 }
 
 // id: p_data
@@ -19,7 +21,7 @@ macro_rules! todo_predicate {
 // predicate: JSON round-trip preserves effects with no function argument, and an update effect keeps its function by reference
 #[test]
 fn p_data() {
-        todo_predicate!("JSON round-trip preserves effects with no function argument, and an update effect keeps its function by reference");
+    todo_predicate!("JSON round-trip preserves effects with no function argument, and an update effect keeps its function by reference");
 }
 
 // id: p_order
@@ -27,7 +29,7 @@ fn p_data() {
 // predicate: final state equals sequential application
 #[test]
 fn p_order() {
-        todo_predicate!("final state equals sequential application");
+    todo_predicate!("final state equals sequential application");
 }
 
 // id: p_update
@@ -35,7 +37,7 @@ fn p_order() {
 // predicate: value at path equals f(old, ...args)
 #[test]
 fn p_update() {
-        todo_predicate!("value at path equals f(old, ...args)");
+    todo_predicate!("value at path equals f(old, ...args)");
 }
 
 // id: p_set_get_delete
@@ -43,7 +45,7 @@ fn p_update() {
 // predicate: set then get returns the value and delete then get returns undefined
 #[test]
 fn p_set_get_delete() {
-        todo_predicate!("set then get returns the value and delete then get returns undefined");
+    todo_predicate!("set then get returns the value and delete then get returns undefined");
 }
 
 // id: p_overloads
@@ -51,7 +53,7 @@ fn p_set_get_delete() {
 // predicate: all three apply the same effect
 #[test]
 fn p_overloads() {
-        todo_predicate!("all three apply the same effect");
+    todo_predicate!("all three apply the same effect");
 }
 
 // id: p_unknown
@@ -59,7 +61,7 @@ fn p_overloads() {
 // predicate: later effects still apply and nothing throws
 #[test]
 fn p_unknown() {
-        todo_predicate!("later effects still apply and nothing throws");
+    todo_predicate!("later effects still apply and nothing throws");
 }
 
 // id: p_compose
@@ -67,7 +69,7 @@ fn p_unknown() {
 // predicate: dispatching it increments the number at the path
 #[test]
 fn p_compose() {
-        todo_predicate!("dispatching it increments the number at the path");
+    todo_predicate!("dispatching it increments the number at the path");
 }
 
 // id: p_registry
@@ -75,7 +77,7 @@ fn p_compose() {
 // predicate: it is both dispatchable by type and callable directly
 #[test]
 fn p_registry() {
-        todo_predicate!("it is both dispatchable by type and callable directly");
+    todo_predicate!("it is both dispatchable by type and callable directly");
 }
 
 // id: p_captured
@@ -83,7 +85,7 @@ fn p_registry() {
 // predicate: state ends with a todo hello and next-todo-text empty
 #[test]
 fn p_captured() {
-        todo_predicate!("state ends with a todo hello and next-todo-text empty");
+    todo_predicate!("state ends with a todo hello and next-todo-text empty");
 }
 
 // id: p_empty
@@ -91,7 +93,7 @@ fn p_captured() {
 // predicate: no repaint and no handler call
 #[test]
 fn p_empty() {
-        todo_predicate!("no repaint and no handler call");
+    todo_predicate!("no repaint and no handler call");
 }
 
 // id: p_repaint
@@ -99,7 +101,7 @@ fn p_empty() {
 // predicate: exactly one repaint is scheduled
 #[test]
 fn p_repaint() {
-        todo_predicate!("exactly one repaint is scheduled");
+    todo_predicate!("exactly one repaint is scheduled");
 }
 
 // id: p_override
@@ -107,7 +109,7 @@ fn p_repaint() {
 // predicate: the custom function receives every effect
 #[test]
 fn p_override() {
-        todo_predicate!("the custom function receives every effect");
+    todo_predicate!("the custom function receives every effect");
 }
 
 // id: p_state_forms
@@ -115,7 +117,7 @@ fn p_override() {
 // predicate: both run and the cell is shared not copied
 #[test]
 fn p_state_forms() {
-        todo_predicate!("both run and the cell is shared not copied");
+    todo_predicate!("both run and the cell is shared not copied");
 }
 
 // id: p_container
@@ -123,7 +125,7 @@ fn p_state_forms() {
 // predicate: context holds that size at the next render
 #[test]
 fn p_container() {
-        todo_predicate!("context holds that size at the next render");
+    todo_predicate!("context holds that size at the next render");
 }
 
 // id: p_counter_effects
@@ -131,7 +133,7 @@ fn p_container() {
 // predicate: num becomes 11 and nums becomes 0, 1, 2, 0
 #[test]
 fn p_counter_effects() {
-        todo_predicate!("num becomes 11 and nums becomes 0, 1, 2, 0");
+    todo_predicate!("num becomes 11 and nums becomes 0, 1, 2, 0");
 }
 
 // id: p_clipboard_effects
@@ -139,6 +141,5 @@ fn p_counter_effects() {
 // predicate: the backend clipboard receives hello
 #[test]
 fn p_clipboard_effects() {
-        todo_predicate!("the backend clipboard receives hello");
+    todo_predicate!("the backend clipboard receives hello");
 }
-

@@ -11,7 +11,9 @@
 /// opting in with **rust:** compiles as a real assertion instead
 /// (executable predicate fragment, specodelic.md Revision 15).
 macro_rules! todo_predicate {
-    ($reason:expr) => { todo!("{}", $reason) };
+    ($reason:expr) => {
+        todo!("{}", $reason)
+    };
 }
 
 // id: p_plain_data
@@ -19,7 +21,7 @@ macro_rules! todo_predicate {
 // predicate: structured clone succeeds and every value is a plain type or function
 #[test]
 fn p_plain_data() {
-        todo_predicate!("structured clone succeeds and every value is a plain type or function");
+    todo_predicate!("structured clone succeeds and every value is a plain type or function");
 }
 
 // id: p_string_tags
@@ -27,7 +29,7 @@ fn p_plain_data() {
 // predicate: both resolve to the same registered handler
 #[test]
 fn p_string_tags() {
-        todo_predicate!("both resolve to the same registered handler");
+    todo_predicate!("both resolve to the same registered handler");
 }
 
 // id: p_punctuated
@@ -35,7 +37,7 @@ fn p_string_tags() {
 // predicate: select, set and update work on each
 #[test]
 fn p_punctuated() {
-        todo_predicate!("select, set and update work on each");
+    todo_predicate!("select, set and update work on each");
 }
 
 // id: p_nil
@@ -43,7 +45,7 @@ fn p_punctuated() {
 // predicate: all three read as nil and select returns undefined for each
 #[test]
 fn p_nil() {
-        todo_predicate!("all three read as nil and select returns undefined for each");
+    todo_predicate!("all three read as nil and select returns undefined for each");
 }
 
 // id: p_iterables
@@ -51,7 +53,7 @@ fn p_nil() {
 // predicate: all three produce the same view and the output children is an array
 #[test]
 fn p_iterables() {
-        todo_predicate!("all three produce the same view and the output children is an array");
+    todo_predicate!("all three produce the same view and the output children is an array");
 }
 
 // id: p_variadic
@@ -59,7 +61,7 @@ fn p_iterables() {
 // predicate: the views deep-equal
 #[test]
 fn p_variadic() {
-        todo_predicate!("the views deep-equal");
+    todo_predicate!("the views deep-equal");
 }
 
 // id: p_free_functions
@@ -67,7 +69,7 @@ fn p_variadic() {
 // predicate: every export is a function, a constant or a sentinel, and none uses this
 #[test]
 fn p_free_functions() {
-        todo_predicate!("every export is a function, a constant or a sentinel, and none uses this");
+    todo_predicate!("every export is a function, a constant or a sentinel, and none uses this");
 }
 
 // id: p_functions
@@ -75,7 +77,7 @@ fn p_free_functions() {
 // predicate: both are called with the same arguments
 #[test]
 fn p_functions() {
-        todo_predicate!("both are called with the same arguments");
+    todo_predicate!("both are called with the same arguments");
 }
 
 // id: p_seam
@@ -83,7 +85,7 @@ fn p_functions() {
 // predicate: update at one path works and default ops are used when none are given
 #[test]
 fn p_seam() {
-        todo_predicate!("update at one path works and default ops are used when none are given");
+    todo_predicate!("update at one path works and default ops are used when none are given");
 }
 
 // id: p_ops_bound
@@ -91,7 +93,7 @@ fn p_seam() {
 // predicate: each behaves per its own ops
 #[test]
 fn p_ops_bound() {
-        todo_predicate!("each behaves per its own ops");
+    todo_predicate!("each behaves per its own ops");
 }
 
 // id: p_identity
@@ -99,7 +101,7 @@ fn p_ops_bound() {
 // predicate: todo 3 is reference-equal before and after and the input is unchanged
 #[test]
 fn p_identity() {
-        todo_predicate!("todo 3 is reference-equal before and after and the input is unchanged");
+    todo_predicate!("todo 3 is reference-equal before and after and the input is unchanged");
 }
 
 // id: p_tag_ns
@@ -107,7 +109,7 @@ fn p_identity() {
 // predicate: the normalised tags differ and keep their namespaces
 #[test]
 fn p_tag_ns() {
-        todo_predicate!("the normalised tags differ and keep their namespaces");
+    todo_predicate!("the normalised tags differ and keep their namespaces");
 }
 
 // id: p_no_conversion
@@ -115,7 +117,7 @@ fn p_tag_ns() {
 // predicate: total time is under 1000 ms and no conversion function is called
 #[test]
 fn p_no_conversion() {
-        todo_predicate!("total time is under 1000 ms and no conversion function is called");
+    todo_predicate!("total time is under 1000 ms and no conversion function is called");
 }
 
 // id: p_explicit_paths
@@ -123,7 +125,7 @@ fn p_no_conversion() {
 // predicate: the each helper gives the second visible item the path todos, filter, 1
 #[test]
 fn p_explicit_paths() {
-        todo_predicate!("the each helper gives the second visible item the path todos, filter, 1");
+    todo_predicate!("the each helper gives the second visible item the path todos, filter, 1");
 }
 
 // id: p_no_macro
@@ -131,7 +133,7 @@ fn p_explicit_paths() {
 // predicate: deleting visible index 1 leaves first and third, and toggling visible index 0 changes only first
 #[test]
 fn p_no_macro() {
-        todo_predicate!("deleting visible index 1 leaves first and third, and toggling visible index 0 changes only first");
+    todo_predicate!("deleting visible index 1 leaves first and third, and toggling visible index 0 changes only first");
 }
 
 // id: p_macro_optional
@@ -139,7 +141,7 @@ fn p_no_macro() {
 // predicate: both produce deep-equal views and effects
 #[test]
 fn p_macro_optional() {
-        todo_predicate!("both produce deep-equal views and effects");
+    todo_predicate!("both produce deep-equal views and effects");
 }
 
 // id: p_esm
@@ -147,7 +149,7 @@ fn p_macro_optional() {
 // predicate: named imports resolve and no side effect runs at import
 #[test]
 fn p_esm() {
-        todo_predicate!("named imports resolve and no side effect runs at import");
+    todo_predicate!("named imports resolve and no side effect runs at import");
 }
 
 // id: p_advanced
@@ -155,7 +157,7 @@ fn p_esm() {
 // predicate: the click still produces the counter-increment effect
 #[test]
 fn p_advanced() {
-        todo_predicate!("the click still produces the counter-increment effect");
+    todo_predicate!("the click still produces the counter-increment effect");
 }
 
 // id: p_same_everywhere
@@ -163,6 +165,5 @@ fn p_advanced() {
 // predicate: the resulting states are deep-equal
 #[test]
 fn p_same_everywhere() {
-        todo_predicate!("the resulting states are deep-equal");
+    todo_predicate!("the resulting states are deep-equal");
 }
-
