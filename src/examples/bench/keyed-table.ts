@@ -17,6 +17,12 @@
 //   with empty rows so a "Build 1000" click is the measured creation
 //   op (scenario keyed-table-build) and the ops scenario runs after an
 //   untimed build (scenario keyed-table-ops).
+//
+//   Row labels render through the public memo component
+//   (components.memo, tambor-54j.8.4): the row-label subtree is keyed
+//   on the row object's identity, and the ops preserve the identity of
+//   every row they don't touch (structural sharing), so a whole-view
+//   re-derive after an op rebuilds only the changed rows' labels.
 
 import {
   button,
@@ -28,6 +34,7 @@ import { horizontalLayout, verticalLayout } from "../../views/layout.ts";
 import type { Intent, IntentList } from "../../events/bubble.ts";
 import type { Path } from "../../effects/paths.ts";
 import { makeApp, type App } from "../../effects/dispatch.ts";
+import { memo } from "../../components/memo/memo.ts";
 import { VIEWPORT } from "../../spa/viewport.ts";
 
 // The keyed row shape: a stable id (the key the ops preserve) and a
@@ -118,6 +125,12 @@ function rowLabel(row: KeyedRow): Elem {
   return labelNode(`row ${row.id} — ${row.label}`);
 }
 
+// The memoized row label: keyed on the row object's identity, so an
+// op that preserves a row's object (every row the ops don't touch)
+// skips the label derive. Created once — the memoized function owns
+// the cache; the view body stays a pure function of state.
+const rowNode = memo(rowLabel);
+
 // The keyed-table view: the control row, a spacer, then the row stack.
 // The buttons' update intents route through the app's dispatcher; the
 // rows are plain labels — pure view, no state of their own.
@@ -133,7 +146,7 @@ export function keyedTableView(state: KeyedTableState): Elem {
     spacer(5, 0),
     opButton("Append 1k", appendRows),
   ]) as Elem;
-  const rows = (verticalLayout(state.rows.map(rowLabel)) ?? []) as readonly Elem[];
+  const rows = (verticalLayout(state.rows.map(rowNode)) ?? []) as readonly Elem[];
   const body = [controls, spacer(0, 10), ...rows] as readonly Elem[];
   return (verticalLayout(body) ?? controls) as Elem;
 }
