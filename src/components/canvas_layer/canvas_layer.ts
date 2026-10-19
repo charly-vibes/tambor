@@ -2,108 +2,97 @@
 //   opt-in public seam where a subtree's big data is held BY REFERENCE
 //   and drawn through a raster/cache path instead of the per-op drawn
 //   tree (tambor-54j.8.3).
-// Responsibilities: canvasLayer — a component whose props carry the
-//   data object, the layer's pixel size and the draw function; the
-//   identity-keyed raster cache (one WeakMap on the data reference) and
-//   the view — a single image node replaying the cached raster.
+// Responsibilities: canvasLayer({ width, height, draw }) — the memo
+//   shape (components.memo): an app creates the layer ONCE (module
+//   scope) and calls it per derive with the data object; the identity-
+//   keyed raster cache (one WeakMap on the data reference) and the
+//   returned view — a single image node replaying the cached raster.
+//   cachedRaster exposes the cache lookup itself (meters, tests).
 // Rationale: openspec/specs/components-canvas_layer/spec.md is the
 //   design authority. The BZ2 evidence (benchmarks/findings-bz.md): the
 //   per-op cost scales with DRAWN nodes (1600 path nodes → 606 ms,
 //   400 → 183 ms), not with data size — every op re-derives and
 //   re-rasterizes the whole drawn subtree regardless of whether the
-//   data changed. The layer mirrors the memo identity rule
-//   (components.memo): state changes only through dispatch, so a data
-//   reference is a sound invalidation signal — a dispatch that changes
-//   the data produces a fresh object (a miss → re-derive + re-rasterize
-//   once), and every op that leaves the data reference alone (pan,
-//   zoom, a control flip) is a hit that skips the drawn-tree derivation
-//   of the wrapped subtree entirely: one image node instead of the
-//   subtree's nodes. The wrapper's state holds the data by reference —
-//   the payload is never copied and never deep-compared; a WeakMap
-//   lets data that leaves app state be collected. The raster seam
-//   (raster.ts) is DOM-free and reuses the backend's painters, so the
-//   cached pixels are exactly the pixels the wrapped subtree paints.
+//   data changed. The layer mirrors the memo identity rule exactly:
+//   state changes only through dispatch, so a data reference is a
+//   sound invalidation signal — a dispatch that changes the data
+//   produces a fresh object (a miss → one re-derive + re-rasterize),
+//   and every op that leaves the data reference alone (pan, zoom, a
+//   control flip) is a hit that skips the drawn-tree derivation of the
+//   wrapped subtree entirely: one image node instead of the subtree's
+//   nodes. The wrapper's state holds the data by reference — the
+//   payload is never copied and never deep-compared; a WeakMap lets
+//   data that leaves app state be collected. The layer is a function,
+//   not a defui component call, for the same reason memo is: a defui
+//   call would pay the render cache's serialization key over the whole
+//   props map — the ~5 µs finding (findings-kit.md, tambor-54j.11)
+//   scaled to the payload — per op; the WeakMap hit is one lookup. The
+//   raster seam (raster.ts) is DOM-free and reuses the backend's
+//   painters, so the cached pixels are exactly the pixels the wrapped
+//   subtree paints.
 
-import type { Elem } from "../../views/model.ts";
-import type { EventElem } from "../../events/bubble.ts";
+import type { Elem, EventElem } from "../../views/model.ts";
 import type { ImageBuffer } from "../../render/image.ts";
 import { image } from "../../render/primitives.ts";
-import {
-  defineComponent,
-  type Component,
-  type Props,
-} from "../../model/component.ts";
 import { rasterize } from "./raster.ts";
 
 // The draw function: the wrapped subtree, derived from the data.
 export type LayerDraw = (data: object) => Elem;
 
-// The per-data raster cache: one WeakMap keyed on the data object's
-// identity — the memo identity rule — carrying the draw function that
-// produced the raster, so two call sites drawing the same data through
-// different draw functions each keep their own raster. WeakMap so data
-// that leaves app state (a load op replacing the points) lets its
+// One layer's options: the pixel size and the subtree it draws.
+export interface CanvasLayerOpts {
+  readonly width: number;
+  readonly height: number;
+  readonly draw: LayerDraw;
+}
+
+// The per-data raster cache of ONE layer: one WeakMap keyed on the
+// data object's identity — the memo identity rule — carrying the size
+// it was rasterized at (a resized layer is a new layer). WeakMap so
+// data that leaves app state (a load op replacing the points) lets its
 // raster be collected.
 interface Entry {
-  readonly draw: LayerDraw;
   readonly width: number;
   readonly height: number;
   readonly buf: ImageBuffer;
 }
-const cache = new WeakMap<object, Entry>();
 
-// The layer's cached raster for a data reference: a hit (same data
-// reference, same draw and size) returns the cached buffer — the
-// wrapped subtree is NEVER re-derived; a miss derives the subtree once
-// and rasterizes it.
+// The layer's type: called per derive with the data BY REFERENCE.
+export type CanvasLayerFn = (data: object) => readonly EventElem[];
+
+// The canvas-layer component: created once per call site, called per
+// derive. A hit (same data reference, same layer) replays the cached
+// raster without touching the wrapped subtree; a miss derives the
+// subtree once and rasterizes it.
+export function canvasLayer(opts: CanvasLayerOpts): CanvasLayerFn {
+  const cache = new WeakMap<object, Entry>();
+  return (data: object): readonly EventElem[] => {
+    if (typeof data !== "object" || data === null) {
+      throw new TypeError(
+        "canvas_layer: data must be an object — the reference is the invalidation signal",
+      );
+    }
+    const buf = cachedRaster(cache, data, opts.draw, opts.width, opts.height);
+    return [image(opts.width, opts.height, buf)] as unknown as readonly EventElem[];
+  };
+}
+
+// The raster cache lookup behind a layer: a hit returns the cached
+// buffer (the wrapped subtree is NEVER re-derived); a miss derives the
+// subtree once and rasterizes it. Exposed for meters and tests that
+// want the buffer, not the view node.
 export function cachedRaster(
+  cache: WeakMap<object, Entry>,
   data: object,
   draw: LayerDraw,
   width: number,
   height: number,
 ): ImageBuffer {
   const cached = cache.get(data);
-  if (
-    cached !== undefined &&
-    cached.draw === draw &&
-    cached.width === width &&
-    cached.height === height
-  ) {
+  if (cached !== undefined && cached.width === width && cached.height === height) {
     return cached.buf;
   }
   const fresh = rasterize(draw(data), width, height);
-  cache.set(data, { draw, width, height, buf: fresh });
+  cache.set(data, { width, height, buf: fresh });
   return fresh;
 }
-
-// The layer's view: one image node whose data is the cached raster —
-// the drawn-tree derivation of the wrapped subtree skipped on a hit,
-// the raster replayed by the backend's drawImage.
-export function canvasLayerView(props: Props): readonly EventElem[] {
-  const data = props["data"];
-  if (typeof data !== "object" || data === null) {
-    throw new TypeError(
-      "canvas_layer: data must be an object — the reference is the invalidation signal",
-    );
-  }
-  const width = props["width"] as number;
-  const height = props["height"] as number;
-  const draw = props["draw"] as LayerDraw;
-  const buf = cachedRaster(data, draw, width, height);
-  return [image(width, height, buf)] as unknown as readonly EventElem[];
-}
-
-// The canvas-layer component: data (by reference), width, height and
-// draw are all declared props — the function prop keeps the component
-// render cache out of the way, so the identity rule is this module's
-// WeakMap, not the serialization-keyed render cache.
-export const canvasLayer: Component = defineComponent(
-  "canvas_layer",
-  [
-    {
-      keys: ["data", "width", "height", "draw"],
-      defaults: {},
-    },
-  ],
-  (props) => canvasLayerView(props),
-);

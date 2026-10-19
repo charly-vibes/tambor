@@ -105,6 +105,13 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+// The resolver's leaf rule: ArrayBuffer views (typed arrays) are leaf
+// values — walking a view's index entries would explode a big raster
+// buffer (the canvas layer's ImageBuffer) into millions of numeric keys.
+function isContainer(value: unknown): boolean {
+  return (Array.isArray(value) || isPlainObject(value)) && !ArrayBuffer.isView(value);
+}
+
 // A component declaration has exactly one parameter, either a symbol or
 // a map pattern, and anything else is rejected at definition time
 // (single_map_arg).
@@ -333,8 +340,7 @@ function resolve(
   seen: Set<object>,
 ): { value: unknown; changed: boolean } {
   if (isCall(value)) return { value: render(value), changed: true };
-  const isContainer = Array.isArray(value) || isPlainObject(value);
-  if (!isContainer) return { value, changed: false };
+  if (!isContainer(value)) return { value, changed: false };
   const obj = value as object;
   if (seen.has(obj)) return { value, changed: false };
   seen.add(obj);
