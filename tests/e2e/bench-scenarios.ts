@@ -267,5 +267,23 @@ export const SCENARIOS: readonly Scenario[] = [
     ops: 12,
     warmupOps: 1,
   },
+  {
+    id: "virt-list-10k-window",
+    // the windowed candidate (tambor-54j.8.2): the same +1-row scroll
+    // op over the same 10k summaries, drawn through
+    // components.virtual_list — only the window's rows exist in the
+    // drawn DOM. The readout's from/at lines are ratios of the row
+    // pitch (the first window index and the offset in rows), so they
+    // are metric-independent guards: a dropped op reads at 12, a
+    // whole-view flip reads from 0 / drawn 10000.
+    expectedText: "window from 13 at 13",
+    app: "virtual list (bench demo, dist/spa.js)",
+    demoId: "virtual-list",
+    pointsOf: [buttonText("Scroll down")],
+    drawnSetup: "Window 10k",
+    drawnOps: ["Scroll down"],
+    ops: 12,
+    warmupOps: 1,
+  },
   ...SCENARIOS_BZ,
 ];
