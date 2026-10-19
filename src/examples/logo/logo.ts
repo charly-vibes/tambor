@@ -37,7 +37,7 @@ import {
   type RunOutcome,
 } from "./run.ts";
 import { makeRegistry, type InterHandler } from "../../interop/seam.ts";
-import type { App } from "../../effects/dispatch.ts";
+import type { App, LaneStore } from "../../effects/dispatch.ts";
 import type { Path } from "../../effects/paths.ts";
 import type { IntentList } from "../../events/bubble.ts";
 import {
@@ -165,7 +165,11 @@ export function createLogoApp(): App {
       opsApp.dispatch(batch);
     },
     getState: () => opsApp.getState(),
+    // the demo's own lane store (ops-app is the interop seam, not an
+    // effects.makeApp, so it carries no lane of its own)
+    getLane: (): LaneStore => lane,
   };
+  const lane: LaneStore = {};
   hooks.current = {
     launch: (req: RunRequest) => {
       void runner.run(req).then(

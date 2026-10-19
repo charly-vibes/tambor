@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.12.0"
+derived_from = "p_state_identity@0763ea5baafc"
+description = "the state object is identical before and after each batch"
+falsifiability_class = "safety"
+id = "p-state-identity"
+status = "active"
+superseded_by = ""
+
+[[tests.vitest]]
+flags = "--testNamePattern=p_state_identity"

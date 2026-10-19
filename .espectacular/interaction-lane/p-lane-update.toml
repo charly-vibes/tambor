@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.12.0"
+derived_from = "p_lane_update@88ae954d7da4"
+description = "each lane[key] equals the update function applied to the previous value, applied in batch order"
+falsifiability_class = "safety"
+id = "p-lane-update"
+status = "active"
+superseded_by = ""
+
+[[tests.vitest]]
+flags = "--testNamePattern=p_lane_update"

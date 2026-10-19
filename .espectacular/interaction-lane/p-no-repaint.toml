@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.12.0"
+derived_from = "p_no_repaint@40be656d75d5"
+description = "no repaint is scheduled for the batch"
+falsifiability_class = "safety"
+id = "p-no-repaint"
+status = "active"
+superseded_by = ""
+
+[[tests.vitest]]
+flags = "--testNamePattern=p_no_repaint"

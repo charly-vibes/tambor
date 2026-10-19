@@ -8,8 +8,12 @@
 //   exactly one repaint per dispatch on the next animation frame;
 //   accept a plain initial state or an atom-like cell; place the
 //   backend's container size in the render context; support a custom
-//   dispatch for tests, undo history or an external store.
-// Rationale: openspec/specs/effect-dispatch/spec.md is the design authority.
+//   dispatch for tests, undo history or an external store; own a per-app
+//   ephemeral interaction lane the ["lane", key, fn] builtin applies to
+//   without touching state identity (lane-only batches schedule no
+//   repaint).
+// Rationale: openspec/specs/effect-dispatch/spec.md and
+//   openspec/specs/interaction-lane/spec.md are the design authorities.
 //   counter-increment (update with inc) and add-counter (update with
 //   conj of 0) are pre-registered effects. A registered effect receives
 //   dispatch first; effects it dispatches are applied before it
@@ -35,6 +39,11 @@ export interface EffectContext {
   readonly backend?: Backend | undefined;
   [key: string]: unknown;
 }
+
+// The per-app ephemeral interaction lane (interaction-lane): plain
+// mutable record, never part of state, reached through the ctx
+// extra-keys seam so the global registry stays app-agnostic.
+export type LaneStore = Record<string, unknown>;
 
 // The registry is global: defeffect registers under its namespaced type.
 const registry = new Map<string, EffectFn>();
@@ -83,6 +92,7 @@ function builtin(state: unknown, effect: Effect, ctx: EffectContext): unknown {
       // writes the string to the system clipboard through the backend
       ctx.backend?.copyToClipboard?.(args[0] as string);
       return state;
+
     default:
       // an unknown type is reported and skipped; the rest of the
       // batch still runs
@@ -149,6 +159,8 @@ export interface App {
   view(): Elem;
   dispatch: DispatchFn;
   getState(): unknown;
+  /** the app's ephemeral interaction lane (interaction-lane) */
+  getLane(): LaneStore;
 }
 
 // make-app accepts an initial state or an atom and an optional handler,
@@ -179,33 +191,38 @@ function makeInternalDispatch(applyOne: (effect: Effect) => void): DispatchFn {
   };
 }
 
-function makeAppObject(options: AppOptions, getState: () => unknown, dispatch: DispatchFn): App {
+function makeAppObject(
+  options: AppOptions,
+  getState: () => unknown,
+  dispatch: DispatchFn,
+  getLane: () => LaneStore,
+): App {
   return {
     view: () => appView(options, getState),
     dispatch,
     getState,
+    getLane,
   };
 }
 
-export function makeApp(options: AppOptions): App {
-  const useCell = options.cell !== undefined;
-  let state = useCell ? options.cell!.value : options.state;
-  const handler = options.handler ?? defaultHandler;
+// The state box lets the extracted seams read and write the app's
+// current state through one shared cell.
+interface StateBox {
+  state: unknown;
+}
 
-  const applyOne = (effect: Effect): void => {
-    const [type, ...args] = effect;
-    const fn = typeof type === "string" ? registry.get(type) : undefined;
-    if (fn) {
-      // a registered effect receives dispatch first; effects it
-      // dispatches are applied before it returns (no repaint)
-      fn(internalDispatch, ...args);
-    } else {
-      state = handler(state, [effect], { backend: options.backend });
-      if (useCell) options.cell!.value = state;
-    }
-  };
-
-  const dispatch: DispatchFn = (input, ...rest) => {
+// The app dispatch: normalize, apply (custom dispatch first, applyOne
+// otherwise), then exactly one repaint — skipped for a lane-only batch
+// (interaction-lane lane_batch_no_repaint): it changed nothing the view
+// derives from, so a 60 Hz lane stream costs no per-event
+// re-derivation; any state effect repaints once as usual
+// (single_repaint).
+function makeAppDispatch(
+  options: AppOptions,
+  box: StateBox,
+  applyOne: (effect: Effect) => void,
+): DispatchFn {
+  return (input, ...rest) => {
     const batch = normalizeBatch(input, rest);
     // an empty batch calls no handler and triggers no repaint
     if (batch.length === 0) return;
@@ -217,11 +234,51 @@ export function makeApp(options: AppOptions): App {
       for (const effect of batch) applyOne(effect);
     }
 
+    // a lane-only batch changed nothing the view derives from
+    // (interaction-lane lane_batch_no_repaint): no repaint, so a 60 Hz
+    // lane stream costs no per-event re-derivation. Any state effect in
+    // the batch repaints exactly once as usual (single_repaint).
+    if (batch.every((effect) => effect[0] === "lane")) return;
+
     // exactly one repaint, scheduled on the next animation frame
-    scheduleRepaint(() => appView(options, () => state));
+    scheduleRepaint(() => appView(options, () => box.state));
     return;
+  };
+}
+
+export function makeApp(options: AppOptions): App {
+  const useCell = options.cell !== undefined;
+  const box: StateBox = { state: useCell ? options.cell!.value : options.state };
+  const handler = options.handler ?? defaultHandler;
+  // the per-app lane store (interaction-lane): one plain record, owned
+  // here, threaded through the effect context's extra-keys seam
+  const lane: LaneStore = {};
+  const ctx: EffectContext = { backend: options.backend, lane };
+
+  const applyOne = (effect: Effect): void => {
+    const [type, ...args] = effect;
+    // interaction-lane: the lane effect mutates the app's ephemeral lane
+    // store, never the state — lane[key] = updateFn(lane[key]). It is
+    // applied here, registry-style, BEFORE any state handler, so custom
+    // handlers (undo history, external stores) cannot drop lane writes;
+    // the store also rides the ctx extra-keys seam for handler reads.
+    if (type === "lane") {
+      const [key, fn] = args as [string, (old: unknown) => unknown];
+      lane[key] = fn(lane[key]);
+      return;
+    }
+    const fn = typeof type === "string" ? registry.get(type) : undefined;
+    if (fn) {
+      // a registered effect receives dispatch first; effects it
+      // dispatches are applied before it returns (no repaint)
+      fn(internalDispatch, ...args);
+    } else {
+      box.state = handler(box.state, [effect], ctx);
+      if (useCell) options.cell!.value = box.state;
+    }
   };
 
   const internalDispatch = makeInternalDispatch(applyOne);
-  return makeAppObject(options, () => state, dispatch);
+  const dispatch = makeAppDispatch(options, box, applyOne);
+  return makeAppObject(options, () => box.state, dispatch, () => lane);
 }
