@@ -1,0 +1,37 @@
+source = "components.worker_effect"
+
+[[constraints]]
+id = "typed_envelope"
+kind = "invariant"
+expr = "every run crosses as plain data — a request carries the handler name, its input and an id echoed back verbatim; a response is the handler's value (ok) or a typed failure carrying its message (ok:false) — and the echoed id routes each reply to exactly its own request, so a late reply never cross-resolves"
+traces_to = "[[components.worker_effect]]"
+
+[[constraints]]
+id = "pure_handler"
+kind = "invariant"
+expr = "worker-side handlers are pure functions of their input only; runWorkerEffect calls the named handler once per request and catches every failure (a thrown error, an unknown handler name) into the typed failure branch — it never throws across the boundary"
+traces_to = "[[components.worker_effect]]"
+
+[[constraints]]
+id = "spawn_reply_effects"
+kind = "invariant"
+expr = 'in the effect-dispatch bridge a run is spawned as plain effect data (["worker-effect", handler, input]) and the answer lands through the same dispatch as a typed reply (["worker-effect-reply", id, value]) or typed error (["worker-effect-error", id, message]) — the reply rides the dispatch the effect system already repaints on, and the handler returns before the reply lands'
+traces_to = "[[components.worker_effect]]"
+
+[[constraints]]
+id = "wire_responsive"
+kind = "invariant"
+expr = "a long compute evaluated off-thread never blocks the host wire — while the worker spins, the host's timers (and the dispatch they serve) keep their schedule at timer-jitter scale, where the same compute run in-thread stalls the wire for its full duration"
+traces_to = "[[components.worker_effect]]"
+
+[[constraints]]
+id = "optional_terminate"
+kind = "invariant"
+expr = "the only termination is the client's own optional terminate(): it ends the spawned worker, answers every in-flight request with the typed terminated failure, and the NEXT run lazily respawns a fresh worker so the boundary stays usable — no kill-switch beyond this one boundary (the BZ6 scope decision)"
+traces_to = "[[components.worker_effect]]"
+
+[[constraints]]
+id = "degrade_typed"
+kind = "invariant"
+expr = "when the host offers no Worker, or the worker asset fails to load, every run still answers the same typed contract — the in-thread fallback (terminate is a no-op there), or the typed load failure for in-flight runs followed by the fallback — never a stuck promise"
+traces_to = "[[components.worker_effect]]"

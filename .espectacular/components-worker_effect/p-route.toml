@@ -1,0 +1,14 @@
+archetype = "PF"
+authored_with = "0.12.0"
+derived_from = "p_route@d9ca0faad9ee"
+description = "each promise resolves with its own request's value — the late reply never cross-resolves"
+falsifiability_class = "safety"
+id = "p-route"
+status = "active"
+superseded_by = ""
+
+[[tests.shell]]
+command = "tools/scaffold-check.sh components-worker_effect p-route"
+
+[[tests.vitest]]
+flags = "--testNamePattern=p_route"

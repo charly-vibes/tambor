@@ -1,0 +1,14 @@
+archetype = "PF"
+authored_with = "0.12.0"
+derived_from = "p_fallback@aed528e2376f"
+description = "worker:false, the same Promise contract answered by the in-thread fallback, terminate a no-op"
+falsifiability_class = "safety"
+id = "p-fallback"
+status = "active"
+superseded_by = ""
+
+[[tests.shell]]
+command = "tools/scaffold-check.sh components-worker_effect p-fallback"
+
+[[tests.vitest]]
+flags = "--testNamePattern=p_fallback"

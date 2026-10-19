@@ -1,0 +1,14 @@
+archetype = "PF"
+authored_with = "0.12.0"
+derived_from = "p_envelope_parity@aeed277f910b"
+description = "each response is the typed value envelope, the typed failure message, or the unknown-handler failure, with the request's id echoed verbatim"
+falsifiability_class = "safety"
+id = "p-envelope-parity"
+status = "active"
+superseded_by = ""
+
+[[tests.shell]]
+command = "tools/scaffold-check.sh components-worker_effect p-envelope-parity"
+
+[[tests.vitest]]
+flags = "--testNamePattern=p_envelope_parity"
