@@ -10,7 +10,9 @@
 //   filter), resultsLabel — the candidate ops — ringAppendOp (bounded
 //   ring buffer, oldest dropped) and the fixed-height drawn window —
 //   levelCounts (the one-pass level histogram), summaryLines (the
-//   drawn summary labels), logStreamView, and createLogStreamApp.
+//   drawn summary labels) and the collect-one search ops. The drawn
+//   view and the makeApp mount live in log-stream-view.ts (the
+//   pretender file budget: state/ops split from view).
 // Rationale: the honest naive mode is what the BZ5 row predicts fails:
 //   every append copies the whole ever-growing line array (H3) and the
 //   drawn log is unbounded (memory growth), so the per-op cost climbs
@@ -24,17 +26,14 @@
 //   reads the corpus ahead of results) — no benchmark-specific fast
 //   path. The demo starts empty: appending is the measured op.
 
-import {
-  button,
-  label as labelNode,
-  spacer,
-  type Elem,
-} from "../../views/model.ts";
-import { horizontalLayout, verticalLayout } from "../../views/layout.ts";
-import type { IntentList } from "../../events/bubble.ts";
 import type { Path } from "../../effects/paths.ts";
-import { makeApp, type App } from "../../effects/dispatch.ts";
-import { VIEWPORT } from "../../spa/viewport.ts";
+import {
+  appendSeries,
+  boundedSeries,
+  foldSeries,
+  newestSeries,
+  type BoundedSeries,
+} from "../../components/ring_buffer/ring_buffer.ts";
 
 // Lines per simulated ingest batch (~0.15 s of a 100k lines/min stream).
 export const BATCH = 250;
@@ -70,11 +69,13 @@ export interface SearchResults {
   readonly sample: readonly LogLine[];
 }
 
-// The app state: plain data — the naive corpus, the bounded ring, the
-// ring's next id, the total ingested, and the latest search.
+// The app state: plain data — the naive corpus, the bounded ring (the
+// public bounded-series component, components.ring_buffer — its
+// internal stacks are plain immutable data, a first-class state slice),
+// the ring's next id, the total ingested, and the latest search.
 export interface LogStreamState {
   readonly lines: readonly LogLine[];
-  readonly ring: readonly LogLine[];
+  readonly ring: BoundedSeries<LogLine>;
   readonly ringNext: number;
   readonly total: number;
   readonly results: SearchResults;
@@ -93,11 +94,12 @@ export const RING_APPEND_PATH: Path = [["collect-one", RING_NEXT_PATH], ["keypat
 export const SEARCH_ALL_PATH: Path = [["collect-one", LINES_PATH], ["keypath", "results"]];
 export const SEARCH_RING_PATH: Path = [["collect-one", RING_PATH], ["keypath", "results"]];
 
-// The demo's initial state: nothing ingested, no search yet.
+// The demo's initial state: nothing ingested, no search yet — the ring
+// starts as the empty bounded series at RING_CAPACITY.
 export function logStreamState(): LogStreamState {
   return {
     lines: [],
-    ring: [],
+    ring: boundedSeries<LogLine>(RING_CAPACITY),
     ringNext: 0,
     total: 0,
     results: { query: "", corpus: "all", count: 0, sample: [] },
@@ -149,18 +151,21 @@ export function searchCorpus(
 // --- the candidate mode (bounded ring + fixed-height window) ------------
 
 // Bounded ingest: the ring keeps only the newest RING_CAPACITY lines
-// (oldest dropped) — state holds a window, never the raw stream.
+// (oldest dropped) — state holds a window, never the raw stream. The
+// bounded store is the public bounded-series component
+// (components.ring_buffer): the append is O(1) amortized per line
+// (each line consed at most twice over the stream) with no copy of the
+// retained window — the promotion of the slice-copy this op was before
+// the component existed (the inline pattern's [...ring, ...batch].slice
+// was allocation-bounded but O(capacity) per append).
 export function ringAppendOp(
   ringNext: unknown,
   ring: unknown,
-): readonly LogLine[] {
-  const grown = [
-    ...(ring as readonly LogLine[]),
-    ...makeBatch(ringNext as number),
-  ];
-  return grown.length > RING_CAPACITY
-    ? grown.slice(grown.length - RING_CAPACITY)
-    : grown;
+): BoundedSeries<LogLine> {
+  return appendSeries(
+    ring as BoundedSeries<LogLine>,
+    makeBatch(ringNext as number),
+  );
 }
 
 // The id cursors / total tick (the dashboard bumpTick shape).
@@ -186,16 +191,31 @@ export function levelCounts(corpus: readonly LogLine[]): LevelCounts {
   return counts;
 }
 
+// The one-pass level histogram over the bounded ring — the window fold
+// the component exposes (foldSeries walks the retained window
+// oldest→newest once).
+export function levelCountsRing(ring: BoundedSeries<LogLine>): LevelCounts {
+  const counts = { info: 0, warn: 0, error: 0 };
+  return foldSeries(
+    ring,
+    (acc: { info: number; warn: number; error: number }, line: LogLine) => {
+      acc[line.level]++;
+      return acc;
+    },
+    counts,
+  );
+}
+
 // The drawn summary labels — the per-corpus counts, the total and the
 // latest search's outcome line.
 export function summaryLines(state: LogStreamState): readonly string[] {
   const all = levelCounts(state.lines);
-  const kept = levelCounts(state.ring);
+  const kept = levelCountsRing(state.ring);
   return [
     `total ${state.total}`,
     `all ${state.lines.length}`,
     `all err ${all.error}`,
-    `kept ${state.ring.length}`,
+    `kept ${state.ring.size}`,
     `kept err ${kept.error}`,
     resultsLabel(state.results),
   ];
@@ -208,85 +228,28 @@ export function resultsLabel(results: SearchResults): string {
     : `matches ${results.count} of ${results.query} (${results.corpus})`;
 }
 
-// --- the view ------------------------------------------------------------
-
-// One op button: an ordinary handler returning its plain-data updates.
-function opButton(text: string, intents: IntentList): Elem {
-  return button(text, (): IntentList => intents);
-}
-
-// The ingest/search buttons, two per row: four buttons overflow the
-// 300px viewport's single row and the real-text-metric layout then
-// diverges from the in-process replay coordinates the bench points
-// resolve from (the drive.ts divergence note) — a two-row control
-// keeps every drawn button under the point its scan computes. The
-// search buttons ingest-then-search: one click is one stream cycle
-// (batch lands, then the scan runs), so the scan covers the fresh
-// batch too.
-function controlRow(): Elem {
-  const ingest = horizontalLayout([
-    opButton("Append 250", [
-      ["update", LINES_PATH, appendNaiveOp],
-      ["update", TOTAL_PATH, totalTick],
-    ] as IntentList),
-    spacer(5, 0),
-    opButton("Ring append 250", [
-      ["update", RING_APPEND_PATH, ringAppendOp],
-      ["update", RING_NEXT_PATH, ringNextTick],
-      ["update", TOTAL_PATH, totalTick],
-    ] as IntentList),
-  ]) as Elem;
-  const search = horizontalLayout([
-    opButton("Search all", [
-      ["update", LINES_PATH, appendNaiveOp],
-      ["update", TOTAL_PATH, totalTick],
-      ["update", SEARCH_ALL_PATH, searchAllOp],
-    ] as IntentList),
-    spacer(5, 0),
-    opButton("Search ring", [
-      ["update", RING_APPEND_PATH, ringAppendOp],
-      ["update", RING_NEXT_PATH, ringNextTick],
-      ["update", TOTAL_PATH, totalTick],
-      ["update", SEARCH_RING_PATH, searchRingOp],
-    ] as IntentList),
-  ]) as Elem;
-  return (verticalLayout([ingest, search]) ?? ingest) as Elem;
-}
+// --- the collect-one search ops ------------------------------------------
 
 // The collect-one search ops: the collected corpus is scanned, the
 // old results are replaced (the search always rewrites the outcome).
 export function searchAllOp(all: unknown): SearchResults {
   return searchCorpus(all as readonly LogLine[], "all", SEARCH_QUERY);
 }
+// The ring search: the collected ring is the bounded series, scanned
+// by the window fold (a full pass over plain data — the same one-pass
+// scan searchCorpus does over the naive corpus, without materializing
+// the window into an array first).
 export function searchRingOp(ring: unknown): SearchResults {
-  return searchCorpus(ring as readonly LogLine[], "ring", SEARCH_QUERY);
-}
-
-// The log-stream view: the control row, then the summary lines, the
-// match sample, the fixed-height ring window, and the naive corpus's
-// full (unbounded — the failure the scenario measures) label stack.
-export function logStreamView(state: LogStreamState): Elem {
-  const summaries = summaryLines(state).map((text) => labelNode(text));
-  const matches = state.results.sample.map((line) =>
-    labelNode(`match ${line.id} — ${line.msg}`),
+  const series = ring as BoundedSeries<LogLine>;
+  const sample: LogLine[] = [];
+  const count = foldSeries(
+    series,
+    (matches: number, line: LogLine) => {
+      if (!line.msg.includes(SEARCH_QUERY)) return matches;
+      if (sample.length < MATCH_SAMPLE) sample.push(line);
+      return matches + 1;
+    },
+    0,
   );
-  const window = state.ring
-    .slice(Math.max(0, state.ring.length - WINDOW_DRAWN))
-    .map((line) => labelNode(`kept ${line.id} — ${line.msg}`));
-  const body = state.lines.map((line) => labelNode(line.msg));
-  const head = [...summaries, ...matches, ...window] as readonly Elem[];
-  const stack = [...head, ...body] as readonly Elem[];
-  const controls = controlRow();
-  return (verticalLayout([controls, spacer(0, 10), ...stack]) ??
-    controls) as Elem;
-}
-
-// The bench app: the ordinary registry-aware makeApp mount, the same
-// shape gallery.ts's demos use — no benchmark-specific path.
-export function createLogStreamApp(): App {
-  return makeApp({
-    view: (state) => logStreamView(state as LogStreamState),
-    state: logStreamState(),
-    backend: { containerSize: VIEWPORT },
-  });
+  return { query: SEARCH_QUERY, corpus: "ring", count, sample };
 }

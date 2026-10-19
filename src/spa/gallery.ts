@@ -29,7 +29,7 @@ import { createTimeTravel10kApp } from "../examples/bench/time-travel-10k.ts";
 import { createSaveRestore5kApp } from "../examples/bench/save-restore-5k.ts";
 import { createDashboardDerivedApp } from "../examples/bench/dashboard-derived.ts";
 import { createReviewFaultsApp } from "../examples/bench/review-faults.ts";
-import { createLogStreamApp } from "../examples/bench/log-stream.ts";
+import { createLogStreamApp } from "../examples/bench/log-stream-view.ts";
 import { createStreamDashboardApp } from "../examples/bench/stream-dashboard.ts";
 import { createPlotsApp } from "../examples/bench/plots.ts";
 import { createSpreadsheetApp } from "../examples/bench/spreadsheet.ts";

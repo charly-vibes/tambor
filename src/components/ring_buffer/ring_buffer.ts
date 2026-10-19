@@ -142,7 +142,7 @@ export function newestSeries<T>(
   // the window reaches back past the young stack: walk the old stack
   // (bounded by capacity) and take its last n - newest.length items
   const older: T[] = [];
-  for (let cell = series.old; cell !== null; cell = cell.rest) {
+  for (let cell: Cell<T> | null = series.old; cell !== null; cell = cell.rest) {
     older.push(cell.head);
   }
   return [...older.slice(Math.max(0, older.length - (n - newest.length))), ...newest.reverse()];
