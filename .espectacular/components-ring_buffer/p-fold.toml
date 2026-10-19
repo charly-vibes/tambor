@@ -1,0 +1,14 @@
+archetype = "PF"
+authored_with = "0.12.0"
+derived_from = "p_fold@ab6f25cae327"
+description = "fold visits exactly size items once each in ingest order and its accumulator equals a reference array fold"
+falsifiability_class = "safety"
+id = "p-fold"
+status = "active"
+superseded_by = ""
+
+[[tests.shell]]
+command = "tools/scaffold-check.sh components-ring_buffer p-fold"
+
+[[tests.vitest]]
+flags = "--testNamePattern=p_fold"

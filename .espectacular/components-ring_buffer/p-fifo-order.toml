@@ -1,0 +1,14 @@
+archetype = "PF"
+authored_with = "0.12.0"
+derived_from = "p_fifo_order@a69daea4fd3d"
+description = "the iterated order is a suffix of the ingest order (the dropped prefix is gone) and the fold visits the same order"
+falsifiability_class = "safety"
+id = "p-fifo-order"
+status = "active"
+superseded_by = ""
+
+[[tests.shell]]
+command = "tools/scaffold-check.sh components-ring_buffer p-fifo-order"
+
+[[tests.vitest]]
+flags = "--testNamePattern=p_fifo_order"

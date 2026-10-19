@@ -50,6 +50,10 @@ Run the SPA locally:
 
     npm ci
     npm run build:spa        # esbuild → dist/spa.js (<!-- stamp:bundle-size -->208.8 kB<!-- /stamp:bundle-size -->, ESM, no runtime deps)
+||||||| 21cd520
+    npm run build:spa        # esbuild → dist/spa.js (<!-- stamp:bundle-size -->208.7 kB<!-- /stamp:bundle-size -->, ESM, no runtime deps)
+=======
+    npm run build:spa        # esbuild → dist/spa.js (<!-- stamp:bundle-size -->211.0 kB<!-- /stamp:bundle-size -->, ESM, no runtime deps)
     npx serve .              # then open http://localhost:3000
 
 Or run the test suite:

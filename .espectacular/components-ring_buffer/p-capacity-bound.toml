@@ -1,0 +1,14 @@
+archetype = "PF"
+authored_with = "0.12.0"
+derived_from = "p_capacity_bound@4e60f7723241"
+description = "size never exceeds capacity and the retained window is exactly the newest capacity items in ingest order"
+falsifiability_class = "safety"
+id = "p-capacity-bound"
+status = "active"
+superseded_by = ""
+
+[[tests.shell]]
+command = "tools/scaffold-check.sh components-ring_buffer p-capacity-bound"
+
+[[tests.vitest]]
+flags = "--testNamePattern=p_capacity_bound"

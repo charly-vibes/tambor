@@ -31,7 +31,6 @@ import {
   TOTAL_PATH,
   LINES_PATH,
   appendNaiveOp,
-  createLogStreamApp,
   levelCounts,
   logStreamState,
   makeBatch,
@@ -47,6 +46,8 @@ import {
   type LogLine,
   type LogStreamState,
 } from "../src/examples/bench/log-stream.ts";
+import { createLogStreamApp } from "../src/examples/bench/log-stream-view.ts";
+import { newestSeries } from "../src/components/ring_buffer/ring_buffer.ts";
 
 // Independent recomputation of a corpus's match count (not the app's
 // helper): error ids are exactly the multiples of 10.
@@ -80,16 +81,17 @@ describe("log-stream bench app", () => {
   });
 
   it("ring append keeps only the newest RING_CAPACITY lines", () => {
-    let ring: readonly LogLine[] = [];
+    let ring = logStreamState().ring;
     let ringNext = 0;
     for (let i = 0; i < 13; i++) {
       ring = ringAppendOp(ringNext, ring);
       ringNext += BATCH;
     }
-    expect(ring.length).toBe(RING_CAPACITY);
+    expect(ring.size).toBe(RING_CAPACITY);
     // the oldest 1250 lines were dropped; ids stay monotone
-    expect(ring[0]?.id).toBe(13 * BATCH - RING_CAPACITY);
-    expect(ring[RING_CAPACITY - 1]?.id).toBe(13 * BATCH - 1);
+    const kept = newestSeries(ring, RING_CAPACITY);
+    expect(kept[0]?.id).toBe(13 * BATCH - RING_CAPACITY);
+    expect(kept[RING_CAPACITY - 1]?.id).toBe(13 * BATCH - 1);
   });
 
   it("searchCorpus counts every match and caps the drawn sample", () => {
@@ -106,13 +108,11 @@ describe("log-stream bench app", () => {
 
   it("starts empty: nothing ingested, no search yet", () => {
     const state = logStreamState();
-    expect(state).toEqual({
-      lines: [],
-      ring: [],
-      ringNext: 0,
-      total: 0,
-      results: noResults(),
-    });
+    expect(state.lines).toEqual([]);
+    expect(state.ring.size).toBe(0);
+    expect(state.ringNext).toBe(0);
+    expect(state.total).toBe(0);
+    expect(state.results).toEqual(noResults());
     expect(resultsLabel(state.results)).toBe("no search yet");
   });
 
@@ -139,7 +139,7 @@ describe("log-stream bench app", () => {
       ]);
     }
     const state = app.getState() as LogStreamState;
-    expect(state.ring.length).toBe(RING_CAPACITY);
+    expect(state.ring.size).toBe(RING_CAPACITY);
     expect(state.total).toBe(9 * BATCH);
   });
 
@@ -160,7 +160,9 @@ describe("log-stream bench app", () => {
     ]);
     state = app.getState() as LogStreamState;
     expect(state.results.corpus).toBe("ring");
-    expect(state.results.count).toBe(expectedMatches(state.ring));
+    expect(state.results.count).toBe(
+      expectedMatches(newestSeries(state.ring, RING_CAPACITY)),
+    );
   });
 
   it("levelCounts is the one-pass histogram", () => {
@@ -208,12 +210,12 @@ describe("log-stream bench app", () => {
           ring: grown,
           ringNext: state.ringNext + BATCH,
           total: state.total + BATCH,
-          results: searchCorpus(grown, "ring", SEARCH_QUERY),
+          results: searchRingOp(grown),
         };
       }
     }
     expect(state.lines.length).toBe(7 * BATCH);
-    expect(state.ring.length).toBe(6 * BATCH);
+    expect(state.ring.size).toBe(6 * BATCH);
     expect(summaryLines(state)).toContain("matches 150 of error (ring)");
   });
 });

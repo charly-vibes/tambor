@@ -1,9 +1,0 @@
-- read pattern files (virtual_list, memo spec+tests, findings-kit, plot-points, canvas painter/image, interop)
-- design: canvas_layer = identity-keyed raster cache (WeakMap on data ref) → single image node; raster seam reuses PAINTERS + Painter (DOM-free)
-- ah + spk CLIs available
-- canvas_layer component + raster seam + tests green (8)
-- bench app + meter green; ratio ~0.19 (4.2-4.5ms vs 22-23ms per op, 12k primitives)
-- spec authored (28 specs), 7 contracts synced, ah check clean, docs stamped
-- tsc strict clean (EventElem import, path variadic, ImageNode seam, resolver leaf); scaffold artifacts compiled; emit/core-split pass
-- findings-kit updated with both meter regimes (quiet 0.16-0.19, loaded 0.64-0.66)
-- final: ah check --run-tests clean (709 passed), 15/80 core test files green, meter recorded both regimes

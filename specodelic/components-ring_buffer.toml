@@ -1,0 +1,43 @@
+source = "components.ring_buffer"
+
+[[constraints]]
+id = "capacity_bound"
+kind = "invariant"
+expr = "the series never holds more than capacity items: appending past capacity drops exactly the overflow's oldest items, so the retained set is always the newest capacity items in ingest order"
+traces_to = "[[components.ring_buffer]]"
+
+[[constraints]]
+id = "ingest_order"
+kind = "invariant"
+expr = "the series is a FIFO of the ingest order — iteration (the newest view and the fold) walks oldest→newest, and a dropped item never reappears"
+traces_to = "[[components.ring_buffer]]"
+
+[[constraints]]
+id = "append_amortized"
+kind = "invariant"
+expr = "appending a batch of b items costs O(b) amortized — each item is consed at most twice over the stream (pushed to the young stack, rotated to the old stack at most once) and dropped at most once — and never copies the retained series: an append that drops nothing shares both retained stacks' identity, and a dropping append pops the old stack without re-consing it"
+traces_to = "[[components.ring_buffer]]"
+
+[[constraints]]
+id = "window_view"
+kind = "invariant"
+expr = "newest(n) is exactly the newest min(n, size) items in oldest→newest order, materialized from the newest end so the walk is bounded by the retained window (≤ capacity), never by the ingest history"
+traces_to = "[[components.ring_buffer]]"
+
+[[constraints]]
+id = "fold_visits_all"
+kind = "invariant"
+expr = "fold(seed, f) visits exactly the size retained items once each, oldest→newest, and returns the final accumulator"
+traces_to = "[[components.ring_buffer]]"
+
+[[constraints]]
+id = "pure_slices"
+kind = "invariant"
+expr = "an append returns a fresh immutable value and never mutates its argument; unchanged stacks keep their identity (structural sharing), so a series held in app state changes only through the dispatch that appends to it"
+traces_to = "[[components.ring_buffer]]"
+
+[[constraints]]
+id = "capacity_validated"
+kind = "invariant"
+expr = "capacity must be a positive integer — a non-positive or non-integer capacity is rejected with a TypeError at construction, never silently mis-bounding every later append"
+traces_to = "[[components.ring_buffer]]"

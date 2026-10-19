@@ -1,0 +1,14 @@
+archetype = "PF"
+authored_with = "0.12.0"
+derived_from = "p_append_amortized@c8d58d5e2326"
+description = "a no-drop append shares both stacks (the batch is consed on top of the retained young spine), a dropping append is the exact d-th rest of the old stack, and a rotation allocates fresh cells without aliasing either pre-append stack"
+falsifiability_class = "safety"
+id = "p-append-amortized"
+status = "active"
+superseded_by = ""
+
+[[tests.shell]]
+command = "tools/scaffold-check.sh components-ring_buffer p-append-amortized"
+
+[[tests.vitest]]
+flags = "--testNamePattern=p_append_amortized"

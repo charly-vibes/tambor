@@ -379,3 +379,45 @@ vitest patterns in `.espectacular/components-canvas_layer/`).
   the BZ2 app's built mode; no benchmark-specific fast paths (the bench
   app drives its pan op through the ordinary dispatcher wire, pinned by
   a contract test).
+||||||| 21cd520
+=======
+## RB — bounded-series ring-buffer store (tambor-54j.8.5)
+
+The public promotion of the BZ5 candidate: `src/components/ring_buffer/
+ring_buffer.ts` (`boundedSeries` / `appendSeries` / `newestSeries` /
+`foldSeries`), corpus `openspec/specs/components-ring_buffer/spec.md`
+(7 contracts), public through the interop barrel alongside memo. The
+BZ5 log-stream demo's ring arm now rides the component (state slice
+`BoundedSeries<LogLine>`, append = `appendSeries`, drawn window =
+`newestSeries`, kept-histogram and ring search = window folds).
+
+### Measured
+
+Paired browser runs, same machine ~1 h apart, cpu ×4, Chrome
+156.0.8078.4, production bundle (`benchmarks/run.mjs --scenario
+log-stream-ring-append`, 15 runs × 12 ops + todo-add floor each run):
+
+| arm | commit | median | p90 | todo-add floor |
+|---|---|---|---|---|
+| inline slice pattern (`[...ring, ...batch].slice`, the BZ5 lane's proven op) | `21cd520` | 66.20 ms | 67.24 ms | 66.63 ms |
+| public component (`appendSeries`, O(1) amortized) | `54ec059` | **50.33 ms** | 67.19 ms | 66.71 ms |
+
+Parity holds and then some: the component arm's median is at the same
+draw floor as the inline pattern (both arms sit on the todo-add
+floor ~66–67 ms — the per-op cost is the view re-derive + DOM write +
+paint of the fixed 300×300 surface, not the ingest), and the component
+arm's median landed 16 ms *below* the inline baseline because
+`appendSeries` pays O(batch) consing instead of the slice's
+O(capacity) window copy. Both arms leave the identical drawn state
+(`"kept 2000"` guard). Honest caveats: single paired pair, not 3×
+repeats; the historical 83 ms (findings-bz §BZ5) was a different
+machine/load — today's floor is ~66 ms, so both arms are floor-bound
+and the ingest difference shows up as p25 (49.91 vs 50.36, both
+sub-floor in the fast tail) rather than a large median gap.
+
+Separately noted: `log-stream-search` failed its expectedText guard on
+BOTH arms under today's load (verified at `21cd520` before blaming the
+change) — 13 ingest-then-search ops ≈ 5 s of measured work against the
+spec's 5 s `toContainText` timeout. Pre-existing marginality, not a
+regression of this lane; left for the orchestrator to schedule (slower
+expect timeout or fewer ops).
