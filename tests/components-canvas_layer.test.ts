@@ -53,7 +53,7 @@ const draw: LayerDraw = (data) => {
   const pts = data as readonly Pt[];
   return [
     rectangle(100, 80),
-    ...pts.map((p): Elem => path([[p.x, p.y], [p.x + 3, p.y + 3]])),
+    ...pts.map((p): Elem => path([p.x, p.y], [p.x + 3, p.y + 3])),
     labelNode(`${pts.length} points`),
   ];
 };
@@ -62,11 +62,11 @@ const draw: LayerDraw = (data) => {
 // scope — the memo shape).
 const layer = canvasLayer({ width: 100, height: 80, draw });
 
-// The image node of a derived layer view (the single node the layer
-// returns), typed for the assertions.
-function imageNode(view: readonly unknown[]): { type: string; data?: ImageBuffer; width: number; height: number } {
-  expect(view.length).toBe(1);
-  return view[0] as { type: string; data?: ImageBuffer; width: number; height: number };
+// The image node the layer returns, typed for the assertions.
+function imageNode(node: unknown): { type: string; data?: ImageBuffer; width: number; height: number } {
+  const n = node as { type: string; data?: ImageBuffer; width: number; height: number };
+  expect(n.type).toBe("image");
+  return n;
 }
 
 describe("canvas_layer identity rule", () => {
@@ -180,8 +180,7 @@ describe("canvas_layer × the component wire", () => {
     const data = points(4);
     const view = canvasLayer({ width: 100, height: 80, draw })(data);
     const host = defineComponent("canvas_host", [{ keys: ["view"], defaults: {} }], (props: Props) => props["view"]);
-    const out = render(call(host, { view })) as readonly unknown[];
-    expect(out.length).toBe(1);
+    const out = render(call(host, { view })) as unknown;
     expect(imageNode(out).data === imageNode(view).data).toBe(true); // the same buffer, un-walked
   });
 });

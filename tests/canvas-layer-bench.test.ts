@@ -45,7 +45,8 @@ import { rasterize, bufferEquals } from "../src/components/canvas_layer/index.ts
 import { CanvasBackend } from "../src/render/canvas.ts";
 import type { ImageBuffer } from "../src/render/image.ts";
 import { walk, type EventNode } from "./helpers/scrollview.ts";
-import type { Elem, EventElem } from "../src/views/model.ts";
+import type { Elem } from "../src/views/model.ts";
+import type { EventElem } from "../src/events/bubble.ts";
 import type { Path } from "../src/effects/paths.ts";
 import { makeApp, type App } from "../src/effects/dispatch.ts";
 

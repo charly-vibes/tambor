@@ -26,7 +26,7 @@
 //   the dispatch-shaped immutable update) and pays exactly one
 //   re-derive + re-rasterize.
 
-import { label as labelNode, path, translate, type Elem } from "../../views/model.ts";
+import { label as labelNode, path, translate, type Elem, type Vec2 } from "../../views/model.ts";
 import { canvasLayer } from "../../components/canvas_layer/index.ts";
 
 // The point count: >10k drawn primitives (one path node per point —
@@ -77,11 +77,14 @@ function yOf(v: number): number {
 
 // The wrapped subtree: one path per point (the min/max vertical shape
 // the BZ2 band chart draws, undecimated) — >10k drawn primitives.
-export function chartBody(points: readonly ChartPoint[]): Elem {
+export function chartBody(data: object): Elem {
+  const points = data as readonly ChartPoint[];
   const nodes: Elem[] = [];
   for (let i = 0; i < points.length; i++) {
     const p = points[i]!;
-    nodes.push(path([[i, yOf(p.a)], [i, yOf(p.b)]]));
+    const a: Vec2 = [i, yOf(p.a)];
+    const b: Vec2 = [i, yOf(p.b)];
+    nodes.push(path(a, b));
   }
   return nodes;
 }
@@ -135,6 +138,8 @@ const chartLayer = canvasLayer({
 export function layeredChartView(state: LayerState): Elem {
   return [
     labelNode(summaryLine(state)),
-    translate(-state.winStart, 0, chartLayer(state.points)) as Elem,
+    // the image primitive rides the draw traversal (AnyDraw) — the
+    // view-model Elem union does not carry render primitives
+    translate(-state.winStart, 0, chartLayer(state.points) as unknown as Elem) as Elem,
   ] as Elem;
 }

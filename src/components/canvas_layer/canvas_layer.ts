@@ -31,8 +31,9 @@
 //   painters, so the cached pixels are exactly the pixels the wrapped
 //   subtree paints.
 
-import type { Elem, EventElem } from "../../views/model.ts";
+import type { ImageNode } from "../../render/primitives.ts";
 import type { ImageBuffer } from "../../render/image.ts";
+import type { Elem } from "../../views/model.ts";
 import { image } from "../../render/primitives.ts";
 import { rasterize } from "./raster.ts";
 
@@ -57,23 +58,26 @@ interface Entry {
   readonly buf: ImageBuffer;
 }
 
-// The layer's type: called per derive with the data BY REFERENCE.
-export type CanvasLayerFn = (data: object) => readonly EventElem[];
+// The layer's type: called per derive with the data BY REFERENCE. The
+// node is a render primitive (ImageNode — the draw traversal's
+// vocabulary, AnyDraw), not a view-model Node: apps embed it in their
+// view the way any image primitive rides the draw tree.
+export type CanvasLayerFn = (data: object) => ImageNode;
 
 // The canvas-layer component: created once per call site, called per
 // derive. A hit (same data reference, same layer) replays the cached
 // raster without touching the wrapped subtree; a miss derives the
-// subtree once and rasterizes it.
+// subtree once and rasterizes it. The view is the single image node.
 export function canvasLayer(opts: CanvasLayerOpts): CanvasLayerFn {
   const cache = new WeakMap<object, Entry>();
-  return (data: object): readonly EventElem[] => {
+  return (data: object): ImageNode => {
     if (typeof data !== "object" || data === null) {
       throw new TypeError(
         "canvas_layer: data must be an object — the reference is the invalidation signal",
       );
     }
     const buf = cachedRaster(cache, data, opts.draw, opts.width, opts.height);
-    return [image(opts.width, opts.height, buf)] as unknown as readonly EventElem[];
+    return image(opts.width, opts.height, buf);
   };
 }
 

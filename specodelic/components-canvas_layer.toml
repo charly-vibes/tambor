@@ -1,0 +1,37 @@
+source = "components.canvas_layer"
+
+[[constraints]]
+id = "ref_keyed"
+kind = "invariant"
+expr = "a derive with a data reference already in the layer's cache returns the cached raster — the wrapped subtree is not derived again; a data reference the cache has not seen derives the wrapped subtree once and rasterizes it"
+traces_to = "[[components.canvas_layer]]"
+
+[[constraints]]
+id = "by_ref_state"
+kind = "invariant"
+expr = "the data is held by reference: the layer never copies the payload and never deep-compares it — a structurally equal but distinct data object is a miss and re-derives"
+traces_to = "[[components.canvas_layer]]"
+
+[[constraints]]
+id = "draw_once"
+kind = "invariant"
+expr = "the wrapped subtree's draw function is invoked at most once per distinct data reference — the drawn-tree derivation of the wrapped subtree is skipped for every derive while the reference holds"
+traces_to = "[[components.canvas_layer]]"
+
+[[constraints]]
+id = "image_node"
+kind = "invariant"
+expr = "the layer's view is exactly one image node carrying the cached raster — one drawn primitive replaces the wrapped subtree's nodes, and the app positions it with ordinary view nodes (a pan translate outside the layer)"
+traces_to = "[[components.canvas_layer]]"
+
+[[constraints]]
+id = "raster_pure"
+kind = "invariant"
+expr = "the raster is a pure function of the wrapped subtree, the width and the height: two rasterizations of the same subtree produce equal pixels, so a replayed raster is the pixels the subtree would have painted"
+traces_to = "[[components.canvas_layer]]"
+
+[[constraints]]
+id = "reject_primitive"
+kind = "invariant"
+expr = "a data value that is not an object (a primitive or null) is rejected with a TypeError at the derive, never silently keyed"
+traces_to = "[[components.canvas_layer]]"

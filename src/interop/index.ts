@@ -25,9 +25,10 @@ export { defui } from "./defui.ts";
 export { memo, type Memoized } from "../components/memo/memo.ts";
 export {
   canvasLayer,
-  canvasLayerView,
   cachedRaster,
   rasterize,
   bufferEquals,
+  type CanvasLayerOpts,
+  type CanvasLayerFn,
   type LayerDraw,
 } from "../components/canvas_layer/index.ts";
