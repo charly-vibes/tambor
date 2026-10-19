@@ -32,8 +32,7 @@ export {
   type CanvasLayerFn,
   type LayerDraw,
 } from "../components/canvas_layer/index.ts";
-||||||| 21cd520
-=======
+export {
   appendSeries,
   boundedSeries,
   foldSeries,
