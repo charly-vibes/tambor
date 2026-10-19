@@ -235,3 +235,60 @@ Residuals / follow-up candidates:
 - The notebook-chain-200 card stack (B9, 814.7 ms median) is the next
   candidate consumer: its whole-view redraw is the same shape at 209
   heterogeneous cards.
+||||||| b0de073
+## J8 — subtree memo above expensive derives (tambor-54j.8.4)
+
+Meters: `tests/memo-keyed-table.test.ts` (paired in-process meter, both
+arms in one run — the paired ratio cancels machine load) and the
+`keyed-table-ops` browser scenario (`benchmarks/run.mjs --scenario
+keyed-table-ops`), stash/unstash paired at HEAD `e2ef981` (the memo
+stashed for the before-run). Component: `src/components/memo/memo.ts`,
+public through the interop barrel; corpus
+`openspec/specs/components-memo/spec.md` (7 contracts).
+
+### Measured
+
+| Meter | before | after | delta |
+|---|---|---|---|
+| In-process paired meter (derive + sim-DOM draw per op, keyed-table op cycle, seed 1000 rows) | 6.8–8.5 ms/op | 5.3 ms/op | **ratio 0.63–0.78 (−22–37%)**, stable across three runs on different load states |
+| Browser `keyed-table-ops` (back-to-back stash pair, same load — todo-add floor 66.26 / 66.13 ms) | 216.40 ms | 216.66 ms | **unchanged** (within noise; the floor check says the load was identical, so this is a real null, not a load artifact) |
+| `keyed-table-build` after memo (drawn-output guard, expectedDrawn 1000) | — | passes | drawn DOM unchanged by memo |
+
+Boundary evidence carried in: the render-cache key-cost finding
+(54j.11) put the cache-hit path at ~4.6–5.1 µs/op, so memo only pays
+when the body resolve costs more than the key — the memo key here is
+one WeakMap lookup (~0.1 µs), and the boundary sits above the per-row
+label derive, not above trivial renders elsewhere.
+
+### Verdict
+
+- **Adopted as the public memo component** (`memo(build)` — one
+  memoized renderer per call site, WeakMap keyed on the key object's
+  identity). The keyed-table demo maps its row labels through it: the
+  ops preserve the identity of every row they don't touch, so the
+  whole-view re-derive after an op rebuilds only the changed rows.
+- **The browser scenario's median does NOT move, and the findings
+  record says so plainly**: at 1000–4000 drawn rows the per-op cost is
+  dominated by the DOM draw/layout floor (the same derive-vs-draw
+  split B9 recorded), which memo does not touch. The measurable win is
+  on the derive stage — the in-process paired meter isolates it and
+  pins the ratio. This is the honest reading of 8xm's open memo item:
+  component-level memo recovers the derivation half of the whole-view
+  re-derive cost; the draw floor is a separate lever.
+- **Identity/equality semantics are the corpus contract**
+  (openspec/specs/components-memo/spec.md): identity-keyed, object keys
+  only (primitives rejected with a TypeError rather than silently
+  deep-equalled — deep equality is the ~5 µs serialization key the
+  render cache already pays), and identity is a *sound* invalidation
+  signal for the same reason 8xm's route-time cache is: state changes
+  only through dispatch — including cell-writeback closures, which
+  write back through the registry-aware dispatcher — and every
+  dispatch produces fresh identity for changed slices with structural
+  sharing preserving unchanged ones. The writeback interaction is
+  pinned by contract (`p_writeback`): a cached subtree's handler
+  closures keep routing through dispatch and survive sibling state
+  changes.
+- Anti-goal held: no memo semantics that break cell-writeback/closure
+  semantics (the closure contract test exercises exactly that path),
+  and no benchmark rigging — the null browser result is recorded
+  alongside the positive meter rather than massaged.

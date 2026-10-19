@@ -1,0 +1,31 @@
+source = "components.memo"
+
+[[constraints]]
+id = "identity_keyed"
+kind = "invariant"
+expr = "a call with an object key returns the cached subtree when the key's identity is unchanged, and calls build exactly once per distinct key object"
+traces_to = "[[components.memo]]"
+
+[[constraints]]
+id = "no_deep_equality"
+kind = "invariant"
+expr = "a structurally equal but distinct key object is a miss and re-derives — the equality is identity, never deep equality"
+traces_to = "[[components.memo]]"
+
+[[constraints]]
+id = "object_keys_only"
+kind = "invariant"
+expr = "a key that is not an object (a primitive or null) is rejected with a TypeError at the call, never silently mis-keyed"
+traces_to = "[[components.memo]]"
+
+[[constraints]]
+id = "writeback_sound"
+kind = "invariant"
+expr = "identity is a sound invalidation signal because state changes only through dispatch — including cell-writeback closures that write back through the registry-aware dispatcher — so a memoized subtree's handler closures stay valid for as long as the key identity lives and an unchanged sibling slice keeps its cached subtree across a changed parent"
+traces_to = "[[components.memo]]"
+
+[[constraints]]
+id = "pure_subtree"
+kind = "invariant"
+expr = "the cached subtree is a plain immutable view value and a pure function of its key — the same key object yields the identical node on every derive"
+traces_to = "[[components.memo]]"

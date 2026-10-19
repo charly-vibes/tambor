@@ -1,0 +1,14 @@
+archetype = "PF"
+authored_with = "0.12.0"
+derived_from = "p_sibling_share@4655de79dc36"
+description = "the untouched first row is built once across all three derives"
+falsifiability_class = "safety"
+id = "p-sibling-share"
+status = "active"
+superseded_by = ""
+
+[[tests.shell]]
+command = "tools/scaffold-check.sh components-memo p-sibling-share"
+
+[[tests.vitest]]
+flags = "--testNamePattern=p_sibling_share"
