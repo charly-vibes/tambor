@@ -149,7 +149,7 @@ it("p_pure: state is deep-equal before and after calling a handler", () => {
         // random event's position: none may touch the state directly —
         // state changes only flow back as effects (paths_not_callbacks)
         const tree = [
-          ...(counterView(num, rootRef(state).get("num") as Ref<number>) ?? []),
+          ...(counterView(num, rootRef(state).get("num") as Ref<number>)),
           ...(counterCounterView(
             nums,
             rootRef(state).get("nums") as Ref<readonly number[]>,

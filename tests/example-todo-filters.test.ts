@@ -56,8 +56,8 @@ function isSpacerDrawable(drawable: unknown): boolean {
 // rather than a row group.
 function isSpacerRow(el: unknown): boolean {
   if (Array.isArray(el)) return false;
-  const t = el as TranslateNode;
-  return t.type === "translate" && isSpacerDrawable(t.drawable);
+  const n = el as Node;
+  return n.type === "translate" && isSpacerDrawable((n as TranslateNode).drawable);
 }
 
 // The number of visible rows in the app's list.

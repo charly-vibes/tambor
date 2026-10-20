@@ -81,7 +81,7 @@ describe("component render cache soak (tambor-54j.11)", { timeout: 180_000 }, ()
     // than the soak's working-set noise, not by retention
     const endHeap = heapUsed();
     const growth = endHeap - startHeap;
-    // eslint-disable-next-line no-console
+     
     console.log(
       `soak: entries=${stats.entries} components=${stats.components} ` +
         `heap start=${(startHeap / 1e6).toFixed(1)}MB end=${(endHeap / 1e6).toFixed(1)}MB ` +
@@ -119,7 +119,7 @@ describe("component render cache soak (tambor-54j.11)", { timeout: 180_000 }, ()
     const t0 = performance.now();
     for (let i = 0; i < N; i++) render(c);
     const nsPerOp = ((performance.now() - t0) * 1e6) / N;
-    // eslint-disable-next-line no-console
+     
     console.log(
       `key-cost: cache-hit path (canonical serialization + lookups) ` +
         `~${nsPerOp.toFixed(0)} ns/op`,

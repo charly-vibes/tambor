@@ -21,8 +21,6 @@ import { beforeAll, describe, expect, it } from "vitest";
 // test-only node access (tsconfig types:[vitest/globals] by design)
 // @ts-expect-error node builtin
 import { execSync } from "node:child_process";
-// @ts-expect-error node:timers/promises has no type declarations here
-import { setTimeout as sleep } from "node:timers/promises";
 // @ts-expect-error node builtin
 import { Worker } from "node:worker_threads";
 

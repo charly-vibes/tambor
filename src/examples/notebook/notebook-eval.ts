@@ -134,12 +134,12 @@ function sumOf(a: number | Float64Array): number | Float64Array {
 function lenOf(a: number | Float64Array): number | Float64Array {
   return a instanceof Float64Array ? a.length : 1;
 }
-const FN: Readonly<Record<string, (...a: readonly (number | Float64Array)[]) => number | Float64Array | { readonly plot: readonly [Float64Array, Float64Array] }>> = {
-  sum: sumOf,
-  len: lenOf,
-  mean: (a) => (sumOf(a) as number) / (lenOf(a) as number),
-  min: (a) => red(a, Math.min, Number.POSITIVE_INFINITY),
-  max: (a) => red(a, Math.max, Number.NEGATIVE_INFINITY),
+const FN: Readonly<Record<string, (...a: readonly (number | Float64Array | undefined)[]) => number | Float64Array | { readonly plot: readonly [Float64Array, Float64Array] }>> = {
+  sum: (a) => sumOf(a as number | Float64Array),
+  len: (a) => lenOf(a as number | Float64Array),
+  mean: (a) => (sumOf(a as number | Float64Array) as number) / (lenOf(a as number | Float64Array) as number),
+  min: (a) => red(a as number | Float64Array, Math.min, Number.POSITIVE_INFINITY),
+  max: (a) => red(a as number | Float64Array, Math.max, Number.NEGATIVE_INFINITY),
   range: (a, b) => {
     const to = Number(b === undefined ? a : b);
     const from = b === undefined ? 0 : Number(a);

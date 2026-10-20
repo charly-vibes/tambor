@@ -90,7 +90,7 @@ it("p_handlers: a mouse-down handler takes a Vec2 and returns readonly Effect[]"
   expect(handler([3, 4]).length).toBe(1);
   // @ts-expect-error a mouse-down handler with a wrong parameter is a
   // compile error
-  const bad: MouseDownHandler = (pos: string) => [];
+  const bad: MouseDownHandler = (_pos: string) => [];
   expect(bad).toBeDefined();
   // a wrap-on handler receives the typed default handler first
   const wrap: WrapOnHandler = (defaultHandler, pos) =>
@@ -110,9 +110,9 @@ it("p_intercept: on infers the handler parameters from the registered effect typ
   // wrong parameter types are a compile error
   // @ts-expect-error on select with the wrong parameter types is a
   // compile error
-  on("select", (path: string, value: number) => []);
+  on("select", (_path: string, _value: number) => []);
   // @ts-expect-error the value parameter is checked too
-  on("select", (path, value: string) => []);
+  on("select", (_path, _value: string) => []);
 });
 
 // p_serialisable — derives_from: typing.model.serialisable_effects

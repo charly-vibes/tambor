@@ -59,7 +59,7 @@ describe("logo gallery demo — the world is a fold", () => {
     const container = doc.createElement("div");
     doc.body.appendChild(container);
     const spa = mountDemo(doc, container, def!.create);
-    const text = container.textContent ?? "";
+    const text = container.textContent;
     expect(text).toContain("tambor logo");
     expect(text).toContain("0/0");
     spa.unmount();
@@ -150,7 +150,7 @@ describe("logo gallery demo — the world is a fold", () => {
 
     // the halo draws four handles and the inspector shows the fields
     expect(haloCount(spa.app.view())).toBe(before + 4);
-    const text = container.textContent ?? "";
+    const text = container.textContent;
     expect(text).toContain("inspector — turtle");
     expect(text).toContain("pen: true");
     spa.unmount();
@@ -168,10 +168,10 @@ describe("logo gallery demo — the world is a fold", () => {
       (f) => f.node.type === "path" && (f.node as { points: readonly unknown[] }).points.length === 4,
     )!;
     clickAt(spa.surface, ...centreOf(turtle));
-    expect((container.textContent ?? "")).toContain("inspector — turtle");
+    expect(container.textContent).toContain("inspector — turtle");
 
     clickAt(spa.surface, ...buttonCentre(spa, "✕"));
-    expect((container.textContent ?? "")).not.toContain("inspector — turtle");
+    expect(container.textContent).not.toContain("inspector — turtle");
     expect(
       scanOf(spa.app.view() as never).filter(
         (f) =>

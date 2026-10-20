@@ -143,6 +143,7 @@ export function streamDashboardView(
 // logo demo's hooks-cell shape) so the naive pump can dispatch
 // per-message; the frame op needs no capture.
 export function createStreamDashboardApp(): App {
+  // eslint-disable-next-line prefer-const -- declared before the mount closure captures it; assigned exactly once at mount
   let app: App | undefined;
   const appOf = (): App => {
     if (app === undefined) throw new Error("stream dashboard not mounted");

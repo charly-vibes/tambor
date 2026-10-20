@@ -157,7 +157,7 @@ test(
       [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)]!;
     const lane = median(medians.lane);
     const state = median(medians.state);
-    // eslint-disable-next-line no-console
+     
     console.log(
       `[lane-60hz meter] lane median ${lane.toFixed(3)} ms/event, ` +
         `state median ${state.toFixed(3)} ms/event, ratio ` +

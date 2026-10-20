@@ -54,6 +54,11 @@ pre-push:
       # Vitest strips types; the build-config contract tests cover src/** only.
       run: tools/gate-timing.sh tsc-typecheck npx tsc -p tsconfig.json --noEmit
 
+    - name: eslint
+      # typescript-eslint: no-floating-promises, switch-exhaustiveness-check,
+      # no-unnecessary-condition (tambor-ip9).
+      run: tools/gate-timing.sh eslint npx eslint .
+
     - name: scaffold-debt-report
       # Non-blocking: how many predicates are still todo!() scaffolds.
       run: tools/gate-timing.sh scaffold-debt-report tools/scaffold-debt.sh

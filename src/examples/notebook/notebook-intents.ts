@@ -61,7 +61,7 @@ function applyOne(
   hooks: { current: NotebookHooks },
 ): NotebookState {
   const type = effect[0];
-  const builder = LAUNCH_BUILDERS[type as "add" | "chain" | "fan" | "heavy"];
+  const builder = LAUNCH_BUILDERS[type as "add" | "chain" | "fan" | "heavy"] as ((s: NotebookState) => NotebookState) | undefined;
   if (builder !== undefined) {
     return launch(builder(s), hooks, null, addedOf(type as "add" | "chain" | "fan" | "heavy", s));
   }

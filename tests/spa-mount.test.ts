@@ -58,7 +58,7 @@ describe("spa-mount — todo example in a live document", () => {
 
     mountSpa(doc, container);
 
-    const text = container.textContent ?? "";
+    const text = container.textContent;
     expect(text).toContain("first");
     expect(text).toContain("second");
     expect(text).toContain("third");
@@ -78,7 +78,7 @@ describe("spa-mount — todo example in a live document", () => {
     spa.surface.host.dispatchEvent(new ME("pointerdown", { clientX: x, clientY: y }));
     spa.surface.host.dispatchEvent(new ME("pointerup", { clientX: x, clientY: y }));
 
-    const text = container.textContent ?? "";
+    const text = container.textContent;
     expect(text).not.toContain("first");
     expect(text).not.toContain("second");
     expect(text).toContain("third");

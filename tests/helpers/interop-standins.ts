@@ -18,8 +18,6 @@ import type { Path } from "../../src/effects/paths.ts";
 // The host globals tsconfig's ES2022 lib does not name; both exist in
 // every runtime vitest targets (structuredClone: WHATWG HTML,
 // performance: Web).
-declare const structuredClone: <T>(value: T) => T;
-declare const performance: { now(): number };
 
 /** A ClojureScript keyword stand-in: a host object, normalized only by ops.tag. */
 export class Keyword {

@@ -43,7 +43,8 @@ export type Effect = {
 
 /** The function-bearing mark: does the registered kind carry a
  * function argument (serialisable_effects)? */
-type IsFn<T> = T extends Function ? 1 : 0;
+// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type -- Function is the only way to detect function-bearing slots at the type level
+ type IsFn<T> = T extends Function ? 1 : 0;
 type MarkArgs<T> = { [i in keyof T]: IsFn<T[i]> };
 export type FunctionBearing<K extends keyof EffectMap> =
   1 extends MarkArgs<EffectMap[K]>[number] ? true : false;

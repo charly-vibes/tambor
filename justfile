@@ -76,3 +76,7 @@ testaruda-doctor:
 # Type-check (tsc strict — same command as the tsc-typecheck CI/pre-push gate, tambor-j5n)
 type-check:
     npx tsc -p tsconfig.json --noEmit
+
+# Lint (typescript-eslint, the three audit rules — tambor-ip9; same as CI/pre-push)
+lint:
+    npx eslint .

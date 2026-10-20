@@ -251,8 +251,8 @@ export function buildImage(_ctx: BuildCtx, node: DomNode, parent: ElementLike): 
 function svgExtent(node: DomNode, kind: "path" | "arc"): [number, number] {
   if (kind === "path") {
     const pts = node.points ?? [];
-    const xs = pts.map((p) => p[0] ?? 0);
-    const ys = pts.map((p) => p[1] ?? 0);
+    const xs = pts.map((p) => p[0]);
+    const ys = pts.map((p) => p[1]);
     return [
       Math.max(0, ...xs),
       Math.max(0, ...ys),

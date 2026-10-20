@@ -35,7 +35,7 @@ import { slider } from "../../components/numeric/slider.ts";
 import { call, render } from "../../model/component.ts";
 import { currentLabelMeasure } from "../../views/nodes.ts";
 import { VIEWPORT } from "../../spa/viewport.ts";
-import type { Cell, OutEntry, Val } from "./notebook-core.ts";
+import type { Cell, CellInfo, OutEntry, Val } from "./notebook-core.ts";
 
 // The drawn root's width (spa/mount.ts pins the surface to VIEWPORT[0] =
 // 300): a label measured wider than the space left at its x origin
@@ -49,9 +49,9 @@ const COLUMN = VIEWPORT[0];
 
 function clampText(text: string, budget: number): string {
   const measure = currentLabelMeasure();
-  if ((measure(text)[0] ?? 0) <= budget) return text;
+  if (measure(text)[0] <= budget) return text;
   let n = text.length;
-  while (n > 0 && (measure(`${text.slice(0, n)}…`)[0] ?? 0) > budget) n -= 1;
+  while (n > 0 && measure(`${text.slice(0, n)}…`)[0] > budget) n -= 1;
   return `${text.slice(0, n)}…`;
 }
 import {
@@ -116,7 +116,7 @@ function chips(c: Cell, inf: { readonly name: string | null; readonly reads: rea
   if (inf.reads.length > 0) {
     // the reads label sits at offset width(defines) + 1 (hstack rule) —
     // clamp it to what remains of the column
-    const defsWidth = currentLabelMeasure()(defs)[0] ?? 0;
+    const defsWidth = currentLabelMeasure()(defs)[0];
     row.push(
       labelNode(
         clampText(`reads ${inf.reads.join(", ")}`, COLUMN - defsWidth - 1),
@@ -156,8 +156,8 @@ function sliderView(s: NotebookState, id: number): Elem {
 
 // The output area: slider, error, plot or formatted value.
 function outputView(s: NotebookState, c: Cell, o: OutEntry): Elem {
-  const inf = s.info[c.id];
-  if (inf?.input !== null && inf?.input !== undefined && inf?.err === null) {
+  const inf = s.info[c.id] as CellInfo | undefined;
+  if (inf?.input !== null && inf?.input !== undefined && inf.err === null) {
     return sliderView(s, c.id);
   }
   if (o.err !== undefined) return labelNode(clampText(o.err, COLUMN));
@@ -198,7 +198,7 @@ function statsRow(s: NotebookState): Elem {
   const modeText = `Mode: ${s.mode === "full" ? "full" : "inc"}`;
   // the mode button's emitted box = label bounds + 12 (geometry.ts);
   // the label must fit the column minus the gap and the button's box
-  const modeWidth = (currentLabelMeasure()(modeText)[0] ?? 0) + 12;
+  const modeWidth = currentLabelMeasure()(modeText)[0] + 12;
   return horizontalLayout([
     labelNode(
       clampText(

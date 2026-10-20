@@ -10,11 +10,12 @@
 
 import type { ComponentCall } from "./component.ts";
 
-function canonical(value: unknown, seen: Set<object>): string | null {
-  if (value === null) return "null";
+// Scalar arm of canonical: a JSON-ish encoding for the scalar types,
+// null for function values (unserializable → the whole subtree is), and
+// undefined for object/symbol which continue to the object walk below.
+function canonicalScalar(value: unknown): string | null | undefined {
   switch (typeof value) {
     case "string":
-      return JSON.stringify(value);
     case "number":
     case "boolean":
       return JSON.stringify(value);
@@ -24,7 +25,16 @@ function canonical(value: unknown, seen: Set<object>): string | null {
       return `${value.toString()}n`;
     case "function":
       return null;
+    case "object":
+    case "symbol":
+      return undefined;
   }
+}
+
+function canonical(value: unknown, seen: Set<object>): string | null {
+  if (value === null) return "null";
+  const scalar = canonicalScalar(value);
+  if (scalar !== undefined) return scalar;
   const obj = value as object;
   if (seen.has(obj)) return '"<cycle>"';
   seen.add(obj);

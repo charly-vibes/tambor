@@ -93,7 +93,7 @@ function valueMethods(root: unknown, path: RefPath, value: unknown): Pick<Ref, "
   return {
     assoc(key: string, v: unknown): Ref {
       // assoc is transparent: same path, updated value
-      return makeRef(root, path, { ...((value as Record<string, unknown>) ?? {}), [key]: v });
+      return makeRef(root, path, { ...((value as Record<string, unknown> | undefined) ?? {}), [key]: v });
     },
     selectOne(p: RefPath): Ref {
       return derive(root, [...path, ["path", p] as const]);

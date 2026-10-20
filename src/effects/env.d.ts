@@ -6,10 +6,12 @@
 //   must still report unknown effects and schedule repaints on the
 //   next animation frame, which these globals name.
 
+// eslint-disable-next-line no-var -- ambient global: `var` makes it a globalThis property; let does not
 declare var console: {
   log: (...data: unknown[]) => void;
 };
 
+// eslint-disable-next-line no-var -- ambient global: `var` makes it a globalThis property; let does not
 declare var requestAnimationFrame:
   | ((callback: (time: number) => void) => number)
   | undefined;

@@ -62,7 +62,7 @@ interface Entry {
 // node is a render primitive (ImageNode — the draw traversal's
 // vocabulary, AnyDraw), not a view-model Node: apps embed it in their
 // view the way any image primitive rides the draw tree.
-export type CanvasLayerFn = (data: object) => ImageNode;
+export type CanvasLayerFn = (data: unknown) => ImageNode;
 
 // The canvas-layer component: created once per call site, called per
 // derive. A hit (same data reference, same layer) replays the cached
@@ -70,7 +70,7 @@ export type CanvasLayerFn = (data: object) => ImageNode;
 // subtree once and rasterizes it. The view is the single image node.
 export function canvasLayer(opts: CanvasLayerOpts): CanvasLayerFn {
   const cache = new WeakMap<object, Entry>();
-  return (data: object): ImageNode => {
+  return (data: unknown): ImageNode => {
     if (typeof data !== "object" || data === null) {
       throw new TypeError(
         "canvas_layer: data must be an object — the reference is the invalidation signal",

@@ -79,7 +79,7 @@ it("p_no_macro: deleting visible index 1 leaves first and third, and toggling vi
   const afterDelete = deletePath(state, effectPath(fire(rows[1]?.["delete"])));
   expect((afterDelete as typeof state).todos.map((t) => t["description"])).toEqual(["first", "third"]);
   // toggling visible index 0 changes only first
-  const afterToggle = updatePath(state, effectPath(fire(checkboxOf(rows[0])?.["on-mouse-down"])), not);
+  const afterToggle = updatePath(state, effectPath(fire(checkboxOf(rows[0])["on-mouse-down"])), not);
   expect((afterToggle as typeof state).todos.map((t) => t["complete?"])).toEqual([true, false, true]);
 });
 
@@ -129,8 +129,8 @@ it("p_macro_optional: the todo app written with and without the macro produce de
   expect(shape(withMacro)).toEqual(shape(withoutMacro));
   // and deep-equal effects: the same interactions emit identical batches
   expect(fire(withMacro[1]?.["delete"])).toEqual(fire(withoutMacro[1]?.["delete"]));
-  expect(fire(checkboxOf(withMacro[0])?.["on-mouse-down"])).toEqual(
-    fire(checkboxOf(withoutMacro[0])?.["on-mouse-down"]),
+  expect(fire(checkboxOf(withMacro[0])["on-mouse-down"])).toEqual(
+    fire(checkboxOf(withoutMacro[0])["on-mouse-down"]),
   );
   // and the emitted batches really apply: deleting visible 1 leaves first and third
   const afterDelete = deletePath(state, effectPath(fire(withMacro[1]?.["delete"])));

@@ -121,7 +121,7 @@ function spacerExtentOf(first: Node): Vec2 {
 }
 
 function isReserved(first: Node): boolean {
-  return first != null && !isGroup(first as unknown as Elem) && first.type === "spacer";
+  return !isGroup(first as unknown as Elem) && first.type === "spacer";
 }
 
 // Drawables of an elem tree in painting order (later paints on top).

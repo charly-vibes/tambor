@@ -74,6 +74,8 @@ const OPS = 12;
 
 test("the app drives the pan op through the ordinary dispatcher wire", () => {
   let app: App | undefined;
+
+  // eslint-disable-next-line prefer-const -- declare-then-assign-once, assigned here only
   app = makeApp({
     view: (state) => layeredChartView(state as LayerState),
     state: { points: makePoints(20), winStart: 0, pans: 0 },
@@ -164,7 +166,7 @@ test("paired meter: interleaved arms, fresh state per sample (recorded, unassert
   };
   const layered = median(perArm.layered);
   const naive = median(perArm.naive);
-  // eslint-disable-next-line no-console
+   
   console.log(
     `[canvas-layer meter] layered median ${layered.toFixed(3)} ms/op, ` +
       `naive median ${naive.toFixed(3)} ms/op, ratio ` +

@@ -72,7 +72,7 @@ it("p_immut: input deep-equals its prior snapshot", () => {
       const snapshot = JSON.parse(JSON.stringify(state)) as typeof state;
       const path: Path = keys.map((k) => ["keypath", k]);
       if (kind === 0) setPath(state, path, v);
-      else if (kind === 1) updatePath(state, path, (old) => ((old as number) ?? 0) + v);
+      else if (kind === 1) updatePath(state, path, (old) => (old as number) + v);
       else deletePath(state, path);
       expect(state).toEqual(snapshot);
     }),

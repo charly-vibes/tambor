@@ -154,6 +154,7 @@ export function whiteboardView(state: WBState, appOf: () => App): Elem {
 // The bench app: the ordinary registry-aware makeApp mount. The app
 // instance is captured so the naive pump can dispatch per-message.
 export function createWhiteboardApp(): App {
+  // eslint-disable-next-line prefer-const -- declared before the mount closure captures it; assigned exactly once at mount
   let app: App | undefined;
   const appOf = (): App => {
     if (app === undefined) throw new Error("whiteboard not mounted");

@@ -60,7 +60,7 @@ export function vlView(opts: {
 
 // The view tree's translate nodes — the only nodes that place rows.
 function translatesOf(view: EventElem): readonly TranslateNode[] {
-  return (walk(view) as readonly EventNode[]).flatMap((n) =>
+  return (walk(view) as readonly (EventNode | null)[]).flatMap((n) =>
     n != null && !Array.isArray(n) && n.type === "translate" ? [n as TranslateNode] : [],
   );
 }

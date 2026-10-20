@@ -171,11 +171,9 @@ describe("review-faults bench app", () => {
       return (app.getState() as ReviewFaultsState).review;
     };
 
-    let s = apply(submitAll);
-    s = apply(injectLostAck);
-    s = apply(ackNext);
-    s = apply(injectDuplicateAck);
-    s = apply(injectStaleAck);
+    const ops = [submitAll, injectLostAck, ackNext, injectDuplicateAck, injectStaleAck];
+    let s = apply(ops[0]!);
+    for (const op of ops.slice(1)) s = apply(op);
 
     expect(countsLine(s)).toContain("submitted 199");
     expect(countsLine(s)).toContain("acked 1");

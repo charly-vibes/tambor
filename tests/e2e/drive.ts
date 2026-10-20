@@ -200,7 +200,7 @@ export async function dragView(
 
 // The drawn tree's full text: the state's rendered mirror.
 export async function drawnText(page: Page): Promise<string> {
-  return (await page.locator("#demo > div").innerText()) ?? "";
+  return await page.locator("#demo > div").innerText();
 }
 
 // A named screenshot into tests/screenshots/ (tambor-kd5: LOCAL dev artifact,

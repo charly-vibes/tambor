@@ -36,7 +36,7 @@ import type { IntentList } from "../src/core.ts";
 import { onBubble } from "../src/events/bubble.ts";
 // `performance` is untyped under the vitest/globals types (the 54j.11
 // pattern): import from node:perf_hooks
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+ 
 // @ts-expect-error node builtin without type roots
 import { performance } from "node:perf_hooks";
 
@@ -156,7 +156,7 @@ describe("dispatch hit index (tambor-54j.3 Phase 4)", () => {
     // generous ceiling (machine load 3–5.7 makes tight bounds flaky):
     // the corpus index meter (54j.10) put the bucket query at ~2.4µs;
     // the routed dispatch adds the bounds gates of the probe's cell
-    // eslint-disable-next-line no-console
+     
     console.log(`pointer-move over 10k group: median ${median.toFixed(3)}ms`);
     expect(median).toBeLessThan(10);
   });

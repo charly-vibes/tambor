@@ -27,7 +27,7 @@ import type { Elem } from "../views/model.ts";
 export type Effect = readonly unknown[];
 export type EffectFn = (dispatch: DispatchFn, ...args: unknown[]) => unknown;
 export type DispatchFn = (input: DispatchInput, ...rest: unknown[]) => undefined;
-export type DispatchInput = string | Effect | readonly Effect[];
+export type DispatchInput = string | Effect | readonly Effect[] | null | undefined;
 export type Handler = (state: unknown, effects: readonly Effect[], ctx: EffectContext) => unknown;
 
 export interface Backend {

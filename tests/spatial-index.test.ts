@@ -172,7 +172,7 @@ describe("spatial hit-test index (tambor-54j.10)", () => {
     }
     times.sort((a, b) => a - b);
     const median = times[Math.floor(QUERIES / 2)]!;
-    // eslint-disable-next-line no-console
+     
     console.log(
       `pointer-move meter: 10k shapes, median=${(median * 1000).toFixed(1)}us p90=${(times[Math.floor(QUERIES * 0.9)]! * 1000).toFixed(1)}us (bound 2ms)`,
     );

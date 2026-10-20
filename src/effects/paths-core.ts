@@ -138,6 +138,6 @@ export function entriesOf(value: unknown): [PropertyKey, unknown][] {
 }
 
 export function keywordPred(pred: Pred | string): Pred {
-  if (typeof pred === "string") return (x) => Boolean((x as Record<string, unknown>)?.[pred]);
+  if (typeof pred === "string") return (x) => Boolean((x as Record<string, unknown> | null)?.[pred]);
   return pred;
 }

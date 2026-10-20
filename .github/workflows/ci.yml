@@ -205,6 +205,11 @@ jobs:
         # (the build-config contract tests cover src/** only).
         run: npx tsc -p tsconfig.json --noEmit
 
+      - name: eslint (tambor-ip9)
+        # typescript-eslint: no-floating-promises, switch-exhaustiveness-check,
+        # no-unnecessary-condition. Same command as `just lint`.
+        run: npx eslint .
+
       - name: scaffold-debt report (non-blocking)
         run: tools/scaffold-debt.sh
 

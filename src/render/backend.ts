@@ -128,8 +128,8 @@ export class Runtime {
     const view = this.opts.view;
     if (!view) return [];
     const context: Record<string, unknown> = {};
-    const size = this.containerSize();
-    if (size !== undefined && size !== null) context["stretch/container-size"] = size;
+    const size = this.containerSize() as Vec2 | undefined;
+    if (size !== undefined) context["stretch/container-size"] = size;
     return view(this.state, context);
   }
 

@@ -151,7 +151,7 @@ function deliver(target: TouchTarget, event: TamborEvent): IntentList {
   const pos = event.pos ?? [0, 0];
   const local: Vec2 = [pos[0] - target.origin[0], pos[1] - target.origin[1]];
   if (target.node.type === "button") {
-    return target.node.onClick ? (target.node.onClick(local) as IntentList) ?? [] : [];
+    return target.node.onClick ? ((target.node.onClick(local) as IntentList | undefined) ?? []) : [];
   }
   if (target.node.eventType === event.type) {
     const result = (target.node.handler as (p: Vec2, e: TamborEvent) => unknown)(local, event);

@@ -67,7 +67,7 @@ function hoverWired(
     view: (s) => {
       const root = (s ?? {}) as Record<string, unknown>;
       const callsite: CallSite = {
-        extra: (root["::extra"] as Record<string, unknown>) ?? {},
+        extra: (root["::extra"] as Record<string, unknown> | undefined) ?? {},
         $extra: ROOT_EXTRA,
       };
       return render(make(callsite)) as Elem;

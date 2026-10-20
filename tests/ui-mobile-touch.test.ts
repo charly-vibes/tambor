@@ -59,7 +59,7 @@ function hoverWired(text: string): { app: HeadlessApp; $hover: Path } {
     view: (s) => {
       const root = (s ?? {}) as Record<string, unknown>;
       const callsite = {
-        extra: (root["::extra"] as Record<string, unknown>) ?? {},
+        extra: (root["::extra"] as Record<string, unknown> | undefined) ?? {},
         $extra: ROOT_EXTRA,
       };
       return render(hoverButton(text, () => [], callsite)) as Elem;

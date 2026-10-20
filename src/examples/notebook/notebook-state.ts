@@ -108,7 +108,7 @@ export function isSliderNumPath(path: unknown): boolean {
 
 // The slider id a sliders-path update targets (keypath arg).
 export function sliderIdOf(path: unknown): number | null {
-  const step = (path as readonly (readonly unknown[])[])?.[1];
+  const step = (path as readonly (readonly unknown[])[] | undefined)?.[1];
   const id = Array.isArray(step) ? step[1] : undefined;
   return typeof id === "number" ? id : null;
 }

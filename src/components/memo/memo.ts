@@ -46,7 +46,7 @@ export function memo<K extends object, V>(
     // key on (a primitive key would need deep equality — the ~5 µs
     // serialization key the component render cache already pays — so
     // the contract rejects it loudly instead of silently mis-keying).
-    if (typeof key !== "object" || key === null) {
+    if (typeof key !== "object") {
       throw new TypeError(
         "memo: the key must be an object — identity is the invalidation signal",
       );
