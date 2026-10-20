@@ -33,7 +33,27 @@ import { textarea } from "../../components/textarea/textarea.ts";
 import { initialTextareaExtra, type TextareaExtra } from "../../components/textarea/edit.ts";
 import { slider } from "../../components/numeric/slider.ts";
 import { call, render } from "../../model/component.ts";
+import { currentLabelMeasure } from "../../views/nodes.ts";
+import { VIEWPORT } from "../../spa/viewport.ts";
 import type { Cell, OutEntry, Val } from "./notebook-core.ts";
+
+// The drawn root's width (spa/mount.ts pins the surface to VIEWPORT[0] =
+// 300): a label measured wider than the space left at its x origin
+// overflows the root — the tambor-194 finding (the e2e guard at 380px
+// caught scrollWidth 317 on chromium, 300 on the author's fonts). Every
+// long-text label is clamped to its measured pixel budget with the SAME
+// measure the layout math uses (currentLabelMeasure, tambor-0rp), so the
+// bound holds whatever font renders it — truncating to a prefix + "…"
+// when the string can't fit its column.
+const COLUMN = VIEWPORT[0];
+
+function clampText(text: string, budget: number): string {
+  const measure = currentLabelMeasure();
+  if ((measure(text)[0] ?? 0) <= budget) return text;
+  let n = text.length;
+  while (n > 0 && (measure(`${text.slice(0, n)}…`)[0] ?? 0) > budget) n -= 1;
+  return `${text.slice(0, n)}…`;
+}
 import {
   cellExtraPath,
   cellSrcPath,
@@ -93,7 +113,16 @@ function plotView(v: Extract<Val, { plot: unknown }>): Elem {
 function chips(c: Cell, inf: { readonly name: string | null; readonly reads: readonly string[] }): Elem {
   const defs = inf.name === null ? "output" : `defines ${inf.name}`;
   const row: Elem[] = [labelNode(defs)];
-  if (inf.reads.length > 0) row.push(labelNode(`reads ${inf.reads.join(", ")}`));
+  if (inf.reads.length > 0) {
+    // the reads label sits at offset width(defines) + 1 (hstack rule) —
+    // clamp it to what remains of the column
+    const defsWidth = currentLabelMeasure()(defs)[0] ?? 0;
+    row.push(
+      labelNode(
+        clampText(`reads ${inf.reads.join(", ")}`, COLUMN - defsWidth - 1),
+      ),
+    );
+  }
   void c;
   return horizontalLayout(row) as Elem;
 }
@@ -131,12 +160,12 @@ function outputView(s: NotebookState, c: Cell, o: OutEntry): Elem {
   if (inf?.input !== null && inf?.input !== undefined && inf?.err === null) {
     return sliderView(s, c.id);
   }
-  if (o.err !== undefined) return labelNode(o.err);
+  if (o.err !== undefined) return labelNode(clampText(o.err, COLUMN));
   const v = o.v;
   if (v !== undefined && typeof v === "object" && !Array.isArray(v) && "plot" in v) {
     return plotView(v as Extract<Val, { plot: unknown }>);
   }
-  if (v !== undefined) return labelNode(fmt(v));
+  if (v !== undefined) return labelNode(clampText(fmt(v), COLUMN));
   return labelNode("");
 }
 
@@ -166,10 +195,19 @@ function card(s: NotebookState, c: Cell, idx: number, focus: unknown): Elem {
 // label stays short so the row fits the drawn root's 300px width).
 function statsRow(s: NotebookState): Elem {
   const st = s.stats;
+  const modeText = `Mode: ${s.mode === "full" ? "full" : "inc"}`;
+  // the mode button's emitted box = label bounds + 12 (geometry.ts);
+  // the label must fit the column minus the gap and the button's box
+  const modeWidth = (currentLabelMeasure()(modeText)[0] ?? 0) + 12;
   return horizontalLayout([
-    labelNode(`ran ${st.ran}/${st.total} cells · ${st.ms.toFixed(1)} ms`),
+    labelNode(
+      clampText(
+        `ran ${st.ran}/${st.total} cells · ${st.ms.toFixed(1)} ms`,
+        COLUMN - modeWidth - 1,
+      ),
+    ),
     spacer(5, 0),
-    fxButton(`Mode: ${s.mode === "full" ? "full" : "inc"}`, "mode"),
+    fxButton(modeText, "mode"),
   ]) as Elem;
 }
 
@@ -208,7 +246,7 @@ export function notebookView(s: NotebookState, context: { focus?: unknown } = {}
     labelNode(NOTEBOOK_TITLE),
     statsRow(s),
     ...controlsRows(),
-    ...(s.err.length > 0 ? [labelNode(s.err)] : []),
+    ...(s.err.length > 0 ? [labelNode(clampText(s.err, COLUMN))] : []),
     ...cards,
   ];
   return (verticalLayout(body) ?? labelNode(NOTEBOOK_TITLE)) as Elem;
