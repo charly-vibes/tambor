@@ -373,3 +373,9 @@
   - HITL screenshots refreshed 8a66237 (stale since 8yn).
   - Ordering lesson: 4h6 before 4u6 so the new CI gate didn't adopt the race.
   - Next: tambor-194 (notebook-380px overflow) to widen the e2e gate, or tambor-8n3 load-flake family
+- 2026-10-20T21:23:54Z [id:c59da184e9dc1d6f5bf07dcd3cac4d0a3141406cabddf0977750ad2a4322ec8c] ### 2026-10-20 21:25 — snap
+  - tambor-kd5 CLOSED (0cf0aff): tests/screenshots gitignored (79 PNGs untracked), policy in tests/e2e/README.md — local dev artifacts, no test asserts on them; option 1 of 3.
+  - tambor-194 REOPENED then actually fixed (886e7b8 + stamp 31aed8a): my earlier 'already fixed in 54j.9' close was WRONG — the e2e guard is font-dependent, local 5/5 was vacuous for CI chromium's font regime; the widened tambor-4u6 gate caught scrollWidth 317/300 live. LESSON: a guard test passing only on the author machine must not close a font-severity ticket — reproduce headlessly via configureLabelMeasure injection (~8.5px/char) before claiming fix. Fix: clampText in notebook-view.ts truncates unbounded labels (fmt output/err/reads/stats) to measured pixel budget with currentLabelMeasure — same measure layout uses, font-agnostic. tests/notebook-view-width.test.ts red→green.
+  - tambor-ip9 OPEN with probe report recorded on ticket: 201 errors (102 TS6133, 91 TS4111, 8 unused-imports, 0 noImplicitReturns). TS4111 needs a design call — the dollar path idiom (p_$checked) is load-bearing; prefer bracket convention there. eslint not yet added.
+  - tambor-8n3 still open (flake investigation, own session).
+  - CI green on 31aed8a, both jobs. Next: fresh session → tambor-ip9 remediation (or eslint adoption first) or 8n3.
