@@ -26,7 +26,6 @@
 import {
   bounds,
   children,
-  isGroup,
   type ButtonNode,
   type Elem,
   type HandlerNode,
@@ -69,10 +68,6 @@ function isGroupElem(
   return Array.isArray(elem);
 }
 
-function isConcatKind(type: string): boolean {
-  return CONCAT_KINDS.includes(type);
-}
-
 function isInputKind(type: string): boolean {
   return INPUT_KINDS.includes(type);
 }
@@ -106,16 +101,16 @@ function wireTranslate(dispatch: DispatchFn2, elem: EventElem, event: TamborEven
   return dispatch(node.drawable, shifted);
 }
 
-function wireDrawables(dispatch: DispatchFn2, elem: EventElem, event: TamborEvent): IntentList {
+function wireDrawables(_dispatch: DispatchFn2, elem: EventElem, event: TamborEvent): IntentList {
   return dispatchGroup((elem as { drawables: readonly EventElem[] }).drawables, event);
 }
 
-function wireCheckbox(dispatch: DispatchFn2, elem: EventElem, event: TamborEvent): IntentList {
+function wireCheckbox(_dispatch: DispatchFn2, elem: EventElem, event: TamborEvent): IntentList {
   // the checkbox draw (its only child) is traversed like any group
   return dispatchGroup(children(elem as never), event);
 }
 
-function wireBubble(dispatch: DispatchFn2, elem: EventElem, event: TamborEvent): IntentList {
+function wireBubble(_dispatch: DispatchFn2, elem: EventElem, event: TamborEvent): IntentList {
   // after the child results are collected the node applies its
   // bubble function once (bubble_after_children, on_bubble_raw)
   const node = elem as { bubble: (intents: IntentList) => IntentList; drawables: readonly EventElem[] };
@@ -128,10 +123,10 @@ const WIRES: Readonly<Record<string, Wire>> = {
   "with-style": wireDrawables,
   "with-stroke-width": wireDrawables,
   "checkbox": wireCheckbox,
-  "handler": (dispatch, elem, event) => dispatchHandler(elem as never, event),
-  "button": (dispatch, elem, event) => dispatchButton(elem as never, event),
+  "handler": (_dispatch, elem, event) => dispatchHandler(elem as never, event),
+  "button": (_dispatch, elem, event) => dispatchButton(elem as never, event),
   "bubble": wireBubble,
-  "wrap": (dispatch, elem, event) => dispatchWrap(elem as never, event),
+  "wrap": (_dispatch, elem, event) => dispatchWrap(elem as never, event),
 };
 
 // Group delivery under the rule of the event type: pointer kinds try

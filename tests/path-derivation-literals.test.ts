@@ -71,7 +71,7 @@ it("p_call_table: the navigator list matches the table", () => {
     ["assoc", rootRef(state).get("m").assoc("k", 5), []],
     ["select-one", rootRef(state).selectOne([["keypath", "b"]] as Path), [["path", [["keypath", "b"]] as Path]]],
   ];
-  for (const [call, ref, expected] of cases) {
+  for (const [, ref, expected] of cases) {
     expect(ref.path.slice(ref.path.length - expected.length)).toEqual(expected);
   }
   // root-deref maps to rawPath: the raw path itself
@@ -185,10 +185,3 @@ it("p_strategy: outputs are deep-equal", () => {
 
   expect(explicit).toEqual(collected);
 });
-
-// helper: derive a ref through a chain of gets
-function chainOf(state: unknown, keys: readonly string[]): { state: unknown; ref: Ref } {
-  let ref = rootRef(state);
-  for (const k of keys) ref = ref.get(k);
-  return { state, ref };
-}

@@ -162,7 +162,7 @@ it("p_compose: dispatching counter-increment increments the number at the path",
 // type and callable directly
 it("p_registry: it is both dispatchable by type and callable directly", () => {
   const calls: unknown[][] = [];
-  const fn = defeffect("test/registry-probe", (dispatch, x, y) => {
+  const fn = defeffect("test/registry-probe", (_dispatch, x, y) => {
     calls.push([x, y]);
     return "done";
   });

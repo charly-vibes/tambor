@@ -56,7 +56,7 @@ function pinnedPanelBody(props: Props): Elem {
     throw new Error("pinned_panel needs a body");
   }
 
-  const [ox, oy] = offset;
+  const [, oy] = offset;
   const [start, end] = range;
   const active = start <= oy && oy <= end;
 

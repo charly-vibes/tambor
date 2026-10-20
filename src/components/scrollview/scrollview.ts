@@ -93,7 +93,7 @@ export function wheelIntents(
 // (touch_drag_scrolls). Like the wheel update, the update reads the
 // stored offset so a stale value snaps back.
 export function dragScrollf(
-  offset: Vec2,
+  _offset: Vec2,
   total: Vec2,
   viewport: Vec2,
   $offset: Path,

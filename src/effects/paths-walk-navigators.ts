@@ -27,16 +27,6 @@ import {
   type WalkFn,
 } from "./paths-core.ts";
 
-type Handler = (
-  walk: WalkFn,
-  value: unknown,
-  step: Step,
-  path: readonly unknown[],
-  i: number,
-  ctx: Ctx,
-  leaf: Leaf,
-  writeKey: boolean,
-) => unknown;
 
 // Navigator-tuple handler (step[0] is the vocabulary key).
 type NavHandler = (

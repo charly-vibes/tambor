@@ -47,12 +47,6 @@ function clickAt(surface: { host: HostElement }, x: number, y: number): void {
   surface.host.dispatchEvent(new ME("pointerup", { clientX: x, clientY: y }));
 }
 
-function labelsOf(view: Elem): readonly string[] {
-  return scanOf(view)
-    .filter((f) => f.node.type === "label")
-    .map((f) => (f.node as Label).text);
-}
-
 describe("gallery — every demo mounts and interacts", () => {
   it("todo demo renders the list and filters on click", () => {
     const doc = hostDoc();

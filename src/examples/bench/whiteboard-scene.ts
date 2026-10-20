@@ -246,7 +246,7 @@ export function undoOp(state: WBState): WBState {
 
 // The untimed setup op: the full 10k scene + the bucket index, counters
 // reset (bz3-seed seeds repeatedly; each seed is a fresh scene).
-export function seedOp(state: WBState): WBState {
+export function seedOp(_state: WBState): WBState {
   const shapes = seedShapes();
   return {
     ...whiteboardState(),

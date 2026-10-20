@@ -29,7 +29,6 @@ import {
 } from "../../model/component.ts";
 import {
   bounds,
-  button as uiButton,
   checkbox as uiCheckbox,
   on,
   roundedRectangle,

@@ -76,7 +76,7 @@ it("p_defaults: a declared default is optional at the call site and defined in t
   }
   const $default = key(root<FilterState>(), "default");
   const SelectedFilter = defui(
-    (props: { readonly default: string }, context: AppContext) => {
+    (props: { readonly default: string }, _context: AppContext) => {
       // the body sees a defined value
       expectTypeOf(props.default).toEqualTypeOf<string>();
       return labelNode(props.default);
@@ -95,7 +95,7 @@ it("p_defaults: a declared default is optional at the call site and defined in t
 it("p_context: the context interface is augmentable and the built-in focus is present", () => {
   const $num = key(root<RootState>(), "num");
   const Context = defui(
-    (props: { readonly num: number }, context: AppContext) => {
+    (_props: { readonly num: number }, context: AppContext) => {
       // the augmented field is typed in the component
       expectTypeOf(context.theme).toEqualTypeOf<string>();
       return labelNode(context.theme);

@@ -36,7 +36,7 @@ type Handler = (
 ) => unknown;
 
 function stepAll(
-  walk: WalkFn,
+  _walk: WalkFn,
   value: unknown,
   _step: Step,
   path: readonly unknown[],

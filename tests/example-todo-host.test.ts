@@ -17,7 +17,6 @@ import {
   bounds,
   type Elem,
   type Label,
-  type Node,
   type Vec2,
   type WithStrokeWidthNode,
 } from "../src/views/model.ts";

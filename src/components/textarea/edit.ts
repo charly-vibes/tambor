@@ -184,7 +184,7 @@ function deleteOp(
 function charOp(
   text: string | null,
   cursor: number,
-  selectCursor: number | null,
+  _selectCursor: number | null,
   dir: "forward" | "backward",
 ): EditResult {
   const n = textLen(text);
@@ -203,7 +203,7 @@ function charOp(
 function lineOp(
   text: string | null,
   cursor: number,
-  selectCursor: number | null,
+  _selectCursor: number | null,
   dir: "prev" | "next",
 ): EditResult {
   const base = text ?? "";

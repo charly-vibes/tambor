@@ -13,7 +13,7 @@
 
 import { describe, expect, it, vi } from "vitest";
 
-import { makeApp, type App, type Effect } from "../src/effects/dispatch.ts";
+import { makeApp, type App,} from "../src/effects/dispatch.ts";
 
 // A repaint-counting app: every scheduled repaint is recorded instead
 // of run (the same vi.stubGlobal shape example-counter's p_raw uses).
@@ -55,7 +55,7 @@ describe("interaction-lane", () => {
     const a = makeApp({
       view,
       state: 0,
-      handler: (state, effects, ctx) => {
+      handler: (state, _effects, ctx) => {
         seen.push(ctx["lane"]);
         return state;
       },
@@ -63,7 +63,7 @@ describe("interaction-lane", () => {
     const b = makeApp({
       view,
       state: 0,
-      handler: (state, effects, ctx) => {
+      handler: (state, _effects, ctx) => {
         seen.push(ctx["lane"]);
         return state;
       },

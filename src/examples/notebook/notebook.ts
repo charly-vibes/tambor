@@ -23,30 +23,17 @@
 //   used — everything rides app.dispatch so the mount's draw wire and
 //   the registry-aware dispatcher stay the only paths.
 
-import { makeApp, defaultHandler, type App, type Handler, type EffectContext } from "../../effects/dispatch.ts";
-import { spaFocusView } from "../../spa/focus.ts";
-import { VIEWPORT } from "../../spa/viewport.ts";
+import {defaultHandler, type EffectContext } from "../../effects/dispatch.ts";
 import { applyTextareaIntents } from "../../components/textarea/edit.ts";
 import type { Intent } from "../../events/bubble.ts";
 import type { OutEntry } from "./notebook-core.ts";
 import {
   KILLED_MESSAGE,
-  makeNotebookRunner,
-  type NotebookRunner,
 } from "./worker-client.ts";
 import type { NotebookRunRequest, NotebookRunResponse } from "./worker-main.ts";
-import {
-  appendCell,
-  chainCells,
-  fanCells,
-  heavyCells,
-  addedOf,
-  isSliderNumPath,
-  notebookState,
-  sliderIdOf,
+import {sliderIdOf,
   type NotebookState,
 } from "./notebook-state.ts";
-import { notebookView } from "./notebook-view.ts";
 
 // The launch/kill cell the app fills after construction (the runner
 // needs the app's dispatch, the app needs the runner).

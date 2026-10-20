@@ -12,12 +12,12 @@
 import { expect, it } from "vitest";
 import fc from "fast-check";
 
-import { isGroup, rectangle, type Elem, type Vec2 } from "../src/views/model.ts";
+import { isGroup, rectangle, type Elem,} from "../src/views/model.ts";
 import { call, render } from "../src/model/component.ts";
 import { keyPress } from "../src/events/event.ts";
 import { scrollview } from "../src/components/scrollview/scrollview.ts";
 import { pin } from "../src/scrollytelling/pin.ts";
-import { select, type Path } from "../src/effects/paths.ts";
+import { select,} from "../src/effects/paths.ts";
 import { findTarget, pinApp, screenPos } from "./helpers/pin.ts";
 
 // ---------------------------------------------------------------------------

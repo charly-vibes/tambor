@@ -43,8 +43,6 @@ import {
   IDENTITY,
   Painter,
   matScale,
-  toRGBA,
-  type Color,
 } from "./image.ts";
 import { type SimCanvas, type SimEvent } from "./domsim.ts";
 import { normalizeDOMEvent } from "./input.ts";

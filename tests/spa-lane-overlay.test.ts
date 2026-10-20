@@ -164,7 +164,7 @@ describe("spa lane overlay (tambor-54j.3 Phase 4)", () => {
 
   it("p_lane_overlay_drawn: the commit draw carries no overlay", () => {
     const doc = hostDoc();
-    const { app, derives } = dragApp();
+    const { app } = dragApp();
     const spa = mountDemo(doc, containerIn(doc), () => app);
     const draws = captureDraws(spa);
 

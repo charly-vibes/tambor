@@ -7,7 +7,7 @@
 //   from components-numeric.test.ts so both the counter and the slider
 //   files reuse it without duplication (tambor-272).
 
-import { isGroup, type Elem, type Label, type Node, type Vec2 } from "../../src/views/model.ts";
+import { isGroup, type Elem, type Node, type Vec2 } from "../../src/views/model.ts";
 
 // Every node in the tree satisfying pred, with its absolute origin,
 // collected via children() plus the translate offsets.
@@ -72,6 +72,4 @@ function recordWrapperChildren(
   if (drawables === undefined) return;
   for (const child of drawables) nodeOrigins(child, pred, ox, oy, out);
 }
-
-const isLabel = (n: Node): n is Label => n.type === "label";
 

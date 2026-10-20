@@ -241,8 +241,3 @@ test.describe("risk: touch targets", () => {
     }
   });
 });
-
-// The run intents replayed to reach n fold entries.
-function runs(n: number): readonly (readonly unknown[])[] {
-  return Array.from({ length: n }, () => ["run"]);
-}

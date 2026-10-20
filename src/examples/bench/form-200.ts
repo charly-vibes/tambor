@@ -18,7 +18,6 @@
 
 import {
   label as labelNode,
-  spacer,
   translate,
   bounds,
   type Elem,

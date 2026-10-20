@@ -53,7 +53,6 @@ import { VIEWPORT } from "./viewport.ts";
 import { dispatch } from "../events/dispatch.ts";
 import { phaseTimers } from "../events/phase-timers.ts";
 import { type TamborEvent } from "../events/event.ts";
-import type { IntentList } from "../core.ts";
 import { wireSurfaceInput } from "./surface-input.ts";
 
 export interface SpaHandle {

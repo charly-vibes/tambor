@@ -31,7 +31,6 @@ import {
   appendSeries,
   boundedSeries,
   foldSeries,
-  newestSeries,
   type BoundedSeries,
 } from "../../components/ring_buffer/ring_buffer.ts";
 

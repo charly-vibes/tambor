@@ -11,24 +11,16 @@ import { expect, it } from "vitest";
 import fc from "fast-check";
 
 import { call, render } from "../src/model/component.ts";
-import { defaultHandler, makeApp, type Effect } from "../src/effects/dispatch.ts";
+import { makeApp } from "../src/effects/dispatch.ts";
 import { select, type Path } from "../src/effects/paths.ts";
 import { dispatch as dispatchEvent } from "../src/events/dispatch.ts";
-import { mouseDown, mouseMoveGlobal, mouseUp, type TamborEvent } from "../src/events/event.ts";
+import { mouseDown,} from "../src/events/event.ts";
 import { counter, decNum, incNum } from "../src/components/numeric/counter.ts";
 import {
-  slider,
-  fillWidth,
-  mapValue,
-  sliderLabel,
-} from "../src/components/numeric/slider.ts";
-import {
   bounds,
-  isGroup,
   type Elem,
   type Label,
   type Node,
-  type Vec2,
 } from "../src/views/model.ts";
 import { nodeOrigins } from "./helpers/numeric-view.ts";
 
@@ -43,12 +35,6 @@ const $NUM: Path = [["keypath", "num"]];
 // Render the counter component call as a view tree.
 function counterView(args: Record<string, unknown>): Elem {
   return render(call(counter, args)) as Elem;
-}
-
-// Apply a returned intent batch to an app state (the dispatcher's
-// builtin handler).
-function applyEffects(state: unknown, effects: readonly unknown[]): Record<string, unknown> {
-  return defaultHandler(state, effects as readonly Effect[], {}) as Record<string, unknown>;
 }
 
 // ---------------------------------------------------------------------------

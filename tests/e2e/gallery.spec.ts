@@ -19,14 +19,11 @@
 //   measured, not asserted away here.
 
 import { expect, test, type Page } from "@playwright/test";
-import { CURSOR_PATH } from "../../src/examples/logo/logo.ts";
 import {
   clickDrawnText,
-  clickView,
   drawnText,
   navTo,
   open,
-  pointWhere,
   shot,
 } from "./drive.ts";
 
@@ -191,8 +188,3 @@ test.describe("logo", () => {
     await shot(page, "logo-after-slider-tap-right", testInfo.project.name);
   });
 });
-
-// The run intents replayed to reach n fold entries.
-function runsOf(n: number): readonly (readonly unknown[])[] {
-  return Array.from({ length: n }, () => ["run"]);
-}

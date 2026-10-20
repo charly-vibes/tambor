@@ -19,17 +19,11 @@
 import { expect, it } from "vitest";
 import fc from "fast-check";
 
-import { deletePath, select, setPath, updatePath, type Path } from "../src/effects/paths.ts";
+import {select, setPath, updatePath, type Path } from "../src/effects/paths.ts";
 import {
   bindDollar,
   dollar,
-  each,
-  fori,
-  forKv,
-  forWithLast,
   ifLet,
-  literalRef,
-  opaqueRef,
   rootRef,
   whenLet,
   type Ref,

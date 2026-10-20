@@ -30,7 +30,6 @@ import {
   CURSOR_BURST,
   PROBES,
   SHAPE_COUNT,
-  buildIndex,
   checksum,
   dragGridOp,
   dragLogOp,

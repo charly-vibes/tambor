@@ -59,7 +59,7 @@ const BOOK_DEPTH = 5;
 
 // 500 tickers with seeded prices and non-empty sparkline histories:
 // the untimed setup op both stream scenarios run first.
-export function buildTickers(state: StreamState): StreamState {
+export function buildTickers(_state: StreamState): StreamState {
   const tickers: Ticker[] = [];
   for (let id = 0; id < TICKER_COUNT; id++) {
     const open = seedPrice(id);

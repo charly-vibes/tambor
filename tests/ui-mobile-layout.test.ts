@@ -13,7 +13,7 @@
 import { expect, it } from "vitest";
 import fc from "fast-check";
 
-import type { ButtonNode, Vec2 } from "../src/views/model.ts";
+import type { ButtonNode,} from "../src/views/model.ts";
 import { locate, overflowNodes } from "../src/ui/overflow.ts";
 import { findAll } from "./helpers/scan.ts";
 import {

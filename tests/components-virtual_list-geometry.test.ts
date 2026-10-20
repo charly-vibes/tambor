@@ -38,7 +38,6 @@ const countArb = fc.nat(60);
 const rowHeightArb = fc.nat(20);
 const gapArb = fc.nat(5);
 const viewportHArb = fc.integer({ min: 1, max: 200 });
-const overscanArb = fc.nat(5);
 
 // p_offsets — derives_from: components.virtual_list.offsets_arithmetic
 // generator: random index, row height and gap

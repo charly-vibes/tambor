@@ -134,7 +134,6 @@ describe("component render cache soak (tambor-54j.11)", { timeout: 180_000 }, ()
     clearRenderCache();
     const before = renderCacheStats().entries;
     let resolved = 0;
-    const c = call(line, { n: 1, label: "x" });
     // a function-valued prop makes canonical() return null -> no caching
     const withFn = call(line, { n: 2, label: () => "fn" });
     cachedRender(withFn, () => {

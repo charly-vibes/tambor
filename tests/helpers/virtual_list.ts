@@ -13,7 +13,6 @@ import { call, render, type ComponentCall } from "../../src/model/component.ts";
 import type { EventElem } from "../../src/events/bubble.ts";
 import {
   label,
-  type Elem,
   type TranslateNode,
   type Vec2,
 } from "../../src/views/model.ts";

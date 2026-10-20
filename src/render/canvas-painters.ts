@@ -53,7 +53,7 @@ function paintBox(painter: Painter, x: number, y: number, w: number, h: number):
   }
 }
 
-function paintChildrenOf(paint: TreePainter, painter: Painter, node: CanvasNode): void {
+function paintChildrenOf(paint: TreePainter, _painter: Painter, node: CanvasNode): void {
   for (const child of node.drawables ?? []) paint(child);
 }
 

@@ -23,7 +23,6 @@ import {
   BUCKET_COUNT,
   BUCKET_SIZE,
   BUMPS_PATH,
-  BUMP100_PATH,
   BUMP_PATH,
   SERIES_SIZE,
   SERIES_PATH,
@@ -33,7 +32,6 @@ import {
   createDashboardDerivedApp,
   dashboardState,
   deriveTiles,
-  histogram,
   medianOf,
   seedSeries,
   summarize,
@@ -64,13 +62,11 @@ describe("dashboard-derived bench app", () => {
   it("every tile equals an independent read of the same series", () => {
     const series = seedSeries();
     const tiles = deriveTiles(series);
-    const s = summarize(series);
     expectTile(tiles, "min", Math.min(...series));
     expectTile(tiles, "max", Math.max(...series));
     expectTile(tiles, "mean", series.reduce((a, v) => a + v, 0) / series.length);
     expectTile(tiles, "median", medianOf([...series].sort((a, b) => a - b)));
     expectTile(tiles, "top-3rd", topThird([...series].sort((a, b) => a - b)));
-    const cells = histogram(series);
     for (let i = 0; i < BUCKET_COUNT; i++) {
       const lo = i * BUCKET_SIZE;
       const hi = lo + BUCKET_SIZE;

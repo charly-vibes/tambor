@@ -57,7 +57,7 @@ function containerIn(doc: HostDoc): HostElement {
 // testing: 0 <= x < 100, 0 <= y < 50).
 function dragApp(arm: "lane" | "state"): { app: App; derives: () => number } {
   let n = 0;
-  const view: ViewFn = (state) =>
+  const view: ViewFn = (_state) =>
     translate(
       0,
       0,

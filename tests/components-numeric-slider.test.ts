@@ -28,7 +28,6 @@ import {
   type Label,
   type Node,
   type Rectangle,
-  type Vec2,
 } from "../src/views/model.ts";
 import { nodeOrigins } from "./helpers/numeric-view.ts";
 

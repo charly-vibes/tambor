@@ -28,7 +28,6 @@ import {
   EDIT_DELTA,
   FIELD_COUNT,
   OBJ_COUNT,
-  REWIND_N,
   SEED_EDITS,
   WIN_ROWS,
   articleAt,

@@ -18,9 +18,7 @@
 //   creation op (scenario turtle-20k-draw) and recolor cycles are the
 //   re-derive op (scenario turtle-20k-recolor).
 
-import {
-  on,
-  path as pathNode,
+import {path as pathNode,
   rectangle,
   spacer,
   translate,
@@ -29,7 +27,7 @@ import {
   button,
   type Elem,
 } from "../../views/model.ts";
-import { horizontalLayout, verticalLayout } from "../../views/layout.ts";
+import { horizontalLayout,} from "../../views/layout.ts";
 import type { Intent, IntentList } from "../../events/bubble.ts";
 import type { Path } from "../../effects/paths.ts";
 import { makeApp, type App } from "../../effects/dispatch.ts";
@@ -69,11 +67,6 @@ export function traceOf(state: TurtleState): readonly TraceSeg[] {
   // unbounded run).
   const world = derive([{ text: state.program }], false, "en", 200000);
   return world.trace;
-}
-
-// One op button: an ordinary handler returning its plain-data update.
-function opButton(text: string, op: (s: TurtleState) => TurtleState): Elem {
-  return button(text, (): IntentList => [["update", PROGRAM_PATH, () => op as unknown as never]]);
 }
 
 // The drawn segment: the same normalization the logo canvas uses

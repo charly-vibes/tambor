@@ -35,7 +35,7 @@ import { dispatch, hasMouseMoveGlobal } from "../src/events/dispatch.ts";
 import { keyPress, mouseDown, mouseMove, mouseMoveGlobal, mouseUp } from "../src/events/event.ts";
 import { makeApp } from "../src/effects/dispatch.ts";
 import type { Effect } from "../src/effects/dispatch.ts";
-import type { CallSite, ComponentCall, Props } from "../src/model/component.ts";
+import type { CallSite, ComponentCall,} from "../src/model/component.ts";
 import { render } from "../src/model/component.ts";
 import { select, setPath, type Path } from "../src/effects/paths.ts";
 import { makeHeadlessApp, type HeadlessApp } from "../src/app/app.ts";

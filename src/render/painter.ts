@@ -274,7 +274,6 @@ export class Painter {
       const ox = matApply(this.matrix, x + i * cellW, y);
       for (let dy = 0; dy < cellH; dy++) {
         for (let dx = 0; dx < cellW; dx++) {
-          const px = matApply(this.matrix, x + i * cellW + dx, y + dy);
           const pattern = (code * 7 + dx * 3 + dy * 11) % 7 < 3;
           if (pattern || dy === cellH - 1) {
             this.put(Math.floor(ox[0]) + dx, Math.floor(ox[1]) + dy, color);

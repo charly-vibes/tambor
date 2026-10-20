@@ -21,7 +21,7 @@
 
 import { bounds, children, origin, type Elem } from "../views/model.ts";
 import { buildHitIndex, hitCandidates, type HitIndex } from "../model/spatial-index.ts";
-import type { EventElem, Intent, IntentList } from "./bubble.ts";
+import type { EventElem, IntentList } from "./bubble.ts";
 import type { TamborEvent } from "./event.ts";
 
 type DispatchFn = (elem: EventElem, event: TamborEvent) => IntentList;

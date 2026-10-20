@@ -71,7 +71,7 @@ export class DomBackend implements BackendContract {
   private clipboard: Clipboard | undefined;
   private measure: (text: string, font?: Font | null) => Vec2;
   private readonly make: (tag: string) => ElementLike;
-  private surface: ElementLike | undefined;
+
 
   constructor(options: DomBackendOptions = {}) {
     this.containerSize = options.containerSize ?? [512, 512];
@@ -139,7 +139,6 @@ export class DomBackend implements BackendContract {
 
   // attach: the same raw-event wiring the canvas backend mounts.
   attach(surface: ElementLike): void {
-    this.surface = surface;
     const origin = (): Vec2 => {
       const r = surface.getBoundingClientRect();
       return [r.x, r.y];

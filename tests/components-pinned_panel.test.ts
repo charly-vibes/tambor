@@ -21,7 +21,6 @@ import {
   isGroup,
   origin,
   rectangle,
-  width as elemWidth,
   type Elem,
   type Node,
   type Vec2,

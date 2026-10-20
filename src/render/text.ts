@@ -18,7 +18,6 @@
 
 import type { Vec2 } from "../views/model.ts";
 import type { TamborEvent } from "../events/event.ts";
-import type { Handler, ViewFn } from "../effects/dispatch.ts";
 import {
   type BackendContract,
   type Clipboard,

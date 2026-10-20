@@ -28,7 +28,7 @@ import { call, render } from "../../src/model/component.ts";
 import { scrollview } from "../../src/components/scrollview/scrollview.ts";
 import { pin } from "../../src/scrollytelling/pin.ts";
 import { makeHeadlessApp, type HeadlessApp } from "../../src/app/app.ts";
-import { select, type Path } from "../../src/effects/paths.ts";
+import {type Path } from "../../src/effects/paths.ts";
 
 
 // A leaf node with its accumulated screen position: every translate on

@@ -31,7 +31,7 @@ import {
   type Elem,
 } from "../../views/model.ts";
 import { horizontalLayout, verticalLayout } from "../../views/layout.ts";
-import type { Intent, IntentList } from "../../events/bubble.ts";
+import type {IntentList } from "../../events/bubble.ts";
 import type { Path } from "../../effects/paths.ts";
 import { makeApp, type App } from "../../effects/dispatch.ts";
 import { memo } from "../../components/memo/memo.ts";

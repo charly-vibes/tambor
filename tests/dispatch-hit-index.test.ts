@@ -26,7 +26,6 @@ import { dispatch } from "../src/events/dispatch.ts";
 import { mouseDown, mouseMove, type TamborEvent } from "../src/events/event.ts";
 import {
   button,
-  label,
   on,
   rectangle,
   translate,

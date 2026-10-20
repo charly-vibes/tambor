@@ -9,9 +9,8 @@
 //   host-language data the library never inspects.
 
 import { expect, it } from "vitest";
-import fc from "fast-check";
 
-import { interDispatch, makeRegistry, seamSelect, seamSet, seamUpdate } from "../src/interop/seam.ts";
+import { interDispatch, seamSelect, seamSet, seamUpdate } from "../src/interop/seam.ts";
 import { makeOpsApp } from "../src/interop/app.ts";
 import { jsOps, type DataOps } from "../src/interop/ops.ts";
 import { cljsOps, kw, not, pmap, PMap } from "./helpers/interop-standins.ts";

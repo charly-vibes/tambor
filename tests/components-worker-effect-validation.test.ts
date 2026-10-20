@@ -57,10 +57,6 @@ describe("worker effect — validated replies (add-worker-reply-validation)", ()
     return { spawned, client };
   }
 
-  function typedFailureId(p: Promise<{ readonly id: number; readonly ok: boolean; readonly value?: unknown; readonly message?: string }>): Promise<false | number> {
-    return p.then((r) => (r.ok ? false : r.id));
-  }
-
   it("p_reply_guard_malformed_ok: a reply with a non-boolean ok and a routable id resolves its own request as a typed failure", async () => {
     const { spawned, client } = spawnHarness();
     const req = client.run("double", 21);

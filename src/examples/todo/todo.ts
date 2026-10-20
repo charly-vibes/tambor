@@ -25,19 +25,12 @@
 import {
   bounds,
   button,
-  checkbox,
   height,
-  label as labelNode,
-  on,
-  path,
   spacer,
   translate,
-  withColor,
-  withStrokeWidth,
-  type Color,
   type Elem,
 } from "../../views/model.ts";
-import { horizontalLayout, verticalLayout } from "../../views/layout.ts";
+import {verticalLayout } from "../../views/layout.ts";
 import type { Path, Pred } from "../../effects/paths.ts";
 import { defeffect } from "../../effects/dispatch.ts";
 import { wrapOn, type IntentList } from "../../events/bubble.ts";
@@ -229,7 +222,7 @@ export function todoRows(state: TodoState, $todos: Path = TODOS_PATH): readonly 
   return state.todos
     .map((todo, i) => ({ todo, i }))
     .filter(({ todo }) => pred(todo))
-    .map(({ todo, i }, visible) =>
+    .map(({ todo }, visible) =>
       // the item shown at visible index j has the path todos then
       // filter then seq-nth(j): the filter navigator's sub-sequence is
       // the matching elements, so seq-nth(j) reaches the j-th visible

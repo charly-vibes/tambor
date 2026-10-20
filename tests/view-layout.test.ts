@@ -16,10 +16,8 @@ import {
   spacer,
   translate,
   withColor,
-  withStyle,
   type Elem,
   type Node,
-  type Vec2,
 } from "../src/views/model.ts";
 import {
   center,
