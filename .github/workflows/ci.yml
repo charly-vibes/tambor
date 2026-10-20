@@ -10,8 +10,14 @@
 #                               (exit 0 = ran and passed, exit 10 = store
 #                               uncalibrated, exit 20 = nothing affected —
 #                               all benign)
+#   4. tsc -p tsconfig.json   — full strict typecheck, noEmit (tambor-j5n).
+#                               Vitest strips types, so type errors pass the
+#                               suite; the tsconfig.build.json checks that DO
+#                               run (p-declarations / p-core-split contract
+#                               tests) include only src/** — tests/** and
+#                               vitest.config.ts are typechecked by nobody else.
 # Non-blocking report:
-#   4. tools/scaffold-debt.sh — todo_predicate! scaffold count (always exit 0)
+#   5. tools/scaffold-debt.sh — todo_predicate! scaffold count (always exit 0)
 
 name: CI
 
@@ -148,6 +154,12 @@ jobs:
           if [ "$code" -eq 0 ] || [ "$code" -eq 10 ] || [ "$code" -eq 20 ]; then exit 0; fi
           echo "testaruda exec failed with exit code $code" >&2
           exit "$code"
+
+      - name: tsc full strict typecheck (tambor-j5n)
+        # Same command as `just type-check`. Cheap (~4s) and catches the class
+        # of bug vitest cannot: type errors in tests/** and vitest.config.ts
+        # (the build-config contract tests cover src/** only).
+        run: npx tsc -p tsconfig.json --noEmit
 
       - name: scaffold-debt report (non-blocking)
         run: tools/scaffold-debt.sh

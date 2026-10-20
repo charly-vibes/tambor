@@ -49,6 +49,11 @@ pre-push:
       # tools/gates/testaruda-exec.sh; timing wrapper tambor-j44).
       run: tools/gate-timing.sh testaruda-exec tools/gates/testaruda-exec.sh
 
+    - name: tsc-typecheck
+      # Full strict typecheck, noEmit (tambor-j5n — mirrors the CI gate).
+      # Vitest strips types; the build-config contract tests cover src/** only.
+      run: tools/gate-timing.sh tsc-typecheck npx tsc -p tsconfig.json --noEmit
+
     - name: scaffold-debt-report
       # Non-blocking: how many predicates are still todo!() scaffolds.
       run: tools/gate-timing.sh scaffold-debt-report tools/scaffold-debt.sh

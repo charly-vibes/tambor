@@ -73,6 +73,6 @@ test-justfile:
 testaruda-doctor:
     testaruda doctor
 
-# Type-check (tsc strict, same as the commit gate's tsc: strict clean)
+# Type-check (tsc strict — same command as the tsc-typecheck CI/pre-push gate, tambor-j5n)
 type-check:
     npx tsc -p tsconfig.json --noEmit
