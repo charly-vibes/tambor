@@ -16,9 +16,10 @@ failure at the boundary is the cheapest way to honor it.
   the reply must be a plain object with a numeric `id`, a boolean `ok`,
   and (per envelope) either a `value` or a typed failure carrying its
   `message`.
-- A message failing the guard rejects the pending request whose id it
-  echoes with the existing typed-failure shape; an unrouteable message
-  is dropped without cross-resolving any other request.
+- A message failing the guard delivers a typed failure response
+  (`ok: false`) to the pending request whose id it echoes — the
+  queue resolves every reply, never rejects; an unrouteable message
+  is dropped without delivering to any other request.
 - No change to the worker side, the envelope encoding, or the
   spawn/effects bridge.
 

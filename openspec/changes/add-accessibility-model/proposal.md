@@ -14,10 +14,11 @@ weakness, ahead of verification tooling.
 ## What Changes
 
 - New capability `render-a11y`: a closed role set for interactive
-  elements (`button`, `checkbox`, `textbox`), an ARIA attribute
-  pass-through on nodes (`ariaLabel`, `ariaLive`, `ariaDescribedby`,
-  ...) applied by both backends, and text content exposure for
-  non-interactive text blocks.
+  elements (`button`, `checkbox`, `textbox`) — carried by the view
+  node types so the compiler checks exhaustiveness, not a free-form
+  string — plus an ARIA attribute pass-through on nodes (`ariaLabel`,
+  `ariaLive`, `ariaDescribedby`, ...) applied by both backends, and
+  text content exposure for non-interactive text blocks.
 - The DOM backend maps roles and ARIA attributes onto real element
   attributes; the canvas backend extends the offscreen mirror with the
   same roles and labels so the two backends agree.

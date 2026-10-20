@@ -42,16 +42,33 @@ re-entrancy unchanged — pinned contract stays valid); only the
 derive+draw is coalesced to the next frame. A trailing rAF flush covers
 the final frame so no state change is left unpainted.
 
+Two timing guarantees the deferral needs explicitly:
+
+- **flush()**: the SPA handle exposes a synchronous flush of the
+  pending frame. Today the mount wrapper draws synchronously per
+  dispatch (BZ1's "80 synchronous full draws"), so tests and e2e
+  helpers that read the DOM right after a dispatch rely on that
+  timing — `clickDrawnText` already races it. Helpers get updated to
+  flush or await visibility (see ticket tambor-4h6, same root cause).
+- **No-rAF fallback**: where `requestAnimationFrame` is unavailable
+  (jsdom, server render), the coalescer flushes synchronously instead
+  of silently never painting — the current path has the same hole, but
+  the coalescer must not add a never-flush state.
+
 ### D3. Opt-out shape
 
-A boolean mode on the mount options (`coalesce: false`) restores
-today's behavior; the SPA handle exposes the active mode for tests.
+`mountSpa`/`mountDemo` currently take no options object — the change
+adds one carrying the mode (`coalesce: false` restores today's
+behavior); the SPA handle exposes the active mode for tests.
 Custom `dispatch` already bypasses everything and stays untouched.
 
 ## Risks / Trade-offs
 
 - [Coalescing hides intermediate frames] → latency-critical apps opt
   out; e2e smoke asserts no regression on interactive demos.
+- [Deferred paint breaks DOM read-after-dispatch] → `flush()` on the
+  handle plus e2e helper updates; pinned by a test asserting a flush
+  forces the pending draw exactly once.
 - [Trailing flush could double-draw with the guard's own rAF] → the
   coalescer owns the single scheduling call; unit test pins exactly one
   draw per frame even when both a flush and a fresh dispatch race.

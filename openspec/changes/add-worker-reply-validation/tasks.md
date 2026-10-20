@@ -3,8 +3,8 @@
 ## 1. Guard
 
 - [ ] 1.1 Red: unit tests — a reply with a non-numeric id, a non-boolean
-      ok, or a missing payload fails the guard and rejects its pending
-      request as a typed failure.
+      ok, or a missing payload fails the guard and delivers a typed
+      failure response (`ok: false`) to its pending request.
 - [ ] 1.2 Green: implement the type guard in
       `src/components/worker_effect/client.ts` at the message entry
       point, before `pending.deliver`.
@@ -15,7 +15,9 @@
       nothing — every other pending request keeps waiting (pin against
       the reversed-reply routing property).
 - [ ] 2.2 Red→Green: a well-formed reply of an unknown id is dropped
-      without rejecting anything.
+      without delivering to anything, and a null or non-object message
+      fails the guard as a typed failure rather than crashing the
+      message handler.
 
 ## 3. Verification
 

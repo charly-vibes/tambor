@@ -12,18 +12,21 @@
 - [ ] 2.1 Red→Green: the demo registry resolves each example through a
       dynamic `import()`; the initial chunk imports no example module
       transitively (esbuild metafile assertion).
-- [ ] 2.2 Gallery e2e green against the chunked load (click-through on
-      one representative example per backend).
+- [ ] 2.2 Gallery e2e green against the chunked load (click-through:
+      counter for DOM, notebook for canvas/worker paths).
 
 ## 3. PWA shell
 
 - [ ] 3.1 Emit a web manifest (name, icons, display, theme) from the
-      build; smoke test asserts it is valid JSON in dist.
+      build into `demo-dist/`; smoke test asserts it is valid JSON
+      there and absent from the npm tarball (`npm pack --dry-run`).
 - [ ] 3.2 Red→Green: `src/spa/sw.ts` — cache-first for hashed assets,
       network-first for navigation, content-hash versioned cache name;
       unit-test the versioning.
-- [ ] 3.3 Register the SW from the SPA mount (dev-safe: skip on
-      non-secure origins); e2e offline reload serves the shell.
+- [ ] 3.3 Register the SW from the browser entry (`src/spa/main.ts`,
+      not mount.ts — the mount is shared demo plumbing also run under
+      jsdom), dev-safe: skip on non-secure origins; e2e offline reload
+      serves the shell.
 
 ## 4. Verification
 

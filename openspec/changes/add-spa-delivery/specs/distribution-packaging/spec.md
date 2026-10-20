@@ -3,8 +3,9 @@
 ### Requirement: Minified spa artifact
 
 The SPA build SHALL emit minified bundles for the spa shell and its
-worker scripts, with the minified bundle's gzip size at or below the
-unminified baseline's gzip size measured before the change.
+worker scripts, with the spa bundle's gzip size at or below the
+unminified pre-change baseline (measured 56 KB gzip; expected ≈38.6 KB
+minified).
 
 #### Scenario: minify flag lands
 
@@ -36,8 +37,9 @@ versioned so a deploy invalidates the previous cache.
 #### Scenario: manifest and worker present in dist
 
 - **WHEN** the build completes
-- **THEN** dist contains a valid JSON manifest and the service worker
-  artifact, and the SPA mount registers the worker on secure origins
+- **THEN** the demo build output contains a valid JSON manifest and
+  the service worker artifact outside the npm files allowlist, and the
+  browser entry registers the worker on secure origins
 
 #### Scenario: offline reload serves the shell
 

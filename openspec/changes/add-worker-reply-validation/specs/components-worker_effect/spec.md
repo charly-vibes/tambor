@@ -5,15 +5,17 @@
 The client SHALL validate every incoming worker message against the
 reply envelope before delivery — a plain object carrying a numeric id,
 a boolean ok, and the payload shape the envelope declares for that ok —
-and SHALL reject the pending request the echoed id routes to with the
-typed-failure shape when validation fails.
+and SHALL deliver a typed failure response (`ok: false`) to the pending
+request the echoed id routes to when validation fails — the pending
+queue resolves every reply, it never rejects.
 
 #### Scenario: malformed reply is a typed failure
 
 - **WHEN** a message arrives whose id is not a number or whose ok is
   not a boolean
-- **THEN** the pending request with the echoed id rejects with a typed
-  failure and no promise resolves with the malformed payload
+- **THEN** the pending request with the echoed id resolves with a
+  typed failure response (`ok: false`) and no pending request resolves
+  with the malformed payload
 
 #### Scenario: foreign-id reply is inert
 
@@ -27,4 +29,5 @@ typed-failure shape when validation fails.
 - **WHEN** two in-flight requests receive reversed replies, one of them
   malformed
 - **THEN** the well-formed reply still resolves exactly its own
-  request, and the malformed one rejects only its own
+  request, and the malformed one delivers its typed failure response
+  to only its own

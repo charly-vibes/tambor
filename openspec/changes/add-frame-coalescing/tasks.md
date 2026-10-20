@@ -2,13 +2,22 @@
 
 ## 1. Coalescing layer
 
+- [ ] 1.0 Add the options object to `mountSpa`/`mountDemo` (they take
+      none today) carrying the coalescing mode; existing call sites
+      compile unchanged with the default on.
 - [ ] 1.1 Red: unit test — two `mountSpa` dispatches inside one frame
-      produce exactly one derive+draw (spy on the backend draw), state
-      applied in dispatch order.
+      produce exactly one derive+draw (spy on the backend draw; pump
+      the fake frame between dispatch and assertion), state applied in
+      dispatch order.
 - [ ] 1.2 Green: implement the coalescing dispatch wrapper in
       `src/spa/mount.ts` (apply-immediate, paint-once-per-frame).
 - [ ] 1.3 Red→Green: opt-out test — `immediate` mode restores the
       current per-dispatch repaint behavior.
+- [ ] 1.4 Red→Green: `flush()` test — a flush forces exactly one
+      pending draw synchronously; no-rAF environments flush
+      synchronously instead of never painting.
+- [ ] 1.5 Update e2e helpers to flush or await visibility after
+      dispatch (root cause shared with ticket tambor-4h6).
 
 ## 2. Integration
 

@@ -19,12 +19,20 @@ so coalescing at the mount boundary is safe.
   dispatches arriving within one animation frame apply their effects in
   order against the state immediately, but schedule at most one
   derive+draw for that frame.
-- An opt-out (`immediate` dispatch mode on the handle / mount options)
-  preserves the current per-dispatch repaint for latency-critical apps,
-  and the existing custom-dispatch escape hatch is untouched.
+- An opt-out (`immediate` dispatch mode) preserves the current
+  per-dispatch repaint for latency-critical apps; this requires adding
+  an options object to `mountSpa`/`mountDemo`, which today take only
+  `(doc, container[, create])`. The existing custom-dispatch escape
+  hatch is untouched.
+- The coalesced deferral changes read-your-writes timing for consumers
+  that read the DOM right after a dispatch (today the mount wrapper
+  draws synchronously per dispatch — BZ1's 80 synchronous full draws).
+  The handle gains a `flush()` so tests and e2e helpers can force the
+  pending frame, and the e2e helpers are updated to use it.
 - The default flips the naive BZ1 wiring from ~7.8 s/op to ~383 ms/op
-  without changing app code; the pinned BZ1 state-equivalence contract
-  must stay green in both modes.
+  (CPU ×4 medians; unthrottled runs measured ~28×) without changing
+  app code; the pinned BZ1 state-equivalence contract must stay green
+  in both modes.
 
 ## Impact
 
