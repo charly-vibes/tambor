@@ -120,7 +120,7 @@ it("p_transform: the selected value is one more and nothing else changes", () =>
   expect(select(out, a.path)).toBe(2);
   expect(out).toEqual({ a: 2, b: 2 });
   // nothing else changes — the untouched sibling keeps its reference
-  expect((out as Record<string, unknown>).b).toBe(obj.b);
+  expect((out as Record<string, unknown>)["b"]).toBe(obj.b);
 });
 
 // p_compiles — derives_from: path.derivation.any_binding_form_compiles

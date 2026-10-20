@@ -21,7 +21,7 @@ const PORT = 4599;
 function ci(): boolean {
   const env = (globalThis as { process?: { env?: Record<string, string | undefined> } })
     .process?.env;
-  return env?.CI !== undefined;
+  return env?.["CI"] !== undefined;
 }
 
 export default defineConfig({

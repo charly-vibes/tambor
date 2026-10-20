@@ -37,12 +37,12 @@ function findTranslate(view: EventElem, body: Elem): TranslateNode | undefined {
 // predicate: offset equals [0, 0]
 it("p_default: no offset prop → offset equals [0, 0]", () => {
   expect(
-    call(scrollview, { "scroll-bounds": [200, 200], body: label("hi") }).props.offset,
+    call(scrollview, { "scroll-bounds": [200, 200], body: label("hi") }).props["offset"],
   ).toEqual([0, 0]);
   fc.assert(
     fc.property(viewportArb, bodyArb, (viewport, body) => {
       expect(
-        call(scrollview, { "scroll-bounds": viewport, body }).props.offset,
+        call(scrollview, { "scroll-bounds": viewport, body }).props["offset"],
       ).toEqual([0, 0]);
     }),
   );

@@ -51,7 +51,7 @@ it("p_forward: the rendered view's handlers receive them", () => {
     on("key-press", (s: unknown) => [["hit", "key-press", s]]),
     on("key-event", (s: unknown) => [["hit", "key-event", s]]),
     on("mouse-move-global", (pos: unknown) => [["hit", "mouse-move-global", pos]]),
-    on("mouse-down", () => [["hit", "mouse-down", props.tag]], spacer(10, 10)),
+    on("mouse-down", () => [["hit", "mouse-down", props["tag"]]], spacer(10, 10)),
   ]);
   const view = render(call(forwarder, { tag: "t" })) as EventElem;
   // pointer, key, key-event and global-move events forward to the
@@ -82,7 +82,7 @@ it("p_clipboard: the selected text effect is emitted", () => {
     "textareaish",
     [{ keys: ["text"] }],
     (props) =>
-      on("clipboard", (data: unknown) => [["clipboard-copy", `${data}`]], labelNode(props.text as string)),
+      on("clipboard", (data: unknown) => [["clipboard-copy", `${data}`]], labelNode(props["text"] as string)),
   );
   const view = render(call(textareaish, { text: "copy me" })) as EventElem;
   const intents = dispatch(view, clipboard("copied text"));
@@ -96,18 +96,18 @@ it("p_sizing: setWidth returns a component with the new width prop", () => {
   const sized = defineComponent(
     "sized",
     [{ keys: ["width", "height", "stretch-width", "stretch-height"] }],
-    (props) => rectangle(props.width as number, 5),
+    (props) => rectangle(props["width"] as number, 5),
   );
   const c = call(sized, { width: 10 });
   // setWidth assocs the new width prop and returns a component
   const wider = setWidth(c, 100);
-  expect((wider.props as Props).width).toBe(100);
+  expect((wider.props as Props)["width"]).toBe(100);
   // the re-render sees the new width
   expect((render(wider) as Rectangle).width).toBe(100);
   // setHeight by assoc too
   const taller = setHeight(wider, 50);
-  expect((taller.props as Props).height).toBe(50);
-  expect((taller.props as Props).width).toBe(100);
+  expect((taller.props as Props)["height"]).toBe(50);
+  expect((taller.props as Props)["width"]).toBe(100);
   // stretch flags are read from the component's stretch props
   const stretched = call(sized, { "stretch-width": true });
   expect(stretchWidth(stretched)).toBe(true);
@@ -128,16 +128,16 @@ interface TreeNode {
 // derivation treats the recursive call as a component call
 // (recursive_components).
 const tree = defineComponent("tree", [{ keys: ["data"] }], (props) => {
-  const d = props.data as TreeNode;
+  const d = props["data"] as TreeNode;
   const site = props as Props;
   return [
     labelNode(d.name),
     ...(d.children ?? []).map((child) =>
       call(tree, { data: child }, {
-        extra: site.extra,
-        $extra: site.$extra as Path,
-        context: site.context,
-        $context: site.$context as Path,
+        extra: site["extra"],
+        $extra: site["$extra"] as Path,
+        context: site["context"],
+        $context: site["$context"] as Path,
       }),
     ),
   ];

@@ -137,7 +137,7 @@ it("p_bar_drag: press then delta → the function returns the set offset effect"
   const scrollf = intents[0]![1] as (delta: Vec2) => readonly unknown[];
   // the drag maps the pointer delta to the set offset effect:
   // offset = clamp(div0(position, viewport) * max)
-  const expectedPath = svCall({ viewport, body }).props.$offset;
+  const expectedPath = svCall({ viewport, body }).props["$offset"];
   expect(scrollf([0, 100])).toEqual([["set", expectedPath, [0, 300]]]);
   expect(scrollf([0, 0])).toEqual([["set", expectedPath, [0, 150]]]);
   // the set effect applies to the state as the dispatcher would

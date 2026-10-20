@@ -123,7 +123,7 @@ function colorsEqual(a: Color, b: Color): boolean {
 // predicate: the effect flips open?
 it("p_header_toggle: the effect flips open?", () => {
   const state: Record<string, unknown> = { selected: "this", "::extra": {} };
-  const intents = dispatchEvent(dropdownView(state, state.selected), mouseDown([0, 0]));
+  const intents = dispatchEvent(dropdownView(state, state["selected"]), mouseDown([0, 0]));
   expect(intents.length).toBe(1);
   const intent = intents[0] as unknown[];
   // the effect updates open?

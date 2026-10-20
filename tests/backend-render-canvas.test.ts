@@ -162,12 +162,12 @@ it("p_dpr: backing size equals css size times dpr for dpr in 1, 2, 3", () => {
       const surface = createCanvas();
       backend.attach(surface);
       // the backing store scales by dpr …
-      expect(surface.attrs.width).toBe(320 * dpr);
-      expect(surface.attrs.height).toBe(480 * dpr);
+      expect(surface.attrs["width"]).toBe(320 * dpr);
+      expect(surface.attrs["height"]).toBe(480 * dpr);
       expect(backend.image.width).toBe(320 * dpr);
       // … and the css size is unchanged
-      expect(surface.style.width).toBe("320px");
-      expect(surface.style.height).toBe("480px");
+      expect(surface.style["width"]).toBe("320px");
+      expect(surface.style["height"]).toBe("480px");
     }),
   );
 });

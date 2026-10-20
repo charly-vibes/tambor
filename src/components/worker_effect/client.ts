@@ -81,13 +81,13 @@ function validateReply(
 ): { readonly reply: WorkerEffectResponse } | { readonly routableId: number } | null {
   if (typeof data !== "object" || data === null) return null;
   const m = data as Record<string, unknown>;
-  if (typeof m.id !== "number") return null;
-  if (typeof m.ok !== "boolean") return { routableId: m.id };
-  if (m.ok === true) {
-    if (!("value" in m)) return { routableId: m.id };
+  if (typeof m["id"] !== "number") return null;
+  if (typeof m["ok"] !== "boolean") return { routableId: m["id"] };
+  if (m["ok"] === true) {
+    if (!("value" in m)) return { routableId: m["id"] };
     return { reply: m as unknown as WorkerEffectResponse };
   }
-  if (typeof m.message !== "string") return { routableId: m.id };
+  if (typeof m["message"] !== "string") return { routableId: m["id"] };
   return { reply: m as unknown as WorkerEffectResponse };
 }
 

@@ -236,17 +236,17 @@ function callContext(
   const parent$extra = callsite.$extra ?? ROOT_EXTRA_PATH;
   const context = (callsite.context ?? {}) as Record<string, unknown>;
   const $context = callsite.$context ?? ROOT_CONTEXT_PATH;
-  const childContext = (args.context !== undefined ? args.context : context) as Record<
+  const childContext = (args["context"] !== undefined ? args["context"] : context) as Record<
     string,
     unknown
   >;
-  const child$context = (args.$context as Path | undefined) ?? $context;
+  const child$context = (args["$context"] as Path | undefined) ?? $context;
   const extraKey = extraKeyOf(component, args, nonliteral, $m);
-  const extra = (args.extra !== undefined ? args.extra : (parentExtra[extraKey] ?? {})) as Record<
+  const extra = (args["extra"] !== undefined ? args["extra"] : (parentExtra[extraKey] ?? {})) as Record<
     string,
     unknown
   >;
-  const $extra = (args.$extra as Path | undefined) ?? [...parent$extra, ...keypath(extraKey)];
+  const $extra = (args["$extra"] as Path | undefined) ?? [...parent$extra, ...keypath(extraKey)];
   return { nonliteral, $m, extra, $extra, childContext, child$context };
 }
 

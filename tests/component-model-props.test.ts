@@ -70,8 +70,8 @@ it("p_implicit: extra, context and their paths are present", () => {
   expect("context" in props).toBe(true);
   expect("$context" in props).toBe(true);
   // the implicit keys carry paths too (an array of steps)
-  expect(Array.isArray(props.$extra)).toBe(true);
-  expect(Array.isArray(props.$context)).toBe(true);
+  expect(Array.isArray(props["$extra"])).toBe(true);
+  expect(Array.isArray(props["$context"])).toBe(true);
 });
 
 // p_path_get — derives_from: component.model.path_resolves
@@ -97,8 +97,8 @@ it("p_path_get: select equals the prop value", () => {
         ];
         const props = renderOf(call(comp, { v: value, $v: path }));
         // select(state, dollar p) deep-equals p at render time
-        expect(select(state, props.$v as Path)).toEqual(value);
-        expect(props.v).toEqual(value);
+        expect(select(state, props["$v"] as Path)).toEqual(value);
+        expect(props["v"]).toEqual(value);
       },
     ),
   );
@@ -114,11 +114,11 @@ it("p_as_map: the as map contains a 42, b 42 and extra", () => {
     propsBody,
   );
   const props = renderOf(call(asChild, { b: 42 }));
-  const m = props.m as Props;
+  const m = props["m"] as Props;
   // the as name is bound to the complete props map including the
   // filled-in default
-  expect(m.a).toBe(42);
-  expect(m.b).toBe(42);
+  expect(m["a"]).toBe(42);
+  expect(m["b"]).toBe(42);
   expect("extra" in m).toBe(true);
 });
 
@@ -133,10 +133,10 @@ it("p_literal_call: the explicit path wins", () => {
   ];
   const explicit = renderOf(call(litComp, { a: 12, $a: written }));
   // the explicit dollar key is the path the component receives
-  expect(explicit.$a).toEqual(written);
-  expect(explicit.a).toBe(12);
+  expect(explicit["$a"]).toEqual(written);
+  expect(explicit["a"]).toBe(12);
   // without the explicit key the path falls back to the scratch, so the
   // explicit one is what wins
   const implicit = renderOf(call(litComp, { a: 12 }));
-  expect(implicit.$a).not.toEqual(written);
+  expect(implicit["$a"]).not.toEqual(written);
 });

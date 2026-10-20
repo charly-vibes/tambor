@@ -32,7 +32,7 @@ import {
 // step, extent, offset, window — with no item list
 it("p_summary: random extents → the window state carries only numeric summaries — count, step, extent, offset, window — with no item list", () => {
   // the offset prop defaults to [0, 0]
-  expect(vlCall({ count: 5, rowHeight: 16, viewport: [300, 300] }).props.offset).toEqual([0, 0]);
+  expect(vlCall({ count: 5, rowHeight: 16, viewport: [300, 300] }).props["offset"]).toEqual([0, 0]);
   fc.assert(
     fc.property(
       fc.nat(60),

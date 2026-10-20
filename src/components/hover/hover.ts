@@ -178,7 +178,7 @@ function buttonNode(text: string, hover: boolean, onClick?: Handler): ButtonNode
 // carrying its checked path (checkbox_toggle), drawn over the ui
 // checkbox which itself handles no events (checkbox_view_only).
 const checkboxComp = defineComponent("checkbox", [{ keys: ["checked"] }], (props) =>
-  on("mouse-down", () => [["toggle", props.$checked as Path]], uiCheckbox(props.checked as boolean)),
+  on("mouse-down", () => [["toggle", props["$checked"] as Path]], uiCheckbox(props["checked"] as boolean)),
 );
 
 export interface CheckboxProps {

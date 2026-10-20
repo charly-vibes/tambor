@@ -124,8 +124,8 @@ function pinBody(props: Props): Elem {
   };
   if (props["z"] !== undefined) panelArgs["z"] = props["z"];
   const pinned: ComponentCall = call(pinnedPanel, panelArgs, {
-    context: props.context as Record<string, unknown>,
-    $context: props.$context as Path,
+    context: props["context"] as Record<string, unknown>,
+    $context: props["$context"] as Path,
   });
   // the body may carry the nested component call: render resolves it
   // before any dispatch walks the tree (recursive_components)

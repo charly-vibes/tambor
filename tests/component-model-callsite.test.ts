@@ -33,17 +33,17 @@ const child = defineComponent(
   "child",
   [{ keys: ["a", "b", { key: "c", contextual: true }], defaults: { a: 42 }, as: "m" }],
   (props) => {
-    const m = props.m as Props;
-    return on("mouse-down", () => [["data", props.a, props.b, props.c, m]], spacer(10, 10));
+    const m = props["m"] as Props;
+    return on("mouse-down", () => [["data", props["a"], props["b"], props["c"], m]], spacer(10, 10));
   },
 );
 const parent = defineComponent("parent", [{ keys: ["m"] }], (props) =>
-  call(child, props.m as Record<string, unknown>, {
-    $m: props.$m as Path,
-    extra: props.extra,
-    $extra: props.$extra as Path,
-    context: props.context,
-    $context: props.$context as Path,
+  call(child, props["m"] as Record<string, unknown>, {
+    $m: props["$m"] as Path,
+    extra: props["extra"],
+    $extra: props["$extra"] as Path,
+    context: props["context"],
+    $context: props["$context"] as Path,
   }),
 );
 
@@ -94,10 +94,10 @@ it("p_defaults: mouse-down returns data with a equal 42 and b nil", () => {
   // absent location reads as the default once the scratch container
   // exists (defaults_applied, path_resolves)
   const m = intent[4] as Props;
-  const steps = m.$a as readonly unknown[];
+  const steps = m["$a"] as readonly unknown[];
   expect(steps.some((s) => Array.isArray(s) && s[0] === "nil-to-val")).toBe(true);
   // and b, with no default, stays nil while its own path has no such step
-  expect((m.$b as readonly unknown[]).some((s) => Array.isArray(s) && s[0] === "nil-to-val")).toBe(
+  expect((m["$b"] as readonly unknown[]).some((s) => Array.isArray(s) && s[0] === "nil-to-val")).toBe(
     false,
   );
 });
@@ -115,9 +115,9 @@ it("p_contextual: c is nil without context c, and reads 13 with path context the
   });
   const intents = dispatch(render(without) as EventElem, mouseDown([0, 0]));
   const m1 = (intents[0] as readonly unknown[])[4] as Props;
-  expect(m1.c).toBeUndefined();
+  expect(m1["c"]).toBeUndefined();
   // the contextual path is the context path plus keypath c
-  expect(m1.$c).toEqual([["keypath", "foo"], ["keypath", "c"]]);
+  expect(m1["$c"]).toEqual([["keypath", "foo"], ["keypath", "c"]]);
 
   // with context c 13 it reads 13 with path context then c
   const state = { context: { c: 13 } };
@@ -130,11 +130,11 @@ it("p_contextual: c is nil without context c, and reads 13 with path context the
   const intent2 = intents2[0] as readonly unknown[];
   expect(intent2[3]).toBe(13);
   const m2 = intent2[4] as Props;
-  expect(m2.$c).toEqual([
+  expect(m2["$c"]).toEqual([
     ["keypath", "context"],
     ["keypath", "c"],
   ]);
-  expect(select(state, m2.$c as Path)).toBe(13);
+  expect(select(state, m2["$c"] as Path)).toBe(13);
 
   // the call site cannot override a contextual prop
   const ctxComp = defineComponent(
@@ -150,8 +150,8 @@ it("p_contextual: c is nil without context c, and reads 13 with path context the
       $context: [["keypath", "::context"]],
     }),
   );
-  expect(override.c).toBe(13);
-  expect(override.$c).toEqual([
+  expect(override["c"]).toBe(13);
+  expect(override["$c"]).toEqual([
     ["keypath", "::context"],
     ["keypath", "c"],
   ]);
@@ -166,18 +166,18 @@ it("p_nonliteral: a has path m then a and b falls back to extra", () => {
   ) as Props;
   // a: the map contains the key, so the dollar key is filled from the
   // map value's path — m then a
-  expect(props.$a).toEqual([
+  expect(props["$a"]).toEqual([
     ["keypath", "m"],
     ["keypath", "a"],
   ]);
   // b: the map does not contain the key, so the dollar key falls back
   // to the call site's extra
-  expect(props.$b).toEqual([
+  expect(props["$b"]).toEqual([
     ["keypath", "::extra"],
     ["keypath", expect.any(String)],
     ["keypath", "b"],
   ]);
-  expect(props.a).toBe(12);
+  expect(props["a"]).toBe(12);
 });
 
 // p_nonliteral_vals — derives_from: component.model.nonliteral_missing_vals
@@ -201,10 +201,10 @@ it("p_nonliteral_vals: has-default is 42 when absent, is-context is 13, from the
   // a missing non-defaulted key is filled from the extra scratch: the
   // scratch is the call site's extra under the call-site key, so a
   // seeded scratch is read back through the very same path
-  const extraKey = ((props.$extra as readonly unknown[]).at(-1) as readonly unknown[])[1] as string;
+  const extraKey = ((props["$extra"] as readonly unknown[]).at(-1) as readonly unknown[])[1] as string;
   const seeded = renderOf(
     call(nlTarget, {}, { ...callsite, extra: { [extraKey]: { b: 99 } } }),
   ) as Props;
-  expect(seeded.b).toBe(99);
+  expect(seeded["b"]).toBe(99);
   expect(seeded["has-default"]).toBe(42);
 });

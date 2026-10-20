@@ -87,7 +87,7 @@ describe("bench result contract", () => {
 
   it("rejects missing pinned versions", () => {
     const r = wellFormed();
-    delete (r.versions as Record<string, string>).chrome;
+    delete (r.versions as Record<string, string>)["chrome"];
     expect(validateBenchResult(r).length).toBeGreaterThan(0);
   });
 

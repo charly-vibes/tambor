@@ -319,8 +319,8 @@ it("p_namespaces: reserved keys never collide with user keys", () => {
   );
   drag.app.send(mouseDown([1, 1]));
   const st = drag.app.getState() as Record<string, unknown>;
-  expect(st.count).toBe(1);
-  expect(st.name).toBe("x");
+  expect(st["count"]).toBe(1);
+  expect(st["name"]).toBe("x");
   expect(select(st, SCROLL_STATE_PATH)).toEqual({ scrollf, mpos: [1, 1] });
   expect(select(st, FOCUS_PATH)).toBe("somewhere");
   // no user key collided with a reserved key: the reserved entries are

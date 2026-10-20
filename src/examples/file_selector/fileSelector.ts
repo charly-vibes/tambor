@@ -174,7 +174,7 @@ export function fileSelector(itemNames: readonly string[]): FileSelectorSession 
     view: (state) => {
       const s = state as Record<string, unknown>;
       return itemSelector(s["item-names"] as readonly string[], {
-        selected: s.selected as ReadonlySet<string>,
+        selected: s["selected"] as ReadonlySet<string>,
         strFilter: s["str-filter"] as string,
         $selected: SELECTED_PATH,
         $strFilter: STR_FILTER_PATH,

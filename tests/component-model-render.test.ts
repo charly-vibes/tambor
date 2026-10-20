@@ -25,36 +25,36 @@ it("p_identity: extra keys differ and are stable across renders", () => {
   // two call sites with different args inside one parent
   const body = (props: Props): unknown => [
     call(idChild, { v: 1 }, {
-      extra: props.extra,
-      $extra: props.$extra as Path,
-      context: props.context,
-      $context: props.$context as Path,
+      extra: props["extra"],
+      $extra: props["$extra"] as Path,
+      context: props["context"],
+      $context: props["$context"] as Path,
     }),
     call(idChild, { v: 2 }, {
-      extra: props.extra,
-      $extra: props.$extra as Path,
-      context: props.context,
-      $context: props.$context as Path,
+      extra: props["extra"],
+      $extra: props["$extra"] as Path,
+      context: props["context"],
+      $context: props["$context"] as Path,
     }),
   ];
   const first = defineComponent("id-parent-1", [{ keys: [] }], body);
   const rendered = render(call(first, {})) as readonly Props[];
   // different call sites get different extra
   expect(rendered[0] as Props).toBeDefined();
-  expect((rendered[0] as Props).$extra).not.toEqual((rendered[1] as Props).$extra);
+  expect((rendered[0] as Props)["$extra"]).not.toEqual((rendered[1] as Props)["$extra"]);
 
   // the same call site keeps the same extra across renders: a second,
   // identically-argged parent (a different component, so the render
   // cache cannot mask the derivation) yields the same child extra paths
   const second = defineComponent("id-parent-2", [{ keys: [] }], body);
   const rerendered = render(call(second, {})) as readonly Props[];
-  expect((rerendered[0] as Props).$extra).toEqual((rendered[0] as Props).$extra);
-  expect((rerendered[1] as Props).$extra).toEqual((rendered[1] as Props).$extra);
+  expect((rerendered[0] as Props)["$extra"]).toEqual((rendered[0] as Props)["$extra"]);
+  expect((rerendered[1] as Props)["$extra"]).toEqual((rendered[1] as Props)["$extra"]);
 });
 
 // A body whose render output is fresh on every run: a nonce object
 // makes identity observable while the marker stays deep-equal.
-const cacheBody = (props: Props): unknown => ({ marker: props.v, nonce: {} });
+const cacheBody = (props: Props): unknown => ({ marker: props["v"], nonce: {} });
 
 // p_render_pure — derives_from: component.model.render_pure
 // generator: same inputs twice
