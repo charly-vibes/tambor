@@ -84,15 +84,25 @@ plumbing; the backend port is unchanged). Tests: tests/spa-lane-draw.test.ts
 (4 contracts). Drag overlay (cached tree + dragged shape re-drawn on top) is
 Phase 4.
 
-### Phase 3 — replay test + 60 Hz benchmark
+### Phase 3 — replay test + 60 Hz benchmark — LANDED
 
-- Replay: record routed intents excluding `lane`-typed effects; replay
-  reproduces the committed state with the lane reset to null.
-- Benchmark: standalone microbench (per ticket note — not the 54j.4 harness):
-  60 Hz synthetic pointer-move stream over a drag; derive-span count flat
-  during the stream (primary metric, machine-independent); paired before/after
-  frame medians on the same machine state, CPU×4 (findings-8xm lesson:
-  never compare across machine states).
+- Replay (LANDED, tests/lane-replay.test.ts, `p_lane_replay` in the
+  interaction-lane spec): a scripted drag (mouse-down starts the lane,
+  mouse-move streams lane updates, mouse-up commits the final position as
+  the only state-writing event) routed through the wire's dispatch shape;
+  the log minus `lane`-typed effects replays onto a fresh app reproducing
+  the committed state exactly, with the replay's lane empty. The committed
+  output is drawn from state alone (the shape's translate carries the
+  committed x/y).
+- Benchmark (LANDED, tests/lane-60hz-bench.test.ts, standalone per the
+  ticket note — not the 54j.4 harness): 60 synthetic pointer-move events
+  over the mounted wire; derive count FLAT across the stream (primary,
+  machine-independent), one draw per event, every draw re-using the same
+  cached tree object; state identity unchanged. Paired meter (interleaved
+  arms, fresh mount per sample, printed unasserted per findings-kit J8):
+  lane arm vs state arm (each move commits state — the pre-lane membrane
+  shape); on a 400-label tree the lane arm's median sits below the state
+  arm's (both pay the same draw walk — the gap is the derivation).
 
 ### Phase 4 (child ticket) — drag overlay + spatial index
 

@@ -45,6 +45,7 @@ backend port (draw/measure/subscribe) is unchanged.
 | lane_batch_no_repaint | invariant | a batch whose effects are all lane-typed schedules no repaint, and any batch containing a state effect repaints exactly once as usual | [[interaction.lane]] |
 | lane_draw_no_derive | invariant | a routed batch whose effects are all lane-typed re-draws the already-derived cached tree with no view re-derivation, and any batch containing a state effect re-derives exactly once as usual | [[interaction.lane]] |
 | lane_transform_drawn | invariant | every wire draw — cached or freshly derived, routed or async re-render — applies the lane's pan/scroll offset as a translate over the drawn tree, and an app whose lane holds no offset draws the tree unwrapped | [[interaction.lane]] |
+| lane_replay_history | invariant | replaying a drag's routed intent log with the lane-typed effects removed reproduces the committed state exactly, and the replay runs with an empty lane — the lane contributes nothing to the persistent history or the committed drawn output | [[interaction.lane]] |
 
 ## Model
 
@@ -60,6 +61,7 @@ backend port (draw/measure/subscribe) is unchanged.
 | t_write | untouched | held | [[interaction.lane.lane_update_semantics]] |
 | t_stay | held | held | [[interaction.lane.lane_outside_state]] |
 | t_lane_draw | held | held | [[interaction.lane.lane_draw_no_derive]] |
+| t_commit | held | untouched | [[interaction.lane.lane_replay_history]] |
 
 ## Properties
 
@@ -72,6 +74,7 @@ backend port (draw/measure/subscribe) is unchanged.
 | p_mixed_batch | unit | [[interaction.lane.lane_batch_no_repaint]] | a batch carrying a lane effect and a state update | the state changes, the lane changes, and exactly one repaint is scheduled |
 | p_lane_draw_no_derive | unit | [[interaction.lane.lane_draw_no_derive]] | a routed lane-only pointer-move stream | each event costs zero derivations and exactly one draw of the cached tree, wrapped in the lane transform |
 | p_lane_transform_drawn | unit | [[interaction.lane.lane_transform_drawn]] | a lane-only pan followed by a state change, and a state change with an empty lane | the state draw carries the lane's pan translate; with no lane offset the drawn tree is unwrapped |
+| p_lane_replay | unit | [[interaction.lane.lane_replay_history]] | a scripted drag (mouse-down, move stream, mouse-up commit) | the replayed state equals the original state and the replay's lane is empty while the original lane held the interaction values mid-drag |
 
 ## Requirements
 
@@ -121,3 +124,9 @@ Every property row is verified by exactly one dedicated test;
 - **WHEN** a lane-only pan followed by a state change, and a state change with an empty lane
 - **THEN** the state draw carries the lane's pan translate; with no lane offset the drawn tree is unwrapped
 - **VERIFIES** [[interaction.lane.p_lane_transform_drawn]]
+
+#### Scenario: p_lane_replay
+
+- **WHEN** a scripted drag (mouse-down, move stream, mouse-up commit)
+- **THEN** the replayed state equals the original state and the replay's lane is empty while the original lane held the interaction values mid-drag
+- **VERIFIES** [[interaction.lane.p_lane_replay]]
