@@ -104,12 +104,35 @@ Phase 4.
   shape); on a 400-label tree the lane arm's median sits below the state
   arm's (both pay the same draw walk — the gap is the derivation).
 
-### Phase 4 (child ticket) — drag overlay + spatial index
+### Phase 4 (child ticket) — drag overlay + spatial index — LANDED
 
 Overlay lane (dragged shape re-drawn from lane position) wired to
 `src/model/spatial-index.ts` (54j.10 — whose "revisit after 8xm" trigger is
 satisfied). Single-drag scope v1; multi-pointer keyed by pointer id is
 explicitly out of scope until a user needs it.
+
+Landed (2026-10-20): (1) the drag overlay seam — a lane entry carries an
+overlay renderer `(entry) => Elem`, and `drawWire` in `src/spa/mount.ts`
+renders it ON TOP of the lane-transformed tree on every wire draw
+(lane-only, state re-derive and async re-render alike); draw-only, so
+routing semantics are untouched. Spec: `lane_overlay_drawn` +
+`p_lane_overlay_drawn` in interaction-lane; tests/spa-lane-overlay.test.ts
+red→green 3/3. (2) the spatial-index router wiring — `dispatchPointerGroup`
+(src/events/group-index.ts, split out for the pretender 400-line floor)
+serves pointer delivery over groups of ≥64 children from the index
+(`hitCandidates`: containing candidates in original-position order, the
+exact reverse-walk trial order) with the synthesis carve-out: a subtree
+containing a bubble or wrap node keeps the linear walk, because those apply
+a function to the child results and may synthesize intents from empty ones
+(on_bubble_raw, wrap_on_middleware) — which no bounds containment justifies.
+The index is cached on the group's identity (the same trust 8xm's view
+cache holds). Spec: `pointer_group_index` + `p_pointer_index_equiv` /
+`p_pointer_index_bubble` in event-model; tests/dispatch-hit-index.test.ts.
+MEASURED paired: pointer-move over a 10k-child interactive group 2.065 ms
+(linear baseline) → 0.084 ms median (~25×) after the wiring. The test
+oracle caught its own scene bug pre-wiring: a bubble applies its function
+to EVERY event, so a synthesizer later in the array wins a mouse-down that
+hits an earlier real child — the topmost-first ordering matters.
 
 ## Edge-case rulings
 

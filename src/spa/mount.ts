@@ -123,6 +123,41 @@ function viewCache(app: App): () => Elem {
   };
 }
 
+// The drag overlay (interaction-lane lane_overlay_drawn, Phase 4): a
+// lane entry may carry an overlay renderer `(entry) => Elem` — the
+// dragged shape re-drawn from the lane position. The first such entry
+// in key order is rendered ON TOP of the tree (appended after it in
+// draw order); the renderer is called with its lane entry at draw
+// time. Draw-only: routing semantics are untouched (the pointer
+// stream hits the tree's own handlers). Single-drag scope v1.
+function laneOverlay(app: App): Elem | null {
+  const lane = app.getLane() as Record<string, unknown>;
+  for (const key of Object.keys(lane)) {
+    const v = lane[key];
+    if (v !== null && typeof v === "object") {
+      const overlay = (v as { overlay?: unknown }).overlay;
+      if (typeof overlay === "function") {
+        return (overlay as (entry: unknown) => Elem)(v);
+      }
+    }
+  }
+  return null;
+}
+
+// Every wire draw goes through here: the tree under the lane wrap,
+// with the drag overlay appended on top while a drag entry carries a
+// renderer (lane-only draw, state re-derive and async re-render
+// alike — lane wins on position, state wins on structure).
+function drawWire(
+  backend: DomBackend,
+  app: App,
+  wrap: (tree: Elem) => Elem,
+  tree: Elem,
+): void {
+  const overlay = laneOverlay(app);
+  backend.draw(overlay === null ? wrap(tree) : wrap([tree, overlay]));
+}
+
 // The lane transform wrapper (interaction-lane): every draw — cached
 // or freshly derived — carries the lane's pan/scroll offset, so the
 // lane wins on position while state wins on structure; at identity
@@ -144,19 +179,20 @@ function laneWrap(app: App): (tree: Elem) => Elem {
 // NO re-derivation. Any state effect: one derivation + one draw.
 function wireDrawTail(
   backend: DomBackend,
+  app: App,
   viewFor: () => Elem,
   wrap: (tree: Elem) => Elem,
   intents: readonly Effect[],
 ): void {
   if (intents.length === 0) return;
   if (intents.every((effect) => effect[0] === "lane")) {
-    backend.draw(wrap(viewFor()));
+    drawWire(backend, app, wrap, viewFor());
     return;
   }
   phaseTimers.startSpan("derive");
   const drawn = viewFor();
   phaseTimers.endSpan();
-  backend.draw(wrap(drawn));
+  drawWire(backend, app, wrap, drawn);
 }
 
 // The re-render wrapper (tambor-a45): async applies route through the
@@ -176,7 +212,7 @@ function wireRerender(
   const rawDispatch = app.dispatch;
   app.dispatch = (batch, ...rest: unknown[]): undefined => {
     const applied = rawDispatch(batch, ...rest);
-    if (!routed) backend.draw(wrap(viewFor()));
+    if (!routed) drawWire(backend, app, wrap, viewFor());
     return applied;
   };
   return { setRouted: (routedNow: boolean) => void (routed = routedNow) };
@@ -215,7 +251,7 @@ function wireSurface(backend: DomBackend, app: App): Wire {
       rerender.setRouted(false);
     }
     phaseTimers.endSpan();
-    wireDrawTail(backend, viewFor, wrap, intents);
+    wireDrawTail(backend, app, viewFor, wrap, intents);
   };
   backend.subscribe(route);
   return { route, viewFor };

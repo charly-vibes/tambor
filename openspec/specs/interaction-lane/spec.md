@@ -30,8 +30,12 @@ freshly derived, routed or async re-render) carries the lane's
 pan/scroll offset as a translate wrapper, so a state change
 mid-interaction keeps the lane's position (lane wins on position,
 state wins on structure; the BZ2 pan-as-transform verdict promoted to
-a corpus seam). Drag overlay (cached tree + dragged shape re-drawn on
-top) is Phase 4. The draw-boundary constraints live here rather than
+a corpus seam). The drag overlay (Phase 4, lane_overlay_drawn): a lane
+entry may carry an overlay renderer `(entry) => Elem` — the dragged
+shape re-drawn from the lane position — and the wire renders it ON TOP
+of the transformed tree on every wire draw (lane-only, state
+re-derive, async re-render alike), draw-only so the routing semantics
+are untouched; single-drag scope v1. The draw-boundary constraints live here rather than
 in backend-render because the boundary is SPA-wire plumbing — the
 backend port (draw/measure/subscribe) is unchanged.
 
@@ -46,6 +50,7 @@ backend port (draw/measure/subscribe) is unchanged.
 | lane_draw_no_derive | invariant | a routed batch whose effects are all lane-typed re-draws the already-derived cached tree with no view re-derivation, and any batch containing a state effect re-derives exactly once as usual | [[interaction.lane]] |
 | lane_transform_drawn | invariant | every wire draw — cached or freshly derived, routed or async re-render — applies the lane's pan/scroll offset as a translate over the drawn tree, and an app whose lane holds no offset draws the tree unwrapped | [[interaction.lane]] |
 | lane_replay_history | invariant | replaying a drag's routed intent log with the lane-typed effects removed reproduces the committed state exactly, and the replay runs with an empty lane — the lane contributes nothing to the persistent history or the committed drawn output | [[interaction.lane]] |
+| lane_overlay_drawn | invariant | while a lane entry carries an overlay renderer `(entry) => Elem`, every wire draw — lane-only, state re-derive or async re-render — renders the renderer's Elem called with its lane entry on top of the lane-transformed tree, and a lane whose entries carry no renderer draws the tree alone | [[interaction.lane]] |
 
 ## Model
 
@@ -75,6 +80,7 @@ backend port (draw/measure/subscribe) is unchanged.
 | p_lane_draw_no_derive | unit | [[interaction.lane.lane_draw_no_derive]] | a routed lane-only pointer-move stream | each event costs zero derivations and exactly one draw of the cached tree, wrapped in the lane transform |
 | p_lane_transform_drawn | unit | [[interaction.lane.lane_transform_drawn]] | a lane-only pan followed by a state change, and a state change with an empty lane | the state draw carries the lane's pan translate; with no lane offset the drawn tree is unwrapped |
 | p_lane_replay | unit | [[interaction.lane.lane_replay_history]] | a scripted drag (mouse-down, move stream, mouse-up commit) | the replayed state equals the original state and the replay's lane is empty while the original lane held the interaction values mid-drag |
+| p_lane_overlay_drawn | unit | [[interaction.lane.lane_overlay_drawn]] | a scripted drag with an overlay renderer over the mounted wire (start, move stream, mid-drag state change, commit) | the stream draws the overlay on top with zero re-derivations, the mid-drag state change keeps the overlay over the re-derived tree, and the commit draw carries no overlay |
 
 ## Requirements
 
@@ -130,3 +136,9 @@ Every property row is verified by exactly one dedicated test;
 - **WHEN** a scripted drag (mouse-down, move stream, mouse-up commit)
 - **THEN** the replayed state equals the original state and the replay's lane is empty while the original lane held the interaction values mid-drag
 - **VERIFIES** [[interaction.lane.p_lane_replay]]
+
+#### Scenario: p_lane_overlay_drawn
+
+- **WHEN** a scripted drag with an overlay renderer over the mounted wire (start, move stream, mid-drag state change, commit)
+- **THEN** the stream draws the overlay on top with zero re-derivations, the mid-drag state change keeps the overlay over the re-derived tree, and the commit draw carries no overlay
+- **VERIFIES** [[interaction.lane.p_lane_overlay_drawn]]

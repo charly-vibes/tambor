@@ -32,6 +32,7 @@ import {
   type HandlerNode,
   type Vec2,
 } from "../views/model.ts";
+import { dispatchPointerGroup } from "./group-index.ts";
 import type { EventElem, Intent, IntentList, WrapNode } from "./bubble.ts";
 import type { TamborEvent } from "./event.ts";
 
@@ -136,15 +137,12 @@ const WIRES: Readonly<Record<string, Wire>> = {
 // Group delivery under the rule of the event type: pointer kinds try
 // children last to first and stop at the first non-empty list
 // (pointer_first_match); concat and global kinds visit every child in
-// order and concatenate (key_concat, global_move_all).
+// order and concatenate (key_concat, global_move_all). The pointer
+// branch is served by the spatial group index above its threshold
+// (pointer_group_index, tambor-54j.3 Phase 4) — the indexed seam lives
+// in group-index.ts, byte-identical to the reverse walk.
 function dispatchGroup(elems: readonly EventElem[], event: TamborEvent): IntentList {
-  if (isPointerKind(event.type)) {
-    for (let i = elems.length - 1; i >= 0; i--) {
-      const res = dispatch(elems[i], event);
-      if (res.length > 0) return res;
-    }
-    return [];
-  }
+  if (isPointerKind(event.type)) return dispatchPointerGroup(elems, event, dispatch);
   const out: Intent[] = [];
   for (const elem of elems) out.push(...dispatch(elem, event));
   return out;

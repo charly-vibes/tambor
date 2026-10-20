@@ -5,8 +5,10 @@
 // Responsibilities: buildHitIndex (one pass, every item registered in
 //   each grid cell its bbox overlaps), hitAt (the bucket query),
 //   hitIndexMove (a moved item re-registers out of its old cells into
-//   its new ones) and hitLinearRef — the linear reverse-walk reference
-//   the index must be byte-identical to.
+//   its new ones), hitCandidates (all containing candidates, original
+//   position descending — the delivery walk's trial order) and
+//   hitLinearRef — the linear reverse-walk reference the index must be
+//   byte-identical to.
 // Rationale: dispatch semantics are unchanged — the linear walk's rule
 //   (scan from the end, first containing item wins) is exactly "the
 //   containing item with the greatest original position", so members
@@ -125,6 +127,33 @@ export function hitAt<T>(
     if (best === undefined || m.pos > best.pos) best = m;
   }
   return best?.item;
+}
+
+// All containing candidates of a point, original position descending
+// (the reverse-walk order). The single-winner query is hitAt; the
+// delivery walk needs the full candidate run because a candidate can
+// still refuse the point (a handler whose own bounds gate passes can
+// yield an empty intent list), and the next candidate down must be
+// tried — the router tries them in this order until one responds,
+// which is byte-identical to scanning from the end (the non-containing
+// candidates the run omits are exactly the ones whose bounds gate
+// would have failed).
+export function hitCandidates<T>(
+  index: HitIndex<T>,
+  x: number,
+  y: number,
+): T[] {
+  if (index.cells.length === 0) return [];
+  const cx = clampCell(Math.floor(x / index.cell), index.side);
+  const cy = clampCell(Math.floor(y / index.cell), index.side);
+  const cell = index.cells[cy * index.side + cx];
+  if (cell === undefined || cell.length === 0) return [];
+  const out: { item: T; pos: number }[] = [];
+  for (const m of cell) {
+    if (containsBox(m.bbox, x, y)) out.push({ item: m.item, pos: m.pos });
+  }
+  out.sort((a, b) => b.pos - a.pos);
+  return out.map((m) => m.item);
 }
 
 // Re-register one moved item: drop its old refs, add it back with the

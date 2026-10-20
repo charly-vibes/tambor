@@ -27,6 +27,7 @@ Port of the default protocol implementations in `membrane.ui` (the `Object` exte
 | event_pure | invariant | dispatching an event never mutates the view tree or state | [[event.model]] |
 | pointer_unified | invariant | mouse, touch and pen input normalise to one pointer shape with position, button, down flag, modifiers and pointerType | [[event.model]] |
 | tap_vs_drag | invariant | a pointer-up within 10 px and 300 ms of its pointer-down is a tap, which emits mouse-down then mouse-up, and anything else is a drag | [[event.model]] |
+| pointer_group_index | invariant | for a group with at least 64 children a pointer delivery consults a bounds index over the children — cached on the group's identity — and tries the containing candidates in original-position order until one responds, byte-identically to the reverse linear walk; groups below the threshold and groups whose subtree contains a bubble or wrap node keep the reverse linear walk | [[event.model]] |
 
 ## Model
 
@@ -64,6 +65,8 @@ Port of the default protocol implementations in `membrane.ui` (the `Object` exte
 | p_event_pure | unit | [[event.model.event_pure]] | random events | tree and state unchanged afterwards |
 | p_pointer | unit | [[event.model.pointer_unified]] | mouse, touch and pen inputs | all produce the same normalised shape |
 | p_tap | unit | [[event.model.tap_vs_drag]] | random down-up pairs | classification matches the slop and time thresholds |
+| p_pointer_index_equiv | unit | [[event.model.pointer_group_index]] | groups of 80 generated interactive children (handlers, buttons, plain leaves, nested translates) probed by pointer events at generated positions | the indexed delivery equals the naive child loop — first non-empty intent list scanning from the end — on every probe |
+| p_pointer_index_bubble | unit | [[event.model.pointer_group_index]] | a large group carrying a bubble and a wrap whose synthesized intents require no bounds containment | the synthesized intents are still delivered and the topmost hit child still wins |
 
 ## Requirements
 
@@ -71,6 +74,18 @@ Port of the default protocol implementations in `membrane.ui` (the `Object` exte
 
 Every property row is verified by exactly one dedicated scenario;
 `ah sync` derives one contract per VERIFIES link.
+
+#### Scenario: p_pointer_index_equiv
+
+- **WHEN** groups of 80 generated interactive children (handlers, buttons, plain leaves, nested translates) probed by pointer events at generated positions
+- **THEN** the indexed delivery equals the naive child loop — first non-empty intent list scanning from the end — on every probe
+- **VERIFIES** [[event.model.p_pointer_index_equiv]]
+
+#### Scenario: p_pointer_index_bubble
+
+- **WHEN** a large group carrying a bubble and a wrap whose synthesized intents require no bounds containment
+- **THEN** the synthesized intents are still delivered and the topmost hit child still wins
+- **VERIFIES** [[event.model.p_pointer_index_bubble]]
 
 #### Scenario: p_half_open
 

@@ -1,0 +1,11 @@
+archetype = "PF"
+authored_with = "0.12.0"
+derived_from = "p_lane_overlay_drawn@4e5587c980b4"
+description = "the stream draws the overlay on top with zero re-derivations, the mid-drag state change keeps the overlay over the re-derived tree, and the commit draw carries no overlay"
+falsifiability_class = "safety"
+id = "p-lane-overlay-drawn"
+status = "active"
+superseded_by = ""
+
+[[tests.vitest]]
+flags = "--testNamePattern=p_lane_overlay_drawn"
