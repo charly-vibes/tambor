@@ -114,6 +114,28 @@ export async function clickDrawnText(
   text: string,
 ): Promise<void> {
   const el = page.locator("#demo").getByText(text, { exact: true }).last();
+  // tambor-4h6: the preceding interaction's repaint lands on the next
+  // animation frame, so locating + reading the box immediately can see
+  // a not-yet-attached (or mid-swap) element — the logo smoke failed
+  // 1-of-4 reruns with "no drawn element with text: Run". Wait for
+  // visibility (auto-retries through the transient absence), then
+  // settle a double rAF so the draw has flushed before the box read.
+  await el.waitFor({ state: "visible" });
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) => {
+        const raf = (
+          globalThis as unknown as {
+            requestAnimationFrame?: (cb: () => void) => number;
+          }
+        ).requestAnimationFrame;
+        if (raf === undefined) {
+          resolve();
+          return;
+        }
+        raf(() => raf(() => resolve()));
+      }),
+  );
   const box = await el.boundingBox();
   if (box === null) throw new Error(`no drawn element with text: ${text}`);
   await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
