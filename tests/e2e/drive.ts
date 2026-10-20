@@ -203,9 +203,10 @@ export async function drawnText(page: Page): Promise<string> {
   return (await page.locator("#demo > div").innerText()) ?? "";
 }
 
-// A named screenshot into tests/screenshots/ (committed — the HITL
-// review artifact); the project name prefixes the file so desktop and
-// 380px captures stay distinct.
+// A named screenshot into tests/screenshots/ (tambor-kd5: LOCAL dev artifact,
+// gitignored — platform fonts make committed baselines pure git noise, and no
+// test asserts on these; see tests/e2e/README.md). The project name prefixes
+// the file so desktop and 380px captures stay distinct.
 export async function shot(
   page: Page,
   name: string,
