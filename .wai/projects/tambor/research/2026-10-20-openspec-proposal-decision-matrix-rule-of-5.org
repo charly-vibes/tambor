@@ -1,0 +1,31 @@
+#+TITLE: Openspec proposal decision matrix — Rule-of-5 reviewed (TypeSafe-verified)
+#+DATE: 2026-10-20
+#+CONTEXT: 4 change proposals filed from the chat-773745b6 audit (commit 89a9a75/570e966), awaiting approval. This matrix is the deciding artifact; it folds in the Rule-of-5 review (converged Stage 4, 3 HIGH findings TypeSafe-verified @0.83/0.88/0.95, FP 0%) and the membrane/framework prior-art check.
+
+* Prior art (membrane verified by grep 2026-10-20, /tmp/membrane-src + corpus M1-M9)
+- Frame coalescing: membrane DOES NOT coalesce (M1: whole-view re-derive per input callback, loop wakes >= every 0.5s; backends own the draw loop). Its answer is author-controlled defui memo + opt-in Cached image layers. Coalescing proposals align with the reagent/re-frame rAF-flush and React-batch+flushSync lineage — tambor would go BEYOND membrane here.
+- Worker protocol: membrane has NO workers (zero postMessage in src). Comlink-class libraries trust structured-clone payloads; tambor's typed guard is stricter than common practice. Cheap.
+- A11y: membrane has NONE (grep aria|accessib|screen-reader over src+docs = zero real hits). React/Vue/Solid use open string aria-* passthrough; tambor's closed role union is justified ONLY by its unique dual-backend mirror-drift constraint — valid, but stricter than industry.
+- Delivery: membrane has no web-demo delivery story; minify/lazy-chunks/SW is standard practice everywhere. Lowest novelty.
+
+* Matrix
+
+| proposal                  | measured impact                                   | effort/risk                     | prior-art alignment            | deps / coupling                          | review findings to fold in            | order |
+|---------------------------+---------------------------------------------------+---------------------------------+--------------------------------+------------------------------------------+---------------------------------------+-------|
+| add-worker-reply-validation| none measured (latent: silent untyped failure)    | S / tiny (1 file guard)         | stricter than Comlink-class    | isolated (client.ts:90 entry point)      | CORR-003 (split malformed-id case)     |     1 |
+| add-frame-coalescing      | BZ1 7.8s -> 383ms/op (~20x, CPU x4); ~28x unthrottled | M (options object + wrapper + flush) | reagent rAF-flush / React flushSync | touches mount.ts dispatch region = 54j.3 Phase-2 lane seams (mount.ts:97-218) | CORR-001 (lane draws), EDGE-001 (background-tab rAF starvation -> timeout flush), CLAR-001 (mode name), EXCL-001 (viewCache synergy note) |     2 |
+| add-spa-delivery          | 217KB -> ~112KB raw (56 -> 38.6KB gzip) + PWA     | M (3 build seams + SW)          | standard practice              | npm artifact untouched (demo-dist/ already settled in 570e966) | CORR-004 (localhost IS secure origin -> prod-build gate), EDGE-003 (await SW activated in e2e), EDGE-004 (size ceiling -> docs stamp, not test-bound constant) |     3 |
+| add-accessibility-model   | unmeasured but top-ranked audit weakness; unblocks external use | L (role union + bag + mirror + cross-backend property) | beyond membrane (none), stricter than React open strings | backends + render; must precede first external user | CORR-002 (describedby = id-ref with no id model -> defer to focus slice or document as unvalidated), EDGE-002 (name v1 role exclusions) |     4 |
+
+* Verdict
+- Approve ALL FOUR, with review fixes folded in before archive (each is a wording/spec edit, not a redesign).
+- Run order: worker-validation -> frame-coalescing -> spa-delivery -> a11y.
+  Rationale: cheapest first proves the apply flow; coalescing second because its measured win is the largest and its design must land while the 54j.3 lane context is fresh; delivery is independent; a11y is the biggest scope and sequenced "before external user" per the audit.
+- Coalescing coupling warning (CORR-001, verified): it wraps the SAME mount.ts region where laneTransform/wireDrawTail just landed — do it while lane context is warm, and fold the lane-draw + flush() ruling into the design BEFORE implementation.
+- EDGE-001 (verified @0.95) is the one real runtime hole: rAF exists but never fires in a backgrounded tab -> timeout-cap fallback, same shape as React's scheduler.
+- a11y deferred decisions: describedby (CORR-002) either drops from v1 or is documented unvalidated; role exclusions (select/radio/slider) named in spec prose.
+
+* Review record
+- Rule-of-5 universal: DRAFT(2) -> CORRECTNESS(4: 1 HIGH) -> CLARITY(2) -> EDGE(4: 1 HIGH) -> EXCELLENCE(2); converged Stage 4; 0 CRITICAL.
+- TypeSafe (jev-1.13.0): CORR-001 0.83 verified, CORR-002 0.88 verified, EDGE-001 0.95 verified; dropped 0; FP 0%.
+- Premises mechanically confirmed: mountSpa has no options (src/spa/mount.ts:240); lane seams at mount.ts:97-218; A11yNode roles button|checkbox only (src/render/a11y.ts:18-48); blind cast src/components/worker_effect/client.ts:90; build:spa lacks --minify (package.json:39).
