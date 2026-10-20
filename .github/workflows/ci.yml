@@ -34,6 +34,48 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  e2e-smoke:
+    name: playwright e2e smoke (tambor-4u6)
+    # Real-browser gate: mount.ts's pointer-capture/IME/wheel/focus
+    # hardening is only exercised in jsdom locally, which has no layout
+    # or real IME (claude.ai chat 773745b6 robustness audit, finding #2).
+    # Scope = bench-apps smoke + risks specs — deliberately NOT the full
+    # suite: the notebook-380px overflow is a filed ticket (tambor-194)
+    # and the chat saw environment-sensitive gallery failures (3 of 88);
+    # the known-flaky ones stay out of a blocking gate until fixed.
+    # Browser is pinned transitively: package-lock.json pins
+    # @playwright/test, and `playwright install chromium` fetches the
+    # browser build that exact version expects (author's build).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Install pinned Chromium
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
+
+      - name: playwright install (pinned chromium build)
+        run: npx playwright install --with-deps chromium
+
+      # bench-apps smoke + risks against pinned Chromium, both projects
+      # (desktop + mobile-380 — the touch risks need hasTouch).
+      - name: playwright e2e smoke
+        run: |
+          npx playwright test \
+            --config tests/e2e/playwright.config.ts \
+            bench-apps-smoke.spec.ts risks.spec.ts \
+            --project=desktop --project=mobile-380 \
+            --reporter=line
+
   gates:
     name: lefthook-equivalent gates
     runs-on: ubuntu-latest
