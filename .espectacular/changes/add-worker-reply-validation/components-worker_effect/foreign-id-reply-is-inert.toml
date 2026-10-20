@@ -1,0 +1,9 @@
+id = "foreign-id-reply-is-inert"
+description = "a well-formed reply of an unknown id is dropped without delivering to anything"
+archetype = "SC"
+status = "active"
+superseded_by = ""
+authored_with = "0.12.0"
+
+[[tests.vitest]]
+flags = "--testNamePattern=p_reply_guard_foreign_id"

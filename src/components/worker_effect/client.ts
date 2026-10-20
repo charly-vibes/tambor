@@ -64,6 +64,46 @@ export const TERMINATED_MESSAGE = "terminated";
 // The typed failure of a worker asset that never loaded.
 const LOAD_MESSAGE = "worker effect failed to load — runs fall back in-thread";
 
+// The typed failure a malformed reply whose echoed id routes delivers
+// (add-worker-reply-validation: a malformed envelope never resolves a
+// pending request with the malformed payload).
+const MALFORMED_MESSAGE = "malformed worker reply";
+
+// The validated-reply view of one incoming message (the reply guard):
+// a plain object with a numeric id, a boolean ok, and the payload shape
+// the envelope declares for that ok (value present on ok:true, a string
+// message on ok:false). `routable` says a numeric id exists — a
+// malformed reply whose id still routes delivers a typed failure to its
+// own request; a reply with NO numeric id (nothing to route by) is
+// dropped inertly.
+function validateReply(
+  data: unknown,
+): { readonly reply: WorkerEffectResponse } | { readonly routableId: number } | null {
+  if (typeof data !== "object" || data === null) return null;
+  const m = data as Record<string, unknown>;
+  if (typeof m.id !== "number") return null;
+  if (typeof m.ok !== "boolean") return { routableId: m.id };
+  if (m.ok === true) {
+    if (!("value" in m)) return { routableId: m.id };
+    return { reply: m as unknown as WorkerEffectResponse };
+  }
+  if (typeof m.message !== "string") return { routableId: m.id };
+  return { reply: m as unknown as WorkerEffectResponse };
+}
+
+// Deliver one validated (or failed) reply through the pending queue:
+// a malformed envelope whose id routes answers its own request with the
+// typed malformed failure — every reply resolves, never rejects.
+function deliverReply(pending: PendingQueue, data: unknown): void {
+  const v = validateReply(data);
+  if (v === null) return; // no numeric id — nothing to route by
+  if ("reply" in v) {
+    pending.deliver(v.reply);
+    return;
+  }
+  pending.deliver({ id: v.routableId, ok: false, message: MALFORMED_MESSAGE });
+}
+
 // Spawn the worker against the app's bundled asset: import.meta.url is
 // the bundler-resolved module address; reached structurally (the ES2022
 // lib has no ImportMeta.url declaration). The asset name is reached
@@ -86,8 +126,7 @@ function wireWorker(
   pending: PendingQueue,
   onDead: () => void,
 ): void {
-  live.onmessage = (e: { readonly data: unknown }) =>
-    pending.deliver(e.data as WorkerEffectResponse);
+  live.onmessage = (e: { readonly data: unknown }) => deliverReply(pending, e.data);
   live.onerror = () => {
     onDead();
     pending.failAll(LOAD_MESSAGE);

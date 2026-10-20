@@ -21,6 +21,9 @@ import { beforeAll, describe, expect, it } from "vitest";
 // test-only node access (tsconfig types:[vitest/globals] by design)
 // @ts-expect-error node builtin
 import { execSync } from "node:child_process";
+import fc from "fast-check";
+// @ts-expect-error node:timers/promises has no type declarations here
+import { setTimeout as sleep } from "node:timers/promises";
 // @ts-expect-error node builtin
 import { Worker } from "node:worker_threads";
 
@@ -254,6 +257,7 @@ describe("worker effect — per-id routing", () => {
     }
   });
 });
+
 
 describe("worker effect — the optional terminate", () => {
   it("p_terminate: terminate() resolves the in-flight run as the typed terminated failure, and the next run respawns", async () => {

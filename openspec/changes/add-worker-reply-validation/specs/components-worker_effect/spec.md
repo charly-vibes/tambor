@@ -9,13 +9,21 @@ and SHALL deliver a typed failure response (`ok: false`) to the pending
 request the echoed id routes to when validation fails — the pending
 queue resolves every reply, it never rejects.
 
-#### Scenario: malformed reply is a typed failure
+#### Scenario: malformed id is inert
 
-- **WHEN** a message arrives whose id is not a number or whose ok is
-  not a boolean
-- **THEN** the pending request with the echoed id resolves with a
-  typed failure response (`ok: false`) and no pending request resolves
-  with the malformed payload
+- **WHEN** a message arrives whose id is not a number (so no echoed id
+  routes it to any pending request)
+- **THEN** the message is dropped and no pending request resolves or
+  rejects
+
+#### Scenario: malformed envelope with a routable id is a typed failure
+
+- **WHEN** a message arrives with a numeric id matching a pending
+  request but a non-boolean ok or a payload shape the envelope does
+  not declare for that ok
+- **THEN** that pending request resolves with a typed failure response
+  (`ok: false`) and no pending request resolves with the malformed
+  payload
 
 #### Scenario: foreign-id reply is inert
 
@@ -27,7 +35,7 @@ queue resolves every reply, it never rejects.
 #### Scenario: routing property survives validation
 
 - **WHEN** two in-flight requests receive reversed replies, one of them
-  malformed
+  malformed (non-boolean ok) and one carrying a foreign id
 - **THEN** the well-formed reply still resolves exactly its own
-  request, and the malformed one delivers its typed failure response
-  to only its own
+  request, the malformed one delivers its typed failure response
+  to only its own, and the foreign-id one delivers to nothing

@@ -1,0 +1,9 @@
+id = "malformed-id-is-inert"
+description = "a reply whose id is not a number is dropped inertly — no pending request resolves"
+archetype = "SC"
+status = "active"
+superseded_by = ""
+authored_with = "0.12.0"
+
+[[tests.vitest]]
+flags = "--testNamePattern=p_reply_guard_malformed_id"

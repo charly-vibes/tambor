@@ -1,0 +1,11 @@
+id = "malformed-envelope-with-a-routable-id-is-a-typed-failure"
+description = "a malformed envelope whose numeric id routes resolves its own request as a typed failure"
+archetype = "SC"
+status = "active"
+superseded_by = ""
+authored_with = "0.12.0"
+
+[[tests.vitest]]
+flags = "--testNamePattern=p_reply_guard_malformed_ok"
+[[tests.vitest]]
+flags = "--testNamePattern=p_reply_guard_missing_payload"
