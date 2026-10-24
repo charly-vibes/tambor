@@ -5,10 +5,10 @@
 //   the public entry with fresh call objects whose props come from a
 //   bounded state space (the realistic long-session regime — an app's
 //   state cardinality bounds its distinct rendered props maps), so the
-//   retained cache plateaus and heap stays flat; (b) hazard probe: the
-//   unbounded-key regime (props that never repeat) grows the cache
-//   linearly, and any component redefinition resets it — documented as
-//   the existing bound, not asserted as desired behavior; (c) key-cost:
+//   retained cache plateaus and heap stays flat; (b) hazard regime: the
+//   unbounded-key regime (props that never repeat) is BOUNDED by the
+//   per-name LRU cap (tambor-4r7 — the 54j.11 deferred decision), and
+//   any component redefinition still resets it; (c) key-cost:
 //   amortized ns/op of the cache-hit path (canonical serialization plus
 //   the two map lookups), printed for the record.
 // Rationale: the tambor-54j.11 acceptance bar — memory flat across 1M
@@ -22,10 +22,12 @@ import { memoryUsage } from "node:process";
 // @ts-expect-error node:perf_hooks has no type declarations here
 import { performance } from "node:perf_hooks";
 import { describe, it, expect } from "vitest";
+import fc from "fast-check";
 import {
   cachedRender,
   clearRenderCache,
   renderCacheStats,
+  RENDER_CACHE_MAX_ENTRIES,
 } from "../src/model/component-cache.ts";
 import { call, defineComponent, render } from "../src/model/component.ts";
 
@@ -96,17 +98,43 @@ describe("component render cache soak (tambor-54j.11)", { timeout: 180_000 }, ()
     expect(growth).toBeLessThan(64 * 1024 * 1024);
   });
 
-  it("hazard probe: ever-changing props keys grow linearly; redefinition resets (the existing bound)", () => {
+  it("hazard bounded: ever-changing props keys are LRU-capped per name; redefinition still resets (tambor-4r7)", () => {
     clearRenderCache();
     const DISTINCT = 50_000;
     for (let i = 0; i < DISTINCT; i++) {
       render(call(line, { n: i, label: "unique" }));
     }
-    expect(renderCacheStats().entries).toBe(DISTINCT);
+    // the 54j.11 linear-growth hazard is now bounded by the cap
+    expect(renderCacheStats().entries).toBe(RENDER_CACHE_MAX_ENTRIES);
 
     // any redefinition resets the whole cache (render_cached)
     defineComponent("soak-line", [{ keys: ["n", "label"] }], (props) => props);
     expect(renderCacheStats().entries).toBe(0);
+  });
+
+  it("property: cache size stays bounded under a churn generator (fast-check)", () => {
+    clearRenderCache();
+    // churn: fresh call objects whose props never repeat (timestamps /
+    // counters regime) — retained entries must never exceed the cap
+    fc.assert(
+      fc.property(fc.integer({ min: 1, max: 4000 }), fc.integer({ min: 0, max: 2 ** 31 - 1 }), (n, seed) => {
+        clearRenderCache();
+        let s = seed || 1;
+        const next = (): number => {
+          // xorshift32: deterministic, cheap, no repeats within the range
+          s ^= s << 13;
+          s ^= s >>> 17;
+          s ^= s << 5;
+          return s >>> 0;
+        };
+        for (let i = 0; i < n; i++) {
+          render(call(line, { n: next(), label: "churn" }));
+        }
+        const stats = renderCacheStats();
+        expect(stats.entries).toBeLessThanOrEqual(RENDER_CACHE_MAX_ENTRIES);
+      }),
+      { numRuns: 100 },
+    );
   });
 
   it("key-cost: amortized cache-hit path cost, printed for the record", () => {

@@ -71,6 +71,31 @@ function cacheKey(c: ComponentCall): string | null {
 
 const renderCache = new Map<string, Map<string, unknown>>();
 
+// Per-component-name LRU cap on retained props-key entries
+// (tambor-4r7, the 54j.11 deferred eviction decision): apps whose props
+// embed ever-changing values (timestamps, counters) used to grow the
+// cache linearly (H6 hazard probe); a per-name Map already preserves
+// insertion order, so bump-on-hit + evict-oldest is the whole policy.
+// The cap sits far above the realistic long-session working set (the
+// 54j.11 soak plateaus at 485 distinct states), so the bounded regime
+// is unaffected and clear-on-redefine (render_cached) remains the
+// full reset path.
+export const RENDER_CACHE_MAX_ENTRIES = 1024;
+
+function lruBump(byProps: Map<string, unknown>, key: string, value: unknown): void {
+  // Map iteration is insertion order: delete + set moves key to newest
+  byProps.delete(key);
+  byProps.set(key, value);
+}
+
+function lruInsert(byProps: Map<string, unknown>, key: string, value: unknown): void {
+  if (byProps.size >= RENDER_CACHE_MAX_ENTRIES) {
+    const oldest = byProps.keys().next();
+    if (!oldest.done) byProps.delete(oldest.value);
+  }
+  byProps.set(key, value);
+}
+
 // Rendering resolves a call's body output, replacing nested component
 // calls with their rendered trees (recursive_components). An equal
 // props map yields a cached render keyed by component name plus props;
@@ -84,9 +109,12 @@ export function cachedRender(c: ComponentCall, resolve: () => unknown): unknown 
     renderCache.set(c.component.name, byProps);
   }
   const cached = byProps.get(key);
-  if (cached !== undefined) return cached;
+  if (cached !== undefined) {
+    lruBump(byProps, key, cached);
+    return cached;
+  }
   const fresh = resolve();
-  byProps.set(key, fresh);
+  lruInsert(byProps, key, fresh);
   return fresh;
 }
 

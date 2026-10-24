@@ -20,17 +20,21 @@ quiet-machine numbers below, run 2026-10-18).
 
 ### Verdict
 
-- **Eviction policy: none needed, with evidence** — in the realistic
-  long-session regime an app's distinct rendered props maps are bounded by
-  its state cardinality, and the soak shows the cache retains exactly that
-  many entries with flat heap. Clear-on-redefine (corpus-specified,
-  `render_cached`) remains the reset path.
-- **Hazard documented, not fixed**: apps whose props embed ever-changing
-  values (timestamps, monotonic counters) grow the cache linearly. The
-  recorded trigger condition for a future per-name LRU cap: a real app
-  profile showing unbounded distinct keys in a long session. Until then a
-  cap would be machinery without a measured need (same bar as the BZ4/BZ6
-  rejections).
+- **Eviction policy: per-name LRU cap ADOPTED (tambor-4r7, 2026-10-24)** —
+  the original 54j.11 verdict deferred the cap until a real app profile
+  showed unbounded distinct keys; tambor-4r7 re-opened the decision and the
+  cap landed because the hazard probe itself demonstrates the unbounded
+  regime is reachable (any app embedding a timestamp/counter in props grows
+  the cache linearly), and the cap is a ~10-line Map-order policy with no
+  key-cost regression. Cap = `RENDER_CACHE_MAX_ENTRIES` (1024) per
+  component name, bump-on-hit + evict-oldest (Map insertion order), in
+  `src/model/component-cache.ts`. The cap sits far above the realistic
+  long-session working set (soak plateau 485), so the bounded regime is
+  unaffected; clear-on-redefine (corpus-specified, `render_cached`)
+  remains the full reset path. Property pinned: `tests/component-cache-soak.test.ts`
+  fast-check churn generator — retained entries never exceed the cap
+  under a never-repeating-props generator; the hazard probe now asserts
+  the bound (was: asserted the linear growth as the existing bound).
 - **Key-cost finding (programme-level)**: ~5 µs/op means the render cache
   only pays off when re-resolving a component body costs more than ~5 µs —
   cheap bodies are net-negative to cache (serialization + lookup exceeds
