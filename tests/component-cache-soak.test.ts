@@ -7,8 +7,8 @@
 //   state cardinality bounds its distinct rendered props maps), so the
 //   retained cache plateaus and heap stays flat; (b) hazard regime: the
 //   unbounded-key regime (props that never repeat) is BOUNDED by the
-//   per-name LRU cap (tambor-4r7 — the 54j.11 deferred decision), and
-//   any component redefinition still resets it; (c) key-cost:
+//   per-name insertion-order cap (tambor-4r7 — the 54j.11 deferred
+//   decision), and any component redefinition still resets it; (c) key-cost:
 //   amortized ns/op of the cache-hit path (canonical serialization plus
 //   the two map lookups), printed for the record.
 // Rationale: the tambor-54j.11 acceptance bar — memory flat across 1M
@@ -98,7 +98,7 @@ describe("component render cache soak (tambor-54j.11)", { timeout: 180_000 }, ()
     expect(growth).toBeLessThan(64 * 1024 * 1024);
   });
 
-  it("hazard bounded: ever-changing props keys are LRU-capped per name; redefinition still resets (tambor-4r7)", () => {
+  it("hazard bounded: ever-changing props keys are capped per name; redefinition still resets (tambor-4r7)", () => {
     clearRenderCache();
     const DISTINCT = 50_000;
     for (let i = 0; i < DISTINCT; i++) {

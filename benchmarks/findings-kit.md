@@ -20,18 +20,25 @@ quiet-machine numbers below, run 2026-10-18).
 
 ### Verdict
 
-- **Eviction policy: per-name LRU cap ADOPTED (tambor-4r7, 2026-10-24)** —
+- **Eviction policy: per-name insertion-order (FIFO) cap ADOPTED (tambor-4r7,
+  2026-10-24)** —
   the original 54j.11 verdict deferred the cap until a real app profile
   showed unbounded distinct keys; tambor-4r7 re-opened the decision and the
   cap landed because the hazard probe itself demonstrates the unbounded
   regime is reachable (any app embedding a timestamp/counter in props grows
   the cache linearly), and the cap is a ~10-line Map-order policy with no
   key-cost regression. Cap = `RENDER_CACHE_MAX_ENTRIES` (1024) per
-  component name, bump-on-hit + evict-oldest (Map insertion order), in
+  component name, evict-oldest-on-full (Map insertion order), in
   `src/model/component-cache.ts`. The cap sits far above the realistic
   long-session working set (soak plateau 485), so the bounded regime is
   unaffected; clear-on-redefine (corpus-specified, `render_cached`)
-  remains the full reset path. Property pinned: `tests/component-cache-soak.test.ts`
+  remains the full reset path. **FIFO, not LRU, deliberately**: the
+  hazard regime is all-miss (FIFO ≡ LRU there), and bump-on-hit would
+  allocate a Map entry per cache hit — the first CI push (run
+  40135123685, twice) failed on exactly that per-hit garbage flipping
+  the soak's 64 MB heap guard under CI GC timing, while the hit path is
+  allocation-free in the FIFO form and the 54j.11 steady-state profile
+  stays valid. Property pinned: `tests/component-cache-soak.test.ts`
   fast-check churn generator — retained entries never exceed the cap
   under a never-repeating-props generator; the hazard probe now asserts
   the bound (was: asserted the linear growth as the existing bound).

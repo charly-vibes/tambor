@@ -71,24 +71,22 @@ function cacheKey(c: ComponentCall): string | null {
 
 const renderCache = new Map<string, Map<string, unknown>>();
 
-// Per-component-name LRU cap on retained props-key entries
+// Per-component-name insertion-order cap on retained props-key entries
 // (tambor-4r7, the 54j.11 deferred eviction decision): apps whose props
 // embed ever-changing values (timestamps, counters) used to grow the
-// cache linearly (H6 hazard probe); a per-name Map already preserves
-// insertion order, so bump-on-hit + evict-oldest is the whole policy.
-// The cap sits far above the realistic long-session working set (the
-// 54j.11 soak plateaus at 485 distinct states), so the bounded regime
-// is unaffected and clear-on-redefine (render_cached) remains the
-// full reset path.
+// cache linearly (H6 hazard probe); a per-name Map preserves insertion
+// order, so evict-oldest-on-full is the whole policy — deliberately
+// FIFO, not LRU: the hazard regime is all-miss (FIFO ≡ LRU there), and
+// bump-on-hit would allocate a Map entry per cache hit, turning the
+// soak's allocation-free steady state into per-hit garbage (the 64 MB
+// heap guard flipped on CI GC timing — the failure 4r7's first push
+// hit). The cap sits far above the realistic long-session working set
+// (the 54j.11 soak plateaus at 485 distinct states), so the bounded
+// regime is unaffected and clear-on-redefine (render_cached) remains
+// the full reset path.
 export const RENDER_CACHE_MAX_ENTRIES = 1024;
 
-function lruBump(byProps: Map<string, unknown>, key: string, value: unknown): void {
-  // Map iteration is insertion order: delete + set moves key to newest
-  byProps.delete(key);
-  byProps.set(key, value);
-}
-
-function lruInsert(byProps: Map<string, unknown>, key: string, value: unknown): void {
+function insertBounded(byProps: Map<string, unknown>, key: string, value: unknown): void {
   if (byProps.size >= RENDER_CACHE_MAX_ENTRIES) {
     const oldest = byProps.keys().next();
     if (!oldest.done) byProps.delete(oldest.value);
@@ -109,12 +107,9 @@ export function cachedRender(c: ComponentCall, resolve: () => unknown): unknown 
     renderCache.set(c.component.name, byProps);
   }
   const cached = byProps.get(key);
-  if (cached !== undefined) {
-    lruBump(byProps, key, cached);
-    return cached;
-  }
+  if (cached !== undefined) return cached;
   const fresh = resolve();
-  lruInsert(byProps, key, fresh);
+  insertBounded(byProps, key, fresh);
   return fresh;
 }
 
