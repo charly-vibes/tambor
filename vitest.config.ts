@@ -4,6 +4,14 @@ export default defineConfig({
   test: {
     include: ["tests/**/*.test.ts"],
     environment: "node",
+    // tambor-8n3 flake-family ruling (docs/reference/test-suite-flake-ruling.md):
+    // the recurring "different tests fail under full-suite load, green on
+    // rerun" family is the 5s default per-test timeout inflating past the
+    // limit on the shared laptop (load 5-29 during orchestrator waves; a
+    // wave-3 event timed out 25 bench tests at once). Compute-heavy bench
+    // describes already carry explicit 30s budgets — this only widens the
+    // floor for everything else. Genuine hangs are still caught, 2× slower.
+    testTimeout: 10_000,
     // jest-junit output at target/test-results.xml is what the
     // testaruda typescript adapter ingests (see testaruda.toml).
     // PER-REPORTER outputFile (tambor-8rq): a global string outputFile
