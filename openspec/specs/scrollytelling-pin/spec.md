@@ -10,6 +10,8 @@ statement: "WHILE a Pin's Boundary is active, THE Pin SHALL fix its target
 
 # Pin (bridged onto tambor)
 
+## Purpose
+
 Unchanged from the original DOM-oriented specification in intent — this
 file still states the library-level requirement. What changed is *how*
 it is satisfied: there is no native document scroll or `position: fixed`
@@ -93,7 +95,7 @@ in `components-pinned_panel.md`.
 
 ### Requirement: Property coverage mirror
 
-Every property row is verified by exactly one dedicated scenario;
+Every property row SHALL be verified by exactly one dedicated scenario;
 `ah sync` derives one contract per VERIFIES link.
 
 #### Scenario: position_constant_while_pinned

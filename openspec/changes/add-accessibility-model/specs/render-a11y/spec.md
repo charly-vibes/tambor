@@ -20,11 +20,11 @@ text content to the accessibility tree.
 
 ### Requirement: ARIA attribute pass-through
 
-A node MAY declare the typed aria attributes (`ariaLabel`, `ariaLive`,
-`ariaDescribedby`) and both backends SHALL apply them — the DOM
-backend as real element attributes, the canvas backend as fields on
-the mirrored node — so the two backends agree on every declared
-attribute.
+Both backends SHALL apply a node's declared typed aria attributes
+(`ariaLabel`, `ariaLive`, `ariaDescribedby`) — a node MAY declare
+any subset of them — with the DOM backend applying them as real
+element attributes and the canvas backend as fields on the mirrored
+node, so the two backends agree on every declared attribute.
 
 #### Scenario: DOM backend applies declared aria
 

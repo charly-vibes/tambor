@@ -6,6 +6,8 @@ statement: "WHEN content is larger than the viewport THE scrollview SHALL clip i
 
 # components.scrollview
 
+## Purpose
+
 Port of `scrollview`, `vertical-scrollbar` and `horizontal-scrollbar`. Props are `offset` (default [0, 0]), `scroll-bounds` ([w, h]) and `body`. The inner view is translated by the negated offset. Offsets stored in state may sit outside the range after a resize (to avoid rubber-banding) and snap back at the next scroll update. Scrollbar drags use the `start-scroll` intent handled in app.toplevel.
 
 ## Constraints
@@ -65,7 +67,7 @@ Port of `scrollview`, `vertical-scrollbar` and `horizontal-scrollbar`. Props are
 
 ### Requirement: Property coverage mirror
 
-Every property row is verified by exactly one dedicated scenario;
+Every property row SHALL be verified by exactly one dedicated scenario;
 `ah sync` derives one contract per VERIFIES link.
 
 #### Scenario: p_default

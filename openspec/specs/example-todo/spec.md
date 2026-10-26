@@ -6,6 +6,8 @@ statement: "WHEN the user adds, completes, edits, deletes or filters todos THE t
 
 # example.todo
 
+## Purpose
+
 Acceptance spec from `src/membrane/example/todo.cljc` (and `terminal_todo.clj`, the same app on another backend). Components: `delete-X` (a plain view, two 3px red strokes from [0,0]-[10,10] and [10,0]-[0,10]), `todo-item` (delete X at translate(5,5) whose pointer down returns `[[:delete $todo]]`, a checkbox at translate(10,4) bound to `(:complete? todo)`, a 10 px spacer and a textarea bound to `(:description todo)`), `todo-list` (vertical layout with `spacer(0,5)` between rows), `toggle` (option labels, the selected one plain and the others gray and clickable, returning `[[:set $selected option]]`) and `todo-app` (Add Todo button and a textarea with an Enter shortcut, then the toggle, then the filtered list). The initial data is `first` (open), `second` (open), `third` (complete). The central subtlety is that the list shown is `filter(filter-fn, todos)`, yet every item path still reaches the original list, so path.derivation and state.paths are what make this app correct.
 
 ## Constraints
@@ -86,7 +88,7 @@ Acceptance spec from `src/membrane/example/todo.cljc` (and `terminal_todo.clj`, 
 
 ### Requirement: Property coverage mirror
 
-Every property row is verified by exactly one dedicated scenario;
+Every property row SHALL be verified by exactly one dedicated scenario;
 `ah sync` derives one contract per VERIFIES link.
 
 #### Scenario: p_delete_x

@@ -6,6 +6,8 @@ statement: "THE tambor library SHALL render a UI as a pure function of applicati
 
 # tambor
 
+## Purpose
+
 Root spec for tambor, the strict-TypeScript, mobile-first port of the Clojure Membrane UI library (phronmophobic/membrane). Each child spec cites the Membrane source, test or example it was modelled from in its prose. The acceptance bar is the repo's own corpus: `test/membrane/component_test.clj`, `test/membrane/defui_test.clj`, and the `counter`, `todo`, `file_selector` and `kitchen_sink` examples. Reading order: typing.model, interop.model, view.model, view.layout, event.model, event.bubble, state.paths, path.derivation, component.model, effect.dispatch, app.toplevel, components.*, example.*, backend.render, ui.mobile.
 
 ## Constraints
@@ -53,7 +55,7 @@ Root spec for tambor, the strict-TypeScript, mobile-first port of the Clojure Me
 
 ### Requirement: Property coverage mirror
 
-Every property row is verified by exactly one dedicated scenario;
+Every property row SHALL be verified by exactly one dedicated scenario;
 `ah sync` derives one contract per VERIFIES link.
 
 #### Scenario: p_values

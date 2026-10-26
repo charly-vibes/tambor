@@ -6,6 +6,8 @@ statement: "WHEN a view tree is handed to a backend THE backend SHALL draw every
 
 # backend.render
 
+## Purpose
+
 Membrane's only platform requirements are drawing primitives and an event loop that forwards events and repaints. The port ships **canvas** (Canvas2D, the default), **dom** (accessible, selectable text) and a **text** backend (a cell grid, as in `terminal_todo`) behind one contract. Beyond drawing, `textarea` needs two backend services that are easy to forget: `indexForPosition(font, text, x, y)` (turning a click into a character index, set via `index-for-position*`) and a clipboard. The todo example also renders to an image without any window (`save-image`).
 
 ## Constraints
@@ -72,7 +74,7 @@ Membrane's only platform requirements are drawing primitives and an event loop t
 
 ### Requirement: Property coverage mirror
 
-Every property row is verified by exactly one dedicated scenario;
+Every property row SHALL be verified by exactly one dedicated scenario;
 `ah sync` derives one contract per VERIFIES link.
 
 #### Scenario: p_contract

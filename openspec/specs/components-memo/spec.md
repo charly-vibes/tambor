@@ -6,6 +6,8 @@ statement: "WHEN a subtree's inputs are identified by a state slice whose identi
 
 # components.memo
 
+## Purpose
+
 The memo component (tambor-54j.8.4): `memo(build)` returns a memoized
 render function — an app creates it once (module scope, the React
 `memo`/`useCallback` shape without a macro) and maps its per-item
@@ -62,7 +64,7 @@ structural sharing preserving unchanged slices.
 
 ### Requirement: Property coverage mirror
 
-Every property row is verified by exactly one dedicated test;
+Every property row SHALL be verified by exactly one dedicated test;
 `ah sync` derives one contract per VERIFIES link.
 
 #### Scenario: p_identity_hit

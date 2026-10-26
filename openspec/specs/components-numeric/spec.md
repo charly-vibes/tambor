@@ -6,6 +6,8 @@ statement: "WHEN the user presses a counter button or drags a slider THE numeric
 
 # components.numeric
 
+## Purpose
+
 Port of `counter` and `number-slider`. The counter is a "-" button, a centred label and a "+" button, with `num` defaulting to 0 and optional `min` and `max`. The slider maps the x position inside `max-width` (default 100) onto `[min, max]`, truncating when `integer?` and clamping always. It tracks `mdown?` so moves only count while pressed.
 
 ## Constraints
@@ -58,7 +60,7 @@ Port of `counter` and `number-slider`. The counter is a "-" button, a centred la
 
 ### Requirement: Property coverage mirror
 
-Every property row is verified by exactly one dedicated scenario;
+Every property row SHALL be verified by exactly one dedicated scenario;
 `ah sync` derives one contract per VERIFIES link.
 
 #### Scenario: p_default

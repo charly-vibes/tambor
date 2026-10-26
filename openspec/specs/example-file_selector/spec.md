@@ -6,6 +6,8 @@ statement: "WHEN the user types a filter or taps an item THE item selector SHALL
 
 # example.file_selector
 
+## Purpose
+
 Acceptance spec from `src/membrane/example/file_selector.clj`. `item-row` takes `item-name` and `selected?` and handles a pointer down by returning the *built-in* `[:update $selected? not]`, drawing a non-interactive checkbox (translate 5, 5) a 5 px spacer and a label. `item-selector` takes `item-names`, a `selected` set (default empty) and `str-filter` (default empty), shows a textarea bound to the filter, then the case-insensitively matching rows. It wraps each row in `on :update` to **override the child's built-in update** so that, instead of flipping a boolean, the selected set gains or loses the item name. That is a bubble intercept of a built-in effect, and the spec depends on event.bubble.
 
 ## Constraints
@@ -53,7 +55,7 @@ Acceptance spec from `src/membrane/example/file_selector.clj`. `item-row` takes 
 
 ### Requirement: Property coverage mirror
 
-Every property row is verified by exactly one dedicated scenario;
+Every property row SHALL be verified by exactly one dedicated scenario;
 `ah sync` derives one contract per VERIFIES link.
 
 #### Scenario: p_row_layout

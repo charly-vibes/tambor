@@ -6,6 +6,8 @@ statement: "WHEN the repository is released as an npm artifact THE package SHALL
 
 # distribution.packaging
 
+## Purpose
+
 Constraints derived from the interop spec's `esm_named_exports` invariant and
 the tambor-y9d.1 brief: at HEAD the package was `"private": true` with no
 exports map and no emitted declarations, so nothing could consume the library
@@ -55,7 +57,7 @@ invariants and add only packaging.
 
 ### Requirement: Packaging gate mirror
 
-Every property row is verified by exactly one dedicated runnable gate;
+Every property row SHALL be verified by exactly one dedicated runnable gate;
 contract TOMLs bind each VERIFIES link to its command.
 
 #### Scenario: p_packable

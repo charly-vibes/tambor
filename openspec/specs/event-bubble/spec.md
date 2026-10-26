@@ -6,6 +6,8 @@ statement: "WHEN a descendant returns intents THE ancestors SHALL be able to int
 
 # event.bubble
 
+## Purpose
+
 Port of `EventHandler` (`ui/on` with a custom keyword), `OnBubble`, and `ui/wrap-on`. Bubbling is how a deep child asks an ancestor for something it cannot do itself. In `textarea`, the view returns `[::request-focus]` and the `textarea` wrapper rewrites it to `[:set $focus $text]`. In `dropdown`, the list returns `[::select $selected value]` and the dropdown wrapper expands it to a select plus `[:set $open? false]`. `wrap-on` is middleware: the handler gets the default handler first, as `todo-app` does for the Enter key.
 
 ## Constraints
@@ -57,7 +59,7 @@ Port of `EventHandler` (`ui/on` with a custom keyword), `OnBubble`, and `ui/wrap
 
 ### Requirement: Property coverage mirror
 
-Every property row is verified by exactly one dedicated scenario;
+Every property row SHALL be verified by exactly one dedicated scenario;
 `ah sync` derives one contract per VERIFIES link.
 
 #### Scenario: p_intercept

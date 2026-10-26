@@ -6,6 +6,8 @@ statement: "WHEN the user presses more on a counter THE counter app SHALL increm
 
 # example.counter
 
+## Purpose
+
 Acceptance spec from `src/membrane/example/counter.cljc` and the README. `counter` takes `num` and lays out a "more!" button (a pointer-down handler returning `[[::counter-increment $num]]`) beside `label(num)`. `counter-counter` takes `nums` and stacks an "Add Counter" button above one `counter` per entry, built with `for num in nums`, so each counter's `$num` is `nums` plus `seq-nth(i)`. The README also shows the no-framework version, where a handler mutates an atom, which the port keeps as a "raw" mode.
 
 ## Constraints
@@ -55,7 +57,7 @@ Acceptance spec from `src/membrane/example/counter.cljc` and the README. `counte
 
 ### Requirement: Property coverage mirror
 
-Every property row is verified by exactly one dedicated scenario;
+Every property row SHALL be verified by exactly one dedicated scenario;
 `ah sync` derives one contract per VERIFIES link.
 
 #### Scenario: p_layout

@@ -6,6 +6,8 @@ statement: "THE view model SHALL represent every drawable as an immutable node w
 
 # view.model
 
+## Purpose
+
 Port of the `membrane.ui` records: Label, Rectangle, RoundedRectangle, Path, Image, Translate, Padding, Spacer, FixedBounds, WithColor, WithStyle, WithStrokeWidth, Scale, Rotate, Bordered, FillBordered, Checkbox, Button and ScissorView. Collections are drawables too: a vector or list of nodes is a group, and `nil` draws nothing. Node types form one discriminated union (see typing.model). Container nodes expose `children` and `makeNode(node, newChildren)` so generic traversal can rebuild trees. Bounds are pure functions, so layout needs no mounted DOM (the README's `ui/bounds` example: a label above a checkbox measures without any window).
 
 ## Constraints
@@ -61,7 +63,7 @@ Port of the `membrane.ui` records: Label, Rectangle, RoundedRectangle, Path, Ima
 
 ### Requirement: Property coverage mirror
 
-Every property row is verified by exactly one dedicated scenario;
+Every property row SHALL be verified by exactly one dedicated scenario;
 `ah sync` derives one contract per VERIFIES link.
 
 #### Scenario: p_frozen

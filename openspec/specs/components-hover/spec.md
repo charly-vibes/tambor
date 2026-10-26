@@ -6,6 +6,8 @@ statement: "WHEN the pointer enters or leaves a hover-aware component THE compon
 
 # components.hover
 
+## Purpose
+
 Port of `on-hover`, `on-mouse-out`, `button` and `checkbox` from `basic_components.cljc`. Hover is stored as a `hover?` prop, so it lives in the component's `extra` state and is edited through paths like any other state. Entering sets it on mouse-move over the body. Leaving is detected by a *global* mouse-move, which is why the root must always report `has-mouse-move-global`. The bound check on leave is inclusive at the upper edge (`x > w`), unlike hit-testing, which is half-open.
 
 ## Constraints
@@ -55,7 +57,7 @@ Port of `on-hover`, `on-mouse-out`, `button` and `checkbox` from `basic_componen
 
 ### Requirement: Property coverage mirror
 
-Every property row is verified by exactly one dedicated scenario;
+Every property row SHALL be verified by exactly one dedicated scenario;
 `ah sync` derives one contract per VERIFIES link.
 
 #### Scenario: p_enter

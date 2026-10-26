@@ -6,6 +6,8 @@ statement: "WHEN a handler returns a lane-typed effect THE dispatcher SHALL appl
 
 # interaction.lane
 
+## Purpose
+
 The ephemeral interaction lane (tambor-54j.3, I13): high-frequency
 interaction state — pan offsets, drag positions, scroll — lives in a
 per-app lane store OUTSIDE the persistent state, so 60 Hz pointer
@@ -86,7 +88,7 @@ backend port (draw/measure/subscribe) is unchanged.
 
 ### Requirement: Property coverage mirror
 
-Every property row is verified by exactly one dedicated test;
+Every property row SHALL be verified by exactly one dedicated test;
 `ah sync` derives one contract per VERIFIES link.
 
 #### Scenario: p_state_identity

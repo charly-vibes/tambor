@@ -11,6 +11,8 @@ statement: "WHEN a pinned_panel's ambient scrollview offset lies within its
 
 # components.pinned_panel
 
+## Purpose
+
 Membrane has no native "position: fixed" — `components.scrollview` draws
 its body translated by `[-ox, -oy]` inside a clip
 ([[components.scrollview.content_translated]]). A pinned_panel is a plain
@@ -90,7 +92,7 @@ by composition. Flagged rather than silently dropped; see
 
 ### Requirement: Property coverage mirror
 
-Every property row is verified by exactly one dedicated scenario;
+Every property row SHALL be verified by exactly one dedicated scenario;
 `ah sync` derives one contract per VERIFIES link.
 
 #### Scenario: p_contextual_source

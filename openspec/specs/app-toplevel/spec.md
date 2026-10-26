@@ -6,6 +6,8 @@ statement: "WHEN the backend delivers an event to the app root THE top-level han
 
 # app.toplevel
 
+## Purpose
+
 Port of `TopEventHandler`, `wrap-scroll` and `wrap-start-scroll` in `component.cljc`. The root passes every event's intents through the handler. Scrollbars start a drag by returning a `start-scroll` intent holding a function from offset delta to intents. The root intercepts it, stores `{scrollf, mpos}` in the state, and feeds later mouse moves to `scrollf` until mouse-up. A mouse-down that produces no intents while a `focus` is set clears the focus, which is why clicking outside a textarea blurs it.
 
 ## Constraints
@@ -65,7 +67,7 @@ Port of `TopEventHandler`, `wrap-scroll` and `wrap-start-scroll` in `component.c
 
 ### Requirement: Property coverage mirror
 
-Every property row is verified by exactly one dedicated scenario;
+Every property row SHALL be verified by exactly one dedicated scenario;
 `ah sync` derives one contract per VERIFIES link.
 
 #### Scenario: p_all_dispatched

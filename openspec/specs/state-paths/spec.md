@@ -6,6 +6,8 @@ statement: "THE path system SHALL address locations in the state tree with compo
 
 # state.paths
 
+## Purpose
+
 Port of the Specter subset that `membrane.component/path->spec` understands, plus the `ATOM`, `ALL`, `FIRST`, `LAST`, `MAP-VALS`, `META` and `END` special symbols. A path is an array whose elements are navigators, and nested arrays flatten. Navigators are typed data (`["keypath", "todos"]`, `["filter", pred]`) composed into `Path<S, T>` (typing.model typed_path), so effects that carry paths stay plain data. The `filter` navigator is Specter's `filterer`: the todo example depends on it so that editing or deleting a row in a filtered list changes the underlying list.
 
 ## Constraints
@@ -73,7 +75,7 @@ Port of the Specter subset that `membrane.component/path->spec` understands, plu
 
 ### Requirement: Property coverage mirror
 
-Every property row is verified by exactly one dedicated scenario;
+Every property row SHALL be verified by exactly one dedicated scenario;
 `ah sync` derives one contract per VERIFIES link.
 
 #### Scenario: p_select

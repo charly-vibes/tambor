@@ -6,6 +6,8 @@ statement: "WHEN a subtree's big data is held by reference and the layer is deri
 
 # components.canvas_layer
 
+## Purpose
+
 The canvas-layer component (tambor-54j.8.3, the §4.8 canvas seam):
 `canvasLayer({ width, height, draw })` returns a layer render function —
 an app creates it once (module scope, the memo `memo(build)` shape) and
@@ -80,7 +82,7 @@ painted — headless_render is the canvas backend's native mode.
 
 ### Requirement: Property coverage mirror
 
-Every property row is verified by exactly one dedicated test;
+Every property row SHALL be verified by exactly one dedicated test;
 `ah sync` derives one contract per VERIFIES link.
 
 #### Scenario: p_ref_hit

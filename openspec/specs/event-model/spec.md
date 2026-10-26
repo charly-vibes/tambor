@@ -6,6 +6,8 @@ statement: "WHEN an input event arrives at a node THE event router SHALL hit-tes
 
 # event.model
 
+## Purpose
+
 Port of the default protocol implementations in `membrane.ui` (the `Object` extension near the top of `ui.cljc`) and of the `OnMouseDown`, `OnMouseUp`, `OnKeyPress` and related records. The delivery rule differs per event type, and the first draft of this corpus got it wrong. **Pointer events (mouse-event, mouse-move, scroll, drop) are first-match-wins:** children are tried last to first, meaning topmost first, and the first non-empty intent list stops the search. **Key-press, key-event, clipboard and mouse-enter-global events concatenate** the intents of all children in order. **mouse-move-global is delivered to every descendant** with the offset adjusted by each origin. Hit-testing is half-open: 0 at or below local x below width, and the same on y. Everything is a pure function, `dispatch(view, event)` returns a list of intents.
 
 ## Constraints
@@ -72,7 +74,7 @@ Port of the default protocol implementations in `membrane.ui` (the `Object` exte
 
 ### Requirement: Property coverage mirror
 
-Every property row is verified by exactly one dedicated scenario;
+Every property row SHALL be verified by exactly one dedicated scenario;
 `ah sync` derives one contract per VERIFIES link.
 
 #### Scenario: p_pointer_index_equiv

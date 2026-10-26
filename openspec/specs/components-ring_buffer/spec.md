@@ -6,6 +6,8 @@ statement: "WHEN a stream of items is appended to a bounded series THE ring-buff
 
 # components.ring_buffer
 
+## Purpose
+
 The bounded-series store (tambor-54j.8.5): the public promotion of the
 BZ5 log-stream candidate — a fixed-capacity FIFO of items with
 drop-oldest, for state that must hold a window and a summary, never the
@@ -82,7 +84,7 @@ structural sharing does the rest.
 
 ### Requirement: Property coverage mirror
 
-Every property row is verified by exactly one dedicated test;
+Every property row SHALL be verified by exactly one dedicated test;
 `ah sync` derives one contract per VERIFIES link.
 
 #### Scenario: p_capacity_bound

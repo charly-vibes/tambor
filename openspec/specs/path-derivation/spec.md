@@ -6,6 +6,8 @@ statement: "WHEN a component binds a name from a prop through destructuring, ite
 
 # path.derivation
 
+## Purpose
+
 This is the heart of `defui`, and it is exactly what `test/membrane/component_test.clj` and `test/membrane/defui_test.clj` test. Inside a component body every bound name `x` has a sibling `$x` that is a path from the app state to `x`. Membrane derives it at macro-expansion time by walking `let`, `when-let`, `if-let`, `for` and function calls with a table of known functions (`nth`, `get`, `get-in`, keyword call, `filter`, `take`, `drop`, `or`, `assoc`, `select-one`). **Porting note:** TypeScript has no macros and types are erased, so derivation cannot read types. The primary strategy is a **typed runtime ref**: props arrive as `Ref<T>` values carrying value and path, with `ref.get("a")`, `ref.nth(i)`, `ref.filter(fn)` and `ref.each()` returning `Ref` of the narrowed type, and the type checker verifies the navigation. The alternatives are a **TypeScript compiler transformer** and, for squint and ClojureScript, an optional **macro** (see interop.model). A third, macro-free tier is the explicit API (path concatenation, a filter navigator, `each(xs, $xs, fn)`), which already passes the filtered-todo scenario. All are held to the same vectors below. Component_test property-tests this with generated destructuring forms. The three generative laws are *compiles*, *updates* (set the path, re-destructure, get the value back) and *extracts* (select by path equals the bound value).
 
 ## Constraints
@@ -82,7 +84,7 @@ This is the heart of `defui`, and it is exactly what `test/membrane/component_te
 
 ### Requirement: Property coverage mirror
 
-Every property row is verified by exactly one dedicated scenario;
+Every property row SHALL be verified by exactly one dedicated scenario;
 `ah sync` derives one contract per VERIFIES link.
 
 #### Scenario: p_every_binding

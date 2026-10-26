@@ -6,6 +6,8 @@ statement: "THE tambor library SHALL be written in strict TypeScript so that vie
 
 # typing.model
 
+## Purpose
+
 The port target is TypeScript (strict), not vanilla JS. Types give the port things Membrane's Clojure never had: a path is a typed lens `Path<S, T>`, a component's `$k` props are derived from its value props with template-literal key remapping, effects are a discriminated union, and the core compiles without the DOM lib so `backend_optional` is enforced by the compiler. Types erase at runtime, so nothing here may be needed to make behaviour correct. Path derivation (path.derivation) uses typed runtime refs rather than macros, and the types sit on top of that. Squint is no longer a target.
 
 ## Constraints
@@ -80,7 +82,7 @@ The port target is TypeScript (strict), not vanilla JS. Types give the port thin
 
 ### Requirement: Property coverage mirror
 
-Every property row is verified by exactly one dedicated scenario;
+Every property row SHALL be verified by exactly one dedicated scenario;
 `ah sync` derives one contract per VERIFIES link.
 
 #### Scenario: p_strict

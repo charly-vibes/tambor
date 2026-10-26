@@ -6,6 +6,8 @@ statement: "WHEN a layout combinator receives child nodes THE layout engine SHAL
 
 # view.layout
 
+## Purpose
+
 Port of `vertical-layout`, `horizontal-layout`, `table-layout`, `center`, `padding`, and the stretch-width and stretch-height protocols. The original loops as: the first child stays at the origin, the next offset is first size plus origin plus 1, and each later child is translated by the running offset, which then grows by child size plus origin plus 1. The todo example adds `spacer(0, 5)` between rows with `interpose`. Layout is pure: it only wraps children in Translate nodes.
 
 ## Constraints
@@ -56,7 +58,7 @@ Port of `vertical-layout`, `horizontal-layout`, `table-layout`, `center`, `paddi
 
 ### Requirement: Property coverage mirror
 
-Every property row is verified by exactly one dedicated scenario;
+Every property row SHALL be verified by exactly one dedicated scenario;
 `ah sync` derives one contract per VERIFIES link.
 
 #### Scenario: p_vstack

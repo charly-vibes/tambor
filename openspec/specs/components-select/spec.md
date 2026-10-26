@@ -6,6 +6,8 @@ statement: "WHEN the user opens a dropdown and chooses an option THE dropdown SH
 
 # components.select
 
+## Purpose
+
 Port of `dropdown` and `dropdown-list` from `basic_components.cljc`. `options` is a vector of `[value, label]` pairs. The header shows the label of the selected option, or a gray "no selection". The list is rendered only while `open?`. Choosing a row returns `[::select $selected value]`, which the dropdown intercepts (see event.bubble) and expands to select plus close. The per-row hover flag lives in `extra` keyed `[hover?, value]`.
 
 ## Constraints
@@ -57,7 +59,7 @@ Port of `dropdown` and `dropdown-list` from `basic_components.cljc`. `options` i
 
 ### Requirement: Property coverage mirror
 
-Every property row is verified by exactly one dedicated scenario;
+Every property row SHALL be verified by exactly one dedicated scenario;
 `ah sync` derives one contract per VERIFIES link.
 
 #### Scenario: p_header_toggle

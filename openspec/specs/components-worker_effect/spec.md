@@ -6,6 +6,8 @@ statement: "WHEN an app dispatches a worker-effect spawn THE worker effect SHALL
 
 # components.worker_effect
 
+## Purpose
+
 The public worker effect (tambor-54j.8.6): the promotion of the
 logo/notebook worker boundary precedent (src/examples/logo/
 worker-client.ts, tambor-y9d.10; src/examples/notebook/worker-client.ts,
@@ -95,7 +97,7 @@ timer-jitter drift when run through the worker
 
 ### Requirement: Property coverage mirror
 
-Every property row is verified by exactly one dedicated test;
+Every property row SHALL be verified by exactly one dedicated test;
 `ah sync` derives one contract per VERIFIES link.
 
 #### Scenario: p_envelope_parity

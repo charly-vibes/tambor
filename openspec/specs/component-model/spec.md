@@ -6,6 +6,8 @@ statement: "THE component system SHALL let a component declare props through one
 
 # component.model
 
+## Purpose
+
 Port of `defui` (`component.cljc`) as exercised by `defui_test.clj`. A component takes exactly one argument, a symbol or a map with `:keys`, `:or` and `:as`. In TypeScript that is one props object whose type is inferred (typing.model component_generic and dollar_keys_derived). Every declared key `k` has a value `k` and a path `$k`. Two keys are implicit: `extra` (per-call-site scratch state such as hover flags and scroll offsets, stored under `::extra` of the parent) and `context` (state shared down the whole tree, such as `focus`). A key tagged `contextual` takes its value from `context[k]` and its path from `[$context, keypath k]`; textarea uses it for `focus`. In `defui_test`, `child` has props `a`, `b`, `c` with `a` defaulting to 42 and `c` contextual; `parent` calls `(child m)` with a non-literal map.
 
 ## Constraints
@@ -72,7 +74,7 @@ Port of `defui` (`component.cljc`) as exercised by `defui_test.clj`. A component
 
 ### Requirement: Property coverage mirror
 
-Every property row is verified by exactly one dedicated scenario;
+Every property row SHALL be verified by exactly one dedicated scenario;
 `ah sync` derives one contract per VERIFIES link.
 
 #### Scenario: p_single_arg

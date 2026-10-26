@@ -6,6 +6,8 @@ statement: "WHERE a touch device IS INCLUDED THE UI SHALL map touch to the point
 
 # ui.mobile
 
+## Purpose
+
 Membrane is mouse-and-keyboard-first and its example targets are tiny (the todo delete X is 10 by 10 and the ui checkbox is 12 by 12). A mobile port has to adapt interaction without changing the drawn design or the app code. The approach is a mapping layer: touch becomes the existing pointer events, hit areas are padded by a slop layer inside the event router, and layout reflows from the container size, as `membrane.stretch/container-size` already allows.
 
 ## Constraints
@@ -69,7 +71,7 @@ Membrane is mouse-and-keyboard-first and its example targets are tiny (the todo 
 
 ### Requirement: Property coverage mirror
 
-Every property row is verified by exactly one dedicated scenario;
+Every property row SHALL be verified by exactly one dedicated scenario;
 `ah sync` derives one contract per VERIFIES link.
 
 #### Scenario: p_touch_map

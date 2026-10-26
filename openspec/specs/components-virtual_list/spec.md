@@ -6,6 +6,8 @@ statement: "WHEN a list is longer than its viewport THE virtual-list SHALL draw 
 
 # components.virtual_list
 
+## Purpose
+
 A fixed-row-height list component for lists too long to draw whole. Props
 are `count` (the item count), `row-height`, `gap`, `overscan`,
 `scroll-bounds` (the viewport), `offset` (default [0, 0]), `row` (the
@@ -67,7 +69,7 @@ the assembly composes over `scrollview`'s clip and wheel gates.
 
 ### Requirement: Property coverage mirror
 
-Every property row is verified by exactly one dedicated scenario;
+Every property row SHALL be verified by exactly one dedicated scenario;
 `ah sync` derives one contract per VERIFIES link.
 
 #### Scenario: p_offsets

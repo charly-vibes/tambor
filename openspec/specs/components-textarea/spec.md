@@ -6,6 +6,8 @@ statement: "WHILE a textarea holds focus THE textarea SHALL translate key, point
 
 # components.textarea
 
+## Purpose
+
 Port of `textarea`, `textarea-view`, `textarea-light`, `selectable-text` and the cursor effects in `basic_components.cljc`. Two details are easy to miss. **Focus is a path:** the contextual `focus` value equals the textarea's `$text` path when it is focused, and `::request-focus` sets it, which is why two textareas never both hold focus. **Editing state is split:** `text` and `focus` live in the app state, while `cursor`, `select-cursor`, `down-pos`, `mpos` and `last-click` live in a `textarea-state` extra map. Effects use multi-path `update` with `collect-one`, so text, cursor and selection change atomically. A few behaviours are faithful quirks of the original and are specified as such, for example previous-line lands on the newline character itself.
 
 ## Constraints
@@ -87,7 +89,7 @@ Port of `textarea`, `textarea-view`, `textarea-light`, `selectable-text` and the
 
 ### Requirement: Property coverage mirror
 
-Every property row is verified by exactly one dedicated scenario;
+Every property row SHALL be verified by exactly one dedicated scenario;
 `ah sync` derives one contract per VERIFIES link.
 
 #### Scenario: p_focus_path

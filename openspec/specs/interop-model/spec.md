@@ -6,6 +6,8 @@ statement: "WHEN a squint or ClojureScript program uses the library THE library 
 
 # interop.model
 
+## Purpose
+
 Constraints derived from experiments (see EVALUATION.md): squint 0.14.211 emits plain JS objects, arrays and strings for maps, vectors and keywords, so it needs nothing. ClojureScript (probed with cherry 0.6.38, which has CLJS semantics) uses persistent collections and Keyword objects, and a direct call into an array-only API throws, `clj->js` loses reference identity, drops keyword namespaces (`:ui/select` becomes `"select"`) and cost about 11 ms per conversion of a 5000-item state. An injectable `DataOps` seam avoided all three at about 0.07 ms per dispatch. Everything is therefore designed as a data API with that one seam, and the macro is optional sugar.
 
 ## Constraints
@@ -75,7 +77,7 @@ Constraints derived from experiments (see EVALUATION.md): squint 0.14.211 emits 
 
 ### Requirement: Property coverage mirror
 
-Every property row is verified by exactly one dedicated scenario;
+Every property row SHALL be verified by exactly one dedicated scenario;
 `ah sync` derives one contract per VERIFIES link.
 
 #### Scenario: p_plain_data

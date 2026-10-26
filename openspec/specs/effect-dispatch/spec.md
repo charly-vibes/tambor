@@ -6,6 +6,8 @@ statement: "WHEN a handler returns effects THE dispatcher SHALL apply them in or
 
 # effect.dispatch
 
+## Purpose
+
 Port of `defeffect`, `dispatch!`, `default-handler` and `make-app`. Effects are typed data: `["update", path, fn, ...args]`, a member of the Effect union in typing.model. A registered effect is a function whose first parameter is `dispatch`, so effects compose (`counter-increment` is `dispatch(update, $num, inc)`). `dispatch` is overloaded in the original: a bare keyword is a single effect, a sequence of effects is a batch, and `type, ...args` is one effect. An unknown type is logged through `tap>` and returns nil, and it never throws. `make-app` accepts an initial state or an atom and an optional handler, wraps the handler to skip empty or nil batches, and returns a view function.
 
 ## Constraints
@@ -70,7 +72,7 @@ Port of `defeffect`, `dispatch!`, `default-handler` and `make-app`. Effects are 
 
 ### Requirement: Property coverage mirror
 
-Every property row is verified by exactly one dedicated scenario;
+Every property row SHALL be verified by exactly one dedicated scenario;
 `ah sync` derives one contract per VERIFIES link.
 
 #### Scenario: p_data
