@@ -104,14 +104,16 @@ jobs:
         # of truth for these versions; never `latest`)
         uses: taiki-e/install-action@v2
         with:
-          tool: espectacular@0.12.0,pretender@0.7.0,testaruda@0.5.5
+          tool: espectacular@0.12.0,pretender@0.7.0,testaruda@0.5.9
 
       - name: Install testaruda adapters (DDL §4 pins — adapter fixes 65e44d7, eb7f44e, 5deee0b)
-        # The testaruda release tarballs only bundle the core binary +
-        # adapter-rust/adapter-python; tambor needs adapter-typescript (the
-        # default adapter for the vitest stack) and adapter-clojure (the
-        # experiments/ *.cljc/*.cljs files). Without them, discover finds 0
-        # test items and exec exits 20 (tambor-kpx).
+        # Adapters are NOT on crates.io — the binstall fallback that installs
+        # testaruda@<version> from source only yields the core crate plus
+        # adapter-rust/adapter-python (defined in the root package), so
+        # adapter-typescript (default for the vitest stack) and
+        # adapter-clojure (the experiments/ *.cljc/*.cljs files) must come
+        # from git. Without them, discover finds 0 test items and exec exits
+        # 20 (tambor-kpx).
         run: |
           # Adapters may already exist when the cargo cache (which includes
           # ~/.cargo/bin) is restored — cargo install refuses to overwrite

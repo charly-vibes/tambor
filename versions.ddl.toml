@@ -10,9 +10,10 @@
 espectacular = "0.12.0"    # ah — contracts + sync gate (0.12.0: vitest 5 batch fix GH#46, scenario attribution via VERIFIES redirect GH#34, managed-block init fix GH#47; matches local dev install)
 specodelic = "0.7.0"       # spk — lint bridge + parse for ah sync (Rev 18)
 pretender = "0.7.0"        # complexity gate (full-repo gate mode, tambor-272)
-testaruda = "0.5.5"        # test selection loop (0.5.3: collection_path ingest + discovery ancestry 73ca44f — the tambor-8q3 fix; matches local dev install)
-# testaruda adapters — NOT in the release tarballs (which bundle only the core
-# binary + adapter-rust/adapter-python). Installed in CI from the testaruda
-# repo at this git tag (tambor-kpx).
-testaruda-adapter-typescript = "git:eb7f44e" # collapse-fully-selected-files fix (tambor-ci-249)
-testaruda-adapter-clojure = "git:eb7f44e"
+testaruda = "0.5.9"        # test selection loop (0.5.9: run_adapter_group names failing tests from ingested results on runner failure — testaruda-xb8l/178bb26, the tambor-9ca ask; rides the >0.5.5 release ride)
+# testaruda adapters — NOT on crates.io (only the core crate is published;
+# binstall builds core + adapter-rust/adapter-python from source). Installed
+# in CI from the testaruda repo at this git rev (tambor-kpx). The release
+# tarballs DO bundle all five binaries but binstall never uses them.
+testaruda-adapter-typescript = "git:5deee0b" # collapse-fully-selected-files fix (tambor-ci-249)
+testaruda-adapter-clojure = "git:5deee0b"
