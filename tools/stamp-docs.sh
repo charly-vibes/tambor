@@ -17,13 +17,14 @@ SPEC_COUNT=$(ls -1 openspec/specs | wc -l | tr -d ' ')
 CONTRACT_COUNT=$(ls -1 .espectacular/*/*.toml | wc -l | tr -d ' ')
 
 # Bundle size needs a fresh build with a metafile (ACC-004: never hand-stamp).
-rm -f dist/meta.json
-npx esbuild src/spa/main.ts --bundle --format=esm --outfile=dist/spa.js \
-  --metafile=dist/meta.json --log-level=silent
+# add-spa-delivery: the build script minifies + splits into demo-dist/ —
+# the stamped number is the TOTAL shipped demo-artifact bytes (spa shell
+# + hashed chunks + workers), not a single monolithic spa.js.
+node scripts/build-spa.mjs >/dev/null
 BUNDLE_KB=$(node -e '
-  const m = require("./dist/meta.json");
-  const kb = m.outputs["dist/spa.js"].bytes / 1024;
-  process.stdout.write(kb.toFixed(1) + " kB");
+  const m = require("./demo-dist/meta.json");
+  const total = Object.values(m.outputs).reduce((s, o) => s + o.bytes, 0);
+  process.stdout.write((total / 1024).toFixed(1) + " kB");
 ')
 
 stamp() { # stamp <file> <marker> <value> — replace text between markers

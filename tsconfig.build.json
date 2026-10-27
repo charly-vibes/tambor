@@ -14,5 +14,8 @@
     "rewriteRelativeImportExtensions": true,
     "types": []
   },
-  "include": ["src/**/*.ts"]
+  "include": ["src/**/*.ts"],
+  // the service worker is a demo-shell artifact (demo-dist/sw.js via
+  // scripts/build-spa.mjs) — the npm emit must not carry a second copy
+  "exclude": ["src/spa/sw.ts"]
 }
