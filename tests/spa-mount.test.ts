@@ -20,7 +20,8 @@
 
 import { describe, expect, it } from "vitest";
 
-import { mountDemo, mountSpa } from "../src/spa/mount.ts";
+import { mountDemo } from "../src/spa/mount.ts";
+import { mountSpa } from "../src/spa/todo-spa.ts";
 import { spaFocusView } from "../src/spa/focus.ts";
 import { makeApp, lookupEffect } from "../src/effects/dispatch.ts";
 import { select, type Path } from "../src/effects/paths.ts";

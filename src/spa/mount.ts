@@ -1,12 +1,14 @@
 // Purpose: the SPA mount (tambor-e2y) — the testable core of the
-//   browser entry: the todo example drawn through DomBackend onto the
+//   browser entry: a demo app drawn through DomBackend onto the
 //   real-DOM host adapter, driven by the corpus top-level wire.
-// Responsibilities: mountSpa(doc, container) — a makeApp over the
-//   todoApp view and todoState (the registry-aware dispatcher: defeffect
-//   effects like add-todo apply), a DomBackend with the realDomFactory,
-//   and the subscription loop: every forwarded event routes through the
-//   corpus event router (dispatch), its intents go to app.dispatch, and
-//   the tree re-draws from app.view(). Wheel input has no backend
+// Responsibilities: mountDemo(doc, container, create) — a DomBackend
+//   with the realDomFactory, and the subscription loop: every
+//   forwarded event routes through the corpus event router (dispatch),
+//   its intents go to app.dispatch, and the tree re-draws from
+//   app.view(). (The original todo wiring — createTodoApp/mountSpa —
+//   moved to todo-spa.ts with add-spa-delivery: a static example
+//   import here pulled src/examples/todo into every initial chunk.)
+//   Wheel input has no backend
 //   listener, so the surface registers its own (tambor-gov): a raw
 //   wheel becomes the corpus scroll event with the deltas on its delta
 //   field, preventDefaulted so the page does not scroll. The first draw lands before any
@@ -46,9 +48,8 @@ import {
   type HostDoc,
   type HostElement,
 } from "../interop/domhost.ts";
-import { todoApp, todoState, type TodoState } from "../examples/todo/todo.ts";
-import { makeApp, type App, type Effect, type LaneStore } from "../effects/dispatch.ts";
-import { setFocusSurface, spaFocusView } from "./focus.ts";
+import { type App, type Effect, type LaneStore } from "../effects/dispatch.ts";
+import { setFocusSurface } from "./focus.ts";
 import { VIEWPORT } from "./viewport.ts";
 import { dispatch } from "../events/dispatch.ts";
 import { phaseTimers } from "../events/phase-timers.ts";
@@ -68,19 +69,6 @@ export interface SpaHandle {
 // The registry-aware app wire (makeApp): defeffect effects like
 // add-todo apply; the backend is carried so the render context sees
 // the container size.
-// The focus entry is merged into the context the view sees (tambor-e5n):
-// makeApp only injects the container size, so the mount wraps the view
-// with the SPA's focus-context merge (focus_ctx) — the todoApp view
-// reads context.focus for the textareas' focused state.
-function createTodoApp(): App {
-  return makeApp({
-    view: spaFocusView((state, context) =>
-      todoApp(state as TodoState, context as { focus?: unknown })),
-    state: todoState(),
-    backend: { containerSize: VIEWPORT },
-  });
-}
-
 // Route-time view cache (tambor-8xm): the drawn tree is reused while
 // the state is unchanged. State changes only through dispatch, so
 // app.getState() identity is the invalidation signal — a derivation
@@ -270,10 +258,6 @@ function attachInputSurface(backend: DomBackend, root: RealDomElement): RealDomE
   root.host.style.setProperty("touch-action", "none");
   backend.attach(root);
   return root;
-}
-
-export function mountSpa(doc: HostDoc, container: HostElement): SpaHandle {
-  return mountDemo(doc, container, createTodoApp);
 }
 
 // Real font metrics for the mount path (tambor-0rp): measure text the way

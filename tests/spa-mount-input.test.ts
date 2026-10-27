@@ -19,7 +19,7 @@
 
 import { describe, expect, it } from "vitest";
 
-import { mountSpa } from "../src/spa/mount.ts";
+import { mountSpa } from "../src/spa/todo-spa.ts";
 import { NEXT_TEXT_PATH } from "../src/examples/todo/todo.ts";
 import type { HostDoc } from "../src/interop/domhost.ts";
 

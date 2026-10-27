@@ -12,6 +12,7 @@
 node_modules/
 target/
 dist/
+demo-dist/
 # turu workspace — session notes are tracked; .whisper/private/ is
 # machine-specific knowledge, never pushed (git history is forever)
 .whisper/private/

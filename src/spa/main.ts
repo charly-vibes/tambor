@@ -36,26 +36,42 @@ if (doc !== undefined) {
   container.appendChild(content);
 
   let current: SpaHandle | undefined;
+  let selectToken = 0;
 
   function select(demoIndex: number): void {
     const demo = DEMOS[demoIndex]!;
     current?.unmount();
+    current = undefined;
     content.textContent = "";
-    // mount FIRST, blurb after (tambor-8yn): the blurb flows below the
-    // drawn root in normal document order, so a grown demo pushes it
-    // down instead of drawing over it (the drawn root's height now
-    // tracks the drawn extent per draw).
-    current = mountDemo(d, content, demo.create);
-    const blurb: HostElement = d.createElement("p");
-    blurb.setAttribute("class", "blurb");
-    blurb.textContent = demo.blurb;
-    content.appendChild(blurb);
-    let i = 0;
-    for (const child of nav.childNodes) {
-      if (i === demoIndex) child.setAttribute("class", "active");
-      else child.setAttribute("class", "");
-      i++;
-    }
+    // add-spa-delivery: example modules resolve through dynamic
+    // import() — the gallery index renders synchronously, the demo
+    // mount lands when the chunk arrives. The token drops stale loads
+    // (a fast click across two nav buttons must not mount the older
+    // demo after the newer one).
+    const token = ++selectToken;
+    const loading: HostElement = d.createElement("p");
+    loading.setAttribute("class", "blurb");
+    loading.textContent = `loading ${demo.title}…`;
+    content.appendChild(loading);
+    void demo.load().then((app) => {
+      if (token !== selectToken) return;
+      content.removeChild(loading);
+      // mount FIRST, blurb after (tambor-8yn): the blurb flows below the
+      // drawn root in normal document order, so a grown demo pushes it
+      // down instead of drawing over it (the drawn root's height now
+      // tracks the drawn extent per draw).
+      current = mountDemo(d, content, () => app);
+      const blurb: HostElement = d.createElement("p");
+      blurb.setAttribute("class", "blurb");
+      blurb.textContent = demo.blurb;
+      content.appendChild(blurb);
+      let i = 0;
+      for (const child of nav.childNodes) {
+        if (i === demoIndex) child.setAttribute("class", "active");
+        else child.setAttribute("class", "");
+        i++;
+      }
+    });
   }
 
   DEMOS.forEach((demo, i) => {
@@ -66,4 +82,29 @@ if (doc !== undefined) {
   });
 
   select(0);
+
+  // add-spa-delivery: register the PWA service worker from the browser
+  // entry (never mount.ts — the mount is shared demo plumbing also run
+  // under jsdom). Dev-safe: skipped on non-secure origins (http:// on a
+  // LAN address, file://) and under automation (Playwright's
+  // navigator.webdriver), so browser tests never race the cache — the
+  // SW spec opts back in via the ?sw=1 query flag.
+  type NavigatorLike = {
+    serviceWorker?: {
+      register(url: string, options?: { type?: string }): Promise<unknown>;
+    };
+    webdriver?: boolean;
+  };
+  const nav2 = (globalThis as { navigator?: NavigatorLike }).navigator;
+  const secure = (globalThis as { isSecureContext?: boolean }).isSecureContext;
+  const optedIn = (globalThis as { location?: { search?: string } }).location?.search?.includes(
+    "sw=1",
+  );
+  if (
+    nav2?.serviceWorker !== undefined &&
+    secure === true &&
+    (nav2.webdriver !== true || optedIn === true)
+  ) {
+    void nav2.serviceWorker.register("./sw.js", { type: "module" }).catch(() => undefined);
+  }
 }

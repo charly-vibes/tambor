@@ -2,11 +2,11 @@
 //   corpus-documented component/example, mounted through the same
 //   DomBackend + event-router wire as the todo SPA.
 // Responsibilities: DEMOS — the ordered demo registry (id, title, blurb,
-//   create() app factory); each demo is a pure view over plain state
-//   mounted via mountDemo (mount.ts). The first three exemplars:
-//   example-todo (todo clicks/filters), components.numeric (counter
-//   dec/inc effects), components.select (dropdown header toggle +
-//   select-closes interception).
+//   load() app factory); each demo is a pure view over plain state
+//   mounted via mountDemo (mount.ts). Example-backed demos resolve
+//   their module through a dynamic import() (add-spa-delivery): the
+//   registry metadata is synchronous and example modules never ride
+//   the initial chunk — esbuild splits one chunk per example.
 // Rationale: openspec/specs/<name>/spec.md files are the design
 //   authorities — demos change no semantics; they exercise the corpus
 //   components through the real-DOM host so a visitor can feel the
@@ -18,25 +18,9 @@ import { counter } from "../components/numeric/counter.ts";
 import { dropdown } from "../components/select/dropdown.ts";
 import { makeApp, type App } from "../effects/dispatch.ts";
 import type { Path } from "../effects/paths.ts";
-import { todoApp, todoState, type TodoState } from "../examples/todo/todo.ts";
-import { createLogoApp } from "../examples/logo/logo.ts";
-import { createNotebookApp } from "../examples/notebook/notebook.ts";
-import { createKeyedTableApp } from "../examples/bench/keyed-table.ts";
-import { createTurtle20kApp } from "../examples/bench/turtle-20k.ts";
-import { createTodoBenchApp } from "../examples/bench/todomvc.ts";
-import { createForm200App } from "../examples/bench/form-200.ts";
-import { createTimeTravel10kApp } from "../examples/bench/time-travel-10k.ts";
-import { createSaveRestore5kApp } from "../examples/bench/save-restore-5k.ts";
-import { createDashboardDerivedApp } from "../examples/bench/dashboard-derived.ts";
-import { createReviewFaultsApp } from "../examples/bench/review-faults.ts";
-import { createLogStreamApp } from "../examples/bench/log-stream-view.ts";
-import { createStreamDashboardApp } from "../examples/bench/stream-dashboard.ts";
-import { createPlotsApp } from "../examples/bench/plots.ts";
-import { createSpreadsheetApp } from "../examples/bench/spreadsheet.ts";
-import { createWhiteboardApp } from "../examples/bench/whiteboard.ts";
-import { createTrackerApp } from "../examples/bench/tracker.ts";
-import { createVirtualListApp } from "../examples/bench/virtual-list.ts";
-import { createEnvironmentApp } from "../examples/bench/environment.ts";
+// type-only: the todo demo's state shape rides the registry contract,
+// the module itself resolves through the dynamic import in loadTodoDemo
+import type { TodoState } from "../examples/todo/todo.ts";
 import type { Elem } from "../views/model.ts";
 import { VIEWPORT } from "./viewport.ts";
 
@@ -44,12 +28,16 @@ export interface DemoDef {
   readonly id: string;
   readonly title: string;
   readonly blurb: string;
-  create(): App;
+  // resolves the demo's app, importing its example module on demand
+  // (add-spa-delivery: the registry stays synchronous, examples are
+  // behind the dynamic import boundary)
+  load(): Promise<App>;
 }
 
 // --- example-todo ----------------------------------------------------------
 
-function createTodoDemo(): App {
+async function loadTodoDemo(): Promise<App> {
+  const { todoApp, todoState } = await import("../examples/todo/todo.ts");
   return makeApp({
     view: (state, context) =>
       todoApp(state as TodoState, context as { focus?: unknown }),
@@ -134,7 +122,8 @@ function createSelectDemo(): App {
 // from fold(entries[0..cursor]) every render, and run/clear route
 // through the demo's per-app registry (makeOpsApp), never the global
 // effect registry.
-function createLogoDemo(): App {
+async function loadLogoDemo(): Promise<App> {
+  const { createLogoApp } = await import("../examples/logo/logo.ts");
   return createLogoApp();
 }
 
@@ -146,146 +135,146 @@ export const DEMOS: readonly DemoDef[] = [
     title: "todo",
     blurb:
       "example.todo — add, complete, filter. Clicks route through the corpus event router.",
-    create: createTodoDemo,
+    load: loadTodoDemo,
   },
   {
     id: "counter",
     title: "counter",
     blurb:
       "components.numeric — the - / label / + row; dec and inc are plain-data effects applied at $num.",
-    create: createCounterDemo,
+    load: () => Promise.resolve(createCounterDemo()),
   },
   {
     id: "select",
     title: "dropdown",
     blurb:
       "components.select — tap the header to open, tap an option to select; select closes the list.",
-    create: createSelectDemo,
+    load: () => Promise.resolve(createSelectDemo()),
   },
   {
     id: "logo",
     title: "logo",
     blurb:
       "example.logo — the world is never stored: world = fold(entries[0..cursor]). Run programs, rewind with the slider, redefine a procedure for late binding.",
-    create: createLogoDemo,
+    load: loadLogoDemo,
   },
   {
     id: "notebook",
     title: "notebook",
     blurb:
       "example.notebook — reactive cells as a dependency graph: dependencies are inferred from identifiers, edits and slider moves re-run only the transitive dependents (mode toggle for full), evaluation runs in a killable Worker, no eval. Try +200 chained, then move the chain slider in both modes.",
-    create: createNotebookApp,
+    load: async () => (await import("../examples/notebook/notebook.ts")).createNotebookApp(),
   },
   {
     id: "keyed-table",
     title: "keyed-table",
     blurb:
       "bench key-table — 1000 keyed rows over plain state: Build 1000, Replace 10%, Swap Rows, Remove 10, Append 1k, each an ordinary update intent.",
-    create: createKeyedTableApp,
+    load: async () => (await import("../examples/bench/keyed-table.ts")).createKeyedTableApp(),
   },
   {
     id: "turtle-20k",
     title: "turtle-20k",
     blurb:
       "bench turtle — 20k path segments derived by the corpus logo interpreter: Draw 20k + Recolor as ordinary update intents.",
-    create: createTurtle20kApp,
+    load: async () => (await import("../examples/bench/turtle-20k.ts")).createTurtle20kApp(),
   },
   {
     id: "todomvc",
     title: "todomvc",
     blurb:
       "bench todo — the example.todo app at scale (200 seeded todos): add, complete, delete through the ordinary effects.",
-    create: createTodoBenchApp,
+    load: async () => (await import("../examples/bench/todomvc.ts")).createTodoBenchApp(),
   },
   {
     id: "save-restore-5k",
     title: "save-restore-5k",
     blurb:
       "bench state — 5k plain-data items: Save serialises the whole state to one JSON string, Restore rehydrates it and verifies the checksum — no component-tree traversal.",
-    create: createSaveRestore5kApp,
+    load: async () => (await import("../examples/bench/save-restore-5k.ts")).createSaveRestore5kApp(),
   },
   {
     id: "form-200",
     title: "form-200",
     blurb:
       "bench form — 200 labeled fields over plain state: every interaction re-derives the whole view (the honest weak-spot measurement).",
-    create: createForm200App,
+    load: async () => (await import("../examples/bench/form-200.ts")).createForm200App(),
   },
   {
     id: "time-travel-10k",
     title: "time-travel-10k",
     blurb:
       "bench time travel — a 10k-step log over plain state: Build 10k, Scrub to 5k/10k and Undo one move the cursor as ordinary update intents (the log is never rewritten).",
-    create: createTimeTravel10kApp,
+    load: async () => (await import("../examples/bench/time-travel-10k.ts")).createTimeTravel10kApp(),
   },
   {
     id: "dashboard-derived",
     title: "dashboard-derived",
     blurb:
       "bench dashboard — ~20 derived tiles over one 500-number series: Seed, Bump and Bump 100 are ordinary update intents, and every bump re-derives every tile (no memo, no computed — the honest cost of many derived values).",
-    create: createDashboardDerivedApp,
+    load: async () => (await import("../examples/bench/dashboard-derived.ts")).createDashboardDerivedApp(),
   },
   {
     id: "log-stream",
     title: "log-stream",
     blurb:
       "bench log stream — simulated log batches (100k lines/min): naive Append 250 (unbounded ingest), the bounded Ring append 250 candidate, and main-thread Search all / Search ring over the plain state.",
-    create: createLogStreamApp,
+    load: async () => (await import("../examples/bench/log-stream-view.ts")).createLogStreamApp(),
   },
   {
     id: "review-faults",
     title: "review-faults",
     blurb:
       "bench faults — a 200-item review session (draft → submitted → acked/rejected): duplicate, stale and lost acks are injected as ordinary update intents; echoed ids and typed outcomes keep the queue consistent.",
-    create: createReviewFaultsApp,
+    load: async () => (await import("../examples/bench/review-faults.ts")).createReviewFaultsApp(),
   },
   {
     id: "stream-dashboard",
     title: "stream-dashboard",
     blurb:
       "bench stream — 500 tickers with sparklines and a top-of-book line fed by a simulated quote stream: Stream naive dispatches one intent per message (a full re-derive each), Stream frame folds the whole 80-message burst into one update — same final state, one repaint.",
-    create: createStreamDashboardApp,
+    load: async () => (await import("../examples/bench/stream-dashboard.ts")).createStreamDashboardApp(),
   },
   {
     id: "plots",
     title: "plots",
     blurb:
       "bench plots — two linked charts over one 100k-point domain (zoom + pan): Pan naive re-derives the window decimation from the raw points and copies them per op, Pan tx slices the precomputed band index — same drawn geometry, different work shape.",
-    create: createPlotsApp,
+    load: async () => (await import("../examples/bench/plots.ts")).createPlotsApp(),
   },
   {
     id: "spreadsheet",
     title: "spreadsheet",
     blurb:
       "bench spreadsheet — a 1M-cell logical grid (10000×100) with 100k defined cells: 10k literals plus 90k three-ref formulas. Seed builds the dependency index; Edit naive recomputes every formula after each edit, Edit graph recomputes only the edited cell's transitive dependents — same final state (the status line's edits counter and values checksum guard it), measured per edit.",
-    create: createSpreadsheetApp,
+    load: async () => (await import("../examples/bench/spreadsheet.ts")).createSpreadsheetApp(),
   },
   {
     id: "whiteboard",
     title: "whiteboard",
     blurb:
       "bench whiteboard — a 10k-shape scene (drag, resize, undo, remote cursors): Drag naive checkpoints the whole scene per op, Drag log records one old rect, Drag grid hit-tests through a maintained bucket index; Cursor naive dispatches one update per message, Cursor frame folds the 80-move burst into one — same final state (the summary line's counters and checksum guard it).",
-    create: createWhiteboardApp,
+    load: async () => (await import("../examples/bench/whiteboard.ts")).createWhiteboardApp(),
   },
   {
     id: "tracker",
     title: "tracker",
     blurb:
       "bench tracker — a Jira-like board over 5000 issues in five columns: Move naive derives + draws every issue row per op while Move window draws only the visible 8×5 slice; Filter naive rescans all issues per toggle while Filter memo reads the maintained column indexes; Opt edit applies the optimistic write and settles the clean ack — all ordinary update intents guarded by one status line.",
-    create: createTrackerApp,
+    load: async () => (await import("../examples/bench/tracker.ts")).createTrackerApp(),
   },
   {
     id: "virtual-list",
     title: "virtual-list",
     blurb:
       "bench virtual list — a 10k-row list over summaries (count + offset; rows derive from the index): Draw all 10k redraws the whole view per scroll op, Window 10k draws only the visible window through components.virtual_list — same scroll op, different draw strategy.",
-    create: createVirtualListApp,
+    load: async () => (await import("../examples/bench/virtual-list.ts")).createVirtualListApp(),
   },
   {
     id: "environment",
     title: "environment",
     blurb:
       "bench environment — a Smalltalk-like inspector over 100k logical objects with a 4096-entry edit history: Edit naive re-folds every window entry per op, Edit fold re-folds only the edited entry; Rewind replay rebuilds the world by folding the whole history, Rewind ckpt restores the nearest checkpoint snapshot — same final state (the status line's counters and window checksum guard it).",
-    create: createEnvironmentApp,
+    load: async () => (await import("../examples/bench/environment.ts")).createEnvironmentApp(),
   },
 ];

@@ -48,24 +48,26 @@ function clickAt(surface: { host: HostElement }, x: number, y: number): void {
 }
 
 describe("gallery — every demo mounts and interacts", () => {
-  it("todo demo renders the list and filters on click", () => {
+  it("todo demo renders the list and filters on click", async () => {
     const doc = hostDoc();
     const container = doc.createElement("div");
     doc.body.appendChild(container);
     const todo = DEMOS.find((d) => d.id === "todo")!;
-    const spa = mountDemo(doc, container, todo.create);
+    const todoApp = await todo.load();
+  const spa = mountDemo(doc, container, () => todoApp);
     expect(container.textContent).toContain("first");
     // the +1 button of the counter demo must not leak across mounts
     expect(container.textContent).not.toContain("+");
     spa.unmount();
   });
 
-  it("counter demo: clicking + increments the drawn number", () => {
+  it("counter demo: clicking + increments the drawn number", async () => {
     const doc = hostDoc();
     const container = doc.createElement("div");
     doc.body.appendChild(container);
     const def = DEMOS.find((d) => d.id === "counter")!;
-    const spa = mountDemo(doc, container, def.create);
+    const defApp = await def.load();
+  const spa = mountDemo(doc, container, () => defApp);
 
     expect(container.textContent).toContain("5");
     const view = render(call(counter, { num: 5, $num: [["keypath", "num"]] })) as Elem;
@@ -78,12 +80,13 @@ describe("gallery — every demo mounts and interacts", () => {
     spa.unmount();
   });
 
-  it("dropdown demo: open then select an option; the list closes", () => {
+  it("dropdown demo: open then select an option; the list closes", async () => {
     const doc = hostDoc();
     const container = doc.createElement("div");
     doc.body.appendChild(container);
     const def = DEMOS.find((d) => d.id === "select")!;
-    const spa = mountDemo(doc, container, def.create);
+    const defApp = await def.load();
+  const spa = mountDemo(doc, container, () => defApp);
 
     expect(container.textContent).toContain("no selection");
     const ARGS = {

@@ -28,11 +28,13 @@ export type ViewPoint = readonly [number, number];
 
 // A fresh in-process instance of a demo's app view — pure, no DOM
 // (makeApp draws only on dispatch), so it mirrors the page's initial
-// view exactly.
-export function demoView(demoId: string): Elem {
+// view exactly. Async since add-spa-delivery: example modules resolve
+// through the registry's dynamic import boundary.
+export async function demoView(demoId: string): Promise<Elem> {
   const def = DEMOS.find((d) => d.id === demoId);
   if (def === undefined) throw new Error(`no demo: ${demoId}`);
-  return def.create().view();
+  const app = await def.load();
+  return app.view();
 }
 
 // The view-space centre of the drawn button with the given text.
@@ -93,6 +95,10 @@ export async function navTo(page: Page, title: string): Promise<void> {
   // exact: substring matching went ambiguous when the bench apps added
   // "todomvc" next to "todo" (both matched hasText "todo").
   await page.getByRole("button", { name: title, exact: true }).click();
+  // add-spa-delivery: the demo chunk resolves asynchronously — every
+  // nav waits for the drawn root to replace the loading placeholder,
+  // so callers never race the mount
+  await page.locator("#demo > div").waitFor({ state: "visible" });
 }
 
 // Click a view-space point on the stage through the real mouse wire.
@@ -160,13 +166,13 @@ export async function stagePoint(page: Page, el: Locator): Promise<ViewPoint> {
 // scan coordinates stay correct for elements whose position depends on
 // state (the logo buttons row grows with the world; the dropdown's
 // options exist only while open).
-export function replayView(
+export async function replayView(
   demoId: string,
   intents: readonly (readonly unknown[])[],
-): Elem {
+): Promise<Elem> {
   const def = DEMOS.find((d) => d.id === demoId);
   if (def === undefined) throw new Error(`no demo: ${demoId}`);
-  const app = def.create();
+  const app = await def.load();
   for (const intent of intents) {
     app.dispatch([intent] as Parameters<typeof app.dispatch>[0]);
   }

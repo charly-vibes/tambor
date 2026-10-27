@@ -13,6 +13,8 @@ exclude = [
   "**/target/**",
   "dist/**",
   "**/dist/**",
+  "demo-dist/**",
+  "**/demo-dist/**",
   "**/*_generated.*",
 ]
 

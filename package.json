@@ -35,7 +35,7 @@
   "scripts": {
     "bench": "node benchmarks/run.mjs",
     "build": "tsc -p tsconfig.build.json",
-    "build:spa": "esbuild src/spa/main.ts --bundle --format=esm --outfile=dist/spa.js && esbuild src/examples/logo/worker.ts --bundle --format=esm --outfile=dist/worker.js && esbuild src/examples/notebook/worker.ts --bundle --format=esm --outfile=dist/notebook-worker.js",
+    "build:spa": "node scripts/build-spa.mjs",
     "lint": "eslint .",
     "prepack": "npm run build",
     "test": "vitest run"

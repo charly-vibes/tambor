@@ -120,7 +120,7 @@ test.describe("benchmark scenarios (bench apps)", () => {
 
       // The op points, resolved once from a fresh view: the ops sit at
       // fixed view-space positions (control row / list head).
-      const fresh = demoView(scenario.demoId);
+      const fresh = await demoView(scenario.demoId);
       const points = scenario.pointsOf.map((resolve) => resolve(fresh));
       const setup = scenario.setupOf?.(fresh);
 

@@ -61,10 +61,13 @@ export function makeWorkerRunner(W: WorkerCtor, URLC: URLCtor): NotebookRunner |
       // import.meta.url is the bundler-resolved module address; reached
       // structurally (the ES2022 lib has no ImportMeta.url declaration)
       const here = (import.meta as unknown as { url: string }).url;
-      // the asset name build:spa emits (dist/notebook-worker.js) —
-      // reached relative to the bundled spa.js address so it resolves
-      // on Pages too
-      return new W(new URLC("./notebook-worker.js", here), { type: "module" });
+      // the asset name build:spa emits (demo-dist/notebook-worker.js) —
+      // add-spa-delivery: splitting puts this client in
+      // chunks/<demo>-<hash>.js, while the worker entries keep stable
+      // demo-dist root names, so resolve against the chunk's PARENT
+      // (the demo-dist root), not the chunk address itself
+      const root = here.replace(/\/chunks\/[^/]*$/, "/");
+      return new W(new URLC("./notebook-worker.js", root), { type: "module" });
     } catch {
       return null; // construction can fail even where Worker exists
     }

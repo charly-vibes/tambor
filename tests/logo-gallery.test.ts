@@ -52,25 +52,27 @@ function buttonCentre(spa: { app: { view(): unknown } }, text: string): readonly
 }
 
 describe("logo gallery demo — the world is a fold", () => {
-  it("is registered and mounts with the title and cursor label", () => {
+  it("is registered and mounts with the title and cursor label", async () => {
     const def = DEMOS.find((d) => d.id === "logo");
     expect(def).toBeDefined();
     const doc = hostDoc();
     const container = doc.createElement("div");
     doc.body.appendChild(container);
-    const spa = mountDemo(doc, container, def!.create);
+    const defApp = await def!.load();
+    const spa = mountDemo(doc, container, () => defApp);
     const text = container.textContent;
     expect(text).toContain("tambor logo");
     expect(text).toContain("0/0");
     spa.unmount();
   });
 
-  it("clicking Run appends a fold entry and re-renders the cursor", () => {
+  it("clicking Run appends a fold entry and re-renders the cursor", async () => {
     const doc = hostDoc();
     const container = doc.createElement("div");
     doc.body.appendChild(container);
     const def = DEMOS.find((d) => d.id === "logo")!;
-    const spa = mountDemo(doc, container, def.create);
+    const defApp = await def.load();
+  const spa = mountDemo(doc, container, () => defApp);
 
     const [x, y] = buttonCentre(spa, "Run");
     clickAt(spa.surface, x, y);
@@ -84,12 +86,13 @@ describe("logo gallery demo — the world is a fold", () => {
     spa.unmount();
   });
 
-  it("the stepper rewinds: ◀ back to 0/0 redraws an empty world", () => {
+  it("the stepper rewinds: ◀ back to 0/0 redraws an empty world", async () => {
     const doc = hostDoc();
     const container = doc.createElement("div");
     doc.body.appendChild(container);
     const def = DEMOS.find((d) => d.id === "logo")!;
-    const spa = mountDemo(doc, container, def.create);
+    const defApp = await def.load();
+  const spa = mountDemo(doc, container, () => defApp);
 
     clickAt(spa.surface, ...buttonCentre(spa, "Run"));
     clickAt(spa.surface, ...buttonCentre(spa, "◀"));
@@ -102,12 +105,13 @@ describe("logo gallery demo — the world is a fold", () => {
     spa.unmount();
   });
 
-  it("tambor-y9d.5: a Spanish program runs end-to-end after the dialect toggle", () => {
+  it("tambor-y9d.5: a Spanish program runs end-to-end after the dialect toggle", async () => {
     const doc = hostDoc();
     const container = doc.createElement("div");
     doc.body.appendChild(container);
     const def = DEMOS.find((d) => d.id === "logo")!;
-    const spa = mountDemo(doc, container, def.create);
+    const defApp = await def.load();
+  const spa = mountDemo(doc, container, () => defApp);
 
     // Switch to Spanish: the example loaders become the ES set.
     clickAt(spa.surface, ...buttonCentre(spa, "Español"));
@@ -123,12 +127,13 @@ describe("logo gallery demo — the world is a fold", () => {
     spa.unmount();
   });
 
-  it("tambor-y9d.6: clicking the turtle selects it — halo handles and inspector appear", () => {
+  it("tambor-y9d.6: clicking the turtle selects it — halo handles and inspector appear", async () => {
     const doc = hostDoc();
     const container = doc.createElement("div");
     doc.body.appendChild(container);
     const def = DEMOS.find((d) => d.id === "logo")!;
-    const spa = mountDemo(doc, container, def.create);
+    const defApp = await def.load();
+  const spa = mountDemo(doc, container, () => defApp);
 
     clickAt(spa.surface, ...buttonCentre(spa, "Run"));
     const haloCount = (view: unknown): number =>
@@ -156,12 +161,13 @@ describe("logo gallery demo — the world is a fold", () => {
     spa.unmount();
   });
 
-  it("tambor-y9d.6: the ✕ handle deselects — halo and inspector disappear", () => {
+  it("tambor-y9d.6: the ✕ handle deselects — halo and inspector disappear", async () => {
     const doc = hostDoc();
     const container = doc.createElement("div");
     doc.body.appendChild(container);
     const def = DEMOS.find((d) => d.id === "logo")!;
-    const spa = mountDemo(doc, container, def.create);
+    const defApp = await def.load();
+  const spa = mountDemo(doc, container, () => defApp);
 
     clickAt(spa.surface, ...buttonCentre(spa, "Run"));
     const turtle = scanOf(spa.app.view() as never).find(
@@ -182,12 +188,13 @@ describe("logo gallery demo — the world is a fold", () => {
     spa.unmount();
   });
 
-  it("tambor-y9d.6: clicking a drawn segment selects it — the inspector shows its row", () => {
+  it("tambor-y9d.6: clicking a drawn segment selects it — the inspector shows its row", async () => {
     const doc = hostDoc();
     const container = doc.createElement("div");
     doc.body.appendChild(container);
     const def = DEMOS.find((d) => d.id === "logo")!;
-    const spa = mountDemo(doc, container, def.create);
+    const defApp = await def.load();
+  const spa = mountDemo(doc, container, () => defApp);
 
     clickAt(spa.surface, ...buttonCentre(spa, "Run"));
     // a segment whose bbox is a real area (spiral turns ~91° per step):

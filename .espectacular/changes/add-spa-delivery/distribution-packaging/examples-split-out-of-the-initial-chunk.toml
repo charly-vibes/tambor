@@ -1,0 +1,9 @@
+id = "examples-split-out-of-the-initial-chunk"
+description = "no src/examples module is transitively reachable from the initial chunk's static import graph; example modules ride content-hashed chunks"
+archetype = "SC"
+status = "active"
+superseded_by = ""
+authored_with = "0.12.0"
+
+[[tests.vitest]]
+flags = "--testNamePattern=p_examples_split_out_of_initial_chunk"

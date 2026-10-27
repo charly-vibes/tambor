@@ -23,8 +23,8 @@ function mouseDown(p: readonly [number, number]): TamborEvent {
 }
 
 describe("logo demo Run routing", () => {
-  it("a mouse-down at the Run button's centre routes the run intent", () => {
-    const view = demoView("logo");
+  it("a mouse-down at the Run button's centre routes the run intent", async () => {
+    const view = await demoView("logo");
     const p = buttonPoint(view, "Run");
     const intents = dispatch(view, mouseDown(p));
     expect({

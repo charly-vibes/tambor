@@ -1,0 +1,9 @@
+id = "offline-reload-serves-the-shell"
+description = "the service worker serves navigation network-first with the cached shell as the offline fallback and hashed assets cache-first, with the cache name content-hash versioned"
+archetype = "SC"
+status = "active"
+superseded_by = ""
+authored_with = "0.12.0"
+
+[[tests.vitest]]
+flags = "--testNamePattern=p_offline_shell_serves_navigation"

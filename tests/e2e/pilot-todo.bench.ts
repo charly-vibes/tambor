@@ -146,7 +146,7 @@ test.describe("benchmark scenarios", () => {
         const cdp = await context.newCDPSession(page);
         await cdp.send("Emulation.setCPUThrottlingRate", { rate: CPU_RATE });
 
-        const view = demoView(scenario.demoId);
+        const view = await demoView(scenario.demoId);
         const point = buttonPoint(view, scenario.buttonText);
 
         // warmup: untimed clicks settle JIT + first-layout costs
