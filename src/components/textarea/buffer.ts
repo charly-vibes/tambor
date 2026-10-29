@@ -81,6 +81,176 @@ export function moveByCluster(
   return { ...s, head: headN, anchor: anchorN };
 }
 
+// The line boundary kinds: the start of the current line or the end
+// (just before the next newline, or the end of text on the last line).
+export type LineBoundary = "start" | "end";
+
+// The document boundary kinds: the start or the end of the text.
+export type DocumentBoundary = "start" | "end";
+
+// The character class of the code unit at index `i`: "word" for
+// letters, digits and underscore (design D7), "space" for whitespace
+// and "other" for every other character. The word rule is class-based
+// and headless: a word is a run of word-class characters, while
+// whitespace and each punctuation run are their own stops.
+function charClass(text: string, i: number): "word" | "space" | "other" {
+  const ch = text[i];
+  if (ch === undefined) return "other";
+  if (/[\p{L}\p{N}_]/u.test(ch)) return "word";
+  if (/\s/u.test(ch)) return "space";
+  return "other";
+}
+
+// The exclusive end of the word run that starts at or before `from`
+// (a word is a maximal run of word-class characters).
+function wordRunEnd(text: string, from: number): number {
+  let end = from + 1;
+  while (end < text.length && charClass(text, end) === "word") {
+    end += 1;
+  }
+  return end;
+}
+
+// The inclusive start of the word run that ends at `from`.
+function wordRunStart(text: string, from: number): number {
+  let start = from;
+  while (start > 0 && charClass(text, start - 1) === "word") {
+    start -= 1;
+  }
+  return start;
+}
+
+// The exclusive end of the next word run at or after `i`; when there is
+// none it returns `i` (the move is a no-op).
+function nextWordEnd(text: string, i: number): number {
+  let j = i;
+  while (j < text.length && charClass(text, j) !== "word") {
+    j += 1;
+  }
+  return j < text.length ? wordRunEnd(text, j) : i;
+}
+
+// The exclusive end of the previous word run before `i`; when there is
+// none it returns `i` (the move is a no-op).
+function prevWordEnd(text: string, i: number): number {
+  let j = i - 1;
+  while (j >= 0 && charClass(text, j) !== "word") {
+    j -= 1;
+  }
+  return j >= 0 ? j + 1 : i;
+}
+
+// The shared step for the task-3 navigation moves: `next` is the snapped
+// target boundary; extend keeps the anchor (a shift move), a move
+// without extend over a selection collapses to the selection edge in the
+// move direction without stepping further (task 2 collapse rule), and a
+// move without a selection moves the cursor (anchor follows head).
+function stepHead(
+  s: EditorBufferState,
+  next: number,
+  dir: -1 | 1,
+  extend: boolean,
+): EditorBufferState {
+  const text = s.text ?? "";
+  const len = text.length;
+  const head = Math.min(Math.max(s.head, 0), len);
+  const headN = Math.min(Math.max(next, 0), len);
+  if (extend) {
+    const anchor = s.anchor === s.head ? next : s.anchor;
+    return { ...s, head: headN, anchor };
+  }
+  if (s.anchor !== head) {
+    const edge = dir === 1 ? head : s.anchor;
+    return { ...s, head: edge, anchor: edge };
+  }
+  return { ...s, head: headN, anchor: headN };
+}
+
+// Move the cursor to a line boundary (task 3.1): the line is delimited by
+// newline characters, "end" stops before the next newline (or at the end
+// of text on the last line) and "start" is the first index of the current
+// line. Idempotent at the edges. Pure: the input state is not mutated and
+// a fresh state is returned.
+export function moveToLineBoundary(
+  s: EditorBufferState,
+  boundary: LineBoundary,
+  extend = false,
+): EditorBufferState {
+  const text = s.text ?? "";
+  const len = text.length;
+  const head = Math.min(Math.max(s.head, 0), len);
+  let target: number;
+  if (boundary === "start") {
+    let lineStart = 0;
+    for (let i = head - 1; i >= 0; i -= 1) {
+      if (text[i] === "\n") {
+        lineStart = i + 1;
+        break;
+      }
+    }
+    target = lineStart;
+  } else {
+    let lineEnd = len;
+    for (let i = head; i < len; i += 1) {
+      if (text[i] === "\n") {
+        lineEnd = i;
+        break;
+      }
+    }
+    target = lineEnd;
+  }
+  const dir: -1 | 1 = boundary === "start" ? -1 : 1;
+  return stepHead(s, target, dir, extend);
+}
+
+// Move the cursor to a document boundary (task 3.1): "start" lands at 0
+// and "end" at the end of the text. Idempotent at the edges. Pure.
+export function moveToDocumentBoundary(
+  s: EditorBufferState,
+  boundary: DocumentBoundary,
+  extend = false,
+): EditorBufferState {
+  const text = s.text ?? "";
+  const len = text.length;
+  const target = boundary === "start" ? 0 : len;
+  const dir: -1 | 1 = boundary === "start" ? -1 : 1;
+  return stepHead(s, target, dir, extend);
+}
+
+// Move the cursor by one word in `dir` (1 = forward, -1 = backward) using
+// the class-based word rule (design D7): a word is a run of letters,
+// digits and underscore; whitespace and each punctuation run is its own
+// stop, so word moves are deterministic and headless. Moving past the
+// first/last word is a no-op (task 3 keeps indices in range). Pure.
+export function moveByWord(
+  s: EditorBufferState,
+  dir: -1 | 1,
+  extend = false,
+): EditorBufferState {
+  const text = s.text ?? "";
+  const len = text.length;
+  const head = Math.min(Math.max(s.head, 0), len);
+  let next: number;
+  if (dir === 1) {
+    if (head >= len) {
+      next = head;
+    } else if (charClass(text, head) === "word") {
+      next = wordRunEnd(text, head);
+    } else {
+      next = nextWordEnd(text, head);
+    }
+  } else {
+    if (head <= 0) {
+      next = head;
+    } else if (charClass(text, head - 1) === "word") {
+      next = wordRunStart(text, head - 1);
+    } else {
+      next = prevWordEnd(text, head);
+    }
+  }
+  return stepHead(s, next, dir, extend);
+}
+
 // Select all: the selection spans the whole text (anchor 0 .. head len);
 // the selection is empty exactly when anchor equals head (task 2).
 export function selectAll(s: EditorBufferState): EditorBufferState {
