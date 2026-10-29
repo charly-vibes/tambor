@@ -11,6 +11,13 @@
 //   selection model, line/word navigation, goal-column moves, hit-test,
 //   undo and textarea integration land in later tasks.
 
+import { lineRange } from "./hit-test.ts";
+
+// The multi-line hit-test seam (task 5, design D5) lives in its own module;
+// the buffer re-exports it so the buffer-level API surface stays stable for
+// callers and tests.
+export { indexAt, positionFor } from "./hit-test.ts";
+
 // The editor buffer state: the text being edited, the selection (the
 // range between anchor and head, empty exactly when they are equal) and
 // the goal x offset (the horizontal target for vertical movement; task 4).
@@ -209,27 +216,6 @@ function stepHead(
     return { ...s, head: edge, anchor: edge };
   }
   return { ...s, head: headN, anchor: headN };
-}
-
-// The content range [start, end) of the line containing `head`: the line
-// content runs from the first character after the previous newline to the
-// next newline (or the end of text on the last line).
-function lineRange(text: string, head: number): { start: number; end: number } {
-  let start = 0;
-  for (let i = head - 1; i >= 0; i -= 1) {
-    if (text[i] === "\n") {
-      start = i + 1;
-      break;
-    }
-  }
-  let end = text.length;
-  for (let i = head; i < text.length; i += 1) {
-    if (text[i] === "\n") {
-      end = i;
-      break;
-    }
-  }
-  return { start, end };
 }
 
 // Move the cursor to a line boundary (task 3.1): the line is delimited by

@@ -34,9 +34,9 @@ section 7.
 
 ## 5. Multi-line hit-test
 
-- [ ] 5.1 Red: round trip `indexAt(positionFor(i)) == i`; y selects the
+- [x] 5.1 Red: round trip `indexAt(positionFor(i)) == i`; y selects the
       line; out-of-range clamps; monotone in x within a line.
-- [ ] 5.2 Green: `indexAt` / `positionFor` delegating to the existing
+- [x] 5.2 Green: `indexAt` / `positionFor` delegating to the existing
       single-line `indexForPosition` per line.
 
 ## 6. Undo and redo
