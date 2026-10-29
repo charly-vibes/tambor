@@ -21,9 +21,9 @@ section 7.
 
 ## 3. Line, word and document navigation
 
-- [ ] 3.1 Red: line-start/end bounds; word stops match the class rule;
+- [x] 3.1 Red: line-start/end bounds; word stops match the class rule;
       document start/end; idempotence at the edges.
-- [ ] 3.2 Green: implement the class-based word rule (D7).
+- [x] 3.2 Green: implement the class-based word rule (D7).
 
 ## 4. Goal-column vertical movement
 
