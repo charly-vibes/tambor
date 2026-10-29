@@ -52,39 +52,70 @@ export function clusterBoundaries(text: string): number[] {
 }
 
 // Move the cursor (head) by one grapheme cluster in `dir` (1 = forward,
-// -1 = backward), snapping to the adjacent cluster boundary. Pure: the
-// input state is not mutated and a fresh state is returned. Moving past
-// the first/last boundary is a no-op (task 1 keeps indices in range).
-export function moveByCluster(s: EditorBufferState, dir: -1 | 1): EditorBufferState {
+// -1 = backward), snapping to the adjacent cluster boundary. With
+// `extend` the move keeps the selection anchor (shift extends); without
+// it, a move over a non-empty selection collapses to the selection edge
+// in the move direction without stepping further, clearing the selection
+// (task 2 collapse rule). Pure: the input state is not mutated and a
+// fresh state is returned. Moving past the first/last boundary is a
+// no-op (task 1 keeps indices in range).
+export function moveByCluster(
+  s: EditorBufferState,
+  dir: -1 | 1,
+  extend = false,
+): EditorBufferState {
   const text = s.text ?? "";
   const len = text.length;
   const head = Math.min(Math.max(s.head, 0), len);
   const bounds = clusterBoundaries(text);
   const idx = bounds.indexOf(head);
   const next = dir === 1 ? bounds[idx + 1] ?? head : bounds[idx - 1] ?? head;
-  return { ...s, head: next };
+  let headN = next;
+  let anchorN = s.anchor;
+  if (!extend && anchorN !== head) {
+    // collapse to the selection edge in the move direction, without
+    // stepping further; the selection is cleared (it is now empty)
+    headN = dir === 1 ? head : anchorN;
+    anchorN = headN;
+  }
+  return { ...s, head: headN, anchor: anchorN };
 }
 
-// Delete the grapheme cluster immediately before the cursor (head), as
-// a whole cluster: the text splits at the previous boundary and the head
-// moves to that boundary (task 1 slice; selection-aware deletion lands
-// with the selection model in task 2). Pure: the input state is not
-// mutated and a fresh state is returned; indices stay in range and the
-// resulting head rests on a cluster boundary.
+// Select all: the selection spans the whole text (anchor 0 .. head len);
+// the selection is empty exactly when anchor equals head (task 2).
+export function selectAll(s: EditorBufferState): EditorBufferState {
+  const len = s.text?.length ?? 0;
+  return { ...s, anchor: 0, head: len };
+}
+
+// Delete: with a non-empty selection delete the selected range whole;
+// without one, delete the grapheme cluster immediately before the cursor
+// (head), as a whole cluster: the text splits at the previous boundary and
+// the head moves to that boundary. Pure: the input state is not mutated
+// and a fresh state is returned; indices stay in range and the resulting
+// head rests on a cluster boundary. Select-all then delete therefore
+// empties the text.
 export function deleteByCluster(s: EditorBufferState): EditorBufferState {
   const text = s.text;
   if (text === null) {
     return { ...s };
   }
   const head = Math.min(Math.max(s.head, 0), text.length);
-  if (head === 0) {
+  const anchor = Math.min(Math.max(s.anchor, 0), text.length);
+  let start: number;
+  let end: number;
+  if (anchor !== head) {
+    start = Math.min(anchor, head);
+    end = Math.max(anchor, head);
+  } else if (head === 0) {
     return { ...s };
+  } else {
+    const bounds = clusterBoundaries(text);
+    const idx = bounds.indexOf(head);
+    start = idx > 0 ? (bounds[idx - 1] ?? 0) : 0;
+    end = head;
   }
-  const bounds = clusterBoundaries(text);
-  const idx = bounds.indexOf(head);
-  const start = idx > 0 ? (bounds[idx - 1] ?? 0) : 0;
-  const nextText = text.slice(0, start) + text.slice(head);
-  const nextHead = Math.min(start, nextText.length);
-  const nextAnchor = Math.min(s.anchor, nextText.length);
-  return { text: nextText, anchor: nextAnchor, head: nextHead, goalX: s.goalX };
+  const nextText = text.slice(0, start) + text.slice(end);
+  const nextPos = Math.min(start, nextText.length);
+  return { text: nextText, anchor: nextPos, head: nextPos, goalX: s.goalX };
 }

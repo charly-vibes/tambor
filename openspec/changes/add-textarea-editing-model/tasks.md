@@ -15,9 +15,9 @@ section 7.
 
 ## 2. Selection model
 
-- [ ] 2.1 Red: extend keeps anchor; collapse-to-edge; select-all then
+- [x] 2.1 Red: extend keeps anchor; collapse-to-edge; select-all then
       delete empties; select-all then insert replaces.
-- [ ] 2.2 Green: extend flag, collapse rule, select-all.
+- [x] 2.2 Green: extend flag, collapse rule, select-all.
 
 ## 3. Line, word and document navigation
 
