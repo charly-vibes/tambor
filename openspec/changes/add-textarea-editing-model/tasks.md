@@ -27,9 +27,9 @@ section 7.
 
 ## 4. Goal-column vertical movement
 
-- [ ] 4.1 Red: up-then-down returns; goal x survives a short line;
+- [x] 4.1 Red: up-then-down returns; goal x survives a short line;
       first/last line edges; horizontal moves reset `goalX`.
-- [ ] 4.2 Green: `Metrics` interface, fixed-width test stub, vertical
+- [x] 4.2 Green: `Metrics` interface, fixed-width test stub, vertical
       move.
 
 ## 5. Multi-line hit-test
