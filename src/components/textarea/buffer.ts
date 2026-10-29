@@ -33,6 +33,49 @@ export function initialEditorBuffer(
   return { text, anchor: anchor ?? head, head, goalX };
 }
 
+// Design D3 (task 4): geometry is injected, not ambient — operations that
+// reason about widths take a Metrics { measure; lineHeight }; the fixed-width
+// stub is the headless default and the DOM and canvas backends supply their
+// own measure (and the hit-test layer its line pitch).
+export interface Metrics {
+  readonly measure: (text: string) => number;
+  readonly lineHeight: number;
+}
+
+// The headless fixed-width stub (design D3): every character is 8 x units
+// wide with a line pitch of 16; tests inject their own stub.
+export const fixedMetrics: Metrics = {
+  measure: (text: string) => text.length * 8,
+  lineHeight: 16,
+};
+
+// The goal x offset (design D4) of the cursor `head` within its line, under
+// the injected measure: the width of the line content before the head.
+function goalXOf(text: string, head: number, metrics: Metrics): number {
+  return metrics.measure(text.slice(lineRange(text, head).start, head));
+}
+
+// The boundary in a line (design D4): the offset into the line whose x under
+// the injected measure is nearest the goal x, or the line end when the line
+// is shorter than the goal (the line end is the last boundary).
+function lineLandingBoundary(
+  lineText: string,
+  goalX: number,
+  metrics: Metrics,
+): number {
+  let best = 0;
+  let bestDist = Number.POSITIVE_INFINITY;
+  for (let rel = 0; rel <= lineText.length; rel += 1) {
+    const x = metrics.measure(lineText.slice(0, rel));
+    const dist = Math.abs(x - goalX);
+    if (dist < bestDist) {
+      bestDist = dist;
+      best = rel;
+    }
+  }
+  return best;
+}
+
 // Grapheme cluster boundaries of a text as sorted string indices: the
 // set of cluster-start offsets including 0 and the text length. Uses
 // Intl.Segmenter with granularity "grapheme"; indices are string indices
@@ -63,13 +106,14 @@ export function moveByCluster(
   s: EditorBufferState,
   dir: -1 | 1,
   extend = false,
+  metrics: Metrics = fixedMetrics,
 ): EditorBufferState {
   const text = s.text ?? "";
-  const len = text.length;
-  const head = Math.min(Math.max(s.head, 0), len);
+  const head = Math.min(Math.max(s.head, 0), text.length);
   const bounds = clusterBoundaries(text);
   const idx = bounds.indexOf(head);
-  const next = dir === 1 ? bounds[idx + 1] ?? head : bounds[idx - 1] ?? head;
+  const next =
+    dir === 1 ? (bounds[idx + 1] ?? head) : (bounds[idx - 1] ?? head);
   let headN = next;
   let anchorN = s.anchor;
   if (!extend && anchorN !== head) {
@@ -78,7 +122,8 @@ export function moveByCluster(
     headN = dir === 1 ? head : anchorN;
     anchorN = headN;
   }
-  return { ...s, head: headN, anchor: anchorN };
+  const goalX = goalXOf(text, headN, metrics);
+  return { ...s, head: headN, anchor: anchorN, goalX };
 }
 
 // The line boundary kinds: the start of the current line or the end
@@ -166,66 +211,76 @@ function stepHead(
   return { ...s, head: headN, anchor: headN };
 }
 
+// The content range [start, end) of the line containing `head`: the line
+// content runs from the first character after the previous newline to the
+// next newline (or the end of text on the last line).
+function lineRange(text: string, head: number): { start: number; end: number } {
+  let start = 0;
+  for (let i = head - 1; i >= 0; i -= 1) {
+    if (text[i] === "\n") {
+      start = i + 1;
+      break;
+    }
+  }
+  let end = text.length;
+  for (let i = head; i < text.length; i += 1) {
+    if (text[i] === "\n") {
+      end = i;
+      break;
+    }
+  }
+  return { start, end };
+}
+
 // Move the cursor to a line boundary (task 3.1): the line is delimited by
 // newline characters, "end" stops before the next newline (or at the end
 // of text on the last line) and "start" is the first index of the current
-// line. Idempotent at the edges. Pure: the input state is not mutated and
-// a fresh state is returned.
+// line. Any horizontal move resets the goal x to the new position under
+// the injected measure (design D4). Idempotent at the edges. Pure: the
+// input state is not mutated and a fresh state is returned.
 export function moveToLineBoundary(
   s: EditorBufferState,
   boundary: LineBoundary,
   extend = false,
+  metrics: Metrics = fixedMetrics,
 ): EditorBufferState {
   const text = s.text ?? "";
-  const len = text.length;
-  const head = Math.min(Math.max(s.head, 0), len);
-  let target: number;
-  if (boundary === "start") {
-    let lineStart = 0;
-    for (let i = head - 1; i >= 0; i -= 1) {
-      if (text[i] === "\n") {
-        lineStart = i + 1;
-        break;
-      }
-    }
-    target = lineStart;
-  } else {
-    let lineEnd = len;
-    for (let i = head; i < len; i += 1) {
-      if (text[i] === "\n") {
-        lineEnd = i;
-        break;
-      }
-    }
-    target = lineEnd;
-  }
+  const range = lineRange(text, Math.min(Math.max(s.head, 0), text.length));
+  const target = boundary === "start" ? range.start : range.end;
   const dir: -1 | 1 = boundary === "start" ? -1 : 1;
-  return stepHead(s, target, dir, extend);
+  const moved = stepHead(s, target, dir, extend);
+  return { ...moved, goalX: goalXOf(text, moved.head, metrics) };
 }
 
 // Move the cursor to a document boundary (task 3.1): "start" lands at 0
-// and "end" at the end of the text. Idempotent at the edges. Pure.
+// and "end" at the end of the text. Any horizontal move resets the goal x
+// to the new position under the injected measure (design D4). Idempotent
+// at the edges. Pure.
 export function moveToDocumentBoundary(
   s: EditorBufferState,
   boundary: DocumentBoundary,
   extend = false,
+  metrics: Metrics = fixedMetrics,
 ): EditorBufferState {
   const text = s.text ?? "";
-  const len = text.length;
-  const target = boundary === "start" ? 0 : len;
+  const target = boundary === "start" ? 0 : text.length;
   const dir: -1 | 1 = boundary === "start" ? -1 : 1;
-  return stepHead(s, target, dir, extend);
+  const moved = stepHead(s, target, dir, extend);
+  return { ...moved, goalX: goalXOf(text, moved.head, metrics) };
 }
 
 // Move the cursor by one word in `dir` (1 = forward, -1 = backward) using
 // the class-based word rule (design D7): a word is a run of letters,
 // digits and underscore; whitespace and each punctuation run is its own
 // stop, so word moves are deterministic and headless. Moving past the
-// first/last word is a no-op (task 3 keeps indices in range). Pure.
+// first/last word is a no-op (task 3 keeps indices in range). Any
+// horizontal move resets the goal x to the new position under the
+// injected measure (design D4). Pure.
 export function moveByWord(
   s: EditorBufferState,
   dir: -1 | 1,
   extend = false,
+  metrics: Metrics = fixedMetrics,
 ): EditorBufferState {
   const text = s.text ?? "";
   const len = text.length;
@@ -248,7 +303,61 @@ export function moveByWord(
       next = prevWordEnd(text, head);
     }
   }
-  return stepHead(s, next, dir, extend);
+  const moved = stepHead(s, next, dir, extend);
+  return { ...moved, goalX: goalXOf(text, moved.head, metrics) };
+}
+
+// The boundary a vertical move lands on: the target line's boundary nearest
+// the goal x, or the line end when the line is shorter (design D4).
+function verticalLanding(
+  text: string,
+  range: { start: number; end: number },
+  dir: -1 | 1,
+  goalX: number,
+  metrics: Metrics,
+): number {
+  const movingDown = dir === 1;
+  let base: number;
+  let lineEnd: number;
+  if (movingDown) {
+    base = range.end + 1;
+    const nextNL = text.indexOf("\n", base);
+    lineEnd = nextNL === -1 ? text.length : nextNL;
+  } else {
+    const prevNL = range.start - 1;
+    base = prevNL < 0 ? 0 : text.lastIndexOf("\n", prevNL - 1) + 1;
+    lineEnd = prevNL;
+  }
+  const line = text.slice(base, lineEnd);
+  return base + lineLandingBoundary(line, goalX, metrics);
+}
+
+// Move the cursor by one line in `dir` (1 = down, -1 = up) preserving the
+// goal x offset (design D4): the cursor lands on the boundary in the target
+// line nearest to the goal x under the injected measure, or on the line end
+// when the line is shorter, and consecutive up/down moves reuse the goal x.
+// Up on the first line and down on the last line move to document start and
+// end respectively. Pure: the input state is not mutated and a fresh state is
+// returned; the vertical move keeps the goal x (it is not a horizontal move).
+export function moveByLine(
+  s: EditorBufferState,
+  dir: -1 | 1,
+  metrics: Metrics,
+  extend = false,
+): EditorBufferState {
+  const text = s.text ?? "";
+  const len = text.length;
+  const range = lineRange(text, Math.min(Math.max(s.head, 0), len));
+  const movingDown = dir === 1;
+  const atEdge = movingDown ? range.end >= len : range.start <= 0;
+  if (atEdge) {
+    const next = movingDown ? len : 0;
+    const moved = stepHead(s, next, movingDown ? 1 : -1, extend);
+    return { ...moved, goalX: s.goalX };
+  }
+  const landing = verticalLanding(text, range, dir, s.goalX, metrics);
+  const moved = stepHead(s, landing, dir, extend);
+  return { ...moved, goalX: s.goalX };
 }
 
 // Select all: the selection spans the whole text (anchor 0 .. head len);
