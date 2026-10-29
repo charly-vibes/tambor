@@ -1,6 +1,6 @@
 // Purpose: the editor buffer — the headless pure editing model over
-//   { text, anchor, head, goalX } that the textarea's `extended`
-//   profile routes through (openspec/specs/editor-buffer/spec.md).
+//   { text, anchor, head, goalX } plus the task-6 undo timeline that the
+//   textarea's `extended` profile routes through (openspec/specs/editor-buffer/spec.md).
 // Responsibilities: the buffer state type, the grapheme cluster
 //   boundary helper (Intl.Segmenter, granularity "grapheme") and the
 //   task-1 operation slice: move-by-cluster and delete-by-cluster.
@@ -8,24 +8,31 @@
 //   (pure buffer state) and every operation steps over whole grapheme
 //   clusters so no index ever rests inside a cluster (grapheme boundary
 //   snapping). Task 1.2 of tambor-72m lands this Red->Green slice; the
-//   selection model, line/word navigation, goal-column moves, hit-test,
-//   undo and textarea integration land in later tasks.
+//   selection model, line/word navigation, goal-column moves, hit-test
+//   and undo land in later tasks.
 
 import { lineRange } from "./hit-test.ts";
+import { initialUndoHistory, pushDelete, type UndoHistory } from "./undo.ts";
 
 // The multi-line hit-test seam (task 5, design D5) lives in its own module;
 // the buffer re-exports it so the buffer-level API surface stays stable for
 // callers and tests.
 export { indexAt, positionFor } from "./hit-test.ts";
 
+// The undo timeline (task 6, design D6) lives in its own module; the buffer re-exports it (hit-test seam pattern).
+export { insertText, redo, undo } from "./undo.ts";
+export type { UndoEntry, UndoHistory } from "./undo.ts";
+
 // The editor buffer state: the text being edited, the selection (the
-// range between anchor and head, empty exactly when they are equal) and
-// the goal x offset (the horizontal target for vertical movement; task 4).
+// range between anchor and head, empty exactly when they are equal), the
+// goal x offset (task 4) and the task-6 undo timeline (design D6: bounded
+// splice history).
 export interface EditorBufferState {
   readonly text: string | null;
   readonly anchor: number;
   readonly head: number;
   readonly goalX: number;
+  readonly history?: UndoHistory;
 }
 
 // The initial buffer state for a text (nil text -> nil buffer) with the
@@ -37,7 +44,7 @@ export function initialEditorBuffer(
   anchor: number | null = null,
   goalX = 0,
 ): EditorBufferState {
-  return { text, anchor: anchor ?? head, head, goalX };
+  return { text, anchor: anchor ?? head, head, goalX, history: initialUndoHistory() };
 }
 
 // Design D3 (task 4): geometry is injected, not ambient — operations that
@@ -382,5 +389,9 @@ export function deleteByCluster(s: EditorBufferState): EditorBufferState {
   }
   const nextText = text.slice(0, start) + text.slice(end);
   const nextPos = Math.min(start, nextText.length);
-  return { text: nextText, anchor: nextPos, head: nextPos, goalX: s.goalX };
+  const before: readonly [number, number] = anchor !== head
+    ? [Math.min(anchor, head), Math.max(anchor, head)]
+    : [head, head];
+  const nextHistory = pushDelete(s.history ?? initialUndoHistory(), start, text.slice(start, end), before, [nextPos, nextPos]);
+  return { text: nextText, anchor: nextPos, head: nextPos, goalX: s.goalX, history: nextHistory };
 }

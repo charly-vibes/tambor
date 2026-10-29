@@ -41,9 +41,9 @@ section 7.
 
 ## 6. Undo and redo
 
-- [ ] 6.1 Red: edit-then-undo identity; redo undoes undo; branch on act;
+- [x] 6.1 Red: edit-then-undo identity; redo undoes undo; branch on act;
       coalescing of one word; bounded length.
-- [ ] 6.2 Green: splice history with selection before/after, coalescing
+- [x] 6.2 Green: splice history with selection before/after, coalescing
       rule (whitespace, newline, jump, `now` gap), limit prop.
 
 ## 7. Textarea integration
