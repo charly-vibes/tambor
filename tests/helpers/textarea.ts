@@ -83,6 +83,6 @@ export function render(state: HarnessState, overrides: PropsOverrides = {}) {
 export function send(state: HarnessState, event: TamborEvent, overrides: PropsOverrides = {}) {
   const tree = render(state, overrides);
   const intents: IntentList = dispatch(tree, event);
-  const applied = applyTextareaIntents(state, intents);
+  const applied = applyTextareaIntents(state, intents, { profile: overrides.profile, metrics: overrides.metrics });
   return { tree, intents, state: applied.state, external: applied.external };
 }
