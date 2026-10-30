@@ -26,7 +26,7 @@ import fc from "fast-check";
 
 import { keyPress, mouseDown } from "../src/events/event.ts";
 import { clusterBoundaries } from "../src/components/textarea/buffer.ts";
-import { EXTRA_PATH, harnessState, send, TEXT_PATH } from "./helpers/textarea.ts";
+import { harnessState, send, TEXT_PATH } from "./helpers/textarea.ts";
 import type { HarnessState } from "./helpers/textarea.ts";
 import type { TextareaExtra } from "../src/components/textarea/edit.ts";
 
@@ -117,17 +117,21 @@ it("task 7.2 Red→Green: the extended extra map carries goal-x and history", ()
   expect(initial["goal-x"]).toBe(null);
   expect(initial.history.entries.length).toBe(0);
 
-  const moved = send(harnessState("hello world", { cursor: 0 }), keyPress("right"), { profile: "extended", metrics: METRICS });
+  const moved = send(harnessState("hello world", { cursor: 0 }, TEXT_PATH), keyPress("right"), { profile: "extended", metrics: METRICS });
   expect(moved.state["textarea-state"]["goal-x"]).toBe(8);
 });
 
 // Task 7.2 Red→Green — an extended pointer down resolves its index with
-// the buffer's multi-line hit-test (design D5): a click on the third row
-// of three-line text lands in the third line.
+// the buffer's multi-line hit-test (design D5): a click that lands in the
+// second row of two-line text resolves within that line (the membrane
+// backend service is single-line and ignores y).
 it("task 7.2 Red→Green: an extended pointer down resolves through the multi-line hit-test", () => {
-  const state = harnessState("aaa\nbbb\nccc", { cursor: 0 }, TEXT_PATH);
-  const res = send(state, mouseDown([0, 32]), { profile: "extended", metrics: METRICS });
-  expect(res.state["textarea-state"].cursor).toBe(8);
+  const state = harnessState("ab\ncd", { cursor: 0 }, TEXT_PATH);
+  // frame position [5, 4] is the node-local position minus the bordered
+  // frame padding (padX 5, padY 2): text position [0, 2] is the second row
+  // (line pitch 2 under the injected stub metrics)
+  const res = send(state, mouseDown([5, 4]), { profile: "extended", metrics: { ...METRICS, lineHeight: 2 } });
+  expect(res.state["textarea-state"].cursor).toBe(3);
 });
 
 // Task 7.3 Red→Green — the shared op-sequence property: under `"extended"`
@@ -137,12 +141,13 @@ it("task 7.3 Red→Green: under extended the editor-buffer invariants hold after
   const texts = fc
     .array(fc.constantFrom("a", "b", " ", "\n", "é"), { maxLength: 3 })
     .map((arr) => arr.join(""));
-  const moves = fc.constantFrom("left", "right", "up", "down");
+  type MoveKey = "left" | "right" | "up" | "down";
+  const moveArb = fc.constantFrom<MoveKey>("left", "right", "up", "down");
   const ops = fc
     .array(
       fc.record({
         kind: fc.constantFrom("key", "pointer"),
-        key: fc.option(fc.constantFrom(moves), { freq: 1 }),
+        key: fc.option(moveArb, { freq: 1 }),
         shift: fc.option(fc.constant(true), { freq: 1 }),
         ctrl: fc.option(fc.constant(true), { freq: 1 }),
         pos: fc.option(fc.tuple(fc.integer({ min: 0, max: 40 }), fc.integer({ min: 0, max: 64 })), { freq: 1 }),
@@ -153,7 +158,7 @@ it("task 7.3 Red→Green: under extended the editor-buffer invariants hold after
 
   fc.assert(
     fc.property(texts, fc.integer({ min: 0, max: 6 }), ops, (text, cursor, opList) => {
-      let state: HarnessState = harnessState(text.length > 0 ? text : null, { cursor, "goal-x": 0 }, TEXT_PATH);
+      let state: HarnessState = harnessState(text.length > 0 ? text : null, { cursor: Math.min(cursor, text.length), "goal-x": 0 }, TEXT_PATH);
       for (const op of opList) {
         const event = op.kind === "key"
           ? keyPress(op.key ?? "left", {

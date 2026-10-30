@@ -48,12 +48,12 @@ section 7.
 
 ## 7. Textarea integration
 
-- [ ] 7.1 Red: the existing `components-textarea-*` tests pass
+- [x] 7.1 Red: the existing `components-textarea-*` tests pass
       unchanged with no `profile` prop (regression gate, run first).
-- [ ] 7.2 Red→Green: `profile` prop; extended key routing (D8); pointer
+- [x] 7.2 Red→Green: `profile` prop; extended key routing (D8); pointer
       placement via the buffer; `goal-x` and `history` in the extra map;
       atomic multi-path updates.
-- [ ] 7.3 Red→Green: shared op-sequence property — under `"extended"`
+- [x] 7.3 Red→Green: shared op-sequence property — under `"extended"`
       the invariants of `editor-buffer` hold after any generated mix of
       key and pointer events.
 

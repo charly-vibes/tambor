@@ -30,7 +30,8 @@
 import { onPairs, type Intent } from "../../events/bubble.ts";
 import { bounds, label, rectangle, translate, withColor, withStyle, type Color, type Elem, type Vec2 } from "../../views/model.ts";
 import type { Path } from "../../effects/paths.ts";
-import type { TextareaExtra } from "./edit.ts";
+import { fixedMetrics, type Metrics } from "./buffer.ts";
+import { DEFAULT_TEXTAREA_PROFILE, type TextareaExtra, type TextareaProfile } from "./edit.ts";
 import { onClipboard, onKeyPress, onMouseDown, onMouseMove, onMouseUp, selectionRange, type TextareaCtx } from "./handlers.ts";
 
 // The variants of border_default: bordered is the default.
@@ -72,6 +73,10 @@ export interface TextareaProps {
   readonly variant?: TextareaVariant;
   /** the clock for the double-click detector; defaults to Date.now() */
   readonly now?: number;
+  /** the opt-in editing profile (design D1); defaults to "membrane" */
+  readonly profile?: TextareaProfile;
+  /** the injected geometry for the buffer's goal-column moves (design D3) */
+  readonly metrics?: Metrics;
 }
 
 // Deep equality for path values (focus_by_path: context focus
@@ -142,6 +147,8 @@ export function textarea(props: TextareaProps): Elem {
     extra: props.state,
     t,
     focused,
+    profile: props.profile ?? DEFAULT_TEXTAREA_PROFILE,
+    metrics: props.metrics ?? fixedMetrics,
     u: (key, value): Intent => [
       "update",
       [...props.extraPath, ["keypath", key]],

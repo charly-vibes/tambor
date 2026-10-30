@@ -215,7 +215,10 @@ function stepHead(
   const head = Math.min(Math.max(s.head, 0), len);
   const headN = Math.min(Math.max(next, 0), len);
   if (extend) {
-    const anchor = s.anchor === s.head ? next : s.anchor;
+    // the anchor is the pre-move head: a shift move extends the
+    // selection from where it started (an empty selection extends from
+    // the cursor itself)
+    const anchor = s.anchor === s.head ? s.head : s.anchor;
     return { ...s, head: headN, anchor };
   }
   if (s.anchor !== head) {

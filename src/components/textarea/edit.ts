@@ -1,23 +1,31 @@
 // Purpose: the textarea's editing state and effect interpreter — the
 //   second half of the basic_components.cljc textarea port.
 // Responsibilities: the textarea-state extra map (cursor, select-cursor,
-//   down-pos, mpos, last-click — text_state_split), and
+//   down-pos, mpos, last-click, goal-x and history — text_state_split plus
+//   the extended profile's state, design D4/D6), and
 //   applyTextareaIntents, the interpreter for the intents the textarea's
 //   handlers return: it applies the editing effects (insert-text,
 //   insert-newline, delete-backward, backward-char, forward-char,
-//   previous-line, next-line) and raw update effects against the state,
-//   and returns the external intents (request-focus, clipboard-copy,
+//   previous-line, next-line, and the extended profile's select-all,
+//   undo, redo and move operations) and raw update effects against the
+//   state, and returns the external intents (request-focus, clipboard-copy,
 //   clipboard-cut) untouched for the app-level dispatcher.
 // Rationale: openspec/specs/components-textarea/spec.md is the design authority —
 //   editing state is split (text and focus in app state, cursor,
 //   select-cursor, down-pos, mpos and last-click in the textarea-state
 //   extra map), editing effects carry their text and extra paths as
 //   data so they remain replaceable intents, and every editing op keeps
-//   0 <= cursor <= len(text) (cursor_clamped).
+//   0 <= cursor <= len(text) (cursor_clamped). Under the opt-in "extended"
+//   profile the editing effects route through the editor-buffer operations
+//   (design D8) and write the buffer result back through the same paths in
+//   one atomic pass (text, cursor, selection, goal-x, history).
 
 import { select, setPath, updatePath, type Path } from "../../effects/paths.ts";
 import type { Intent, IntentList } from "../../events/bubble.ts";
 import type { Vec2 } from "../../views/model.ts";
+import { initialUndoHistory, type UndoHistory } from "./undo.ts";
+import { fixedMetrics, type Metrics } from "./buffer.ts";
+import { applyBufferIntent } from "./buffer-edit.ts";
 
 // The last click, for the double-click detector (double_click_word:
 // within 500 ms and squared distance under 100 of the previous click).
@@ -27,14 +35,29 @@ export interface LastClick {
 }
 
 // The textarea-state extra map (text_state_split): everything the
-// textarea edits that is NOT the text or the focus.
+// textarea edits that is NOT the text or the focus, plus the extended
+// profile's own state keys (design D4 goal-x, design D6 history) that the
+// editor-buffer carries as pure buffer state (openspec/changes/
+// add-textarea-editing-model/specs/components-textarea/spec.md,
+// Extended state placement).
 export interface TextareaExtra {
   readonly cursor: number;
   readonly "select-cursor": number | null;
   readonly "down-pos": Vec2 | null;
   readonly mpos: Vec2 | null;
   readonly "last-click": LastClick | null;
+  /** design D4: the goal x offset kept across vertical moves; nil before any move */
+  readonly "goal-x": number | null;
+  /** design D6: the bounded undo timeline; empty until the first edit */
+  readonly history: UndoHistory;
 }
+
+// The opt-in editing profile (design D1): "membrane" (the default; the
+// faithful baseline with its advisory quirks) and "extended" (the
+// editor-buffer-routed model).
+export type TextareaProfile = "membrane" | "extended";
+
+export const DEFAULT_TEXTAREA_PROFILE: TextareaProfile = "membrane";
 
 export function initialTextareaExtra(over: Partial<TextareaExtra> = {}): TextareaExtra {
   return {
@@ -43,6 +66,8 @@ export function initialTextareaExtra(over: Partial<TextareaExtra> = {}): Textare
     "down-pos": null,
     mpos: null,
     "last-click": null,
+    "goal-x": null,
+    history: initialUndoHistory(),
     ...over,
   };
 }
@@ -52,43 +77,80 @@ export function initialTextareaExtra(over: Partial<TextareaExtra> = {}): Textare
 // applies itself). External intents (request-focus, the clipboard
 // effects — applied by the top-level handler and the effect
 // dispatcher's backend service respectively) and unknown intents pass
-// through unchanged.
-type EditApplier = (state: unknown, intent: Intent) => unknown;
+// through unchanged. The membrane applier keeps the faithful baseline
+// ops; the extended applier routes through the editor-buffer operations
+// (design D8) and writes the buffer result back through the same paths.
+type EditApplier = (
+  state: unknown,
+  intent: Intent,
+  profile: TextareaProfile,
+  metrics: Metrics,
+) => unknown;
 
 const rest = (intent: Intent): readonly unknown[] => intent.slice(1) as readonly unknown[];
 
 const EDIT_OPS: Readonly<Record<string, EditApplier>> = {
-  "update": (s, it) => updatePath(s, rest(it)[0] as Path, rest(it)[1] as (old: unknown) => unknown),
-  "insert-text": (s, it) => withPaths(s, rest(it)[1] as Path, rest(it)[2] as Path, (t, c, sc) =>
-    insertOp(t, c, sc, rest(it)[0] as string)),
-  "insert-newline": (s, it) => withPaths(s, rest(it)[0] as Path, rest(it)[1] as Path, (t, c, sc) =>
-    insertOp(t, c, sc, "\n")),
-  "delete-backward": (s, it) => withPaths(s, rest(it)[0] as Path, rest(it)[1] as Path, deleteOp),
-  "backward-char": (s, it) => withPaths(s, rest(it)[0] as Path, rest(it)[1] as Path, (t, c, sc) =>
-    charOp(t, c, sc, "backward")),
-  "forward-char": (s, it) => withPaths(s, rest(it)[0] as Path, rest(it)[1] as Path, (t, c, sc) =>
-    charOp(t, c, sc, "forward")),
-  "previous-line": (s, it) => withPaths(s, rest(it)[0] as Path, rest(it)[1] as Path, (t, c, sc) =>
-    lineOp(t, c, sc, "prev")),
-  "next-line": (s, it) => withPaths(s, rest(it)[0] as Path, rest(it)[1] as Path, (t, c, sc) =>
-    lineOp(t, c, sc, "next")),
+  "update": (s, it, _p, _m) => updatePath(s, rest(it)[0] as Path, rest(it)[1] as (old: unknown) => unknown),
+  "insert-text": (s, it, profile, metrics) => profile === "extended"
+    ? applyBufferIntent(s, it, metrics)
+    : withPaths(s, rest(it)[1] as Path, rest(it)[2] as Path, (t, c, sc) => insertOp(t, c, sc, rest(it)[0] as string)),
+  "insert-newline": (s, it, profile, metrics) => profile === "extended"
+    ? applyBufferIntent(s, it, metrics)
+    : withPaths(s, rest(it)[0] as Path, rest(it)[1] as Path, (t, c, sc) => insertOp(t, c, sc, "\n")),
+  "delete-backward": (s, it, profile, _metrics) => profile === "extended"
+    ? applyBufferIntent(s, it, _metrics)
+    : withPaths(s, rest(it)[0] as Path, rest(it)[1] as Path, deleteOp),
+  "backward-char": (s, it, profile, metrics) => profile === "extended"
+    ? applyBufferIntent(s, it, metrics)
+    : withPaths(s, rest(it)[0] as Path, rest(it)[1] as Path, (t, c, sc) => charOp(t, c, sc, "backward")),
+  "forward-char": (s, it, profile, metrics) => profile === "extended"
+    ? applyBufferIntent(s, it, metrics)
+    : withPaths(s, rest(it)[0] as Path, rest(it)[1] as Path, (t, c, sc) => charOp(t, c, sc, "forward")),
+  "previous-line": (s, it, profile, metrics) => profile === "extended"
+    ? applyBufferIntent(s, it, metrics)
+    : withPaths(s, rest(it)[0] as Path, rest(it)[1] as Path, (t, c, sc) => lineOp(t, c, sc, "prev")),
+  "next-line": (s, it, profile, metrics) => profile === "extended"
+    ? applyBufferIntent(s, it, metrics)
+    : withPaths(s, rest(it)[0] as Path, rest(it)[1] as Path, (t, c, sc) => lineOp(t, c, sc, "next")),
+  "backward-word": (s, it, _profile, metrics) => applyBufferIntent(s, it, metrics),
+  "forward-word": (s, it, _profile, metrics) => applyBufferIntent(s, it, metrics),
+  "move-to-line-start": (s, it, _profile, metrics) => applyBufferIntent(s, it, metrics),
+  "move-to-line-end": (s, it, _profile, metrics) => applyBufferIntent(s, it, metrics),
+  "move-to-document-start": (s, it, _profile, metrics) => applyBufferIntent(s, it, metrics),
+  "move-to-document-end": (s, it, _profile, metrics) => applyBufferIntent(s, it, metrics),
+  "select-all": (s, it, _p, _m) => applyBufferIntent(s, it, _m),
+  "undo": (s, it, _p, _m) => applyBufferIntent(s, it, _m),
+  "redo": (s, it, _p, _m) => applyBufferIntent(s, it, _m),
 };
+
+// The options of applyTextareaIntents: the editing profile under which
+// the intents are applied (design D1) and the injected geometry
+// (design D3).
+export interface TextareaIntentOptions {
+  readonly profile?: TextareaProfile | undefined;
+  readonly metrics?: Metrics | undefined;
+}
 
 // Apply the textarea's intents against the state, in order. Editing
 // effects read and write through their carried paths; the external
 // intents (request-focus, the clipboard effects — applied by the
 // top-level handler and the effect dispatcher's backend service
-// respectively) pass through unchanged.
+// respectively) pass through unchanged. Under the extended profile the
+// editing effects route through the editor-buffer operations and write
+// the buffer result back through the same paths in one atomic pass.
 export function applyTextareaIntents<S>(
   state: S,
   intents: IntentList,
+  options: TextareaIntentOptions = {},
 ): { state: S; external: IntentList } {
+  const profile = options.profile ?? DEFAULT_TEXTAREA_PROFILE;
+  const metrics = options.metrics ?? fixedMetrics;
   let out: unknown = state;
   const external: Intent[] = [];
   for (const intent of intents) {
     const edit = EDIT_OPS[intent[0] as string];
     if (edit !== undefined) {
-      out = edit(out, intent);
+      out = edit(out, intent, profile, metrics);
       continue;
     }
     // an intent this interpreter does not know is not ours to
