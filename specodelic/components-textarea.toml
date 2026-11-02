@@ -21,7 +21,7 @@ traces_to = "[[components.textarea]]"
 [[constraints]]
 id = "key_map"
 kind = "invariant"
-expr = "up, down, left, right, enter and backspace map to previous-line, next-line, backward-char, forward-char, insert-newline and delete-backward, any string inserts text, and any other key is ignored"
+expr = "in the membrane profile up, down, left, right, enter and backspace map to previous-line, next-line, backward-char, forward-char, insert-newline and delete-backward, any string inserts text, and any other key is ignored"
 traces_to = "[[components.textarea]]"
 
 [[constraints]]
@@ -50,14 +50,14 @@ traces_to = "[[components.textarea]]"
 
 [[constraints]]
 id = "previous_line_quirk"
-kind = "invariant"
-expr = "previous-line clears the selection and sets the cursor to the index of the last newline at or before c - 1, or to 0 when there is none, which is the newline character itself and not the line start"
+kind = "advisory"
+expr = "in the membrane profile previous-line clears the selection and sets the cursor to the index of the last newline at or before c - 1, or to 0 when there is none, which is the newline character itself and not the line start; the extended profile replaces it with the goal-column move"
 traces_to = "[[components.textarea]]"
 
 [[constraints]]
 id = "next_line_rule"
-kind = "invariant"
-expr = "next-line clears the selection and sets the cursor to one past the next newline at or after c, or to len(text) when there is none"
+kind = "advisory"
+expr = "in the membrane profile next-line clears the selection and sets the cursor to one past the next newline at or after c, or to len(text) when there is none; the extended profile replaces it with the goal-column move"
 traces_to = "[[components.textarea]]"
 
 [[constraints]]
@@ -130,4 +130,34 @@ traces_to = "[[components.textarea]]"
 id = "ime_compose"
 kind = "advisory"
 expr = "composition input from a mobile keyboard is applied as one insert-text at the end of composition"
+traces_to = "[[components.textarea]]"
+
+[[constraints]]
+id = "extended_profile"
+kind = "invariant"
+expr = 'the textarea has an opt-in profile prop: "membrane" is the default and keeps every baseline behavior, and "extended" routes the editing effects through the editor buffer, so the acceptance baseline stays intact'
+traces_to = "[[components.textarea]]"
+
+[[constraints]]
+id = "extended_key_map"
+kind = "invariant"
+expr = "under the extended profile up and down move by goal column, shift extends the selection of any move, home and end move to line start and end, and ctrl or meta with left, right, home or end moves by word or to document start and end"
+traces_to = "[[components.textarea]]"
+
+[[constraints]]
+id = "extended_shortcuts"
+kind = "invariant"
+expr = "under the extended profile ctrl or meta with a selects all, with z undoes, and with shift and z or with y redoes, each as a data intent against the textarea state, and the named key delete deletes forward and is never inserted as text"
+traces_to = "[[components.textarea]]"
+
+[[constraints]]
+id = "extended_state_placement"
+kind = "invariant"
+expr = "the extended profile's own state (the goal x and the undo history) lives in the textarea-state extra map, and one edit writes the text, the cursor, the selection, the goal x and the history in a single atomic pass"
+traces_to = "[[components.textarea]]"
+
+[[constraints]]
+id = "extended_pointer_placement"
+kind = "invariant"
+expr = "under the extended profile a pointer down resolves its index through the editor buffer's multi-line hit-test and sets the goal x from the resolved position"
 traces_to = "[[components.textarea]]"

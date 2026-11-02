@@ -61,7 +61,27 @@ button, checkbox, on-hover -> components.hover.*
 | mouse-down at [15 15] on translate(10 10) returns `[[:say-hello]]` | event.model.p_local |
 
 ## Faithful quirks recorded (deliberately preserved, flagged in the spec)
-- previous-line lands on the newline char, not line start (components.textarea.p_prev_line)
+- previous-line lands on the newline char, not line start (components.textarea.p_prev_line) — the membrane profile only; the extended profile replaces it with the goal-column move
 - hover-leave bound check is inclusive; hit-test is half-open (components.hover.p_leave vs event.model.p_half_open)
 - file-selector lowercases the name but not the filter (example.file_selector.p_filter)
 - clipboard events are not forwarded by `defui` components (component.model.p_clipboard, advisory fix)
+
+## src/components/textarea — the editing model (tambor's own, not a Membrane port)
+| Scenario | Spec property |
+|---|---|
+| operations never mutate the buffer and keep both indices in range | editor.buffer.p_buffer_pure |
+| no index ever rests inside a grapheme cluster | editor.buffer.p_grapheme_snapping |
+| shift extends, a plain move collapses to the selection edge, select-all spans the text | editor.buffer.p_selection_model |
+| line, word and document moves land on the specified boundaries | editor.buffer.p_navigation_moves |
+| up and down keep the goal x across a short line | editor.buffer.p_goal_column |
+| indexAt(positionFor(i)) returns i and y selects the line | editor.buffer.p_hit_test |
+| undo restores the text and selection, redo reapplies, typing coalesces, the history is bounded | editor.buffer.p_undo_history |
+| a forward delete takes the whole cluster after the cursor | editor.buffer.p_forward_delete |
+| the default profile keeps the Membrane behavior, the extended profile routes edits through the buffer | components.textarea.p_profile_default |
+| extended up and down keep the goal column, shift extends, home and end move within the line | components.textarea.p_extended_keys |
+| extended ctrl+z undoes, meta+a selects all, the delete key deletes forward | components.textarea.p_extended_shortcuts |
+| the goal x and the undo history live in the textarea-state extra map | components.textarea.p_extended_state |
+| an extended pointer down resolves through the multi-line hit-test | components.textarea.p_extended_pointer |
+| the soft-keyboard bridge maps Home, End and Delete to named key-press events | ui.mobile.p_bridge_named |
+| the bridge carries the modifier flags of a hardware key-down | ui.mobile.p_bridge_modifiers |
+| the bridge never case-folds a named key and composed text keeps its casing | ui.mobile.p_bridge_case |

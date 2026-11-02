@@ -1,0 +1,14 @@
+archetype = "PF"
+authored_with = "0.12.0"
+derived_from = "p_extended_pointer@b04650ae141b"
+description = "the cursor resolves within the second line"
+falsifiability_class = "safety"
+id = "p-extended-pointer"
+status = "active"
+superseded_by = ""
+
+[[tests.shell]]
+command = "tools/scaffold-check.sh components-textarea p-extended-pointer"
+
+[[tests.vitest]]
+flags = "--testNamePattern=^p_extended_pointer:"

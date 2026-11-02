@@ -1,0 +1,14 @@
+archetype = "PF"
+authored_with = "0.12.0"
+derived_from = "p_goal_column@5370d9810331"
+description = "up then down returns to the original index, the goal x survives a short line, and a horizontal move resets it"
+falsifiability_class = "safety"
+id = "p-goal-column"
+status = "active"
+superseded_by = ""
+
+[[tests.shell]]
+command = "tools/scaffold-check.sh editor-buffer p-goal-column"
+
+[[tests.vitest]]
+flags = "--testNamePattern=^p_goal_column:"

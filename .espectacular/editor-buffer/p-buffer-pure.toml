@@ -1,0 +1,14 @@
+archetype = "PF"
+authored_with = "0.12.0"
+derived_from = "p_buffer_pure@a7b0d6cbed8b"
+description = "the input state is unchanged by each operation and anchor and head stay within 0..len(text) after every step"
+falsifiability_class = "safety"
+id = "p-buffer-pure"
+status = "active"
+superseded_by = ""
+
+[[tests.shell]]
+command = "tools/scaffold-check.sh editor-buffer p-buffer-pure"
+
+[[tests.vitest]]
+flags = "--testNamePattern=^p_buffer_pure:"

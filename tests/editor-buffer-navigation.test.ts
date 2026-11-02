@@ -107,7 +107,7 @@ it("word moves at the document edges are no-ops", () => {
 
 // task 3.1 Red — property: word moves stay in range and are idempotent
 // at the edges
-it("p_editor_buffer: word moves stay in range and are idempotent at the edges", () => {
+it("p_navigation_moves: line, word and document moves land on the specified boundaries and stay in range", () => {
   const text = fc
     .array(fc.constantFrom("a", "b", "1", "_", ",", "-", " ", "\n"), { maxLength: 8 })
     .map((arr) => arr.join(""));

@@ -67,14 +67,20 @@ section 7.
 
 ## 9. Corpus and docs
 
-- [ ] 9.1 Add the new constraint and property rows plus one
+- [x] 9.1 Add the new constraint and property rows plus one
       `VERIFIES` scenario per property to
       `openspec/specs/components-textarea/spec.md`, create
       `openspec/specs/editor-buffer/spec.md` in the dual-format layout,
       and extend `ui-mobile` (the delta files here are the source text).
-- [ ] 9.2 Run `ah sync`, `tools/scaffold-check.sh` and
+      (8 editor-buffer rows, 5 extended-profile rows, 3 bridge rows; 16
+      new contracts with vitest bindings, each backed by a dedicated
+      `p_<id>` test.)
+- [x] 9.2 Run `ah sync`, `tools/scaffold-check.sh` and
       `tools/scaffold-debt.sh`; update `TRACEABILITY.md` so the quirks
       read as advisory under the `"membrane"` profile only.
+      (The membrane key map and the two line quirks are now advisory and
+      scoped to the membrane profile; `TRACEABILITY.md` maps the new
+      buffer and extended-profile properties. Scaffold debt 0.)
 
 ## 10. Demo and acceptance
 

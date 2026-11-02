@@ -1,0 +1,14 @@
+archetype = "PF"
+authored_with = "0.12.0"
+derived_from = "p_extended_shortcuts@6f29fbc4712d"
+description = "the typed text is undone, the text is selected, the cursor moves by word and the delete removes the character after the cursor"
+falsifiability_class = "safety"
+id = "p-extended-shortcuts"
+status = "active"
+superseded_by = ""
+
+[[tests.shell]]
+command = "tools/scaffold-check.sh components-textarea p-extended-shortcuts"
+
+[[tests.vitest]]
+flags = "--testNamePattern=^p_extended_shortcuts:"

@@ -29,6 +29,9 @@ Membrane is mouse-and-keyboard-first and its example targets are tiny (the todo 
 | theme_aware | invariant | colors follow prefers-color-scheme, with explicit tokens for both themes | [[ui.mobile]] |
 | haptics_optional | advisory | a short vibration on button taps where navigator.vibrate exists | [[ui.mobile]] |
 | hover_off_on_touch | invariant | touch input never sets a hover flag and the hover visual is not shown | [[ui.mobile]] |
+| bridge_named_keys | invariant | the soft-keyboard bridge maps the DOM keys Home, End and Delete to the named key-press events home, end and delete | [[ui.mobile]] |
+| bridge_modifiers | invariant | the soft-keyboard bridge carries the modifier flags (shift, ctrl, meta, alt) of a hardware key-down on the key-press event | [[ui.mobile]] |
+| bridge_case | invariant | the soft-keyboard bridge does not alter the case of a named key, and text delivered by an input or a composition-end event becomes a single insert with its original casing | [[ui.mobile]] |
 
 ## Model
 
@@ -66,6 +69,9 @@ Membrane is mouse-and-keyboard-first and its example targets are tiny (the todo 
 | p_theme | unit | [[ui.mobile.theme_aware]] | both color schemes | tokens resolve in each |
 | p_haptics | unit | [[ui.mobile.haptics_optional]] | vibrate present and absent | no error either way |
 | p_no_hover | unit | [[ui.mobile.hover_off_on_touch]] | touch moves over a button | hover? is never set |
+| p_bridge_named | unit | [[ui.mobile.bridge_named_keys]] | keydown events for Home, End and Delete | key-press events named home, end and delete are produced |
+| p_bridge_modifiers | unit | [[ui.mobile.bridge_modifiers]] | keydowns with shift, ctrl, meta and alt set | the key-press event carries every modifier flag |
+| p_bridge_case | unit | [[ui.mobile.bridge_case]] | a composition-end with the data "Éa" and a named key | one key-press with the data "Éa" is produced and the named key keeps its name |
 
 ## Requirements
 
@@ -163,4 +169,24 @@ Every property row SHALL be verified by exactly one dedicated scenario;
 - **WHEN** touch moves over a button
 - **THEN** hover? is never set
 - **VERIFIES** [[ui.mobile.p_no_hover]]
+
+#### Scenario: p_bridge_named
+
+- **WHEN** keydown events for Home, End and Delete are bridged
+- **THEN** key-press events named home, end and delete are produced
+- **VERIFIES** [[ui.mobile.p_bridge_named]]
+
+#### Scenario: p_bridge_modifiers
+
+- **WHEN** keydowns with shift, ctrl, meta and alt set are bridged
+- **THEN** the key-press event carries every modifier flag
+- **VERIFIES** [[ui.mobile.p_bridge_modifiers]]
+
+#### Scenario: p_bridge_case
+
+- **WHEN** a composition-end with the data "Éa" and a named key are
+  bridged
+- **THEN** one key-press with the data "Éa" is produced and the named key
+  keeps its name
+- **VERIFIES** [[ui.mobile.p_bridge_case]]
 

@@ -1,0 +1,14 @@
+archetype = "PF"
+authored_with = "0.12.0"
+derived_from = "p_navigation_moves@18a7ccfe6c99"
+description = "line, word and document moves land on the specified boundaries, word stops are class-based, and the edges are no-ops"
+falsifiability_class = "safety"
+id = "p-navigation-moves"
+status = "active"
+superseded_by = ""
+
+[[tests.shell]]
+command = "tools/scaffold-check.sh editor-buffer p-navigation-moves"
+
+[[tests.vitest]]
+flags = "--testNamePattern=^p_navigation_moves:"

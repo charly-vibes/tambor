@@ -89,3 +89,21 @@ id = "hover_off_on_touch"
 kind = "invariant"
 expr = "touch input never sets a hover flag and the hover visual is not shown"
 traces_to = "[[ui.mobile]]"
+
+[[constraints]]
+id = "bridge_named_keys"
+kind = "invariant"
+expr = "the soft-keyboard bridge maps the DOM keys Home, End and Delete to the named key-press events home, end and delete"
+traces_to = "[[ui.mobile]]"
+
+[[constraints]]
+id = "bridge_modifiers"
+kind = "invariant"
+expr = "the soft-keyboard bridge carries the modifier flags (shift, ctrl, meta, alt) of a hardware key-down on the key-press event"
+traces_to = "[[ui.mobile]]"
+
+[[constraints]]
+id = "bridge_case"
+kind = "invariant"
+expr = "the soft-keyboard bridge does not alter the case of a named key, and text delivered by an input or a composition-end event becomes a single insert with its original casing"
+traces_to = "[[ui.mobile]]"

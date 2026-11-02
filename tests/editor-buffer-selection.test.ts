@@ -16,13 +16,30 @@ import {
   selectAll,
 } from "../src/components/textarea/buffer.ts";
 
-// task 2.1 Red — extend keeps the anchor
-it("shift-extend keeps the anchor while moving the head", () => {
+// p_selection_model — the extend move keeps the anchor
+it("p_selection_model: the extend move keeps the anchor, a plain move collapses to the edge and select-all spans the text", () => {
   const s = initialEditorBuffer("hello world", 3);
   const m1 = moveByCluster(s, 1, true);
   const m2 = moveByCluster(m1, 1, true);
   expect(m2.anchor).toBe(3);
   expect(m2.head).toBe(5);
+
+  // a plain move collapses the selection to the edge in the move's
+  // direction without stepping further
+  const back = moveByCluster(initialEditorBuffer("abcdef", 6, 2), -1, false);
+  expect(back.anchor).toBe(2);
+  expect(back.head).toBe(2);
+  const fwd = moveByCluster(initialEditorBuffer("abcdef", 6, 2), 1, false);
+  expect(fwd.anchor).toBe(6);
+  expect(fwd.head).toBe(6);
+
+  // select-all spans the text, and deleting the selection empties it
+  const all = selectAll(initialEditorBuffer("hello", 0));
+  expect(all.anchor).toBe(0);
+  expect(all.head).toBe(5);
+  const del = deleteByCluster(all);
+  expect(del.text).toBe("");
+  expect(del.head).toBe(0);
 });
 
 // task 2.1 Red — collapse to the selection edge in the move direction

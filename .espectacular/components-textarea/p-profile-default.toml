@@ -1,0 +1,14 @@
+archetype = "PF"
+authored_with = "0.12.0"
+derived_from = "p_profile_default@6a5ee80fb1bf"
+description = "the default keeps the membrane previous-line behavior and the extended profile returns intents for the same events"
+falsifiability_class = "safety"
+id = "p-profile-default"
+status = "active"
+superseded_by = ""
+
+[[tests.shell]]
+command = "tools/scaffold-check.sh components-textarea p-profile-default"
+
+[[tests.vitest]]
+flags = "--testNamePattern=^p_profile_default:"

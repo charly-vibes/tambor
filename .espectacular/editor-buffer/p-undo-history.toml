@@ -1,0 +1,14 @@
+archetype = "PF"
+authored_with = "0.12.0"
+derived_from = "p_undo_history@fbdb37795dca"
+description = "undo restores the text and selection, redo reapplies, an edit after an undo branches, typing coalesces and the history stays bounded"
+falsifiability_class = "safety"
+id = "p-undo-history"
+status = "active"
+superseded_by = ""
+
+[[tests.shell]]
+command = "tools/scaffold-check.sh editor-buffer p-undo-history"
+
+[[tests.vitest]]
+flags = "--testNamePattern=^p_undo_history:"

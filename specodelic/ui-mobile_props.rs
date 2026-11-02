@@ -135,3 +135,29 @@ fn p_haptics() {
 fn p_no_hover() {
     todo_predicate!("hover? is never set");
 }
+
+// id: p_bridge_named
+// generator: keydown events for Home, End and Delete
+// predicate: key-press events named home, end and delete are produced
+#[test]
+fn p_bridge_named() {
+    todo_predicate!("key-press events named home, end and delete are produced");
+}
+
+// id: p_bridge_modifiers
+// generator: keydowns with shift, ctrl, meta and alt set
+// predicate: the key-press event carries every modifier flag
+#[test]
+fn p_bridge_modifiers() {
+    todo_predicate!("the key-press event carries every modifier flag");
+}
+
+// id: p_bridge_case
+// generator: a composition-end with the data "Éa" and a named key
+// predicate: one key-press with the data "Éa" is produced and the named key keeps its name
+#[test]
+fn p_bridge_case() {
+    todo_predicate!(
+        "one key-press with the data \"Éa\" is produced and the named key keeps its name"
+    );
+}

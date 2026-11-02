@@ -1,0 +1,49 @@
+source = "editor.buffer"
+
+[[constraints]]
+id = "buffer_pure"
+kind = "invariant"
+expr = "every operation returns a fresh state and never mutates its input, and after every operation 0 <= anchor and head <= len(text)"
+traces_to = "[[editor.buffer]]"
+
+[[constraints]]
+id = "grapheme_snapping"
+kind = "invariant"
+expr = "anchor and head never rest inside a grapheme cluster: horizontal movement and deletion step over whole clusters (emoji ZWJ sequences, regional-indicator pairs, base plus combining marks) while the index unit stays code points"
+traces_to = "[[editor.buffer]]"
+
+[[constraints]]
+id = "selection_model"
+kind = "invariant"
+expr = "a move with the extend flag moves head and keeps anchor, a move without it collapses the selection to the edge in the move's direction without stepping further, and select-all sets anchor to 0 and head to len(text)"
+traces_to = "[[editor.buffer]]"
+
+[[constraints]]
+id = "navigation_moves"
+kind = "invariant"
+expr = "the buffer provides line-start, line-end, word-backward, word-forward, document-start and document-end moves over newline-delimited lines and class-based word stops, so every stop is deterministic and headless"
+traces_to = "[[editor.buffer]]"
+
+[[constraints]]
+id = "goal_column"
+kind = "invariant"
+expr = "a vertical move keeps the goal x offset: any horizontal move, edit or pointer placement sets goalX from the new head under the injected measure, and consecutive up or down moves reuse it, landing on the boundary in the target line nearest goalX or the line end when the line is shorter"
+traces_to = "[[editor.buffer]]"
+
+[[constraints]]
+id = "hit_test"
+kind = "invariant"
+expr = "indexAt resolves a point (x, y) by choosing the line clamp(floor(y / lineHeight), 0, lines - 1) and then the nearest boundary within that line under the injected single-line measure, and positionFor is its inverse: resolving the position of any boundary index returns that index"
+traces_to = "[[editor.buffer]]"
+
+[[constraints]]
+id = "undo_history"
+kind = "invariant"
+expr = "the buffer keeps a bounded history of splice entries with the selection before and after each edit, undo applies the inverse splice and restores the selection before, redo reapplies, an edit made after an undo discards the redo entries, and consecutive single-character inserts coalesce into one entry until a boundary (whitespace, newline, cursor jump or an elapsed-time gap)"
+traces_to = "[[editor.buffer]]"
+
+[[constraints]]
+id = "forward_delete"
+kind = "invariant"
+expr = "a forward deletion with a non-empty selection deletes the selected range whole, and without one deletes the grapheme cluster immediately after the cursor as a whole cluster while the cursor stays put, and at the end of the text it changes nothing"
+traces_to = "[[editor.buffer]]"

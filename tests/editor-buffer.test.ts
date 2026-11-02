@@ -27,7 +27,7 @@ const clone = (s: EditorBufferState): EditorBufferState => ({ ...s });
 // p_editor_buffer — Requirement: Pure buffer state
 // generator: generated text + generated move sequence
 // predicate: operations never mutate the input and keep indices in 0..len
-it("p_editor_buffer: operations never mutate the input and keep indices in 0..len", () => {
+it("p_buffer_pure: operations never mutate the input and keep indices in 0..len", () => {
   fc.assert(
     fc.property(fc.string({ minLength: 0, maxLength: 8 }), (text) => {
       let s = initialEditorBuffer(text.length > 0 ? text : null, 0);
@@ -56,7 +56,7 @@ it("p_editor_buffer: operations never mutate the input and keep indices in 0..le
 // Task 8.1 Red→Green — delete forward removes the cluster after the
 // cursor as a whole cluster, does nothing at the end of the text, and
 // deletes the selection when there is one.
-it("task 8.1 Red→Green: delete forward removes the whole cluster after the cursor", () => {
+it("p_forward_delete: delete forward removes the whole cluster after the cursor", () => {
   // a ZWJ family is one cluster: the delete takes the whole family
   const family = "👨‍👩‍👧";
   const s = initialEditorBuffer(family + "x", 0);
@@ -79,7 +79,7 @@ it("task 8.1 Red→Green: delete forward removes the whole cluster after the cur
 // generator: generated text over cluster-hostile characters (combining
 // marks, ZWJ sequences, flags, newlines)
 // predicate: moves and deletes never leave an index inside a cluster
-it("p_editor_buffer: moves and deletes never leave an index inside a grapheme cluster", () => {
+it("p_grapheme_snapping: moves and deletes never leave an index inside a grapheme cluster", () => {
   const graphemeText = fc
     .array(
       fc.constantFrom(

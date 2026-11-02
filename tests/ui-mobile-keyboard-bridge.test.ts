@@ -18,7 +18,7 @@ import { bridgeEvents } from "../src/ui/keyboard.ts";
 // The three scenarios of the delta requirement.
 
 // Scenario: Home and End are named
-it("task 8.1 Red→Green: Home and End become named key-press events", () => {
+it("p_bridge_named: Home, End and Delete become named key-press events", () => {
   expect(bridgeEvents({ kind: "keydown", key: "Home" })).toEqual([
     { type: "key-press", key: "home" },
   ]);
@@ -28,7 +28,7 @@ it("task 8.1 Red→Green: Home and End become named key-press events", () => {
 });
 
 // Scenario: modifiers are carried
-it("task 8.1 Red→Green: the modifier flags of a key-down ride along on the key-press event", () => {
+it("p_bridge_modifiers: the modifier flags of a key-down ride along on the key-press event", () => {
   expect(bridgeEvents({ kind: "keydown", key: "a", mods: ["shift", "ctrl"] })).toEqual([
     { type: "key-press", key: "a", mods: ["shift", "ctrl"] },
   ]);
@@ -43,7 +43,7 @@ it("task 8.1 Red→Green: the modifier flags of a key-down ride along on the key
 });
 
 // Scenario: composed text keeps casing
-it("task 8.1 Red→Green: composed text keeps its case and a named key is not lowercased", () => {
+it("p_bridge_case: composed text keeps its case and a named key is not lowercased", () => {
   expect(bridgeEvents({ kind: "composition-end", data: "Éa" })).toEqual([
     { type: "key-press", key: "Éa" },
   ]);

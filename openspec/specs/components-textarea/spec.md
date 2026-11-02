@@ -17,13 +17,13 @@ Port of `textarea`, `textarea-view`, `textarea-light`, `selectable-text` and the
 | focus_by_path | invariant | a textarea is focused exactly when context focus deep-equals its text path, and request-focus sets focus to that path | [[components.textarea]] | app.toplevel.focus_effect (cross-file) |
 | request_focus_on_hit | invariant | a pointer down inside the textarea that yields intents returns request-focus followed by those intents, and a pointer down that yields none returns nothing | [[components.textarea]] |  |
 | keys_need_focus | invariant | an unfocused textarea returns no effects for key-press or clipboard events | [[components.textarea]] |  |
-| key_map | invariant | up, down, left, right, enter and backspace map to previous-line, next-line, backward-char, forward-char, insert-newline and delete-backward, any string inserts text, and any other key is ignored | [[components.textarea]] |  |
+| key_map | invariant | in the membrane profile up, down, left, right, enter and backspace map to previous-line, next-line, backward-char, forward-char, insert-newline and delete-backward, any string inserts text, and any other key is ignored | [[components.textarea]] |  |
 | insert_splice | invariant | inserting s with cursor c and no selection yields text[0..c] + s + text[c..] with cursor c + len(s), and a nil text yields s | [[components.textarea]] |  |
 | insert_replaces_selection | invariant | with a select cursor the range from min(c, sc) to max(c, sc), clamped to len(text), is replaced by s, the cursor becomes min(c, sc) + len(s), and the selection is cleared | [[components.textarea]] |  |
 | delete_backward_rule | invariant | with no selection it removes the character before the cursor, where the cursor is first clamped to len(text) and a cursor at 0 removes nothing and with a selection it removes the selected range, and the cursor becomes max(0, min(sc, c) or c - 1) and the selection is cleared | [[components.textarea]] |  |
 | cursor_clamped | invariant | after any effect 0 <= cursor <= len(text), forward-char gives min(len, c + 1) and backward-char gives max(0, min(len, c) - 1), and both clear the selection | [[components.textarea]] |  |
-| previous_line_quirk | invariant | previous-line clears the selection and sets the cursor to the index of the last newline at or before c - 1, or to 0 when there is none, which is the newline character itself and not the line start | [[components.textarea]] |  |
-| next_line_rule | invariant | next-line clears the selection and sets the cursor to one past the next newline at or after c, or to len(text) when there is none | [[components.textarea]] |  |
+| previous_line_quirk | advisory | in the membrane profile previous-line clears the selection and sets the cursor to the index of the last newline at or before c - 1, or to 0 when there is none, which is the newline character itself and not the line start; the extended profile replaces it with the goal-column move | [[components.textarea]] |  |
+| next_line_rule | advisory | in the membrane profile next-line clears the selection and sets the cursor to one past the next newline at or after c, or to len(text) when there is none; the extended profile replaces it with the goal-column move | [[components.textarea]] |  |
 | pointer_down_cursor | invariant | a pointer down moves the cursor to indexForPosition(font, text, x, y), stores mpos and down-pos as the position, and clears the selection | [[components.textarea]] |  |
 | drag_tracks | invariant | a pointer move while down-pos is set stores mpos, and with no down-pos it returns nothing | [[components.textarea]] |  |
 | finish_drag_rule | invariant | on pointer up the end index is indexForPosition at the position, the selection start is the index at down-pos when it differs from the end index, plus one when it lies after the end index, and down-pos is cleared | [[components.textarea]] |  |
@@ -36,6 +36,11 @@ Port of `textarea`, `textarea-view`, `textarea-light`, `selectable-text` and the
 | selection_drawn | invariant | a selection draws a highlight over its range, and a focused textarea draws a translucent gray cursor | [[components.textarea]] |  |
 | enter_event_bubbles | invariant | the enter key effect is a normal effect so a wrapping handler can replace it, as todo-app does | [[components.textarea]] |  |
 | ime_compose | advisory | composition input from a mobile keyboard is applied as one insert-text at the end of composition | [[components.textarea]] |  |
+| extended_profile | invariant | the textarea has an opt-in profile prop: "membrane" is the default and keeps every baseline behavior, and "extended" routes the editing effects through the editor buffer, so the acceptance baseline stays intact | [[components.textarea]] |  |
+| extended_key_map | invariant | under the extended profile up and down move by goal column, shift extends the selection of any move, home and end move to line start and end, and ctrl or meta with left, right, home or end moves by word or to document start and end | [[components.textarea]] |  |
+| extended_shortcuts | invariant | under the extended profile ctrl or meta with a selects all, with z undoes, and with shift and z or with y redoes, each as a data intent against the textarea state, and the named key delete deletes forward and is never inserted as text | [[components.textarea]] |  |
+| extended_state_placement | invariant | the extended profile's own state (the goal x and the undo history) lives in the textarea-state extra map, and one edit writes the text, the cursor, the selection, the goal x and the history in a single atomic pass | [[components.textarea]] |  |
+| extended_pointer_placement | invariant | under the extended profile a pointer down resolves its index through the editor buffer's multi-line hit-test and sets the goal x from the resolved position | [[components.textarea]] |  |
 
 ## Model
 
@@ -84,6 +89,11 @@ Port of `textarea`, `textarea-view`, `textarea-light`, `selectable-text` and the
 | p_selection_drawn | unit | [[components.textarea.selection_drawn]] | selection present and focused | highlight and cursor nodes exist |
 | p_enter | unit | [[components.textarea.enter_event_bubbles]] | enter while focused | the insert-newline effect is returned so it can be replaced |
 | p_ime | unit | [[components.textarea.ime_compose]] | composition events | one insert-text at the end |
+| p_profile_default | unit | [[components.textarea.extended_profile]] | a textarea rendered without a profile prop and one rendered with the extended profile | the default keeps the membrane previous-line behavior and the extended profile returns intents for the same events |
+| p_extended_keys | unit | [[components.textarea.extended_key_map]] | an extended focused textarea receiving up, down, shift+right, end, ctrl+right and ctrl+home | the goal column is preserved, the selection extends, end moves within the line and the ctrl moves go by word and to the document start |
+| p_extended_shortcuts | unit | [[components.textarea.extended_shortcuts]] | typed text with ctrl+z, meta+a and ctrl+right, and the named key delete | the typed text is undone, the text is selected, the cursor moves by word and the delete removes the character after the cursor |
+| p_extended_state | unit | [[components.textarea.extended_state_placement]] | an extended textarea before and after one edit | the extra map carries the goal x and the history and one edit writes both in the same pass |
+| p_extended_pointer | unit | [[components.textarea.extended_pointer_placement]] | a pointer down on the second row of two-line text | the cursor resolves within the second line |
 
 ## Requirements
 
@@ -223,4 +233,41 @@ Every property row SHALL be verified by exactly one dedicated scenario;
 - **WHEN** composition events
 - **THEN** one insert-text at the end
 - **VERIFIES** [[components.textarea.p_ime]]
+
+#### Scenario: p_profile_default
+
+- **WHEN** a textarea rendered without a profile prop and one rendered
+  with the extended profile
+- **THEN** the default keeps the membrane previous-line behavior and the
+  extended profile returns intents for the same events
+- **VERIFIES** [[components.textarea.p_profile_default]]
+
+#### Scenario: p_extended_keys
+
+- **WHEN** an extended focused textarea receiving up, down, shift+right,
+  end, ctrl+right and ctrl+home
+- **THEN** the goal column is preserved, the selection extends, end moves
+  within the line and the ctrl moves go by word and to the document start
+- **VERIFIES** [[components.textarea.p_extended_keys]]
+
+#### Scenario: p_extended_shortcuts
+
+- **WHEN** typed text with ctrl+z, meta+a and ctrl+right, and the named
+  key delete
+- **THEN** the typed text is undone, the text is selected, the cursor
+  moves by word and the delete removes the character after the cursor
+- **VERIFIES** [[components.textarea.p_extended_shortcuts]]
+
+#### Scenario: p_extended_state
+
+- **WHEN** an extended textarea before and after one edit
+- **THEN** the extra map carries the goal x and the history and one edit
+  writes both in the same pass
+- **VERIFIES** [[components.textarea.p_extended_state]]
+
+#### Scenario: p_extended_pointer
+
+- **WHEN** a pointer down on the second row of two-line text
+- **THEN** the cursor resolves within the second line
+- **VERIFIES** [[components.textarea.p_extended_pointer]]
 

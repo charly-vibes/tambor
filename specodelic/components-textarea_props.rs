@@ -191,3 +191,43 @@ fn p_enter() {
 fn p_ime() {
     todo_predicate!("one insert-text at the end");
 }
+
+// id: p_profile_default
+// generator: a textarea rendered without a profile prop and one rendered with the extended profile
+// predicate: the default keeps the membrane previous-line behavior and the extended profile returns intents for the same events
+#[test]
+fn p_profile_default() {
+    todo_predicate!("the default keeps the membrane previous-line behavior and the extended profile returns intents for the same events");
+}
+
+// id: p_extended_keys
+// generator: an extended focused textarea receiving up, down, shift+right, end, ctrl+right and ctrl+home
+// predicate: the goal column is preserved, the selection extends, end moves within the line and the ctrl moves go by word and to the document start
+#[test]
+fn p_extended_keys() {
+    todo_predicate!("the goal column is preserved, the selection extends, end moves within the line and the ctrl moves go by word and to the document start");
+}
+
+// id: p_extended_shortcuts
+// generator: typed text with ctrl+z, meta+a and ctrl+right, and the named key delete
+// predicate: the typed text is undone, the text is selected, the cursor moves by word and the delete removes the character after the cursor
+#[test]
+fn p_extended_shortcuts() {
+    todo_predicate!("the typed text is undone, the text is selected, the cursor moves by word and the delete removes the character after the cursor");
+}
+
+// id: p_extended_state
+// generator: an extended textarea before and after one edit
+// predicate: the extra map carries the goal x and the history and one edit writes both in the same pass
+#[test]
+fn p_extended_state() {
+    todo_predicate!("the extra map carries the goal x and the history and one edit writes both in the same pass");
+}
+
+// id: p_extended_pointer
+// generator: a pointer down on the second row of two-line text
+// predicate: the cursor resolves within the second line
+#[test]
+fn p_extended_pointer() {
+    todo_predicate!("the cursor resolves within the second line");
+}

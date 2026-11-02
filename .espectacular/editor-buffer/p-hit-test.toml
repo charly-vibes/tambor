@@ -1,0 +1,14 @@
+archetype = "PF"
+authored_with = "0.12.0"
+derived_from = "p_hit_test@aff62b468bf5"
+description = "indexAt(positionFor(i)) returns i, y selects the line, and out-of-range points clamp to the first or last line"
+falsifiability_class = "safety"
+id = "p-hit-test"
+status = "active"
+superseded_by = ""
+
+[[tests.shell]]
+command = "tools/scaffold-check.sh editor-buffer p-hit-test"
+
+[[tests.vitest]]
+flags = "--testNamePattern=^p_hit_test:"

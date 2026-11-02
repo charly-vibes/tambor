@@ -24,7 +24,7 @@ import {
 const metrics: Metrics = { measure: (t) => t.length * 8, lineHeight: 16 };
 
 // task 4.1 Red — up then down returns to the original index
-it("task 4.1 Red: up then down returns to the original index", () => {
+it("p_goal_column: up then down returns to the original index and the goal x survives a short line", () => {
   // "abcdef\nghijkl": the cursor is on the second line at the boundary after
   // "g" (index 8, goal column x 8); up lands on the first line at x 8, down
   // lands back on the boundary after "g" (index 8)

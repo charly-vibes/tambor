@@ -24,7 +24,7 @@ import {
 
 // task 6.1 Red — edit-then-undo identity: the undo restores the pre-edit
 //   text and selection
-it("task 6.1 Red: an edit is undone by restoring the pre-edit text and selection", () => {
+it("p_undo_history: an edit is undone by restoring the pre-edit text and selection, redo reapplies and an edit after an undo branches", () => {
   const before = initialEditorBuffer("hello world", 5, 5, 0);
   const edited = insertText(before, "X", { now: 0 });
   expect(edited.text).toBe("helloX world");

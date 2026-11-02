@@ -36,65 +36,92 @@ const METRICS = { measure: (t: string) => t.length * 8, lineHeight: 16 };
 
 // Task 7.1 Red — regression gate: with no `profile` prop the textarea
 // keeps the membrane baseline (the previous-line quirk).
-it("task 7.1 Red: the default profile keeps the membrane previous-line behavior", () => {
+it("p_profile_default: the default profile keeps the membrane previous-line behavior", () => {
   const state = harnessState("ab\ncd", { cursor: 4, "select-cursor": 1 }, TEXT_PATH);
   const res = send(state, keyPress("up"));
   expect(res.state["textarea-state"].cursor).toBe(2);
   expect(res.state["textarea-state"]["select-cursor"]).toBe(null);
 });
 
-// Task 7.2 Red→Green — extended down moves by goal column, not to the
-// next line's start: from column 3 (x 24) of "abcdef\nghijkl" the down
-// key lands at column 3 of the second line (index 10).
-it("task 7.2 Red→Green: an extended down preserves the goal column", () => {
-  const state = harnessState("abcdef\nghijkl", { cursor: 3, "goal-x": 24 }, TEXT_PATH);
-  const res = send(state, keyPress("down"), { profile: "extended", metrics: METRICS });
-  expect(res.state["textarea-state"].cursor).toBe(10);
-});
+// p_extended_keys — the extended profile's key map: the goal column on
+// vertical moves, shift extending, home/end within the line and the
+// ctrl/meta word and document moves.
+it("p_extended_keys: an extended up and down preserve the goal column, shift extends and end moves within the line", () => {
+  // down moves by goal column, not to the next line's start: from column
+  // 3 (x 24) of "abcdef\nghijkl" the down key lands at column 3 of the
+  // second line (index 10)
+  const down = send(
+    harnessState("abcdef\nghijkl", { cursor: 3, "goal-x": 24 }, TEXT_PATH),
+    keyPress("down"),
+    { profile: "extended", metrics: METRICS },
+  );
+  expect(down.state["textarea-state"].cursor).toBe(10);
 
-// Task 7.2 Red→Green — extended shift extends the selection of any move.
-it("task 7.2 Red→Green: an extended shift extends the selection", () => {
-  const state = harnessState("hello world", { cursor: 3 }, TEXT_PATH);
-  const once = send(state, keyPress("right", { mods: ["shift"] }), { profile: "extended", metrics: METRICS });
+  // shift extends the selection of any move
+  const once = send(
+    harnessState("hello world", { cursor: 3 }, TEXT_PATH),
+    keyPress("right", { mods: ["shift"] }),
+    { profile: "extended", metrics: METRICS },
+  );
   expect(once.state["textarea-state"].cursor).toBe(4);
   expect(once.state["textarea-state"]["select-cursor"]).toBe(3);
 
-  const twice = send(once.state, keyPress("right", { mods: ["shift"] }), { profile: "extended", metrics: METRICS });
-  expect(twice.state["textarea-state"].cursor).toBe(5);
-  expect(twice.state["textarea-state"]["select-cursor"]).toBe(3);
-});
+  // end moves to the end of the current line
+  const end = send(harnessState("ab\ncd", { cursor: 3 }, TEXT_PATH), keyPress("end"), {
+    profile: "extended",
+    metrics: METRICS,
+  });
+  expect(end.state["textarea-state"].cursor).toBe(5);
 
-// Task 7.2 Red→Green — extended home and end move to line boundaries.
-it("task 7.2 Red→Green: an extended end moves to the end of the current line", () => {
-  const state = harnessState("ab\ncd", { cursor: 3 }, TEXT_PATH);
-  const res = send(state, keyPress("end"), { profile: "extended", metrics: METRICS });
-  expect(res.state["textarea-state"].cursor).toBe(5);
+  // ctrl+right moves by word and ctrl+home moves to the document start
+  const word = send(
+    harnessState("hello world", { cursor: 0 }, TEXT_PATH),
+    keyPress("right", { mods: ["ctrl"] }),
+    { profile: "extended", metrics: METRICS },
+  );
+  expect(word.state["textarea-state"].cursor).toBe(5);
+  const home = send(
+    harnessState("hello world", { cursor: 4 }, TEXT_PATH),
+    keyPress("home", { mods: ["ctrl"] }),
+    { profile: "extended", metrics: METRICS },
+  );
+  expect(home.state["textarea-state"].cursor).toBe(0);
 });
 
 // Task 7.2 Red→Green — extended ctrl/meta shortcuts route through the
 // editor-buffer operations: ctrl+z undoes the typed text.
-it("task 7.2 Red→Green: an extended ctrl+z undoes the typed text", () => {
+it("p_extended_shortcuts: an extended ctrl+z undoes, meta+a selects all and ctrl+right moves by word", () => {
   let state = harnessState("hello", { cursor: 2 }, TEXT_PATH);
   state = send(state, keyPress("X"), { profile: "extended", metrics: METRICS }).state;
   expect(state.text).toBe("heXllo");
 
   const undone = send(state, keyPress("z", { mods: ["ctrl"] }), { profile: "extended", metrics: METRICS });
   expect(undone.state.text).toBe("hello");
-});
 
-// Task 7.2 Red→Green — extended ctrl+a selects all.
-it("task 7.2 Red→Green: an extended meta+a selects all", () => {
-  const state = harnessState("hello", { cursor: 2 }, TEXT_PATH);
-  const res = send(state, keyPress("a", { mods: ["meta"] }), { profile: "extended", metrics: METRICS });
-  expect(res.state["textarea-state"]["select-cursor"]).toBe(0);
-  expect(res.state["textarea-state"].cursor).toBe(5);
-});
+  // meta+a selects all
+  const all = send(harnessState("hello", { cursor: 2 }, TEXT_PATH), keyPress("a", { mods: ["meta"] }), {
+    profile: "extended",
+    metrics: METRICS,
+  });
+  expect(all.state["textarea-state"]["select-cursor"]).toBe(0);
+  expect(all.state["textarea-state"].cursor).toBe(5);
 
-// Task 7.2 Red→Green — extended ctrl+right moves by word.
-it("task 7.2 Red→Green: an extended ctrl+right moves by word", () => {
-  const state = harnessState("hello world", { cursor: 0 }, TEXT_PATH);
-  const res = send(state, keyPress("right", { mods: ["ctrl"] }), { profile: "extended", metrics: METRICS });
-  expect(res.state["textarea-state"].cursor).toBe(5);
+  // ctrl+right moves by word
+  const word = send(
+    harnessState("hello world", { cursor: 0 }, TEXT_PATH),
+    keyPress("right", { mods: ["ctrl"] }),
+    { profile: "extended", metrics: METRICS },
+  );
+  expect(word.state["textarea-state"].cursor).toBe(5);
+
+  // the named key delete is a command, never the text "delete": the
+  // soft-keyboard bridge produces that name (the ui-mobile delta)
+  const deleted = send(harnessState("abc", { cursor: 1 }, TEXT_PATH), keyPress("delete"), {
+    profile: "extended",
+    metrics: METRICS,
+  });
+  expect(deleted.state.text).toBe("ac");
+  expect(deleted.state["textarea-state"].cursor).toBe(1);
 });
 
 // Task 7.2 Red→Green — an unknown modified key is ignored and inserts no
@@ -112,7 +139,7 @@ it("task 7.2 Red→Green: an extended unknown modified key and an unfocused shor
 
 // Task 7.2 Red→Green — the extended textarea-state extra map carries
 // `goal-x` (null before any move) and a bounded empty `history`.
-it("task 7.2 Red→Green: the extended extra map carries goal-x and history", () => {
+it("p_extended_state: the extended extra map carries goal-x and history", () => {
   const initial = (harnessState("hello", {}) as { readonly "textarea-state": TextareaExtra })["textarea-state"];
   expect(initial["goal-x"]).toBe(null);
   expect(initial.history.entries.length).toBe(0);
@@ -125,24 +152,13 @@ it("task 7.2 Red→Green: the extended extra map carries goal-x and history", ()
 // the buffer's multi-line hit-test (design D5): a click that lands in the
 // second row of two-line text resolves within that line (the membrane
 // backend service is single-line and ignores y).
-it("task 7.2 Red→Green: an extended pointer down resolves through the multi-line hit-test", () => {
+it("p_extended_pointer: an extended pointer down resolves through the multi-line hit-test", () => {
   const state = harnessState("ab\ncd", { cursor: 0 }, TEXT_PATH);
   // frame position [5, 4] is the node-local position minus the bordered
   // frame padding (padX 5, padY 2): text position [0, 2] is the second row
   // (line pitch 2 under the injected stub metrics)
   const res = send(state, mouseDown([5, 4]), { profile: "extended", metrics: { ...METRICS, lineHeight: 2 } });
   expect(res.state["textarea-state"].cursor).toBe(3);
-});
-
-// Task 8.1 Red→Green — the extended profile treats the delete key as a
-// command, not as text: the soft-keyboard bridge produces the named key
-// "delete" (the ui-mobile delta), and a name must never be typed into
-// the buffer.
-it("task 8.1 Red→Green: the extended profile deletes forward on the delete key", () => {
-  const state = harnessState("abc", { cursor: 1 }, TEXT_PATH);
-  const res = send(state, keyPress("delete"), { profile: "extended", metrics: METRICS });
-  expect(res.state.text).toBe("ac");
-  expect(res.state["textarea-state"].cursor).toBe(1);
 });
 
 // Task 8.3 Red→Green — the shared op-sequence property: under `"extended"`

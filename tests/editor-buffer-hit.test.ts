@@ -27,7 +27,7 @@ const metrics: Metrics = { measure: (t) => t.length * 8, lineHeight: 16 };
 
 // task 5.1 Red — round trip: resolving the position of any boundary index
 // and back yields the original index, over generated multi-line text.
-it("task 5.1 Red: indexAt(positionFor(i)) == i for every boundary index", () => {
+it("p_hit_test: indexAt(positionFor(i)) == i for every boundary index, y selects the line and out-of-range points clamp", () => {
   const text = fc
     .array(fc.string({ minLength: 0, maxLength: 3 }), { minLength: 1, maxLength: 3 })
     .map((arr) => arr.join("\n"));
