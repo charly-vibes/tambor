@@ -1,0 +1,1 @@
+- 2026-11-02T22:13:57Z [id:aef591d7f9503090f2572360548a28670d40e8ef3221327af5aa0ddb15a5413d] - SPA demo serving (add-spa-delivery layout): `npm run build:spa` (scripts/build-spa.mjs) → **demo-dist/** (index.html, spa.js, chunks/, workers, sw.js, manifest); serve THAT (`npx serve demo-dist`), never `dist/` — dist/ is the tsc library emit and shows bare directory listings.
