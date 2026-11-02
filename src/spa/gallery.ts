@@ -152,6 +152,13 @@ export const DEMOS: readonly DemoDef[] = [
     load: () => Promise.resolve(createSelectDemo()),
   },
   {
+    id: "editor",
+    title: "editor",
+    blurb:
+      "components.textarea — the extended editing profile: a multi-line markdown buffer with a grapheme-aware cursor. Click a lower line to place the cursor; shift+arrows select, ctrl+z undoes, up and down keep the column.",
+    load: async () => (await import("../examples/editor.ts")).createEditorApp(),
+  },
+  {
     id: "logo",
     title: "logo",
     blurb:

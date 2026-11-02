@@ -84,8 +84,14 @@ section 7.
 
 ## 10. Demo and acceptance
 
-- [ ] 10.1 Gallery example: multi-line editor in the extended profile
+- [x] 10.1 Gallery example: multi-line editor in the extended profile
       (shift-select, undo, vertical movement).
+      (src/examples/editor.ts behind the dynamic-import boundary; the
+      handler routes the editing intents through applyTextareaIntents,
+      the view is spaFocusView-wrapped, the buffer metrics derive from
+      the label measure the layout uses. tests/spa-editor-demo.test.ts
+      drives the wire shapes: click focus + placement, typing, ctrl+z,
+      goal-column down.)
 - [ ] 10.2 Manual acceptance on a real browser: edit a multi-line
       markdown deck (emoji and combining marks included); confirm click
       placement on lower lines. Record the result in the change.

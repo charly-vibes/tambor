@@ -1,9 +1,9 @@
-[tools.testaruda]
-description = "Language-agnostic test selection engine"
+[tools.specodelic]
+description = "Specodelic spec format linter + pipeline (spk)"
 
-[tools.testaruda.detector]
+[tools.specodelic.detector]
 type = "file"
-path = "testaruda.toml"
+path = "AGENTS.md"
 
 [tools.espectacular]
 description = "Spec-test correspondence enforcer"
@@ -12,12 +12,19 @@ description = "Spec-test correspondence enforcer"
 type = "directory"
 path = ".espectacular"
 
-[tools.specodelic]
-description = "Specodelic spec format linter + pipeline (spk)"
+[tools.wai]
+description = "Workflow manager for AI-assisted development"
 
-[tools.specodelic.detector]
+[tools.wai.detector]
+type = "directory"
+path = ".wai"
+
+[tools.testaruda]
+description = "Language-agnostic test selection engine"
+
+[tools.testaruda.detector]
 type = "file"
-path = "AGENTS.md"
+path = "testaruda.toml"
 
 [tools.pretender]
 description = "Multi-language structural code-quality checks"
@@ -25,10 +32,3 @@ description = "Multi-language structural code-quality checks"
 [tools.pretender.detector]
 type = "file"
 path = "pretender.toml"
-
-[tools.wai]
-description = "Workflow manager for AI-assisted development"
-
-[tools.wai.detector]
-type = "directory"
-path = ".wai"
