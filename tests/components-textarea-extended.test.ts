@@ -134,7 +134,18 @@ it("task 7.2 Red→Green: an extended pointer down resolves through the multi-li
   expect(res.state["textarea-state"].cursor).toBe(3);
 });
 
-// Task 7.3 Red→Green — the shared op-sequence property: under `"extended"`
+// Task 8.1 Red→Green — the extended profile treats the delete key as a
+// command, not as text: the soft-keyboard bridge produces the named key
+// "delete" (the ui-mobile delta), and a name must never be typed into
+// the buffer.
+it("task 8.1 Red→Green: the extended profile deletes forward on the delete key", () => {
+  const state = harnessState("abc", { cursor: 1 }, TEXT_PATH);
+  const res = send(state, keyPress("delete"), { profile: "extended", metrics: METRICS });
+  expect(res.state.text).toBe("ac");
+  expect(res.state["textarea-state"].cursor).toBe(1);
+});
+
+// Task 8.3 Red→Green — the shared op-sequence property: under `"extended"`
 // the editor-buffer invariants hold after any generated mix of key and
 // pointer events.
 it("task 7.3 Red→Green: under extended the editor-buffer invariants hold after any generated mix of key and pointer events", () => {

@@ -18,6 +18,7 @@ import type { Intent } from "../../events/bubble.ts";
 import { initialUndoHistory, type UndoHistory } from "./undo.ts";
 import {
   deleteByCluster,
+  deleteForward,
   insertText,
   moveByCluster,
   moveByLine,
@@ -74,6 +75,7 @@ type BufferOpFn = (
 
 const opFns: Record<string, BufferOpFn | undefined> = {
   "delete-backward": (buf) => deleteByCluster(buf),
+  "delete-forward": (buf) => deleteForward(buf),
   "backward-char": (buf, extend, metrics) => moveByCluster(buf, -1, extend, metrics),
   "forward-char": (buf, extend, metrics) => moveByCluster(buf, 1, extend, metrics),
   "previous-line": (buf, extend, metrics) => moveByLine(buf, -1, metrics, extend),

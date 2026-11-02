@@ -59,9 +59,11 @@ section 7.
 
 ## 8. Mobile bridge keys
 
-- [ ] 8.1 Red→Green: `src/ui/keyboard.ts` maps Home/End/Delete, carries
+- [x] 8.1 Red→Green: `src/ui/keyboard.ts` maps Home/End/Delete, carries
       modifiers, no lowercasing of named keys; existing
       `ui-mobile-keyboard` tests green.
+      (The named key `delete` deletes forward through the buffer under
+      the extended profile — a name is a command, never text.)
 
 ## 9. Corpus and docs
 

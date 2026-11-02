@@ -18,14 +18,19 @@
 
 import { keyPress, type TamborEvent } from "../events/event.ts";
 
-// One soft-input event of the hidden input.
+// One soft-input event of the hidden input. A hardware key-down carries
+// the modifier flags the hardware reported; the bridge rides them along
+// on the key-press event so the extended profile's command layer sees
+// them.
 export type SoftInput =
   | { readonly kind: "input"; readonly data: string }
-  | { readonly kind: "keydown"; readonly key: string }
+  | { readonly kind: "keydown"; readonly key: string; readonly mods?: readonly string[] }
   | { readonly kind: "composition-end"; readonly data: string };
 
 // The DOM key names of the mobile keyboard that map onto named keys of
-// the textarea key map; anything else inserts its (lowercased) text.
+// the textarea key map; anything else keeps the name the hardware
+// reported (a named key is never case-folded — a name is a name, not
+// text).
 const DOM_KEYS: ReadonlyMap<string, string> = new Map([
   ["Backspace", "backspace"],
   ["Enter", "enter"],
@@ -33,6 +38,9 @@ const DOM_KEYS: ReadonlyMap<string, string> = new Map([
   ["ArrowDown", "down"],
   ["ArrowLeft", "left"],
   ["ArrowRight", "right"],
+  ["Home", "home"],
+  ["End", "end"],
+  ["Delete", "delete"],
 ]);
 
 // Soft-input events become key-press events (soft_keyboard_bridge).
@@ -43,8 +51,11 @@ export function bridgeEvents(input: SoftInput): readonly TamborEvent[] {
     case "composition-end":
       // one insert at the end of composition (ime_compose)
       return [keyPress(input.data)];
-    case "keydown":
-      return [keyPress(DOM_KEYS.get(input.key) ?? input.key.toLowerCase())];
+    case "keydown": {
+      const name = DOM_KEYS.get(input.key) ?? input.key;
+      const mods = input.mods ?? [];
+      return [keyPress(name, mods.length > 0 ? { mods } : {})];
+    }
   }
 }
 

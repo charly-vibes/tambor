@@ -133,6 +133,33 @@ position of any boundary index returns that index.
 - **WHEN** a point lies above the first row or below the last
 - **THEN** the index resolves within the first or last line respectively
 
+### Requirement: Forward deletion
+
+The buffer SHALL provide a forward deletion that, with a non-empty
+selection, deletes the selected range whole and, without one, deletes
+the grapheme cluster immediately after the cursor as a whole cluster
+while the cursor stays where it is; at the end of the text it SHALL
+change nothing.
+
+#### Scenario: delete forward takes the whole cluster
+
+- **WHEN** the cursor is before a family emoji built from several code
+  points joined by ZWJ and a forward deletion is applied
+- **THEN** the whole sequence is removed and the cursor stays at its
+  index
+
+#### Scenario: delete forward at the end changes nothing
+
+- **WHEN** the cursor is at the end of the text and a forward deletion
+  is applied
+- **THEN** the text and the cursor are unchanged
+
+#### Scenario: delete forward with a selection deletes the selection
+
+- **WHEN** a selection spans 1..3 and a forward deletion is applied
+- **THEN** the selected range is removed whole and the cursor is at the
+  selection start
+
 ### Requirement: Undo and redo history
 
 The buffer SHALL keep a bounded history of splice entries with the

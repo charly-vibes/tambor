@@ -100,6 +100,7 @@ const EDIT_OPS: Readonly<Record<string, EditApplier>> = {
   "delete-backward": (s, it, profile, _metrics) => profile === "extended"
     ? applyBufferIntent(s, it, _metrics)
     : withPaths(s, rest(it)[0] as Path, rest(it)[1] as Path, deleteOp),
+  "delete-forward": (s, it, _profile, metrics) => applyBufferIntent(s, it, metrics),
   "backward-char": (s, it, profile, metrics) => profile === "extended"
     ? applyBufferIntent(s, it, metrics)
     : withPaths(s, rest(it)[0] as Path, rest(it)[1] as Path, (t, c, sc) => charOp(t, c, sc, "backward")),

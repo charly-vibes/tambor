@@ -16,6 +16,7 @@ import fc from "fast-check";
 import {
   clusterBoundaries,
   deleteByCluster,
+  deleteForward,
   initialEditorBuffer,
   moveByCluster,
   type EditorBufferState,
@@ -50,6 +51,28 @@ it("p_editor_buffer: operations never mutate the input and keep indices in 0..le
       expect(del.head).toBeLessThanOrEqual(delLen);
     }),
   );
+});
+
+// Task 8.1 Red→Green — delete forward removes the cluster after the
+// cursor as a whole cluster, does nothing at the end of the text, and
+// deletes the selection when there is one.
+it("task 8.1 Red→Green: delete forward removes the whole cluster after the cursor", () => {
+  // a ZWJ family is one cluster: the delete takes the whole family
+  const family = "👨‍👩‍👧";
+  const s = initialEditorBuffer(family + "x", 0);
+  const del = deleteForward(s);
+  expect(del.text).toBe("x");
+  expect(del.head).toBe(0);
+
+  // at the end of the text nothing changes
+  const atEnd = deleteForward(initialEditorBuffer("abc", 3));
+  expect(atEnd.text).toBe("abc");
+  expect(atEnd.head).toBe(3);
+
+  // with a selection the selection is deleted whole
+  const selected = deleteForward({ ...initialEditorBuffer("abcdef", 1), anchor: 3 });
+  expect(selected.text).toBe("adef");
+  expect(selected.head).toBe(1);
 });
 
 // p_editor_buffer — Requirement: Grapheme boundary snapping

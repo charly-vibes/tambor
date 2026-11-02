@@ -53,7 +53,15 @@ named keys SHALL map as in the membrane profile.
 
 Under the extended profile ctrl or meta with `a` SHALL select all, with
 `z` SHALL undo, and with shift and `z` or with `y` SHALL redo, each as
-data intents against the textarea state.
+data intents against the textarea state. The named key `delete` SHALL
+delete forward through the editor buffer and SHALL NOT be inserted as
+text.
+
+#### Scenario: the delete key is a command, not text
+
+- **WHEN** an extended focused textarea with cursor 1 in "abc" receives
+  the named key `delete`
+- **THEN** the text becomes "ac" and no text named "delete" is inserted
 
 #### Scenario: undo shortcut
 

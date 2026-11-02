@@ -218,12 +218,14 @@ function extendedKeyIntents(c: TextareaCtx, key: unknown, mods: unknown): Intent
   if (isModified(mods)) return [];
   const move = extendedMove(c, key, mods);
   if (move !== null) return move;
-  // The remaining plain keys: enter, backspace and text insert.
+  // The remaining plain keys: enter, backspace, delete and text insert.
   const tp = c.props.textPath;
   const ep = c.props.extraPath;
   const now = c.props.now ?? Date.now();
   if (key === "enter") return single("insert-newline", tp, ep, now);
   if (key === "backspace") return single("delete-backward", tp, ep);
+  // the delete key is a name, never text: it deletes forward
+  if (key === "delete") return single("delete-forward", tp, ep);
   if (typeof key === "string") return single("insert-text", key, tp, ep, now);
   return [];
 }
