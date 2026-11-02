@@ -96,15 +96,15 @@ export function applyBufferIntent(state: unknown, intent: Intent, metrics: Metri
   const rest = intent.slice(1) as readonly unknown[];
   const textPath = rest[0] as Path;
   const extraPath = rest[1] as Path;
-  const extend = (rest[2] as boolean) ?? false;
+  const extend = (rest[2] as boolean | undefined) ?? false;
   if (op === "insert-text") {
     const buf = editorBufferFrom(state, rest[1] as Path, rest[2] as Path);
-    const next = insertText(buf, rest[0] as string, { now: (rest[3] as number) ?? 0, metrics });
+    const next = insertText(buf, rest[0] as string, { now: (rest[3] as number | undefined) ?? 0, metrics });
     return writeBufferState(state, next, rest[1] as Path, rest[2] as Path);
   }
   if (op === "insert-newline") {
     const buf = editorBufferFrom(state, textPath, extraPath);
-    const next = insertText(buf, "\n", { now: (rest[2] as number) ?? 0, metrics });
+    const next = insertText(buf, "\n", { now: (rest[2] as number | undefined) ?? 0, metrics });
     return writeBufferState(state, next, textPath, extraPath);
   }
   const opFn: BufferOpFn | undefined = opFns[op];

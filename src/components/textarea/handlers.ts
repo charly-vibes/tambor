@@ -18,7 +18,7 @@ import { type Vec2 } from "../../views/model.ts";
 import { wordBounds } from "../../ui/handles.ts";
 import { indexAt, lineRange } from "./hit-test.ts";
 import { type EditorBufferState, type Metrics } from "./buffer.ts";
-import { initialUndoHistory } from "./undo.ts";
+import { initialUndoHistory, type UndoHistory } from "./undo.ts";
 import { type TextareaExtra, type TextareaProfile } from "./edit.ts";
 import { type TextareaProps } from "./textarea.ts";
 
@@ -72,7 +72,10 @@ function bufferFromCtx(c: TextareaCtx): EditorBufferState {
   const extra = c.extra;
   const cursor = extra.cursor;
   const selectCursor = extra["select-cursor"];
-  const history = extra.history ?? initialUndoHistory();
+  // an extra map persisted before the undo timeline existed carries no
+  // history key; the widened type is the honest boundary here (the
+  // buffer-edit seam guards the same absence the same way)
+  const history = (extra.history as UndoHistory | undefined) ?? initialUndoHistory();
   const goalX = extra["goal-x"] ?? 0;
   return { text: c.t, anchor: selectCursor ?? cursor, head: cursor, goalX, history };
 }

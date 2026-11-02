@@ -450,3 +450,7 @@
 - GOTCHAS: npm pack --dry-run runs prepack (tsc) — 60s+ test budget; noUncheckedIndexed... n/a; eslint no-unnecessary-condition fights BOTH ?. and ?? on non-null HostElement.textContent (plain call); playwright webServer rebuilds — ad-hoc debug scripts must rebuild too or you test a stale bundle; ssh.github.com flaked mid-push once (retry cleared it).
 - Verified: vitest 745, playwright 86 (incl. new sw.spec offline reload both projects), tsc 0, eslint 0, ah check --changes --run-tests 759/0, openspec validate --strict. Pushed b851314 (2 commits), CI in flight. Board: 9 open (72m chain next: 2ep → 72m → uro/rtt/3i9).
 - **Next:** /renew tambor → tambor-2ep (accessibility model, root of the dep chain) or tambor-bva (frame-coalescing); openspec archive of add-spa-delivery once CI green.
+- 2026-10-29T20:23:18Z [id:64da1fce2d1bc0ebdb08a8b0562122f3e2d813866d67c84dac26c20fac14f20a] 2026-10-29 HH:MM — snap (tambor-72m continuation)
+  - Worked on: tambor-72m — deployed add-textarea-editing-model change from chat-22cafc0c artifact (openspec/changes/add-textarea-editing-model/, openspec validate + ah check green); task 1 Green (buffer.ts: EditorBufferState + Intl.Segmenter cluster boundaries + move/delete cluster); task 2 Green (move extend flag + collapse rule, selectAll, selection-aware delete). Commits 56f0235, 011a3ee; ticket ◐ in_progress (dep: open tambor-2ep).
+  - Key decisions: deploy-first per ticket; delete became selection-aware via selectAll (red→green caught it).
+  - Next: task 3 — line, word and document navigation (3.1 Red → 3.2 Green).

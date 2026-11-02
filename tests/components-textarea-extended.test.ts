@@ -164,7 +164,7 @@ it("task 7.3 Red→Green: under extended the editor-buffer invariants hold after
           ? keyPress(op.key ?? "left", {
             ...(op.shift ? { mods: ["shift"] } : {}),
             ...(op.ctrl ? { mods: ["ctrl"] } : {}),
-            ...(op.now !== undefined ? { now: op.now } : {}),
+            ...(op.now !== null ? { now: op.now } : {}),
           })
           : mouseDown(op.pos ?? [0, 0]);
         const res = send(state, event, { profile: "extended", metrics: METRICS });
