@@ -95,7 +95,7 @@ section 7.
 - [ ] 10.2 Manual acceptance on a real browser: edit a multi-line
       markdown deck (emoji and combining marks included); confirm click
       placement on lower lines. Record the result in the change.
-- [ ] 10.3 Run `openspec validate add-textarea-editing-model --strict`.
+- [x] 10.3 Run `openspec validate add-textarea-editing-model --strict`.
 
 ## Follow-ups (separate changes)
 
