@@ -15,17 +15,17 @@
 
 ## 2. Docs shell
 
-- [ ] 2.1 Red: docs mount test — shell renders journey-grouped
+- [x] 2.1 Red: docs mount test — shell renders journey-grouped
       navigation (getting started / guides / reference / examples,
       quadrant-ordered) and a content pane; selecting a section
       renders its page and marks it current; a module declaring no
       group fails the content check. tests/docs-shell.test.ts (jsdom,
       DomBackend wire as in gallery tests).
-- [ ] 2.2 Green: `src/docs/main.ts` entry + shell view over
+- [x] 2.2 Green: `src/docs/main.ts` entry + shell view over
       makeApp/dispatch; page views render generated data modules as
       tambor elems; extract shared host/registry helpers with
       `src/spa/` (imported, not moved).
-- [ ] 2.3 Refactor: page-view renderer shared by generated and guide
+- [x] 2.3 Refactor: page-view renderer shared by generated and guide
       modules (same Elem shape), nav registry typed once.
 
 ## 3. Keyboard and focus

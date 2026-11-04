@@ -57,6 +57,7 @@ def parse_spec(path: Path) -> dict:
         "statement": stmt,
         "description": sent,
         "sourcePath": f"openspec/specs/{name}/spec.md",
+        "group": "reference",  # D7: corpus pages are the reference quadrant
         "content": text,
     }
 
@@ -69,13 +70,32 @@ def page_module(pg: dict) -> str:
     )
     fields = "".join(
         f"export const {k} = {json.dumps(pg[k])};\n"
-        for k in ("id", "title", "statement", "description", "sourcePath")
+        for k in ("id", "title", "statement", "description", "sourcePath", "group")
     )
     return head + fields + f"export const content = {json.dumps(pg['content'])};\n"
 
 
+def page_loaders(pages: list[dict]) -> str:
+    # D6: content rides dynamic imports — one static loader per page so
+    # esbuild emits per-page chunks; the initial docs chunk carries the
+    # registry rows only (add-spa-delivery pattern: static specifiers,
+    # no runtime-resolved paths).
+    rows = "".join(
+        f'  "{pg["name"]}": () => import("./{pg["name"]}.ts"),\n'
+        for pg in pages
+    )
+    return (
+        "\n"
+        "// one static loader per page (D6): the shell imports bodies through\n"
+        "// these so content modules never ride the initial docs chunk\n"
+        "export const pageLoaders: Readonly<Record<string, () => Promise<{ content: string }>>> = {\n"
+        f"{rows}"
+        "};\n"
+    )
+
+
 def registry_module(pages: list[dict]) -> str:
-    keep = ("name", "id", "title", "statement", "description", "sourcePath")
+    keep = ("name", "id", "title", "statement", "description", "sourcePath", "group")
     meta = [{k: pg[k] for k in keep} for pg in pages]
     rows = json.dumps(meta, separators=(",", ":"))
     return (
@@ -90,9 +110,10 @@ def registry_module(pages: list[dict]) -> str:
         "  statement: string;\n"
         "  description: string;\n"
         "  sourcePath: string;\n"
+        "  group: string;\n"
         "}\n"
         f"export const generatedPages = {rows} satisfies GeneratedPage[];\n"
-    )
+    ) + page_loaders(pages)
 
 
 def emit(corpus: Path, out: Path) -> int:
