@@ -24,10 +24,11 @@ import { describe, expect, it } from "vitest";
 import { spawnSync } from "node:child_process";
 // @ts-expect-error node:path has no type declarations here
 import { resolve } from "node:path";
-import type { Elem, Label } from "../src/views/model.ts";
+import type { Elem, ButtonNode } from "../src/views/model.ts";
 import type { HostDoc, HostElement } from "../src/interop/domhost.ts";
 import { scanOf, type Found } from "./helpers/scan.ts";
 import { centreOf } from "./helpers/appview.ts";
+import { waitFor } from "./helpers/wait.ts";
 
 const TOOL = resolve("tools/gen_docs_content.py");
 const CORPUS = resolve("openspec/specs");
@@ -75,17 +76,14 @@ function clickAt(surface: { host: HostElement }, x: number, y: number): void {
   surface.host.dispatchEvent(new ME("pointerup", { clientX: x, clientY: y }));
 }
 
-// The nav entry (a click handler) whose subtree draws the page title,
-// with or without the current marker prefix.
+// The nav entry (a real DOM control) whose label names the page
+// title, with or without the current marker prefix.
 function navEntryOf(view: Elem, title: string): Found {
-  const draws = (f: Found): boolean =>
-    f.node.type === "label" &&
-    ((f.node as Label).text === title ||
-      (f.node as Label).text === CURRENT + title);
-  const found = scanOf(view).find(
-    (f) =>
-      f.node.type === "handler" && scanOf(f.node as Elem).some(draws),
-  );
+  const found = scanOf(view).find((f) => {
+    if (f.node.type !== "button") return false;
+    const text = (f.node as ButtonNode).text;
+    return text === title || text === CURRENT + title;
+  });
   if (found === undefined) {
     throw new Error(`nav entry not drawn for ${title}`);
   }
@@ -112,7 +110,7 @@ describe("docs shell — journey nav and content pane", () => {
     docs.unmount();
   });
 
-  it("selecting a nav section renders its page and marks it current", () => {
+  it("selecting a nav section renders its page and marks it current", async () => {
     const doc = hostDoc();
     const container = doc.createElement("div");
     doc.body.appendChild(container);
@@ -124,6 +122,13 @@ describe("docs shell — journey nav and content pane", () => {
     expect(text).toContain(target); // the pane renders the selected page
     expect(text).toContain("computable origin, bounds and children"); // statement
     expect(text).toContain(CURRENT + target); // the nav marks it current
+    // the page body arrives through a dynamic import: the pane must
+    // re-draw with the verbatim corpus content once it lands
+    const body = await waitFor(() =>
+      container.textContent.includes("immutable_nodes"),
+    );
+    expect(body).toBe(true);
+    expect(container.textContent).toContain("immutable_nodes");
     docs.unmount();
   });
 

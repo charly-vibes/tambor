@@ -30,11 +30,11 @@
 
 ## 3. Keyboard and focus
 
-- [ ] 3.1 Red: keyboard tests — nav reachable and operable by keyboard
+- [x] 3.1 Red: keyboard tests — nav reachable and operable by keyboard
       alone (real-DOM controls receive focus), and completing a page
       change moves DOM focus to the content pane heading.
       tests/docs-keyboard.test.ts
-- [ ] 3.2 Green: focus effect on navigation (effect-dispatch seam —
+- [x] 3.2 Green: focus effect on navigation (effect-dispatch seam —
       state path + host hook), heading focus target per page.
 
 ## 4. Live container sizing
