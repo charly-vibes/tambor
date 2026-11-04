@@ -72,7 +72,6 @@ export class DomBackend implements BackendContract {
   private measure: (text: string, font?: Font | null) => Vec2;
   private readonly make: (tag: string) => ElementLike;
 
-
   constructor(options: DomBackendOptions = {}) {
     this.containerSize = options.containerSize ?? [512, 512];
     this.clipboard = options.clipboard;
@@ -88,7 +87,9 @@ export class DomBackend implements BackendContract {
         {
           view: options.view,
           ...(options.state !== undefined ? { state: options.state } : {}),
-          ...(options.handler !== undefined ? { handler: options.handler } : {}),
+          ...(options.handler !== undefined
+            ? { handler: options.handler }
+            : {}),
         },
         () => this.containerSize,
         () => this.clipboard,
@@ -102,13 +103,14 @@ export class DomBackend implements BackendContract {
   // phase reads 0 here — the dom backend produces elements, the
   // browser paints after the call (see phase-timers.ts header). The
   // seam calls are no-ops while the timers are off.
-  draw(view: AnyDraw): void {
+  draw(view: AnyDraw): this {
     this.drawCount++;
     phaseTimers.startSpan("reconcile_layout");
     this.root.children.length = 0;
     this.build(view, this.root);
     phaseTimers.endSpan();
     phaseTimers.finishDraw();
+    return this;
   }
 
   drawView(): void {
@@ -116,16 +118,22 @@ export class DomBackend implements BackendContract {
   }
 
   // resize: a viewport change relayouts and redraws (resize_redraws).
-  resize(size: Vec2): void {
+  resize(size: Vec2): this {
     this.containerSize = size;
     this.drawView();
+    return this;
   }
 
   measureText(text: string, font?: Font | null): Vec2 {
     return this.measure(text, font);
   }
 
-  indexForPosition(font: Font | null, text: string, x: number, y: number): number {
+  indexForPosition(
+    font: Font | null,
+    text: string,
+    x: number,
+    y: number,
+  ): number {
     return indexForPosition(this.measure, font, text, x, y);
   }
 
@@ -164,8 +172,8 @@ export class DomBackend implements BackendContract {
   // The element-building traversal (primitive_set): one builder per
   // drawable type behind the BUILDERS dispatch table; unknown node
   // types fall back to drawing their children.
-  build(view: AnyDraw, parent: ElementLike): void {
-    if (view == null) return;
+  build(view: AnyDraw, parent: ElementLike): this {
+    if (view == null) return this;
     // One ctx per root build: the mutable style field threads the
     // with-style mode down the subtree across recursive calls
     // (tambor-0rp — a fresh ctx per recursion would drop it).
@@ -177,10 +185,11 @@ export class DomBackend implements BackendContract {
       strokeWidth: undefined as number | undefined,
     };
     this.buildWith(ctx, view, parent);
+    return this;
   }
 
-  private buildWith(ctx: BuildCtx, view: AnyDraw, parent: ElementLike): void {
-    if (view == null) return;
+  private buildWith(ctx: BuildCtx, view: AnyDraw, parent: ElementLike): this {
+    if (view == null) return this;
     if (Array.isArray(view)) {
       // a bare sequence superimposes its children at the current origin
       // (canvas semantics) — the box anchors them (tambor-0rp)
@@ -190,15 +199,16 @@ export class DomBackend implements BackendContract {
       box.style["top"] = "0px";
       for (const child of view as readonly AnyDraw[]) ctx.build(child, box);
       parent.appendChild(box);
-      return;
+      return this;
     }
     const node = view as DomNode;
     const builder = BUILDERS[node.type];
     if (builder === undefined) {
       buildChildrenOf(ctx, node, parent);
-      return;
+      return this;
     }
     builder(ctx, node, parent);
+    return this;
   }
 }
 
@@ -208,24 +218,22 @@ export class DomBackend implements BackendContract {
 // positioned at its containing origin so the DOM composites like the canvas
 // backend (bare groups superimpose; translate carries the coordinates).
 const BUILDERS: Readonly<Record<string, DomPainter>> = {
-  "label": buildLabel,
-  "button": buildButton,
-  "rectangle": buildRectangle,
+  label: buildLabel,
+  button: buildButton,
+  rectangle: buildRectangle,
   "rounded-rectangle": buildRectangle,
-  "translate": buildTranslate,
-  "spacer": () => {},
-  "rotate": buildWrapperWithColor,
-  "scale": buildWrapperWithColor,
-  "scissor": buildWrapperWithColor,
+  translate: buildTranslate,
+  spacer: () => {},
+  rotate: buildWrapperWithColor,
+  scale: buildWrapperWithColor,
+  scissor: buildWrapperWithColor,
   "with-color": buildWrapperWithColor,
   "with-style": buildWithStyle,
   "with-stroke-width": buildWrapperWithStrokeWidth,
-  "handler": buildChildrenOf,
+  handler: buildChildrenOf,
   "text-selection": buildTextSelection,
   "text-cursor": buildTextCursor,
-  "image": buildImage,
-  "arc": buildArc,
-  "path": buildPath,
+  image: buildImage,
+  arc: buildArc,
+  path: buildPath,
 };
-
-

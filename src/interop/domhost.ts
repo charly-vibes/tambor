@@ -39,7 +39,10 @@ export interface HostDoc {
 // element (browser or jsdom) satisfies it without lib.dom types.
 export interface HostElement {
   setAttribute(name: string, value: string): void;
-  style: { setProperty(name: string, value: string): void; getPropertyValue(name: string): string };
+  style: {
+    setProperty(name: string, value: string): void;
+    getPropertyValue(name: string): string;
+  };
   classList: {
     add(...names: string[]): void;
     remove(...names: string[]): void;
@@ -56,8 +59,15 @@ export interface HostElement {
   // focus through the host element (request-focus, tambor-e5n); the
   // structural interface stays DOM-free so it is optional
   focus?(): void;
-  getBoundingClientRect(): { x: number; y: number; width: number; height: number };
-  querySelectorAll(selectors: string): ArrayLike<HostElement> & Iterable<HostElement>;
+  getBoundingClientRect(): {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
+  querySelectorAll(
+    selectors: string,
+  ): ArrayLike<HostElement> & Iterable<HostElement>;
 }
 
 // A real DOM event, read structurally (pointer/keyboard/clipboard).
@@ -92,8 +102,11 @@ function bool(v: unknown): boolean | undefined {
 // fallback is safe because attach() only registers the five known types.
 function simType(v: string | undefined, fallback: string): SimEvent["type"] {
   if (
-    v === "pointerdown" || v === "pointermove" || v === "pointerup"
-    || v === "keydown" || v === "paste"
+    v === "pointerdown" ||
+    v === "pointermove" ||
+    v === "pointerup" ||
+    v === "keydown" ||
+    v === "paste"
   ) {
     return v;
   }
@@ -124,36 +137,31 @@ export class RealDomElement {
     // svg subtree elements need the svg namespace to render (the dom
     // painters emit path/arc strokes as inline svg — tambor-0rp)
     const SVG_NS = "http://www.w3.org/2000/svg";
-    this.host = tagName === "svg" || tagName === "path"
-      ? (doc.createElementNS?.(SVG_NS, tagName) ?? doc.createElement(tagName))
-      : doc.createElement(tagName);
+    this.host =
+      tagName === "svg" || tagName === "path"
+        ? (doc.createElementNS?.(SVG_NS, tagName) ?? doc.createElement(tagName))
+        : doc.createElement(tagName);
     // attrs: write-through proxy — buildImage writes el.attrs directly,
     // so every record write mirrors onto the host element.
-    this.attrs = new Proxy(
-      {} as Record<string, string | number>,
-      {
-        set: (_t, key, value) => {
-          const name = String(key);
-          this.attrRecord.set(name, value);
-          this.host.setAttribute(name, String(value));
-          return true;
-        },
-        get: (_t, key) => this.attrRecord.get(String(key)),
+    this.attrs = new Proxy({} as Record<string, string | number>, {
+      set: (_t, key, value) => {
+        const name = String(key);
+        this.attrRecord.set(name, value);
+        this.host.setAttribute(name, String(value));
+        return true;
       },
-    );
+      get: (_t, key) => this.attrRecord.get(String(key)),
+    });
     // style: write-through proxy with kebab mapping (the backend writes
     // kebab names; camelCase writes still land correctly in real CSS).
-    this.style = new Proxy(
-      {} as Record<string, string>,
-      {
-        set: (_t, key, value) => {
-          const name = kebab(String(key));
-          this.host.style.setProperty(name, String(value));
-          return true;
-        },
-        get: (_t, key) => this.host.style.getPropertyValue(kebab(String(key))),
+    this.style = new Proxy({} as Record<string, string>, {
+      set: (_t, key, value) => {
+        const name = kebab(String(key));
+        this.host.style.setProperty(name, String(value));
+        return true;
       },
-    );
+      get: (_t, key) => this.host.style.getPropertyValue(kebab(String(key))),
+    });
   }
 
   get classList(): {
@@ -191,14 +199,15 @@ export class RealDomElement {
     return child;
   }
 
-  setAttribute(name: string, value: string | number): void {
+  setAttribute(name: string, value: string | number): this {
     this.attrs[name] = value;
+    return this;
   }
 
   // Registration maps real DOM events to the SimEvent shape the
   // backend's forward() expects; dispatch() (the shim path) still
   // invokes the original listeners untouched.
-  addEventListener(type: string, fn: ShimListener): void {
+  addEventListener(type: string, fn: ShimListener): this {
     const list = this.byType.get(type) ?? [];
     list.push(fn);
     this.byType.set(type, list);
@@ -219,9 +228,10 @@ export class RealDomElement {
     };
     this.wrapped.set(fn, wrapped);
     this.host.addEventListener(type, wrapped);
+    return this;
   }
 
-  removeEventListener(type: string, fn: ShimListener): void {
+  removeEventListener(type: string, fn: ShimListener): this {
     const list = this.byType.get(type);
     if (list !== undefined) {
       const i = list.indexOf(fn);
@@ -232,6 +242,7 @@ export class RealDomElement {
       this.wrapped.delete(fn);
       this.host.removeEventListener(type, wrapped);
     }
+    return this;
   }
 
   // Invoke the registered listeners of the event's type (shim path).
@@ -244,8 +255,6 @@ export class RealDomElement {
 }
 
 // The createElement factory handed to DomBackend's createElement option.
-export function realDomFactory(
-  doc: HostDoc,
-): (tag: string) => RealDomElement {
+export function realDomFactory(doc: HostDoc): (tag: string) => RealDomElement {
   return (tag: string) => new RealDomElement(tag, doc);
 }

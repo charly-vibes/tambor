@@ -90,7 +90,8 @@ export class SimElement {
   } {
     const names = new Set<string>();
     const current = this.attrs["class"];
-    if (typeof current === "string") for (const n of current.split(/\s+/)) if (n) names.add(n);
+    if (typeof current === "string")
+      for (const n of current.split(/\s+/)) if (n) names.add(n);
     return {
       add: (...added) => {
         for (const n of added) names.add(n);
@@ -108,16 +109,18 @@ export class SimElement {
     return this.rect;
   }
 
-  addEventListener(type: string, fn: Listener): void {
+  addEventListener(type: string, fn: Listener): this {
     const list = this.listeners.get(type) ?? [];
     list.push(fn);
     this.listeners.set(type, list);
+    return this;
   }
 
-  removeEventListener(type: string, fn: Listener): void {
+  removeEventListener(type: string, fn: Listener): this {
     const list = this.listeners.get(type) ?? [];
     const i = list.indexOf(fn);
     if (i >= 0) list.splice(i, 1);
+    return this;
   }
 
   // Invoke the registered listeners of the event's type.
@@ -133,8 +136,9 @@ export class SimElement {
     return child;
   }
 
-  setAttribute(name: string, value: string | number): void {
+  setAttribute(name: string, value: string | number): this {
     this.attrs[name] = value;
+    return this;
   }
 }
 

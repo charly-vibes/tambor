@@ -38,12 +38,7 @@ import {
   type RuntimeOptions,
   Subscriptions,
 } from "./backend.ts";
-import {
-  ImageBuffer,
-  IDENTITY,
-  Painter,
-  matScale,
-} from "./image.ts";
+import { ImageBuffer, IDENTITY, Painter, matScale } from "./image.ts";
 import { type SimCanvas, type SimEvent } from "./domsim.ts";
 import { normalizeDOMEvent } from "./input.ts";
 import { phaseTimers } from "../events/phase-timers.ts";
@@ -98,7 +93,13 @@ export class CanvasBackend implements BackendContract {
     this.painter = new Painter(this.image);
     if (options.view) {
       this.runtime = new Runtime(
-        { view: options.view, ...(options.state !== undefined ? { state: options.state } : {}), ...(options.handler !== undefined ? { handler: options.handler } : {}) },
+        {
+          view: options.view,
+          ...(options.state !== undefined ? { state: options.state } : {}),
+          ...(options.handler !== undefined
+            ? { handler: options.handler }
+            : {}),
+        },
         () => this.containerSize,
         () => this.clipboard,
       );
@@ -106,7 +107,10 @@ export class CanvasBackend implements BackendContract {
   }
 
   private backingSize(): Vec2 {
-    return [Math.round(this.containerSize[0] * this.dpr), Math.round(this.containerSize[1] * this.dpr)];
+    return [
+      Math.round(this.containerSize[0] * this.dpr),
+      Math.round(this.containerSize[1] * this.dpr),
+    ];
   }
 
   // The save-stack depth after the last draw: pushes of transforms,
@@ -118,7 +122,7 @@ export class CanvasBackend implements BackendContract {
   // draw(view): rasterize the tree into the image buffer. Every draw
   // clears first (two draws of the same view produce identical
   // pixels, draw_deterministic).
-  draw(view: AnyDraw): void {
+  draw(view: AnyDraw): this {
     // Phase-timer seams (tambor-54j.1, opt-in): the buffer clear and
     // matrix set are the reconcile/layout side of a draw, the
     // rasterization (including the safe-area clip and the a11y tree
@@ -150,6 +154,7 @@ export class CanvasBackend implements BackendContract {
     this.a11y = accessibilityTree(view);
     phaseTimers.endSpan();
     phaseTimers.finishDraw();
+    return this;
   }
 
   drawView(): void {
@@ -158,38 +163,46 @@ export class CanvasBackend implements BackendContract {
 
   // requestDraw: multiple repaint requests in one frame produce one
   // draw (raf_coalesced).
-  requestDraw(): void {
-    if (this.scheduled) return;
-    const raf = (globalThis as { requestAnimationFrame?: (cb: () => void) => number })
-      .requestAnimationFrame;
+  requestDraw(): this {
+    if (this.scheduled) return this;
+    const raf = (
+      globalThis as { requestAnimationFrame?: (cb: () => void) => number }
+    ).requestAnimationFrame;
     if (typeof raf !== "function") {
       // headless host without frames: repaint immediately
       this.draw(this.last);
-      return;
+      return this;
     }
     this.scheduled = true;
     raf(() => {
       this.scheduled = false;
       this.draw(this.last);
     });
+    return this;
   }
 
   // resize: a viewport change relayouts and redraws, passing the new
   // container size to the app (resize_redraws).
-  resize(size: Vec2): void {
+  resize(size: Vec2): this {
     this.containerSize = size;
     const [w, h] = this.backingSize();
     this.image = new ImageBuffer(w, h);
     this.painter.setBuffer(this.image);
     if (this.surface) this.syncSurface();
     this.drawView();
+    return this;
   }
 
   measureText(text: string, font?: Font | null): Vec2 {
     return this.measure(text, font);
   }
 
-  indexForPosition(font: Font | null, text: string, x: number, y: number): number {
+  indexForPosition(
+    font: Font | null,
+    text: string,
+    x: number,
+    y: number,
+  ): number {
     return indexForPosition(this.measure, font, text, x, y);
   }
 
@@ -223,9 +236,9 @@ export class CanvasBackend implements BackendContract {
     surface.addEventListener("paste", forward);
   }
 
-  private syncSurface(): void {
+  private syncSurface(): this {
     const surface = this.surface;
-    if (!surface) return;
+    if (!surface) return this;
     const [w, h] = this.containerSize;
     surface.attrs["width"] = Math.round(w * this.dpr);
     surface.attrs["height"] = Math.round(h * this.dpr);
@@ -235,6 +248,7 @@ export class CanvasBackend implements BackendContract {
     // the canvas disables browser panning and zoom so the router owns
     // touch (touch_action_none)
     surface.style["touchAction"] = "none";
+    return this;
   }
 
   // One forwarded event: subscribers see it, the runtime routes it,
@@ -246,11 +260,11 @@ export class CanvasBackend implements BackendContract {
   }
 
   // The drawing traversal over the primitive_set.
-  paintTree(view: AnyDraw): void {
-    if (view == null) return;
+  paintTree(view: AnyDraw): this {
+    if (view == null) return this;
     if (Array.isArray(view)) {
       for (const child of view as readonly AnyDraw[]) this.paintTree(child);
-      return;
+      return this;
     }
     const node = view as CanvasNode;
     const painter = PAINTERS[node.type];
@@ -258,10 +272,9 @@ export class CanvasBackend implements BackendContract {
       // unknown node types fall back to drawing their children
       // (primitive_set)
       for (const child of node.drawables ?? []) this.paintTree(child);
-      return;
+      return this;
     }
     painter(this.paintTree.bind(this), this.painter, node);
+    return this;
   }
 }
-
-

@@ -39,12 +39,13 @@ export function wireExtentSizing(
     }
   };
   const rawDraw = backend.draw.bind(backend);
-  backend.draw = (view: Elem): void => {
-    rawDraw(view);
+  backend.draw = (view: Elem) => {
+    const drawn = rawDraw(view);
     const h = extentHeight(view);
     if (h !== sizedHeight) {
       sizedHeight = h;
       rootHost.style.setProperty("height", `${h}px`);
     }
+    return drawn;
   };
 }

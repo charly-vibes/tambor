@@ -29,7 +29,14 @@ import {
   type RuntimeOptions,
   Subscriptions,
 } from "./backend.ts";
-import { matApply, matRotate, matScale, matTranslate, IDENTITY, type Mat } from "./image.ts";
+import {
+  matApply,
+  matRotate,
+  matScale,
+  matTranslate,
+  IDENTITY,
+  type Mat,
+} from "./image.ts";
 import type { AnyDraw } from "./primitives.ts";
 import { phaseTimers } from "../events/phase-timers.ts";
 
@@ -65,7 +72,9 @@ export class TextBackend implements BackendContract {
         {
           view: options.view,
           ...(options.state !== undefined ? { state: options.state } : {}),
-          ...(options.handler !== undefined ? { handler: options.handler } : {}),
+          ...(options.handler !== undefined
+            ? { handler: options.handler }
+            : {}),
         },
         () => this.containerSize,
         () => this.clipboard,
@@ -78,16 +87,19 @@ export class TextBackend implements BackendContract {
   // the reconcile/layout side of a draw, the cell painting is the
   // paint side; the record closes here. Seam calls are no-ops while
   // the timers are off.
-  draw(view: AnyDraw): void {
+  draw(view: AnyDraw): this {
     this.drawCount++;
     phaseTimers.startSpan("reconcile_layout");
     const [w, h] = this.containerSize;
-    this.grid = Array.from({ length: h }, () => Array.from({ length: w }, () => " "));
+    this.grid = Array.from({ length: h }, () =>
+      Array.from({ length: w }, () => " "),
+    );
     phaseTimers.endSpan();
     phaseTimers.startSpan("paint");
     this.paint(view, { matrix: IDENTITY, clip: null });
     phaseTimers.endSpan();
     phaseTimers.finishDraw();
+    return this;
   }
 
   drawView(): void {
@@ -98,7 +110,12 @@ export class TextBackend implements BackendContract {
     return this.measure(text, font);
   }
 
-  indexForPosition(font: Font | null, text: string, x: number, y: number): number {
+  indexForPosition(
+    font: Font | null,
+    text: string,
+    x: number,
+    y: number,
+  ): number {
     return indexForPosition(this.measure, font, text, x, y);
   }
 
@@ -118,40 +135,45 @@ export class TextBackend implements BackendContract {
     if (this.runtime) this.drawView();
   }
 
-  put(state: CellState, x: number, y: number, ch: string): void {
+  put(state: CellState, x: number, y: number, ch: string): this {
     const p = matApply(state.matrix, x, y);
     const dx = Math.round(p[0]);
     const dy = Math.round(p[1]);
     const clip = state.clip;
-    if (clip && (dx < clip.x || dx >= clip.x + clip.w || dy < clip.y || dy >= clip.y + clip.h)) {
-      return;
+    if (
+      clip &&
+      (dx < clip.x ||
+        dx >= clip.x + clip.w ||
+        dy < clip.y ||
+        dy >= clip.y + clip.h)
+    ) {
+      return this;
     }
-    if (dy < 0 || dy >= this.grid.length) return;
+    if (dy < 0 || dy >= this.grid.length) return this;
     const row = this.grid[dy]!;
-    if (dx < 0 || dx >= row.length) return;
+    if (dx < 0 || dx >= row.length) return this;
     row[dx] = ch;
+    return this;
   }
 
-  paint(view: AnyDraw, state: CellState): void {
-    if (view == null) return;
+  paint(view: AnyDraw, state: CellState): this {
+    if (view == null) return this;
     if (Array.isArray(view)) {
       this.paintChildren(view as readonly AnyDraw[], state);
-      return;
+      return this;
     }
     const node = view as PaintNode;
     const painter = PAINTERS[node.type];
     if (painter === undefined) {
       // unknown node types fall back to drawing their children
       this.paintChildren(node.drawables ?? [], state);
-      return;
+      return this;
     }
     painter(this, node, state);
+    return this;
   }
 
-  paintChildren(
-    kids: readonly AnyDraw[],
-    state: CellState,
-  ): void {
+  paintChildren(kids: readonly AnyDraw[], state: CellState): void {
     for (const child of kids) this.paint(child, state);
   }
 }
@@ -179,7 +201,11 @@ function paintLabel(b: TextBackend, node: PaintNode, state: CellState): void {
   }
 }
 
-function paintRectangle(b: TextBackend, node: PaintNode, state: CellState): void {
+function paintRectangle(
+  b: TextBackend,
+  node: PaintNode,
+  state: CellState,
+): void {
   const w = Math.round(node.width ?? 0);
   const h = Math.round(node.height ?? 0);
   for (let dy = 0; dy < h; dy++) {
@@ -193,7 +219,11 @@ function paintPath(b: TextBackend, node: PaintNode, state: CellState): void {
   }
 }
 
-function paintTranslate(b: TextBackend, node: PaintNode, state: CellState): void {
+function paintTranslate(
+  b: TextBackend,
+  node: PaintNode,
+  state: CellState,
+): void {
   b.paint(node.drawable ?? null, {
     matrix: matTranslate(state.matrix, node.x ?? 0, node.y ?? 0),
     clip: state.clip,
@@ -232,35 +262,45 @@ function paintButton(b: TextBackend, node: PaintNode, state: CellState): void {
   for (let i = 0; i < text.length; i++) b.put(state, 6 + i, 6, text[i]!);
 }
 
-function paintCheckbox(b: TextBackend, node: PaintNode, state: CellState): void {
+function paintCheckbox(
+  b: TextBackend,
+  node: PaintNode,
+  state: CellState,
+): void {
   b.put(state, 0, 0, node.checked === true ? "x" : "o");
 }
 
-function paintChildrenOf(b: TextBackend, node: PaintNode, state: CellState): void {
+function paintChildrenOf(
+  b: TextBackend,
+  node: PaintNode,
+  state: CellState,
+): void {
   b.paintChildren(node.drawables ?? [], state);
 }
 
 // One painter per drawable type; the pass-through types (selection,
 // cursor, image, arc, the with-* wrappers, handler) just paint their
 // children.
-const PAINTERS: Readonly<Record<string, (b: TextBackend, node: PaintNode, state: CellState) => void>> = {
-  "label": paintLabel,
-  "rectangle": paintRectangle,
+const PAINTERS: Readonly<
+  Record<string, (b: TextBackend, node: PaintNode, state: CellState) => void>
+> = {
+  label: paintLabel,
+  rectangle: paintRectangle,
   "rounded-rectangle": paintRectangle,
-  "path": paintPath,
-  "spacer": () => {},
-  "translate": paintTranslate,
-  "rotate": paintRotate,
-  "scale": paintScale,
-  "scissor": paintScissor,
-  "button": paintButton,
-  "checkbox": paintCheckbox,
+  path: paintPath,
+  spacer: () => {},
+  translate: paintTranslate,
+  rotate: paintRotate,
+  scale: paintScale,
+  scissor: paintScissor,
+  button: paintButton,
+  checkbox: paintCheckbox,
   "text-selection": paintChildrenOf,
   "text-cursor": paintChildrenOf,
-  "image": paintChildrenOf,
-  "arc": paintChildrenOf,
+  image: paintChildrenOf,
+  arc: paintChildrenOf,
   "with-color": paintChildrenOf,
   "with-style": paintChildrenOf,
   "with-stroke-width": paintChildrenOf,
-  "handler": paintChildrenOf,
+  handler: paintChildrenOf,
 };
