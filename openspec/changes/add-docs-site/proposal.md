@@ -17,15 +17,27 @@ session review: no human-facing docs exist.
 ## What Changes
 
 - New `docs-site` capability: a tambor-rendered documentation SPA
-  (`src/docs/`) with a persistent section nav, a scrolling content pane,
-  and three content classes:
+  (`src/docs/`) with a persistent, journey-grouped section nav, a
+  scrolling content pane, and four content classes (one per Diátaxis
+  quadrant — the documentation-skill audit):
   - **Reference pages** — generated from the corpus at build time, one
     per `openspec/specs/<name>/spec.md`, embedded verbatim under a
     provenance preamble (never hand-edited, never forked — the
-    gen_ai_docs EXCL rules carry over).
-  - **Curated guides** — hand-written pages (quickstart, core model,
-    when-not-to-use) that link into reference pages through typed ids
-    validated at build time.
+    gen_ai_docs EXCL rules carry over); the generator's registry
+    carries id, title, statement and a one-line description per page
+    (RAG-friendly front matter).
+  - **Tutorial** — a quickstart that completes in under 15 minutes to
+    a meaningful working result (a running todo app, not hello-world).
+  - **How-to** — task-oriented guides ("compose a form", "wire
+    drag-scroll") that each lead through one task to a verifiable
+    outcome.
+  - **Explanation** — core model and when-not-to-use pages.
+  All curated guides link into reference pages through typed ids
+  validated at build time; external URLs are extracted and checked
+  (malformed URLs fail the build, live URLs are verified in CI).
+  Where feasible, guide code samples are extracted as compiled TS
+  modules so snippets are type-checked and, when they are the demo,
+  runnable.
   - **Demo embeds** — interactive demos resolved through the existing
     gallery registry behind the dynamic-import boundary.
 - The showcase layout dogfoods the scrollytelling pin: on wide viewports
@@ -36,6 +48,9 @@ session review: no human-facing docs exist.
   `backend.render.resize_redraws`) and the view re-derives per size —
   nav collapses below a 600 px breakpoint, no horizontal overflow at
   320 px, touch targets lean on the 44 px slop layer.
+- Keyboard operability: the site is operable by keyboard alone and a
+  page change moves focus to the content pane (SPA focus management —
+  audit item; the real-DOM host adapter renders real controls).
 - Docs chrome (nav, headings, body, code) consumes only `ui/theme.ts`
   tokens in both `prefers-color-scheme` schemes; both schemes meet WCAG
   AA body-text contrast, checked programmatically from token values.
@@ -60,4 +75,10 @@ session review: no human-facing docs exist.
   budget).
 - Non-goals: re-theming the gallery demos (blocked on tambor-pz6
   component token adoption — follow-up, not this change); search;
-  i18n; SEO/SSR (site stays a client-rendered PWA like the demo).
+  i18n; SEO/SSR (site stays a client-rendered PWA like the demo);
+  per-export API reference pages (corpus specs document behavior, not
+  the API surface — generating per-symbol pages from the public
+  barrels is follow-up tambor-g6z, hosted by the Reference nav group
+  this change reserves); usage analytics/TTFS measurement and a
+  changelog page (both deferred — recorded here deliberately, not
+  silently).

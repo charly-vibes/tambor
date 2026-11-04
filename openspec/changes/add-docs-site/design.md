@@ -27,8 +27,9 @@ modules under `src/docs/content/generated/`:
   **verbatim** (string constant, provenance preamble carrying source
   path + corpus id) — the gen_ai_docs rules (EXCL-001/EXCL-002:
   generated, never hand-edited; embedded, never forked) carry over.
-- a registry module (ids → titles → statements) consumed by nav and
-  link resolution.
+- a registry module (ids → titles → statements → one-line
+  descriptions) consumed by nav, link resolution and RAG front matter
+  (audit: per-page description metadata).
 
 Guides are hand-written TS data modules alongside (typed, no new
 esbuild loader). Guide→reference links are typed ids; a build-time
@@ -40,6 +41,12 @@ generated string against the corpus file bytes.
 Why not markdown-at-runtime: no runtime markdown parser exists in the
 corpus, and adding one would fork content rendering away from the
 pure-view model. TS data modules render through ordinary tambor views.
+
+Guide code samples are extracted as compiled TS modules wherever the
+sample is more than a line or two: the module is type-checked by the
+normal build, and when the sample is the page's demo, the snippet and
+the embed are the same source (audit: examples must be complete and
+runnable, not pasted prose).
 
 ### D3 — Responsiveness is view re-derivation, not CSS
 
@@ -71,7 +78,11 @@ Docs chrome consumes `ui/theme.ts` tokens (`background`, `foreground`,
 code — enforced by a token-audit test. Contrast (WCAG AA, ≥ 4.5:1
 body text) is computed from the token values themselves, so the check
 breaks the build if a palette change ever breaks readability in either
-scheme. Known limitation recorded: embedded gallery demos keep their
+scheme. Accessibility goes beyond color: the nav is operable by
+keyboard alone (the dropdown and controls render as real DOM
+controls), and a page change moves focus to the content pane heading
+(SPA focus management — the audit's focus-management item; without it
+keyboard users re-hear the whole chrome after every navigation). Known limitation recorded: embedded gallery demos keep their
 current colors until tambor-pz6 lands (components consuming theme
 tokens) — the docs chrome around them is compliant either way.
 
@@ -96,6 +107,29 @@ imports (add-spa-delivery pattern); a metafile test asserts no content
 module rides the initial chunk and the initial docs shell stays within
 an explicit gzip budget (baseline recorded at task 9, ceiling = demo
 shell's 38.6 KB gzip until measured).
+
+### D7 — Quadrant-organized information architecture
+
+Nav groups follow the reader journey, not the registry's flat order:
+Getting started (tutorial) → Guides (how-to + explanation) → Reference
+(corpus pages; the group is reserved so tambor-g6z's per-export API
+pages can land later without reshaping the nav) → Examples. Each page
+declares its quadrant + group in its data module; the content check
+fails on a page assigned to no group. Guides follow Diátaxis strictly:
+a quickstart is a tutorial (one path to a working result, completable
+in under 15 minutes), how-tos solve one named task each, explanations
+(when-not-to-use, core model) define concepts before using them and
+state prerequisites upfront (EPPO standalone-utility rule).
+
+### D8 — Link discipline and measurement stance
+
+The typed-id graph eliminates internal link rot by construction; the
+content check additionally extracts every external http(s) URL from
+curated pages — malformed URLs fail the build deterministically, and
+CI verifies live URLs resolve (build stays offline-safe). Measurement:
+coverage and freshness are 100%-by-construction (registry equals the
+corpus; pages generate at build); TTFS/analytics is deliberately out
+of scope (see proposal non-goals) rather than silently absent.
 
 ## Risks
 

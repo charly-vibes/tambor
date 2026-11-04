@@ -2,10 +2,12 @@
 
 ### Requirement: Site shell and navigation
 
-The docs site SHALL render a persistent section navigation listing
-every section (curated guides and generated reference) with the
-current page highlighted, and a content pane rendering the selected
-page, so every page is reachable through the navigation alone.
+The docs site SHALL render a persistent section navigation grouped by
+reader journey (getting started, guides, reference, examples) listing
+every page with the current page highlighted, and a content pane
+rendering the selected page, so every page is reachable through the
+navigation alone; the navigation SHALL be operable by keyboard alone,
+and completing a page change SHALL move focus to the content pane.
 
 #### Scenario: visitor navigates to a reference page
 
@@ -14,13 +16,26 @@ page, so every page is reachable through the navigation alone.
 - **THEN** the content pane renders that section's page and the
   navigation marks it as current
 
+#### Scenario: keyboard-only navigation moves focus on page change
+
+- **WHEN** the visitor, using only the keyboard, activates a
+  navigation entry for a different page
+- **THEN** the content pane renders the new page and DOM focus moves
+  to the content pane's heading
+
+#### Scenario: ungrouped page fails the build
+
+- **WHEN** a content module declares no journey group
+- **THEN** the build-time content check fails naming the module
+
 ### Requirement: Generated reference pages
 
 The docs build SHALL generate one reference page per corpus spec by
 embedding its `spec.md` verbatim under a provenance preamble naming
-the source path, generated at build time and never hand-edited, and
-SHALL fail the build when the corpus is missing or a generated page's
-content diverges from its corpus file.
+the source path, generated at build time and never hand-edited, with
+a registry carrying each page's id, title, statement and a one-line
+description, and SHALL fail the build when the corpus is missing or a
+generated page's content diverges from its corpus file.
 
 #### Scenario: corpus spec gets a verbatim page
 
@@ -38,8 +53,11 @@ content diverges from its corpus file.
 ### Requirement: Curated guides with validated links
 
 The docs site SHALL carry hand-written guide pages that reference
-reference pages only through typed page ids, and the build SHALL fail
-on an unresolved id or an id colliding with a generated page id.
+reference pages only through typed page ids, extract every external
+http(s) URL for validation, and the build SHALL fail on an unresolved
+id, an id colliding with a generated page id, or a malformed external
+URL; continuous integration SHALL additionally verify that external
+URLs resolve.
 
 #### Scenario: unresolved guide link fails the build
 
@@ -47,6 +65,37 @@ on an unresolved id or an id colliding with a generated page id.
   defines
 - **THEN** the build-time content check fails naming the guide and
   the unknown id
+
+#### Scenario: malformed external URL fails the build
+
+- **WHEN** a curated page carries an external URL that is not a valid
+  http(s) URL
+- **THEN** the build-time content check fails naming the page and the
+  URL, while well-formed external URLs are emitted to a link inventory
+  that CI verifies resolve
+
+### Requirement: Tutorial and how-to guides
+
+The curated pages SHALL cover all three narrative quadrants: a
+quickstart tutorial that a developer can complete in under 15 minutes
+to a meaningful working result, task-oriented how-to guides that each
+lead through one named task to a verifiable outcome, and explanation
+pages that state their prerequisites and define concepts before using
+them.
+
+#### Scenario: quickstart reaches a working result
+
+- **WHEN** a developer follows the quickstart start to finish
+- **THEN** they reach a running todo application built with tambor,
+  within the 15-minute bar, with every snippet in the guide
+  type-checked by the build
+
+#### Scenario: how-to completes its named task
+
+- **WHEN** a developer follows a how-to guide start to finish
+- **THEN** the named task's outcome is achieved and verifiable in the
+  running app (for example a composed form submitting, or
+  drag-scrolling wired)
 
 ### Requirement: Demo embeds
 
