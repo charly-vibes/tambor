@@ -465,7 +465,7 @@
 - **Next:** gwt task 2 — docs shell (2.1 red: journey-grouped nav + content pane, tests/docs-shell.test.ts jsdom/DomBackend; 2.2 green: src/docs/main.ts + shared host/registry helpers EXTRACTED from src/spa imported-not-moved; 2.3 refactor shared page-view renderer).
 - 2026-11-04T22:14:18Z [id:9296b6979b94b47d702087f383bc9bd7221b2d0de994056c08cd806aca156dd1] (#resume-tambor-gwt) Format: 1
   2026-11-04T22:30:00Z — quick stash (session 01a1a834-da00-7167-b67a-3054f3913c48)
-  Repo: cv/charly-vibes/tambor, branch main, HEAD 311f973 (pushed, CI green 41920853804). Previous entry: none.
+  Repo: cv/charly-vibes/tambor, branch main, HEAD 311f973 (pushed, CI green 41920853804). Previous entry: none. (superseded by 2efea896ac1cff178e29b243925c8b8c1010d6779ac1213ed2a0fcad200e6f36)
   
   Objective: tambor-gwt — apply add-docs-site OpenSpec change (docs SPA: corpus reference pages, guides, demo embeds, scrollytelling showcase).
   
@@ -486,3 +486,27 @@
   Validation: just test green (exit 10 vacuous, 799 ingested, 0 failing); tsc 0; eslint 0; pretender gate 0 new; CI 41920853804 green.
   
   Blockers: none AFK. 72m 10.2 manual browser acceptance still parked on the user. Known limitation: embedded gallery demo colors wait for tambor-pz6 (docs chrome compliant either way).
+- 2026-11-04T23:01:43Z [id:2efea896ac1cff178e29b243925c8b8c1010d6779ac1213ed2a0fcad200e6f36] (#resume-tambor-gwt) Format: 1
+  2026-11-04T23:05:00Z — quick stash (session renew-continuation)
+  Repo: cv/charly-vibes/tambor, branch main, HEAD b681cc1 (NOT pushed — push is user-gated). Previous entry: 9296b6979b94b47d702087f383bc9bd7221b2d0de994056c08cd806aca156dd1.
+  
+  Objective: tambor-gwt — apply add-docs-site OpenSpec change (docs SPA).
+  
+  Phase: green — tasks 2.1/2.2/2.3 LANDED (b48392d + whisper snap 438bcb9 + beads export b681cc1); next is task 3 (keyboard and focus), not started.
+  
+  State:
+  - src/docs/main.ts: mountDocs over mountDemo (imported, not moved). Docs app state {page, body}; select-page swaps page + drops body, then void Promise.resolve().then kicks the D6 dynamic import via generated pageLoaders; body-loaded lands only when still current (stale arrival ignored).
+  - Generator emits group:"reference" + per-page static loaders in registry.ts; page_loaders() extracted for the pretender function_lines gate.
+  - 2.3 refactor: src/docs/page.ts (pageView over PageData — generated and guide modules share the Elem shape), src/docs/nav.ts (NAV typed once, D7 order).
+  - tests/docs-shell.test.ts regenerates gitignored content into src/docs/content/generated before dynamic imports, so fresh checkouts pass under plain vitest run (CI has no build step).
+  - checkGroups in src/docs/content/check.ts runs at mount; test asserts it throws naming the ungrouped module.
+  
+  Exact next action: gwt task 3.1 RED — tests/docs-keyboard.test.ts: nav operable by keyboard alone (real-DOM controls receive focus), completing a page change moves DOM focus to the content pane heading. Study src/spa/focus.ts (request-focus effect, ::context/focus state, spaFocusView) and how mount.ts registers the focus effect on the dispatcher before writing the red test.
+  
+  Key constraints: body never in initial chunk (task 7 metafile test); CURRENT "▸ " glyph marks the current nav entry until task 5 theme highlight; guide pages land in tasks 4-5 conforming to PageData.
+  
+  Gotchas that bit this session: node:child_process NEEDS @ts-expect-error in tests (prior handoff said it was typed — wrong, no @types/node at all); queueMicrotask untyped → Promise.resolve().then; HostDoc textContent non-nullable (no ?? ""); NEVER git commit --amend without checking HEAD — it amended the prior session's whisper snap; recovered via soft reset to 311f973 + split re-commit; bd has no --comment flag, use bd comment.
+  
+  Validation: just test green (802 ingested, 0 failing, CALIBRATED vacuous); tsc strict + build 0; eslint 0; pretender 0 new; ah check 0 findings; all pre-commit hooks green.
+  
+  Blockers: none AFK. Unpushed: b48392d, 438bcb9, b681cc1 (push user-gated). 72m 10.2 manual browser acceptance still parked on the user. (supersedes 9296b6979b94b47d702087f383bc9bd7221b2d0de994056c08cd806aca156dd1)
