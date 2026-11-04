@@ -2,13 +2,13 @@
 
 ## 1. Content generator
 
-- [ ] 1.1 Red: generator tests — one page module per corpus spec with
+- [x] 1.1 Red: generator tests — one page module per corpus spec with
       verbatim embedded content (byte-diff against
       `openspec/specs/<name>/spec.md`), provenance preamble carries
       the source path, registry module lists every page with id,
       title, statement and one-line description, and a missing corpus
       exits non-zero naming the path. tests/docs-content-generator.test.ts
-- [ ] 1.2 Green: `tools/gen_docs_content.py` emits
+- [x] 1.2 Green: `tools/gen_docs_content.py` emits
       `src/docs/content/generated/` TS data modules (page per spec +
       registry); wire as a build step in `scripts/build-spa.mjs`
       ahead of esbuild.

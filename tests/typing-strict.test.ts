@@ -53,10 +53,16 @@ it("p_no_any: no exported symbol in the emitted declarations mentions any", () =
 // One declaration file's stripped signatures mention no any.
 function expectDeclarationMentionsNoAny(file: string): void {
   const source = execSync(`cat ${file}`).toString();
-  // strip comments: only signatures are scanned
+  // strip comments: only signatures are scanned; then strip string
+  // literal CONTENTS — a string literal is data, not a type, so prose
+  // (or a literal type "any") inside one is not a mention of the any
+  // type. Generated declarations with embedded corpus text (docs
+  // content, add-docs-site D2) otherwise false-positive this scan.
   const stripped = source
     .replace(/\/\*[\s\S]*?\*\//g, "")
-    .replace(/\/\/.*/g, "");
+    .replace(/\/\/.*/g, "")
+    .replace(/"(?:[^"\\]|\\.)*"/g, '""')
+    .replace(/'(?:[^'\\]|\\.)*'/g, "''");
   const hits = stripped.match(/\bany\b/);
   expect(hits, `${file} mentions any: ${stripped.slice(0, 200)}`).toBeNull();
 }

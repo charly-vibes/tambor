@@ -17,6 +17,7 @@
 //   dependencies: esbuild is an existing devDependency.
 
 import { build } from "esbuild";
+import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync, rmSync } from "node:fs";
 
 const OUTDIR = "demo-dist";
@@ -33,6 +34,12 @@ for (const stale of [
 ]) {
   rmSync(stale, { force: true });
 }
+
+// docs content (add-docs-site D2): generated TS data modules must exist
+// before esbuild bundles anything that imports them; the generator owns
+// its whole out dir (gitignored, wiped + regenerated every run), so a
+// renamed corpus spec can never ship a stale page.
+execFileSync("python3", ["tools/gen_docs_content.py"], { stdio: "pipe" });
 
 const result = await build({
   // explicit out labels: the two worker entries share the basename

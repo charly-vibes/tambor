@@ -84,3 +84,7 @@ tests/screenshots/
 # the briefs under .wai/projects/*/briefs are the tracked source)
 .wai/projects/*/runs/
 /progress.md
+
+# docs-site content (add-docs-site D2): generated at build from the
+corpus — never hand-edited, never committed
+src/docs/content/generated/

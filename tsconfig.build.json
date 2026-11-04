@@ -16,6 +16,10 @@
   },
   "include": ["src/**/*.ts"],
   // the service worker is a demo-shell artifact (demo-dist/sw.js via
-  // scripts/build-spa.mjs) — the npm emit must not carry a second copy
-  "exclude": ["src/spa/sw.ts"]
+  // scripts/build-spa.mjs) — the npm emit must not carry a second copy;
+  // same for the generated docs content (add-docs-site D2: build-time
+  // data modules under src/docs/content/generated/, gitignored, demo
+  // surface only — their embedded corpus prose would also leak the word
+  // "any" into the p_no_any declarations scan)
+  "exclude": ["src/spa/sw.ts", "src/docs/content/generated/**"]
 }
