@@ -488,7 +488,7 @@
   Blockers: none AFK. 72m 10.2 manual browser acceptance still parked on the user. Known limitation: embedded gallery demo colors wait for tambor-pz6 (docs chrome compliant either way).
 - 2026-11-04T23:01:43Z [id:2efea896ac1cff178e29b243925c8b8c1010d6779ac1213ed2a0fcad200e6f36] (#resume-tambor-gwt) Format: 1
   2026-11-04T23:05:00Z — quick stash (session renew-continuation)
-  Repo: cv/charly-vibes/tambor, branch main, HEAD b681cc1 (NOT pushed — push is user-gated). Previous entry: 9296b6979b94b47d702087f383bc9bd7221b2d0de994056c08cd806aca156dd1.
+  Repo: cv/charly-vibes/tambor, branch main, HEAD b681cc1 (NOT pushed — push is user-gated). Previous entry: 9296b6979b94b47d702087f383bc9bd7221b2d0de994056c08cd806aca156dd1. (superseded by 77f33616a0f85cdf60bd4f9fd2eb185f8299d8d2920873e526933660565a11b7)
   
   Objective: tambor-gwt — apply add-docs-site OpenSpec change (docs SPA).
   
@@ -510,3 +510,49 @@
   Validation: just test green (802 ingested, 0 failing, CALIBRATED vacuous); tsc strict + build 0; eslint 0; pretender 0 new; ah check 0 findings; all pre-commit hooks green.
   
   Blockers: none AFK. Unpushed: b48392d, 438bcb9, b681cc1 (push user-gated). 72m 10.2 manual browser acceptance still parked on the user. (supersedes 9296b6979b94b47d702087f383bc9bd7221b2d0de994056c08cd806aca156dd1)
+- 2026-11-04T23:17:42Z [id:77f33616a0f85cdf60bd4f9fd2eb185f8299d8d2920873e526933660565a11b7] (#resume-tambor-gwt) Format: 1
+  2026-11-04T23:15:00Z — quick stash (session renew-continuation)
+  Repo: cv/charly-vibes/tambor, branch main, HEAD 0c3c1d7 PUSHED (311f973..0c3c1d7, pre-push gates green). Previous entry: 2efea896ac1cff178e29b243925c8b8c1010d6779ac1213ed2a0fcad200e6f36. (superseded by 0bd0898b4ad65a12dc778fe7154a8b638b4937bb7a4a5796da9ad6149f700004)
+  
+  Objective: tambor-gwt — apply add-docs-site OpenSpec change (docs SPA).
+  
+  Phase: green — tasks 2.1/2.2/2.3 LANDED and pushed; next is task 3 (keyboard and focus), not started.
+  
+  State (details in superseded entry, still valid):
+  - src/docs/main.ts mountDocs over mountDemo; state {page, body}; select-page kicks D6 dynamic import via generated pageLoaders; body-loaded lands only when current.
+  - Generator emits group:"reference" + per-page static loaders; page.ts PageData contract + nav.ts NAV (2.3 refactor).
+  - tests/docs-shell.test.ts self-regenerates gitignored content before dynamic imports (fresh-checkout CI safety).
+  
+  Exact next action: gwt task 3.1 RED — tests/docs-keyboard.test.ts: nav operable by keyboard alone (real-DOM controls receive focus), page change moves DOM focus to the content pane heading. Study src/spa/focus.ts (request-focus effect, ::context/focus, spaFocusView) and mount.ts's focus-effect registration before writing red.
+  
+  Key constraints: body never in initial chunk (task 7 metafile); "▸ " glyph marks current until task 5 theme; guides land in tasks 4-5 conforming to PageData.
+  
+  Gotchas (from this session): node:child_process needs @ts-expect-error in tests (no @types/node at all); queueMicrotask untyped → Promise.resolve().then; HostDoc textContent non-nullable; NEVER git commit --amend without checking HEAD; bd has no --comment flag (use bd comment).
+  
+  Validation at stash: just test green 802/0 CALIBRATED; tsc 0; eslint 0; pretender 0 new; ah check 0 findings. All pushed.
+  
+  Blockers: none AFK. 72m 10.2 manual browser acceptance still parked on the user. (supersedes 2efea896ac1cff178e29b243925c8b8c1010d6779ac1213ed2a0fcad200e6f36)
+- 2026-11-04T23:49:43Z [id:0bd0898b4ad65a12dc778fe7154a8b638b4937bb7a4a5796da9ad6149f700004] (#resume-tambor-gwt) Format: 1
+  2026-11-04T23:50:00Z — quick stash (session renew-continuation)
+  Repo: cv/charly-vibes/tambor, branch main, HEAD 05a94fc (NOT pushed — push is user-gated). Previous entry: 77f33616a0f85cdf60bd4f9fd2eb185f8299d8d2920873e526933660565a11b7.
+  
+  Objective: tambor-gwt — apply add-docs-site OpenSpec change (docs SPA).
+  
+  Phase: green — tasks 3.1/3.2 LANDED (commit 05a94fc); next is task 4 (live container sizing), not started.
+  
+  State:
+  - Nav entries are corpus button nodes — the DOM backend paints a native <button>, so the nav is focusable and keyboard reachable.
+  - src/docs/dom.ts is the host seam the corpus tree cannot express: a keydown on a focused nav control dispatches select-page; the docs-focus effect (effect-dispatch seam) records the focus target on the docs state path and runs the host hook that focuses the pane heading (tabindex=-1, role=heading).
+  - The focus lands AFTER the body-loaded draw: the page change completes with the body, and every draw rebuilds the tree (an earlier focus would be dropped).
+  - FIXED (latent task-2.2 defect): the page body never reached the DOM — createDocsApp captured app.dispatch before mountDemo wrapped it with the async re-draw path (tambor-a45). dispatch now reads app.dispatch at call time.
+  - Landing test change: tests/docs-shell.test.ts's navEntryOf now finds button nodes (same intent); the shell test also waits for the body render (tests/helpers/wait.ts).
+  
+  Exact next action: task 4.1 RED — tests/docs-host-sizing.test.ts: the ResizeObserver callback routes the observed size through DomBackend.resize and the re-derived view differs at 320 vs 900 px container width (mock ResizeObserver in jsdom). Then 4.2: src/docs/host.ts observes the mount container, calls backend.resize, re-derives; gallery untouched.
+  
+  Constraints: body never in the initial chunk (task 7 metafile); the "▸ " glyph marks the current nav entry until task 5 layers the theme highlight; guides land in tasks 4-5 conforming to PageData; the nav buttons are the only <button> elements in the docs tree (the pane heading is a span the seam marks with tabindex/role).
+  
+  Gotchas: (1) the core has no lib.dom — tests read tagName/getAttribute/focus through a local structural cast and reach setTimeout structurally; (2) pretender lazy_cluster = >=3 near-identical trivial helpers in a test file = a NEW finding = gate failure (hostDoc now fails loud on a missing document to break the cluster); (3) the app-role cyclomatic green band is <=10 (11 = yellow = new = gate failure) — docsHandler was split into applyEffect/selectPage/bodyLoaded/selectFocus; (4) HostElement.textContent is non-nullable (no ?? ""); (5) the page body arrives through a dynamic import — assertions on it must wait, not race; (6) NEVER git commit --amend without checking HEAD; (7) bd has no --comment flag (use bd comment).
+  
+  Validation: vitest 130 files / 804 tests green; ah check --run-tests 787 passed, 0 findings; tsc 0; eslint 0; pretender gate 49 known 0 new; npm run build + build:spa OK.
+  
+  Blockers: none AFK. Unpushed: 05a94fc (push user-gated). 72m 10.2 manual browser acceptance still parked on the user. (supersedes 77f33616a0f85cdf60bd4f9fd2eb185f8299d8d2920873e526933660565a11b7)
