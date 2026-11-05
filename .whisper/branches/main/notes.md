@@ -604,7 +604,7 @@
   Ownership/blockers: bead tambor-gwt IN_PROGRESS, assignee charly vibes (claimed this session). Blockers: none AFK. 72m 10.2 manual browser acceptance still parked on the user. Authorization limit observed: push is user-gated in this repo's practice, though the repo protocol mandates push on session close — the last two pushes went through the full pre-push gates. (supersedes 8481016a12b972d0b37a85a3a81070a2d954c52e7f1aadca51be3c7e4a711242)
 - 2026-11-05T14:01:49Z [id:8a9e7cd37e41b204d4ea72fcab5394b36de4d5c61924c436d2cbdbac5eb26344] (#resume-tambor-gwt) Format: 1
   2026-11-05T14:01:49Z — quick stash (session renew-continuation)
-  Repo: cv/charly-vibes/tambor, branch main, HEAD f7dda3a PUSHED (d62661a..f7dda3a, all 6 pre-push gates green). Previous entry: fac19c5f0b6c1b375f835b51e4d33d14a08c2cd2cd257097a0aa3cd03d6cc88e.
+  Repo: cv/charly-vibes/tambor, branch main, HEAD f7dda3a PUSHED (d62661a..f7dda3a, all 6 pre-push gates green). Previous entry: fac19c5f0b6c1b375f835b51e4d33d14a08c2cd2cd257097a0aa3cd03d6cc88e. (superseded by 875e1e77d00fd35bd1f6e50a672382d035dbd85ae94dda7d0e14468460d9e661)
   
   Objective: tambor-gwt — apply the add-docs-site OpenSpec change (docs SPA).
   
@@ -624,3 +624,25 @@
   Validation (at f7dda3a): vitest exec selected green (CALIBRATED vacuous line expected); ah check --run-tests 787 passed 0 findings; tsc 0; eslint 0; pretender gate-full green; build + build:spa OK; packaging contracts PASS in fresh-checkout condition (emit-check, core-split-check, pack-probe); CI run for f7dda3a pending at push time — check on resume.
   
   Blockers: none AFK. 72m 10.2 manual browser acceptance still parked on the user. (supersedes fac19c5f0b6c1b375f835b51e4d33d14a08c2cd2cd257097a0aa3cd03d6cc88e)
+- 2026-11-05T14:07:28Z [id:875e1e77d00fd35bd1f6e50a672382d035dbd85ae94dda7d0e14468460d9e661] (#resume-tambor-gwt) Format: 1
+  2026-11-05T14:20:00Z — quick stash (session renew-continuation)
+  Repo: cv/charly-vibes/tambor, branch main, HEAD 7143ee7 PUSHED (up to date with origin/main; f7dda3a feat + 7143ee7 handoff mirror, all pre-push gates green both pushes). Previous entry: 8a9e7cd37e41b204d4ea72fcab5394b36de4d5c61924c436d2cbdbac5eb26344.
+  
+  Objective: tambor-gwt — apply the add-docs-site OpenSpec change (docs SPA).
+  
+  Phase: green — tasks 4.1/4.2 landed and pushed; next is task 5 (theme fidelity), not started.
+  
+  State (at 7143ee7, clean tree):
+  - Task 4.1 RED: tests/docs-host-sizing.test.ts — mock ResizeObserver (jsdom ships none) pins the sizing chain: the host observes the mount container and disconnects on unmount; the callback routes the observed box through DomBackend.resize (containerSize recorded, drawCount increases); the re-derived tree differs at 320 vs 900 px.
+  - Task 4.2 GREEN: src/docs/host.ts — wireDocsHost(container, backend, derive): observe → on box change backend.resize([w,h]) then backend.draw(derive()); the demo backend hosts no runtime view, so the seam drives the redraw. Docs-agnostic (design D3: gallery can adopt later). No RO in the environment degrades to static VIEWPORT — the domMeasure fallback precedent (tambor-0rp). Width response: docsView resolves a stretch-width shell band against the received container (stretch_resolved/layout_reflows — corpus view.layout); task 6 branches breakpoints on it, task 5 paints it.
+  - Wiring: mountDocs fills a liveBackend cell; createDocsApp's backend record reads containerSize through it (getter), so every derivation path (wire viewCache, host resize) derives at the live size, not mount-time VIEWPORT. Initial mount draw lands before the cell fill → draws at VIEWPORT once; harmless (RO delivers the real box on first observation).
+  
+  Exact next action: task 5.1 RED — tests/docs-theme.test.ts: token-audit (no literal color outside src/docs/theme.ts, source scan) + WCAG AA contrast ≥ 4.5:1 computed from ui/theme.ts token values for body-text pairs in both schemes. Then 5.2 GREEN: src/docs/theme.ts maps docs roles (nav, heading, body, code) to tokens via colorSchemePref's injected matcher; shell views consume only mapped roles.
+  
+  Constraints: no literal colors in docs view code (token-audit enforces); embedded gallery demos keep current colors until tambor-pz6 (recorded limitation); nav buttons stay the only <button> elements in the docs tree; nothing under src/docs may enter the npm emit.
+  
+  Gotchas: (1) pretender lazy_cluster is STRUCTURAL CLONE detection — three normalized-identical statements in one test file trip it (literals normalize away); loop over widths or vary shape; 0 known 1 new = block. (2) wire viewCache keys on state identity — the FIRST dispatch after a resize draws the cached pre-resize tree (self-heals next state change); task 6.2 must address invalidation when width visibly branches (touches src/spa/mount.ts — shared with gallery, design says adopt-not-move). (3) core has no lib.dom — structural casts only. (4) app-role cyclomatic green band ≤10. (5) bd has no --comment flag (use bd comment). (6) NEVER git commit --amend without checking HEAD; piping git commit to tail swallows the exit — capture COMMIT_EXIT.
+  
+  Validation (at f7dda3a, pre 7143ee7 which only adds the mirror): vitest exec selected green (CALIBRATED vacuous line expected); ah check --run-tests 787 passed 0 findings; tsc 0; eslint 0; pretender gate-full green; build + build:spa OK; packaging contracts PASS in fresh-checkout condition (emit-check, core-split-check, pack-probe). CI run for f7dda3a was pending at push time — CHECK IT on resume before building on the state.
+  
+  Blockers: none AFK. 72m 10.2 manual browser acceptance still parked on the user. (supersedes 8a9e7cd37e41b204d4ea72fcab5394b36de4d5c61924c436d2cbdbac5eb26344)

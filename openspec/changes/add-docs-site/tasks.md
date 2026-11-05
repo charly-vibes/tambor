@@ -48,11 +48,11 @@
 
 ## 5. Theme fidelity
 
-- [ ] 5.1 Red: token-audit test — no literal color outside
+- [x] 5.1 Red: token-audit test — no literal color outside
       `src/docs/theme.ts` (source scan) and contrast ratios computed
       from `ui/theme.ts` token values ≥ 4.5:1 for body-text pairs in
       both schemes. tests/docs-theme.test.ts
-- [ ] 5.2 Green: `src/docs/theme.ts` maps docs roles (nav, heading,
+- [x] 5.2 Green: `src/docs/theme.ts` maps docs roles (nav, heading,
       body, code) to existing tokens via colorSchemePref's injected
       matcher; shell views consume only mapped roles.
 

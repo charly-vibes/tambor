@@ -33,7 +33,7 @@ import {
   type ViewContext,
 } from "../effects/dispatch.ts";
 import type { HostDoc, HostElement } from "../interop/domhost.ts";
-import { button, label, rectangle } from "../views/nodes.ts";
+import { button, label, rectangle, withColor } from "../views/nodes.ts";
 import { resolveStretch, verticalLayout } from "../views/layout.ts";
 import { bounds } from "../views/geometry.ts";
 import type { Elem, Vec2 } from "../views/model.ts";
@@ -42,6 +42,7 @@ import { VIEWPORT } from "../spa/viewport.ts";
 import { wireDocsHost } from "./host.ts";
 import { checkGroups } from "./content/check.ts";
 import { clearDocsDom, wireDocsDom } from "./dom.ts";
+import { ambientBackground, ambientColor, resolveAmbient } from "./theme.ts";
 import { NAV, type NavGroup } from "./nav.ts";
 import { pageView } from "./page.ts";
 import {
@@ -148,7 +149,14 @@ function navEntry(page: GeneratedPage, current: string): Elem {
 
 function navGroup(group: NavGroup, current: string): Elem[] {
   const pages = generatedPages.filter((p) => p.group === group.id);
-  return [label(group.header), ...pages.map((p) => navEntry(p, current))];
+  // The group header speaks the heading role (task 5: views consume
+  // mapped roles from ./theme.ts, never tokens or literals). Inside the
+  // layout's translate wrapper the with-color wrapper paints ink only —
+  // the auto-extent background paints nothing (tambor-2jz).
+  return [
+    withColor(ambientColor("heading"), label(group.header)),
+    ...pages.map((p) => navEntry(p, current)),
+  ];
 }
 
 function docsView(state: unknown, context: ViewContext): Elem {
@@ -164,8 +172,13 @@ function docsView(state: unknown, context: ViewContext): Elem {
   // drawn at nominal size and resolved against the container the view
   // receives (stretch_resolved), so a resize re-derivation (layout_reflows)
   // redraws it at the live width. Task 6 branches the breakpoint variants
-  // on the same width; task 5 paints the band.
-  const band = rectangle(0, bounds(shell)[1], { stretchWidth: true });
+  // on the same width; task 5 paints the band with the background token
+  // through the ambient theme (the with-color wrapper's fill background
+  // covers its positioned ancestor — the textarea selection precedent).
+  const band = withColor(
+    ambientBackground(),
+    rectangle(0, bounds(shell)[1], { stretchWidth: true }),
+  );
   return resolveStretch([band, shell], contextSize(context));
 }
 
@@ -218,6 +231,10 @@ function appBackend(): Backend {
 }
 
 export function mountDocs(doc: HostDoc, container: HostElement): DocsHandle {
+  // The theme ambient resolves once per mount through the host's
+  // media-query seam (task 5.2): every view derivation then reads the
+  // matched scheme's token colors without touching ui/theme.
+  resolveAmbient((query) => doc.matchMedia?.(query) ?? null);
   const handle = mountDemo(doc, container, createDocsApp);
   liveBackend.backend = handle.backend;
   // The host seams: the keyboard activation of a nav control and the

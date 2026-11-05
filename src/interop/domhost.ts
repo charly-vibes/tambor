@@ -33,6 +33,11 @@ export interface HostDoc {
   createElementNS?(namespace: string, tag: string): HostElement;
   body: HostElement;
   getElementById(id: string): HostElement | null;
+  // The media-query seam (add-docs-site task 5.2): real Documents and
+  // jsdom expose matchMedia natively; the structural shim omits it and
+  // callers degrade to the light scheme through colorSchemePref's
+  // undefined-or-null contract (ui/theme MediaQueryFn).
+  matchMedia?(query: string): { matches: boolean } | undefined | null;
 }
 
 // The structural element surface the adapter touches — a real DOM
