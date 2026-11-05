@@ -26,12 +26,17 @@
 import { mountDemo, type SpaHandle } from "../spa/mount.ts";
 import {
   makeApp,
+  defaultHandler,
   CONTAINER_SIZE_KEY,
   type App,
   type Backend,
   type Effect,
   type ViewContext,
 } from "../effects/dispatch.ts";
+import type { Path } from "../effects/paths.ts";
+import { call, render } from "../model/component.ts";
+import { dropdown } from "../components/select/dropdown.ts";
+import type { Options } from "../components/select/types.ts";
 import type { HostDoc, HostElement } from "../interop/domhost.ts";
 import { button, label, rectangle, withColor } from "../views/nodes.ts";
 import { resolveStretch, verticalLayout } from "../views/layout.ts";
@@ -44,6 +49,7 @@ import { checkGroups } from "./content/check.ts";
 import { clearDocsDom, wireDocsDom } from "./dom.ts";
 import { ambientBackground, ambientColor, resolveAmbient } from "./theme.ts";
 import { NAV, type NavGroup } from "./nav.ts";
+import { collapsedNav } from "./breakpoint.ts";
 import { pageView } from "./page.ts";
 import {
   generatedPages,
@@ -62,6 +68,30 @@ interface DocsState {
   // The page whose pane heading holds DOM focus (null when none) —
   // the state path the docs-focus effect writes (task 3.2).
   readonly focus: string | null;
+  // The collapsed-nav dropdown (task 6): the select component writes
+  // these through the dispatcher builtins — the open flag and the
+  // ::extra scratch tree (component.model top-level-ui semantics, the
+  // gallery's createSelectDemo shape).
+  readonly "open?": boolean;
+  readonly "::extra": Record<string, unknown>;
+}
+
+// The paths the dropdown component speaks (gallery idiom).
+const PAGE_PATH: Path = [["keypath", "page"]];
+const OPEN_PATH: Path = [["keypath", "open?"]];
+const EXTRA_ROOT: Path = [["keypath", "::extra"]];
+
+// The state step one effect makes, carrying every untouched field —
+// the dropdown's open flag and scratch tree survive navigation.
+function withFields(state: DocsState, patch: Partial<DocsState>): DocsState {
+  return {
+    page: state.page,
+    body: state.body,
+    focus: state.focus,
+    "open?": state["open?"],
+    "::extra": state["::extra"],
+    ...patch,
+  };
 }
 
 // The docs dispatch, assigned once createDocsApp builds the app — the
@@ -98,13 +128,32 @@ function docsHandler(state: unknown, effects: readonly Effect[]): DocsState {
   return next;
 }
 
+// The dispatcher builtins (set/update — the dropdown's selection and
+// open toggle): the default handler applies the path write; a set that
+// lands on the page path is page NAVIGATION, so it drops the stale
+// body and kicks the import exactly like select-page.
+function builtinEffect(state: DocsState, effect: Effect): DocsState {
+  const next = defaultHandler(state, [effect], {}) as DocsState;
+  const arg = effect[1];
+  const value = effect[2];
+  const navigates =
+    effect[0] === "set" &&
+    JSON.stringify(arg) === JSON.stringify(PAGE_PATH) &&
+    typeof value === "string" &&
+    value !== state.page;
+  return navigates ? selectPage(next, value as string) : next;
+}
+
 // The state step one effect makes — each effect kind is its own named
 // step, so the handler keeps its complexity under the gate.
 function applyEffect(state: DocsState, effect: Effect): DocsState {
   const kind = effect[0];
   const arg = effect[1];
+  if (kind === "set" || kind === "update") {
+    return builtinEffect(state, effect);
+  }
   if (kind === "select-page" && typeof arg === "string") {
-    return selectPage(arg);
+    return selectPage(state, arg);
   }
   if (
     kind === "body-loaded" &&
@@ -119,24 +168,31 @@ function applyEffect(state: DocsState, effect: Effect): DocsState {
   return state;
 }
 
-// The page swaps, the stale body drops, and the body load starts.
-function selectPage(page: string): DocsState {
+// The page swaps, the stale body drops, and the body load starts —
+// carrying the dropdown's open flag and scratch tree (withFields).
+function selectPage(state: DocsState, page: string): DocsState {
   void Promise.resolve().then(() => loadBody(page));
-  return { page, body: null, focus: null };
+  return withFields(state, { page, body: null, focus: null });
 }
 
 // The fetched body lands — only for the page still current (a load
 // that lost the race lands nothing).
 function bodyLoaded(state: DocsState, page: string, body: string): DocsState {
   if (page !== state.page) return state;
-  return { page: state.page, body, focus: state.focus };
+  return withFields(state, { body });
 }
 
 // The focus target names the page whose heading holds DOM focus — only
 // for the page still current.
 function selectFocus(state: DocsState, page: string): DocsState {
+  // Identity-preserving no-op when the target is already the current,
+  // focused page: a focus re-dispatch after a resize must NOT change
+  // state identity, or the wire's stale-view window (task 6's cache
+  // contract) could never be exercised — and a redundant focus effect
+  // is not a change.
   if (page !== state.page) return state;
-  return { page: state.page, body: state.body, focus: page };
+  if (state.focus === page) return state;
+  return withFields(state, { focus: page });
 }
 
 // A nav entry: a real DOM control (the corpus button node paints a
@@ -159,14 +215,43 @@ function navGroup(group: NavGroup, current: string): Elem[] {
   ];
 }
 
-function docsView(state: unknown, context: ViewContext): Elem {
+// The collapsed-nav dropdown (task 6.2): every registry page as a
+// [name, title] option; selection writes the page path through the
+// dispatcher builtins and the dropdown closes itself (select_closes).
+// The gallery's createSelectDemo is the integration idiom.
+function navDropdown(s: DocsState): Elem {
+  const options: Options = generatedPages.map((p) => [p.name, p.title]);
+  return render(
+    call(
+      dropdown,
+      {
+        selected: s.page,
+        options,
+        $selected: PAGE_PATH,
+        "open?": s["open?"],
+        "$open?": OPEN_PATH,
+      },
+      { extra: s["::extra"], $extra: EXTRA_ROOT },
+    ),
+  ) as Elem;
+}
+
+export function docsView(state: unknown, context: ViewContext): Elem {
   const s = state as DocsState;
   const page =
     generatedPages.find((p) => p.name === s.page) ?? generatedPages[0]!;
-  const shell = verticalLayout([
-    ...NAV.flatMap((group) => navGroup(group, s.page)),
-    ...pageView(page, s.body),
-  ]) ?? [];
+  const size = contextSize(context);
+  // The breakpoint branch (task 6.2, design D3): below 600 px the nav
+  // collapses to a top-bar dropdown and the prose wraps at the live
+// width; at or above it the journey-grouped sidebar renders.
+  const shell = (
+    collapsedNav(size[0])
+      ? verticalLayout([navDropdown(s), ...pageView(page, s.body, size[0])])
+      : verticalLayout([
+          ...NAV.flatMap((group) => navGroup(group, s.page)),
+          ...pageView(page, s.body, size[0]),
+        ])
+  ) ?? [];
   // The shell band: a full-width strip behind the shell — the live-width
   // chrome a resize reflows. The width is not drawn here: the band is
   // drawn at nominal size and resolved against the container the view
@@ -179,7 +264,7 @@ function docsView(state: unknown, context: ViewContext): Elem {
     ambientBackground(),
     rectangle(0, bounds(shell)[1], { stretchWidth: true }),
   );
-  return resolveStretch([band, shell], contextSize(context));
+  return resolveStretch([band, shell], size);
 }
 
 // The container size a derivation is against: the render context carries
@@ -206,6 +291,8 @@ function createDocsApp(): App {
       page: generatedPages[0]!.name,
       body: null,
       focus: null,
+      "open?": false,
+      "::extra": {},
     } satisfies DocsState,
     backend: appBackend(),
     handler: docsHandler,

@@ -29,6 +29,7 @@ import type { HostDoc, HostElement } from "../src/interop/domhost.ts";
 import { scanOf, type Found } from "./helpers/scan.ts";
 import { centreOf } from "./helpers/appview.ts";
 import { waitFor } from "./helpers/wait.ts";
+import { lastObserver, MockResizeObserver } from "./helpers/mock-ro.ts";
 
 const TOOL = resolve("tools/gen_docs_content.py");
 const CORPUS = resolve("openspec/specs");
@@ -53,6 +54,24 @@ const { checkGroups } = await import("../src/docs/content/check.ts");
 const { generatedPages } = await import(
   "../src/docs/content/generated/registry.ts"
 );
+
+// The sidebar fixtures deliver width through the RO double (jsdom
+// ships none) — installed before any mount constructs one.
+(globalThis as { ResizeObserver?: unknown }).ResizeObserver =
+  MockResizeObserver;
+
+// The shell tests pin the SIDEBAR contracts (journey groups, real nav
+// buttons — task 2/3), so each mount delivers a desktop-width box: the
+// responsive branch (task 6) collapses below 600 px, and the unmeasured
+// fallback width is the corpus VIEWPORT constant.
+function mountDocsAtSidebarWidth(
+  doc: HostDoc,
+  container: HostElement,
+): ReturnType<typeof mountDocs> {
+  const docs = mountDocs(doc, container);
+  lastObserver().fire([{ contentRect: { width: 900, height: 600 } }]);
+  return docs;
+}
 
 function hostDoc(): HostDoc {
   return (globalThis as { document?: unknown }).document as HostDoc;
@@ -95,7 +114,7 @@ describe("docs shell — journey nav and content pane", () => {
     const doc = hostDoc();
     const container = doc.createElement("div");
     doc.body.appendChild(container);
-    const docs = mountDocs(doc, container);
+    const docs = mountDocsAtSidebarWidth(doc, container);
     const text = container.textContent;
     let at = -1;
     for (const group of JOURNEY) {
@@ -114,7 +133,7 @@ describe("docs shell — journey nav and content pane", () => {
     const doc = hostDoc();
     const container = doc.createElement("div");
     doc.body.appendChild(container);
-    const docs = mountDocs(doc, container);
+    const docs = mountDocsAtSidebarWidth(doc, container);
     const target = "View Model";
     const [x, y] = centreOf(navEntryOf(docs.app.view(), target));
     clickAt(docs.surface, x, y);

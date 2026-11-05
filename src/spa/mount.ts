@@ -99,13 +99,15 @@ function laneTransform(lane: LaneStore): Vec2 {
   return [x, y];
 }
 
-function viewCache(app: App): () => Elem {
-  let cache: { state: unknown; view: Elem } | null = null;
+function viewCache(app: App, size: () => unknown): () => Elem {
+  let cache: { state: unknown; size: unknown; view: Elem } | null = null;
   return () => {
     const state = app.getState();
-    if (cache !== null && cache.state === state) return cache.view;
+    const box = size();
+    if (cache !== null && cache.state === state && cache.size === box)
+      return cache.view;
     const view = app.view();
-    cache = { state, view };
+    cache = { state, size: box, view };
     return view;
   };
 }
@@ -221,7 +223,7 @@ function wireSurface(backend: DomBackend, app: App): Wire {
   // span), handler is the routing plus the intent application, and the
   // dom draw attributes reconcile_layout and closes the record. All
   // seam calls are no-ops while the timers are off.
-  const viewFor = viewCache(app);
+  const viewFor = viewCache(app, () => backend.containerSize);
   const wrap = laneWrap(app);
   const rerender = wireRerender(backend, app, viewFor);
   const route = (ev: TamborEvent): void => {

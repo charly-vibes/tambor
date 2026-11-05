@@ -60,6 +60,25 @@ spawnSync("python3", [TOOL, "--corpus", CORPUS, "--out", GENERATED], {
   encoding: "utf8",
 });
 const { mountDocs } = await import("../src/docs/main.ts");
+import { lastObserver, MockResizeObserver } from "./helpers/mock-ro.ts";
+
+// The sidebar fixtures deliver width through the RO double (jsdom
+// ships none) — installed before any mount constructs one.
+(globalThis as { ResizeObserver?: unknown }).ResizeObserver =
+  MockResizeObserver;
+
+// The keyboard contracts are SIDEBAR contracts (real nav buttons —
+// task 3), so each mount delivers a desktop-width box: the responsive
+// branch (task 6) collapses below 600 px, and the unmeasured fallback
+// width is the corpus VIEWPORT constant.
+function mountDocsAtSidebarWidth(
+  doc: HostDoc,
+  container: HostElement,
+): ReturnType<typeof mountDocs> {
+  const docs = mountDocs(doc, container);
+  lastObserver().fire([{ contentRect: { width: 900, height: 600 } }]);
+  return docs;
+}
 
 function hostDoc(): HostDoc {
   const doc = (globalThis as { document?: unknown }).document;
@@ -120,7 +139,7 @@ describe("docs keyboard — nav operable by keyboard alone", () => {
     const doc = hostDoc();
     const container = doc.createElement("div");
     doc.body.appendChild(container);
-    const docs = mountDocs(doc, container);
+    const docs = mountDocsAtSidebarWidth(doc, container);
 
     const controls = navControls(container);
     expect(controls.length).toBeGreaterThan(0);
@@ -138,7 +157,7 @@ describe("docs keyboard — nav operable by keyboard alone", () => {
     const doc = hostDoc();
     const container = doc.createElement("div");
     doc.body.appendChild(container);
-    const docs = mountDocs(doc, container);
+    const docs = mountDocsAtSidebarWidth(doc, container);
 
     const control = controlFor(container, TARGET);
     raw(control).focus();

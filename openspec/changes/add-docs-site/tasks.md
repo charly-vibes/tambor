@@ -58,11 +58,11 @@
 
 ## 6. Responsive breakpoints
 
-- [ ] 6.1 Red: breakpoint tests — below 600 px the nav renders the
+- [x] 6.1 Red: breakpoint tests — below 600 px the nav renders the
       top-bar dropdown variant (components-select), demo embeds stack
       above prose, and the rendered root at 320 px width fits the
       container with no horizontal overflow. tests/docs-responsive.test.ts
-- [ ] 6.2 Green: shell view branches on container width (pure
+- [x] 6.2 Green: shell view branches on container width (pure
       re-derivation); breakpoint constant lives in one module.
 
 ## 7. Demo embeds

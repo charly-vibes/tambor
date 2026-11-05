@@ -27,57 +27,19 @@ import { spawnSync } from "node:child_process";
 import { resolve } from "node:path";
 import type { DocsHandle } from "../src/docs/main.ts";
 import type { HostDoc, HostElement } from "../src/interop/domhost.ts";
+import {
+  lastObserver,
+  MockResizeObserver,
+  observers,
+  type MockObserver,
+} from "./helpers/mock-ro.ts";
 
 const TOOL = resolve("tools/gen_docs_content.py");
 const CORPUS = resolve("openspec/specs");
 const GENERATED = resolve("src/docs/content/generated");
 
-// The structural ResizeObserver surface the host reaches through the
-// global (the core keeps no lib.dom types; jsdom ships no RO).
-interface MockEntry {
-  readonly contentRect: { readonly width: number; readonly height: number };
-}
-
-// Every constructed observer is recorded so a test can fire its
-// callback the way a real browser would on a container box change.
-interface MockObserver {
-  readonly observed: HostElement[];
-  disconnected: boolean;
-  fire(entries: readonly MockEntry[]): void;
-}
-
-const observers: MockObserver[] = [];
-
-class MockResizeObserver {
-  readonly observed: HostElement[] = [];
-  disconnected = false;
-  private readonly callback: (entries: readonly MockEntry[]) => void;
-
-  constructor(callback: (entries: readonly MockEntry[]) => void) {
-    this.callback = callback;
-    observers.push(this);
-  }
-
-  observe(target: HostElement): void {
-    this.observed.push(target);
-  }
-
-  // Deliver a box change the way a browser does: invoke the mount's
-  // callback with entries carrying the observed content rect.
-  fire(entries: readonly MockEntry[]): void {
-    this.callback(entries);
-  }
-
-  // The host never re-targets a mounted observer.
-  unobserve(_target: HostElement): void {}
-
-  disconnect(): void {
-    this.disconnected = true;
-  }
-}
-
-// Install the mock before the dynamic import: mounting constructs the
-// observer through the global, and jsdom defines none.
+// Install the shared RO double before the dynamic import: mounting
+// constructs the observer through the global, and jsdom defines none.
 (globalThis as { ResizeObserver?: unknown }).ResizeObserver =
   MockResizeObserver;
 
@@ -100,10 +62,7 @@ function mount(): {
   const container = host.createElement("div");
   host.body.appendChild(container);
   const docs = mountDocs(host, container);
-  const observer = observers[observers.length - 1] as MockObserver | undefined;
-  if (observer === undefined) {
-    throw new Error("docs: no ResizeObserver was constructed at mount");
-  }
+  const observer = lastObserver();
   return { docs, observer, container };
 }
 
