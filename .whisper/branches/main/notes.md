@@ -558,7 +558,7 @@
   Blockers: none AFK. Unpushed: 05a94fc (push user-gated). 72m 10.2 manual browser acceptance still parked on the user. (supersedes 77f33616a0f85cdf60bd4f9fd2eb185f8299d8d2920873e526933660565a11b7)
 - 2026-11-05T00:06:06Z [id:8481016a12b972d0b37a85a3a81070a2d954c52e7f1aadca51be3c7e4a711242] (#resume-tambor-gwt) Format: 1
   2026-11-04T23:59:00Z — quick stash (session renew-continuation)
-  Repo: cv/charly-vibes/tambor, branch main, HEAD e8323da PUSHED (96299f4..e8323da, CI 41937546639 green); this entry's commit follows. Previous entry: 0bd0898b4ad65a12dc778fe7154a8b638b4937bb7a4a5796da9ad6149f700004.
+  Repo: cv/charly-vibes/tambor, branch main, HEAD e8323da PUSHED (96299f4..e8323da, CI 41937546639 green); this entry's commit follows. Previous entry: 0bd0898b4ad65a12dc778fe7154a8b638b4937bb7a4a5796da9ad6149f700004. (superseded by fac19c5f0b6c1b375f835b51e4d33d14a08c2cd2cd257097a0aa3cd03d6cc88e)
   
   Objective: tambor-gwt — apply add-docs-site OpenSpec change (docs SPA).
   
@@ -578,3 +578,27 @@
   Validation: vitest 130 files / 804 tests green; ah check --run-tests 787 passed 0 findings; tsc 0; eslint 0; pretender gate 49 known 0 new; npm run build + build:spa OK; packaging contracts re-verified in the fresh-checkout condition (generated dir moved away): emit-check PASS, core-split-check PASS, pack-probe PASS; CI 41937546639 green.
   
   Blockers: none AFK. 72m 10.2 manual browser acceptance still parked on the user. (supersedes 0bd0898b4ad65a12dc778fe7154a8b638b4937bb7a4a5796da9ad6149f700004)
+- 2026-11-05T12:19:11Z [id:fac19c5f0b6c1b375f835b51e4d33d14a08c2cd2cd257097a0aa3cd03d6cc88e] (#resume-tambor-gwt) Format: 1
+  2026-11-05T12:19:02Z — quick stash (session 01a1a8dd-1a81-7167-b67a-30599c864225)
+  Repo: cv/charly-vibes/tambor, branch main, HEAD d62661a PUSHED (up to date with origin/main, clean tree). Previous entry: 8481016a12b972d0b37a85a3a81070a2d954c52e7f1aadca51be3c7e4a711242.
+  
+  Objective: tambor-gwt — apply the add-docs-site OpenSpec change (docs SPA).
+  
+  Phase: green — tasks 3.1/3.2 landed and pushed; next is task 4 (live container sizing), not started.
+  
+  State (all pushed, CI green):
+  - Nav entries are corpus button nodes — the DOM backend paints a native <button>, so the nav is focusable and keyboard reachable (task 3.1).
+  - src/docs/dom.ts is the host seam the corpus tree cannot express: a keydown on a focused nav control dispatches select-page; the docs-focus effect (effect-dispatch seam) records the focus target on the docs state path (state.focus) and runs the host hook that focuses the pane heading (tabindex=-1, role=heading) after the completed page has been drawn (task 3.2).
+  - FIXED (task-2.2 defect): the page body never reached the DOM — createDocsApp captured app.dispatch before mountDemo wrapped it with the async re-draw path (tambor-a45); dispatch now reads app.dispatch at call time.
+  - FIXED (CI was red on main, run 41932508597): tsconfig.build.json excludes src/docs/** — the packaging contracts build the package from a clean tree where the gitignored generated registry does not exist (4 packaging contracts failed with TS2307). The docs site is a docs artifact (demo-dist/docs), not a package surface.
+  - tests/docs-keyboard.test.ts (new), tests/helpers/wait.ts (new bounded poll), tests/docs-shell.test.ts (navEntryOf now finds button nodes; also waits for the body render).
+  
+  Exact next action: task 4.1 RED — tests/docs-host-sizing.test.ts: the ResizeObserver callback routes the observed size through DomBackend.resize and the re-derived view differs at 320 vs 900 px container width (mock ResizeObserver in jsdom). Then 4.2: src/docs/host.ts observes the mount container, calls backend.resize, re-derives; gallery untouched.
+  
+  Constraints: body never in the initial chunk (task 7 metafile); the "▸ " glyph marks the current nav entry until task 5 layers the theme highlight; guides land in tasks 4-5 conforming to PageData; the nav buttons are the only <button> elements in the docs tree (the pane heading is a span the seam marks); nothing under src/docs may enter the npm emit.
+  
+  Gotchas: (1) the core has no lib.dom — tests read tagName/getAttribute/focus through a local structural cast and reach setTimeout structurally; (2) pretender lazy_cluster = >=3 near-identical trivial helpers in a test file = a NEW finding = gate failure; (3) the app-role cyclomatic green band is <=10 (11 = yellow = new = gate failure) — docsHandler was split into applyEffect/selectPage/bodyLoaded/selectFocus; (4) HostElement.textContent is non-nullable (no ?? ""); (5) the page body arrives via a dynamic import — assertions on it must wait, not race; (6) every draw rebuilds the DOM tree, so DOM focus must be applied after the final draw of a page change; (7) NEVER git commit --amend without checking HEAD; (8) bd has no --comment flag (use bd comment).
+  
+  Validation (at this commit): vitest 130 files / 804 tests; ah check --run-tests 787 passed 0 findings; tsc 0; eslint 0; pretender gate 49 known 0 new; npm run build + build:spa; packaging contracts re-verified in the fresh-checkout condition (generated dir moved away): emit-check PASS, core-split-check PASS, pack-probe PASS; CI 41937546639 and 41939093524 green.
+  
+  Ownership/blockers: bead tambor-gwt IN_PROGRESS, assignee charly vibes (claimed this session). Blockers: none AFK. 72m 10.2 manual browser acceptance still parked on the user. Authorization limit observed: push is user-gated in this repo's practice, though the repo protocol mandates push on session close — the last two pushes went through the full pre-push gates. (supersedes 8481016a12b972d0b37a85a3a81070a2d954c52e7f1aadca51be3c7e4a711242)

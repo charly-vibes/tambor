@@ -39,11 +39,11 @@
 
 ## 4. Live container sizing
 
-- [ ] 4.1 Red: host test — ResizeObserver callback routes the observed
+- [x] 4.1 Red: host test — ResizeObserver callback routes the observed
       size through DomBackend.resize and the re-derived view differs
       at 320 vs 900 px container width. tests/docs-host-sizing.test.ts
       (mock ResizeObserver in jsdom).
-- [ ] 4.2 Green: `src/docs/host.ts` — observe the mount container,
+- [x] 4.2 Green: `src/docs/host.ts` — observe the mount container,
       call backend.resize, re-derive; gallery untouched.
 
 ## 5. Theme fidelity

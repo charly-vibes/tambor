@@ -26,14 +26,20 @@
 import { mountDemo, type SpaHandle } from "../spa/mount.ts";
 import {
   makeApp,
+  CONTAINER_SIZE_KEY,
   type App,
+  type Backend,
   type Effect,
+  type ViewContext,
 } from "../effects/dispatch.ts";
 import type { HostDoc, HostElement } from "../interop/domhost.ts";
-import { button, label } from "../views/nodes.ts";
-import { verticalLayout } from "../views/layout.ts";
-import type { Elem } from "../views/model.ts";
+import { button, label, rectangle } from "../views/nodes.ts";
+import { resolveStretch, verticalLayout } from "../views/layout.ts";
+import { bounds } from "../views/geometry.ts";
+import type { Elem, Vec2 } from "../views/model.ts";
+import type { DomBackend } from "../render/dom.ts";
 import { VIEWPORT } from "../spa/viewport.ts";
+import { wireDocsHost } from "./host.ts";
 import { checkGroups } from "./content/check.ts";
 import { clearDocsDom, wireDocsDom } from "./dom.ts";
 import { NAV, type NavGroup } from "./nav.ts";
@@ -61,6 +67,13 @@ interface DocsState {
 // handler kicks the body import through it (async applies re-draw via
 // the wire's rerender path, tambor-a45).
 let dispatchDocs: App["dispatch"] | null = null;
+
+// The live backend cell: mountDemo builds the app before the demo
+// backend exists, so the app's backend record reads the container size
+// through this cell and mountDocs fills it right after mount — every
+// derivation path (wire cache, host resize) then derives against the
+// live size instead of the mount-time VIEWPORT constant (task 4.2).
+const liveBackend: { backend: DomBackend | null } = { backend: null };
 
 // Body loaders resolve outside the pure handler: the import result
 // comes back as a body-loaded effect, which only lands when it still
@@ -138,14 +151,38 @@ function navGroup(group: NavGroup, current: string): Elem[] {
   return [label(group.header), ...pages.map((p) => navEntry(p, current))];
 }
 
-function docsView(state: unknown): Elem {
+function docsView(state: unknown, context: ViewContext): Elem {
   const s = state as DocsState;
   const page =
     generatedPages.find((p) => p.name === s.page) ?? generatedPages[0]!;
-  return verticalLayout([
+  const shell = verticalLayout([
     ...NAV.flatMap((group) => navGroup(group, s.page)),
     ...pageView(page, s.body),
-  ]);
+  ]) ?? [];
+  // The shell band: a full-width strip behind the shell — the live-width
+  // chrome a resize reflows. The width is not drawn here: the band is
+  // drawn at nominal size and resolved against the container the view
+  // receives (stretch_resolved), so a resize re-derivation (layout_reflows)
+  // redraws it at the live width. Task 6 branches the breakpoint variants
+  // on the same width; task 5 paints the band.
+  const band = rectangle(0, bounds(shell)[1], { stretchWidth: true });
+  return resolveStretch([band, shell], contextSize(context));
+}
+
+// The container size a derivation is against: the render context carries
+// it under the stretch key (make-app injects the backend's size; the
+// docs host derives with the live box). A bare call without a context
+// falls back to the mount viewport.
+function contextSize(context: ViewContext): Vec2 {
+  const size = context[CONTAINER_SIZE_KEY];
+  if (
+    Array.isArray(size) &&
+    typeof size[0] === "number" &&
+    typeof size[1] === "number"
+  ) {
+    return [size[0], size[1]];
+  }
+  return [VIEWPORT[0], VIEWPORT[1]];
 }
 
 function createDocsApp(): App {
@@ -157,7 +194,7 @@ function createDocsApp(): App {
       body: null,
       focus: null,
     } satisfies DocsState,
-    backend: { containerSize: VIEWPORT },
+    backend: appBackend(),
     handler: docsHandler,
   });
   // Read the dispatch at call time: the mount wraps app.dispatch with
@@ -168,17 +205,37 @@ function createDocsApp(): App {
   return app;
 }
 
+// The app's backend record: the container size reads through the live
+// cell, so derivations see the mounted backend's size once mountDocs
+// fills it (and the mount viewport before that).
+function appBackend(): Backend {
+  return {
+    get containerSize(): readonly [number, number] | null | undefined {
+      const backend = liveBackend.backend;
+      return backend === null ? VIEWPORT : backend.containerSize;
+    },
+  };
+}
+
 export function mountDocs(doc: HostDoc, container: HostElement): DocsHandle {
   const handle = mountDemo(doc, container, createDocsApp);
+  liveBackend.backend = handle.backend;
   // The host seams: the keyboard activation of a nav control and the
-  // focus effect's instance ref (task 3.2).
+  // focus effect's instance ref (task 3.2), and the live size source
+  // (task 4.2) — observed container boxes re-derive the shell.
   wireDocsDom(handle.surface.host, container, handle.app, (batch) => {
     handle.app.dispatch(batch);
   });
+  const dropHost = wireDocsHost(container, handle.backend, () =>
+    docsView(handle.app.getState(), {
+      [CONTAINER_SIZE_KEY]: handle.backend.containerSize,
+    }),
+  );
   const unmount = handle.unmount;
   return {
     ...handle,
     unmount: () => {
+      dropHost();
       unmount();
       clearDocsDom();
     },
