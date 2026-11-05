@@ -24,5 +24,19 @@ export default defineConfig({
     // no routing shim needed (tambor-8rq shim retired in tambor-kue).
     reporters: ["default", "junit"],
     outputFile: { junit: "target/test-results.xml" },
+    // Files must never run concurrently (CI-red 42082454763, contract
+    // tests/vitest-config.test.ts): several files mutate or pack shared
+    // trees — npm pack walks dist/ while another worker's prepack tsc
+    // writes it (spa-delivery's tarball check failed on exactly that
+    // interleaving), build-spa wipes demo-dist/ while spa-bundle reads
+    // the bundle, and the docs content generator wipes its outdir while
+    // docs tests import it. Warm-local tsc (~1.5s emit) hides the races;
+    // CI's cold emit (~10-20s) exposes them — so local green proves
+    // nothing, only serialisation does. A per-file vitest project split
+    // was rejected: per-project junit reporters clobber the single
+    // target/test-results.xml the adapter ingests. The wall-clock cost
+    // (suite runs ~3× longer than fully parallel) is the price of no
+    // cross-file shared-state races.
+    fileParallelism: false,
   },
 });
