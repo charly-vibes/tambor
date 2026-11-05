@@ -667,3 +667,24 @@
   Validation (at 3cef1e9): docs-theme 6/6 green; docs-shell/keyboard/host-sizing untouched green; just test 813 ingested green; tsc 0; eslint 0; ah check --run-tests 787 passed 0 findings; pre-commit + all 6 pre-push gates green (espectacular-contracts 29s, testaruda-exec 77s, tsc, eslint, pretender-full, scaffold-debt 0). CI 3cef1e9 pending — CHECK on resume before building on the state.
   
   Blockers: none AFK. 72m 10.2 manual browser acceptance still parked on the user. (supersedes 875e1e77d00fd35bd1f6e50a672382d035dbd85ae94dda7d0e14468460d9e661)
+- 2026-11-05T18:13:01Z [id:cfb09a9e36d2aef65d8c42b0b923a5e81120c768f323f157b9eff3b7de5c2f0d] (#resume-tambor-gwt) Format: 1
+  2026-11-05T18:13:01Z — quick stash (session renew-continuation)
+  Repo: cv/charly-vibes/tambor, branch main, HEAD 7175b2f PUSHED (1e25da9..7175b2f; CI on 7175b2f in_progress at handoff time — check on resume; pre-push gates green on retry, see gotcha 7). Previous entry: aa3519f72d30b717afbc15da3ca163c2f66ba0d645fc536e0ca16c93e2f43df2.
+  
+  Objective: tambor-gwt — apply the add-docs-site OpenSpec change (docs SPA).
+  
+  Phase: green — task 6 (responsive breakpoints, 6.1+6.2) landed and pushed; next is task 7 (demo embeds), not started.
+  
+  State (at 7175b2f, clean tree):
+  - Task 6.1 RED: tests/docs-responsive.test.ts — three contracts: sidebar carries ≥32 native buttons at 900 px while the collapsed variant carries ZERO (dropdown header/list are on-wrapped labels, never buttons); pure docsView bounds ≤ container at 320 (no horizontal overflow); a post-resize IDENTITY-PRESERVING dispatch (docs-focus for current page) still repaints the collapsed variant.
+  - Task 6.2 GREEN: src/docs/breakpoint.ts (DOCS_BREAKPOINT=600 + collapsedNav — the one module owning the width); main.ts docsView branches pure on width: below 600 single column with components.select dropdown (gallery createSelectDemo idiom: options = [name,title] pairs, =page path, open? flag, ::extra scratch; selection writes page via dispatcher builtins and select_closes closes the dropdown); DocsState gains open? + ::extra carried through every transition (withFields helper); builtinEffect delegates set/update to defaultHandler — a set landing on the page path IS navigation (drops stale body, kicks import); selectFocus is now an identity-preserving no-op when already focused (the stale-cache contract depends on it). page.ts: greedy word wrap at currentLabelMeasure — prose lines fit the column, single-line labels stay single-line, wrap emits more labels. spa/mount.ts: wire viewCache keyed on (state, containerSize) — first dispatch after resize can no longer repaint the stale tree; gallery unaffected (constant size).
+  - Tests: shared tests/helpers/mock-ro.ts RO double (class + registry + lastObserver; consumers assign the global themselves — keep the helper to this statement surface, pretender lazy_cluster counts normalized assignment shapes); docs-shell + docs-keyboard now deliver a 900 px box post-mount (they certify SIDEBAR contracts; the unmeasured fallback width is VIEWPORT 300×300 = collapsed).
+  - Note: the 6.1 demo-embeds-stack clause lands with task 7 embed tests (no embed slots exist yet) — recorded in the test header.
+  
+  Exact next action: task 7.1 RED — tests/docs-embed.test.ts: a page declaring a demo resolves it (per tasks.md 7.1); then 7.2 GREEN: embed view reuses the gallery mount pattern; embeds stack above prose in the collapsed branch (design D3 third assertion), sidebar composition per design D5 (scrollytelling pin lands task 8).
+  
+  Gotchas (accumulated): (1) NEVER pipe git commit/push through tail — capture REAL_EXIT from an unpiped run. (2) pretender lazy_cluster = 3+ normalized-identical statements, literals AND args normalize away. (3) mut_ratio: no module-level lets in src — const cell + property writes. (4) app-role cyclomatic band ≤10 — applyEffect needed its builtin delegation extracted (builtinEffect). (5) bd has no --comment flag. (6) domhost constructor + mountDemo function_lines are KNOWN baselined hotspots (lease 2026-11-08, tambor-272). (7) pre-push testaruda-exec flaked ONCE (blocked, 'failed to push some refs') then passed on retry with zero changes — data point commented on tambor-cpd; if a push blocks there, retry once before diagnosing.
+  
+  Validation (at 7175b2f): docs tests 17/17 green; just test 816 ingested green; tsc 0; eslint 0; ah check --run-tests 787 passed 0 findings; pre-commit gates green (1 known baselined, 0 new); pre-push gates green on retry. CI 7175b2f pending — CHECK before building on the state.
+  
+  Blockers: none AFK. 72m 10.2 manual browser acceptance still parked on the user. (supersedes aa3519f72d30b717afbc15da3ca163c2f66ba0d645fc536e0ca16c93e2f43df2)
