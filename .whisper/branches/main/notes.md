@@ -646,3 +646,24 @@
   Validation (at f7dda3a, pre 7143ee7 which only adds the mirror): vitest exec selected green (CALIBRATED vacuous line expected); ah check --run-tests 787 passed 0 findings; tsc 0; eslint 0; pretender gate-full green; build + build:spa OK; packaging contracts PASS in fresh-checkout condition (emit-check, core-split-check, pack-probe). CI run for f7dda3a was pending at push time — CHECK IT on resume before building on the state.
   
   Blockers: none AFK. 72m 10.2 manual browser acceptance still parked on the user. (supersedes 8a9e7cd37e41b204d4ea72fcab5394b36de4d5c61924c436d2cbdbac5eb26344)
+- 2026-11-05T17:08:27Z [id:aa3519f72d30b717afbc15da3ca163c2f66ba0d645fc536e0ca16c93e2f43df2] (#resume-tambor-gwt) Format: 1
+  2026-11-05T17:08:27Z — quick stash (session renew-continuation)
+  Repo: cv/charly-vibes/tambor, branch main, HEAD 3cef1e9 PUSHED (7143ee7..3cef1e9, all 6 pre-push gates green; CI on 3cef1e9 in_progress at handoff time — check on resume). Previous entry: 875e1e77d00fd35bd1f6e50a672382d035dbd85ae94dda7d0e14468460d9e661.
+  
+  Objective: tambor-gwt — apply the add-docs-site OpenSpec change (docs SPA).
+  
+  Phase: green — task 5 (theme fidelity, 5.1+5.2) landed and pushed; next is task 6 (responsive breakpoints), not started.
+  
+  State (at 3cef1e9, clean tree):
+  - Task 5.1 RED: tests/docs-theme.test.ts — six contracts: exact roles [nav,heading,body,code]; ROLE_TOKEN values ∈ ui TOKENS; WCAG AA ≥4.5:1 computed from ui/theme token VALUES (sRGB→luminance) per role per scheme; docsColors/docsBackground resolve via colorSchemePref's injected matcher; literal-color source scan (hex 3/6/8 + rgb/hsl fns) over src/docs root modules excluding content/ (generated verbatim corpus); theme.ts is the ONLY docs importer of ../ui/theme.ts and ≥1 view consumes ./theme.ts.
+  - Task 5.2 GREEN: src/docs/theme.ts — ROLE_TOKEN maps all four roles to foreground (only AA-passing body-text pair in BOTH schemes; accent-on-background ≈4.0:1 light, the audit guards future mappings); docsColors/docsBackground pure resolvers; ambient const-cell (liveBackend idiom — module-level lets trip pretender mut_ratio 0.5>0.3, that cost one gate iteration) resolved ONCE per mount: mountDocs calls resolveAmbient((q) => doc.matchMedia?.(q) ?? null); defaults light via null matcher. HostDoc widened with OPTIONAL structural matchMedia (real Document + jsdom satisfy; shim omits).
+  - Views: main.ts band=withColor(ambientBackground()) (wrapper fill background covers positioned ancestor — textarea selection precedent), group headers=heading; page.ts title=heading, statement/description/body lines=body. withColor inside layout translate wrappers paints ink ONLY (zero-extent background, tambor-2jz). Buttons UNPAINTED — buildButton ignores ctx.ink; nav role visible consumption blocked on NEW bead tambor-xtc (painters-only fix, thread ink like buildLabel).
+  - Checkbox 5.1/5.2 ticked in tasks.md; beads exported (128 issues); bd comment on tambor-gwt.
+  
+  Exact next action: task 6.1 RED — breakpoint tests: below 600px the nav renders the collapsed variant (per tasks.md 6.1) branching on the live container width the host already feeds (contextSize in main.ts reads CONTAINER_SIZE_KEY); then 6.2 GREEN: shell view branches on width — GOTCHA: the wire viewCache keys on state identity, first dispatch after a resize draws the cached pre-resize tree (self-heals next state change); when width VISIBLY branches (task 6 does), viewCache invalidation must be addressed and it touches src/spa/mount.ts (shared with gallery — design says adopt-not-move).
+  
+  Gotchas: (1) NEVER pipe git commit through tail — 0 reports tail's exit; capture COMMIT_EXIT from an unpiped run (cost one false-commit today). (2) pretender lazy_cluster = 3 normalized-identical statements (literals normalize away); loop or vary shape. (3) mut_ratio gate: no module-level lets in src — const cell + property writes. (4) app-role cyclomatic band ≤10. (5) bd has no --comment flag (use bd comment). (6) domhost constructor function_lines 31>30 is KNOWN baselined hotspot debt (lease 2026-11-08, tambor-272 refactors).
+  
+  Validation (at 3cef1e9): docs-theme 6/6 green; docs-shell/keyboard/host-sizing untouched green; just test 813 ingested green; tsc 0; eslint 0; ah check --run-tests 787 passed 0 findings; pre-commit + all 6 pre-push gates green (espectacular-contracts 29s, testaruda-exec 77s, tsc, eslint, pretender-full, scaffold-debt 0). CI 3cef1e9 pending — CHECK on resume before building on the state.
+  
+  Blockers: none AFK. 72m 10.2 manual browser acceptance still parked on the user. (supersedes 875e1e77d00fd35bd1f6e50a672382d035dbd85ae94dda7d0e14468460d9e661)
