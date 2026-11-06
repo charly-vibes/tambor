@@ -13,4 +13,13 @@ changes = "openspec/changes"
 [runners]
 # vitest adapter — plain invocation; ah 0.12.0 attributes the batched
 # json run from the report file itself (GH#46), no shim needed.
-vitest = ["npx", "vitest", "run"]
+# AH_RUNNER=1 (via env, array-form direct exec — no shell): marks ah's
+# invocations so tests/helpers/heavy-lock.ts no-ops. ah attributes ONE
+# batched --testNamePattern invocation against an internal ~60-90s
+# budget; the shared-tree lock chain (~130-270s) exceeds it and
+# silently degrades to per-binding storms (CI run 42115074478 hung
+# >2h on exactly that). ah's narrowed batch keeps the historic fast
+# path; the full-suite runs that actually raced (testaruda exec,
+# just test) carry no marker and DO exclude. Contract-pinned in
+# tests/vitest-config.test.ts.
+vitest = ["env", "AH_RUNNER=1", "npx", "vitest", "run"]

@@ -55,6 +55,13 @@ describe("vitest config — heavy_files_lock_and_parallel", () => {
       ).toBe(true);
     }
   });
+
+  it("the ah runner is marked AH_RUNNER=1 (lock no-ops under ah's batch budget)", () => {
+    const toml = readFileSync(".espectacular/config.toml", "utf8");
+    expect(toml).toMatch(
+      /vitest\s*=\s*\[\s*"env",\s*"AH_RUNNER=1",\s*"npx",\s*"vitest",\s*"run"\s*\]/,
+    );
+  });
 });
 
 describe("vitest config — junit_report_wiring", () => {

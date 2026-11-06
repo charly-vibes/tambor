@@ -32,7 +32,11 @@ const timers = globalThis as unknown as {
 // Node's process reached structurally for the same reason: tsconfig
 // types exclude @types/node by design.
 const proc = globalThis as unknown as {
-  process: { readonly pid: number; on(event: "exit", listener: () => void): void };
+  process: {
+    readonly pid: number;
+    readonly env: Record<string, string | undefined>;
+    on(event: "exit", listener: () => void): void;
+  };
 };
 
 function sleep(ms: number): Promise<void> {
@@ -109,6 +113,20 @@ async function spinUntilHeld(
 export async function acquireHeavyLock(
   options: HeavyLockOptions = {},
 ): Promise<HeavyRelease> {
+  // ah-runner bypass: spectacular's configured runner (see
+  // .espectacular/config.toml [runners].vitest) prefixes env
+  // AH_RUNNER=1. ah check --run-tests attributes one batched
+  // --testNamePattern invocation against an internal ~60-90s budget;
+  // the lock's serialised chain (~130-270s) blows that budget and
+  // silently degrades the gate into per-binding storms (CI runs
+  // 42115074478, local push 2026-11-05). ah's narrowed runs therefore
+  // keep the historic lock-free fast path: if a race bites there it
+  // surfaces as an attributable test-failing finding, never a hang.
+  // The full-suite runs that actually flaked (testaruda exec, just
+  // test, manual vitest) carry no AH_RUNNER and DO exclude.
+  if (proc.process.env["AH_RUNNER"] !== undefined) {
+    return () => {};
+  }
   const name = options.name ?? "heavy";
   const dir = options.dir ?? DEFAULT_DIR;
   const maxWaitMs = options.maxWaitMs ?? DEFAULT_MAX_WAIT_MS;

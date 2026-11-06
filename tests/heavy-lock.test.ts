@@ -20,6 +20,11 @@ import { afterEach, expect, it } from "vitest";
 
 import { acquireHeavyLock } from "./helpers/heavy-lock.ts";
 
+// Structural process handle (tsconfig types exclude @types/node).
+const proc = globalThis as unknown as {
+  process: { env: Record<string, string | undefined> };
+};
+
 const SCRATCH_DIR = "target/locks-test";
 const NAME = "scratch";
 const LOCK_PATH = `${SCRATCH_DIR}/${NAME}.d`;
@@ -94,4 +99,23 @@ it("a stale lock past the TTL is seized, not waited on", async () => {
   );
   seized();
   held(); // idempotent release of a vanished dir must not throw
+});
+
+it("the AH_RUNNER marker short-circuits acquisition to a no-op", async () => {
+  // ah's runner config sets AH_RUNNER=1; its narrowed batched
+  // invocation must skip exclusion entirely (fast path, budget
+  // safety) rather than serialise into a batch-fallback storm.
+  proc.process.env["AH_RUNNER"] = "1";
+  try {
+    const first = await acquireScratch({ maxWaitMs: 30_000 });
+    first(); // no-op release must not throw
+    // No lock dir was ever created:
+    expect(() => statSync(LOCK_PATH)).toThrow();
+  } finally {
+    delete proc.process.env["AH_RUNNER"];
+  }
+  // and normal exclusion resumes without the marker
+  const held = await acquireScratch({ maxWaitMs: 5_000 });
+  expect(() => mkdirSync(LOCK_PATH)).toThrow();
+  held();
 });
