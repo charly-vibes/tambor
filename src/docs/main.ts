@@ -38,16 +38,14 @@ import { call, render } from "../model/component.ts";
 import { dropdown } from "../components/select/dropdown.ts";
 import type { Options } from "../components/select/types.ts";
 import type { HostDoc, HostElement } from "../interop/domhost.ts";
-import { button, label, rectangle, withColor } from "../views/nodes.ts";
-import { resolveStretch, verticalLayout } from "../views/layout.ts";
-import { bounds } from "../views/geometry.ts";
+import { button, label, withColor } from "../views/nodes.ts";
 import type { Elem, Vec2 } from "../views/model.ts";
 import type { DomBackend } from "../render/dom.ts";
 import { VIEWPORT } from "../spa/viewport.ts";
 import { wireDocsHost } from "./host.ts";
 import { checkGroups } from "./content/check.ts";
 import { clearDocsDom, wireDocsDom } from "./dom.ts";
-import { ambientBackground, ambientColor, resolveAmbient } from "./theme.ts";
+import { ambientColor, resolveAmbient } from "./theme.ts";
 import { NAV, type NavGroup } from "./nav.ts";
 import { collapsedNav } from "./breakpoint.ts";
 import { pageView } from "./page.ts";
@@ -57,11 +55,8 @@ import {
   type GeneratedPage,
 } from "./content/generated/registry.ts";
 import { PAGE_DEMOS } from "./content/demos.ts";
-import {
-  EMBED_SLOT_HEIGHT,
-  embedMarker,
-  wireDocsEmbed,
-} from "./embeds.ts";
+import { wireDocsEmbed } from "./embeds.ts";
+import { showcaseShell, stackedShell } from "./layout.ts";
 
 export type DocsHandle = SpaHandle;
 
@@ -80,6 +75,10 @@ interface DocsState {
   // gallery's createSelectDemo shape).
   readonly "open?": boolean;
   readonly "::extra": Record<string, unknown>;
+  // The showcase scroll (task 8): the docs pane's own scroll offset —
+  // the wheel intents of the showcase scrollview update this path, and
+  // the view rederives with it (context.scroll for the pin).
+  readonly offset: Vec2;
 }
 
 // The paths the dropdown component speaks (gallery idiom).
@@ -96,6 +95,7 @@ function withFields(state: DocsState, patch: Partial<DocsState>): DocsState {
     focus: state.focus,
     "open?": state["open?"],
     "::extra": state["::extra"],
+    offset: state.offset,
     ...patch,
   };
 }
@@ -201,20 +201,6 @@ function selectFocus(state: DocsState, page: string): DocsState {
   return withFields(state, { focus: page });
 }
 
-// The embed band (task 7.2): the marker label above a stretch slot
-// that reserves the gallery viewport height — the demo stacks above
-// the page's prose (design D3); the embed seam mounts the resolved
-// demo over the slot.
-function embedBand(id: string): Elem[] {
-  return [
-    withColor(ambientColor("body"), label(embedMarker(id))),
-    withColor(
-      ambientBackground(),
-      rectangle(0, EMBED_SLOT_HEIGHT, { stretchWidth: true }),
-    ),
-  ];
-}
-
 // A nav entry: a real DOM control (the corpus button node paints a
 // native <button>, focusable and keyboard reachable — task 3.1)
 // carrying the select-page intent.
@@ -261,35 +247,22 @@ export function docsView(state: unknown, context: ViewContext): Elem {
   const page =
     generatedPages.find((p) => p.name === s.page) ?? generatedPages[0]!;
   const size = contextSize(context);
-  // The breakpoint branch (task 6.2, design D3): below 600 px the nav
-  // collapses to a top-bar dropdown and the prose wraps at the live
-  // width; at or above it the journey-grouped sidebar renders. A page
-  // declaring a demo (task 7) draws its embed band between the nav and
-  // the prose in both branches.
   const demo = PAGE_DEMOS[page.name];
-  const embed = demo === undefined ? [] : embedBand(demo);
-  const shell = (
-    collapsedNav(size[0])
-      ? verticalLayout([navDropdown(s), ...embed, ...pageView(page, s.body, size[0])])
-      : verticalLayout([
-          ...NAV.flatMap((group) => navGroup(group, s.page)),
-          ...embed,
-          ...pageView(page, s.body, size[0]),
-        ])
-  ) ?? [];
-  // The shell band: a full-width strip behind the shell — the live-width
-  // chrome a resize reflows. The width is not drawn here: the band is
-  // drawn at nominal size and resolved against the container the view
-  // receives (stretch_resolved), so a resize re-derivation (layout_reflows)
-  // redraws it at the live width. Task 6 branches the breakpoint variants
-  // on the same width; task 5 paints the band with the background token
-  // through the ambient theme (the with-color wrapper's fill background
-  // covers its positioned ancestor — the textarea selection precedent).
-  const band = withColor(
-    ambientBackground(),
-    rectangle(0, bounds(shell)[1], { stretchWidth: true }),
-  );
-  return resolveStretch([band, shell], size);
+  const wide = !collapsedNav(size[0]);
+  const scroll: Vec2 = (s as { offset?: Vec2 }).offset ?? [0, 0];
+  // The breakpoint branch (task 6.2, design D3): below 600 px the nav
+  // collapses to a top-bar dropdown; at or above it the journey-grouped
+  // chrome renders. A demo page at or above the breakpoint composes the
+  // showcase (task 8.2, design D5 — scrollview + scrollytelling pin);
+  // everything else stacks the demo band above the prose — the pin's
+  // inactive flow.
+  const chrome = wide
+    ? NAV.flatMap((group) => navGroup(group, s.page))
+    : [navDropdown(s)];
+  const prose = pageView(page, s.body, size[0]);
+  return demo !== undefined && wide
+    ? showcaseShell(chrome, prose, demo, scroll, size)
+    : stackedShell(chrome, prose, demo, size);
 }
 
 // The container size a derivation is against: the render context carries
@@ -318,6 +291,7 @@ function createDocsApp(): App {
       focus: null,
       "open?": false,
       "::extra": {},
+      offset: [0, 0],
     } satisfies DocsState,
     backend: appBackend(),
     handler: docsHandler,

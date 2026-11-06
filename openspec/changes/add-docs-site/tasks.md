@@ -80,15 +80,23 @@
 
 ## 8. Scrollytelling showcase
 
-- [ ] 8.1 Red: showcase tests — at ≥ 600 px the embedded demo holds a
+- [x] 8.1 Red: showcase tests — at ≥ 600 px the embedded demo holds a
       constant viewport position while its section scrolls and
       releases at the section end in the same frame with no rendered
       discontinuity (pin activation formula asserted at boundary
       offsets); below 600 px no activation at any offset.
       tests/docs-showcase.test.ts + e2e screenshot pass.
-- [ ] 8.2 Green: showcase layout composes scrollview + the
+      (e2e screenshot deferred to 10.1/10.3 — the docs SPA is not yet
+      emitted to demo-dist/docs, so no served docs page exists for
+      Playwright to screenshot until delivery lands; the behavioural
+      contract is covered headlessly.)
+- [x] 8.2 Green: showcase layout composes scrollview + the
       scrollytelling pin (src/scrollytelling/pin.ts) inside the
       content pane; stacked branch is the pin's inactive flow.
+      src/docs/layout.ts (showcaseShell — content stretch-resolved
+      before the scrollview wraps it, pin boundary spans the demo slot
+      + prose so spacer_matches_body_extent holds), docs pane scroll
+      state (state.offset, wheel intents update it).
 
 ## 9. Curated guides
 
