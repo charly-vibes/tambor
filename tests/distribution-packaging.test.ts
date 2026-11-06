@@ -16,7 +16,21 @@
 // tambor-core.test.ts).
 // @ts-expect-error node:child_process has no type declarations here
 import { execSync } from "node:child_process";
-import { expect, it } from "vitest";
+import { afterAll, beforeAll, expect, it } from "vitest";
+
+import { acquireHeavyLock, type HeavyRelease } from "./helpers/heavy-lock.ts";
+
+let heavyRelease: HeavyRelease | undefined;
+
+// shared-tree exclusion: pack-probe runs a real npm pack (prepack tsc
+// writes dist/) and emit/core-split re-emit dist/ — hold the heavy
+// lock for this file's whole lifetime so concurrent pack walks in
+// other heavy files never see dist/ mid-mutation (CI-red 42082454763).
+beforeAll(async () => {
+  heavyRelease = await acquireHeavyLock();
+}, 420_000);
+
+afterAll(() => heavyRelease?.());
 
 // Gate timeouts: npm pack + clean-room install and tsc emit are
 // subprocess-heavy (flake ruling: budget generously; bench precedent is

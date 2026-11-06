@@ -20,7 +20,7 @@
 //   the same view tree the corpus contracts use (scanOf + centreOf),
 //   as in the gallery tests.
 
-import { describe, expect, it, beforeAll } from "vitest";
+import { describe, expect, it, beforeAll, afterAll } from "vitest";
 // test-only node access (tsconfig types:[vitest/globals] by design);
 // the build runs in a child process — esbuild's node code inside the
 // jsdom environment trips the TextEncoder invariant
@@ -30,6 +30,7 @@ import { execSync } from "node:child_process";
 import { readFileSync, readdirSync } from "node:fs";
 
 import { scanOf } from "./helpers/scan.ts";
+import { acquireHeavyLock, type HeavyRelease } from "./helpers/heavy-lock.ts";
 import { centreOf } from "./helpers/appview.ts";
 import { createLogoApp } from "../src/examples/logo/logo.ts";
 import type { ButtonNode } from "../src/views/model.ts";
@@ -79,11 +80,19 @@ function runCentre(): readonly [number, number] {
   return centreOf(found);
 }
 
-beforeAll(() => {
+let heavyRelease: HeavyRelease | undefined;
+
+beforeAll(async () => {
+  // shared-tree exclusion: build:spa wipes demo-dist/ (and the docs
+  // generator its outdir) — hold the heavy lock for this file's whole
+  // lifetime so no other heavy file reads those trees mid-wipe.
+  heavyRelease = await acquireHeavyLock();
   // the build:spa recipe, verbatim (a child process: esbuild's node
   // code cannot load inside the jsdom environment)
   execSync("npm run build:spa", { stdio: "pipe" });
-});
+}, 420_000);
+
+afterAll(() => heavyRelease?.());
 
 describe("spa bundle — the build contract", () => {
   it("demo-dist/ carries every asset the deployed bundle references (the logo worker)", () => {

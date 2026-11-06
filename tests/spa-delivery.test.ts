@@ -20,7 +20,7 @@
 //   shell. The npm artifact is unchanged (dist-only); the PWA story is
 //   a demo-shell concern that must not leak into the package.
 
-import { describe, expect, it, beforeAll } from "vitest";
+import { describe, expect, it, beforeAll, afterAll } from "vitest";
 // test-only node access (tsconfig types:[vitest/globals] by design);
 // @ts-expect-error node builtin
 import { execFileSync } from "node:child_process";
@@ -28,6 +28,8 @@ import { execFileSync } from "node:child_process";
 import { readFileSync, existsSync } from "node:fs";
 // @ts-expect-error node builtin
 import { gzipSync } from "node:zlib";
+
+import { acquireHeavyLock, type HeavyRelease } from "./helpers/heavy-lock.ts";
 
 import {
   CACHE_PREFIX,
@@ -42,9 +44,17 @@ import {
 // exceed it in total shipped gzip bytes.
 const BASELINE_GZIP_BYTES = 56 * 1024;
 
-beforeAll(() => {
+let heavyRelease: HeavyRelease | undefined;
+
+beforeAll(async () => {
+  // shared-tree exclusion (dist/ via the pack tests' prepack tsc,
+  // demo-dist/ wipes, generated-docs wipes): hold the heavy lock for
+  // this file's whole lifetime — see tests/helpers/heavy-lock.ts.
+  heavyRelease = await acquireHeavyLock();
   execFileSync("node", ["scripts/build-spa.mjs"], { stdio: "pipe" });
-}, 120_000);
+}, 420_000);
+
+afterAll(() => heavyRelease?.());
 
 interface MetaOutput {
   readonly bytes: number;

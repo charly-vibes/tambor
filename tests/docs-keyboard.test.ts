@@ -17,7 +17,7 @@
 //   test regenerates it into the gitignored generated dir before the
 //   first dynamic import (docs-shell.test.ts shape).
 
-import { describe, expect, it } from "vitest";
+import { afterAll, describe, expect, it } from "vitest";
 // @ts-expect-error node:child_process has no type declarations here
 import { spawnSync } from "node:child_process";
 // @ts-expect-error node:path has no type declarations here
@@ -56,11 +56,17 @@ function raw(element: HostElement): RawElement {
 // (idempotent — the generator wipes its own outdir), then import the
 // module under test. Static imports would hoist past the generation
 // and fail on a fresh checkout where build-spa has not run yet.
+// The generation WIPE is a shared-tree mutation (docs-shell.test.ts
+// shape): acquire the heavy lock before it — module scope, since the
+// mutation precedes any hook.
+const heavyRelease = await acquireHeavyLock();
+afterAll(heavyRelease);
 spawnSync("python3", [TOOL, "--corpus", CORPUS, "--out", GENERATED], {
   encoding: "utf8",
 });
 const { mountDocs } = await import("../src/docs/main.ts");
 import { lastObserver, MockResizeObserver } from "./helpers/mock-ro.ts";
+import { acquireHeavyLock } from "./helpers/heavy-lock.ts";
 
 // The sidebar fixtures deliver width through the RO double (jsdom
 // ships none) — installed before any mount constructs one.
