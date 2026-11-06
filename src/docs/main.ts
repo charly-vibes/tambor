@@ -56,6 +56,12 @@ import {
   pageLoaders,
   type GeneratedPage,
 } from "./content/generated/registry.ts";
+import { PAGE_DEMOS } from "./content/demos.ts";
+import {
+  EMBED_SLOT_HEIGHT,
+  embedMarker,
+  wireDocsEmbed,
+} from "./embeds.ts";
 
 export type DocsHandle = SpaHandle;
 
@@ -195,6 +201,20 @@ function selectFocus(state: DocsState, page: string): DocsState {
   return withFields(state, { focus: page });
 }
 
+// The embed band (task 7.2): the marker label above a stretch slot
+// that reserves the gallery viewport height — the demo stacks above
+// the page's prose (design D3); the embed seam mounts the resolved
+// demo over the slot.
+function embedBand(id: string): Elem[] {
+  return [
+    withColor(ambientColor("body"), label(embedMarker(id))),
+    withColor(
+      ambientBackground(),
+      rectangle(0, EMBED_SLOT_HEIGHT, { stretchWidth: true }),
+    ),
+  ];
+}
+
 // A nav entry: a real DOM control (the corpus button node paints a
 // native <button>, focusable and keyboard reachable — task 3.1)
 // carrying the select-page intent.
@@ -243,12 +263,17 @@ export function docsView(state: unknown, context: ViewContext): Elem {
   const size = contextSize(context);
   // The breakpoint branch (task 6.2, design D3): below 600 px the nav
   // collapses to a top-bar dropdown and the prose wraps at the live
-// width; at or above it the journey-grouped sidebar renders.
+  // width; at or above it the journey-grouped sidebar renders. A page
+  // declaring a demo (task 7) draws its embed band between the nav and
+  // the prose in both branches.
+  const demo = PAGE_DEMOS[page.name];
+  const embed = demo === undefined ? [] : embedBand(demo);
   const shell = (
     collapsedNav(size[0])
-      ? verticalLayout([navDropdown(s), ...pageView(page, s.body, size[0])])
+      ? verticalLayout([navDropdown(s), ...embed, ...pageView(page, s.body, size[0])])
       : verticalLayout([
           ...NAV.flatMap((group) => navGroup(group, s.page)),
+          ...embed,
           ...pageView(page, s.body, size[0]),
         ])
   ) ?? [];
@@ -335,10 +360,14 @@ export function mountDocs(doc: HostDoc, container: HostElement): DocsHandle {
       [CONTAINER_SIZE_KEY]: handle.backend.containerSize,
     }),
   );
+  // The demo embed seam (task 7.2): one demo mounted over the drawn
+  // slot, kept in sync by the wrapped backend.draw.
+  const dropEmbed = wireDocsEmbed(doc, container, handle);
   const unmount = handle.unmount;
   return {
     ...handle,
     unmount: () => {
+      dropEmbed();
       dropHost();
       unmount();
       clearDocsDom();

@@ -67,12 +67,16 @@
 
 ## 7. Demo embeds
 
-- [ ] 7.1 Red: embed test — a page declaring a demo resolves it
+- [x] 7.1 Red: embed test — a page declaring a demo resolves it
       through the gallery registry behind dynamic import; metafile
       assertion: no example module in the initial docs chunk.
-      tests/docs-embeds.test.ts
-- [ ] 7.2 Green: embed view reuses the gallery mount pattern;
-      registry imported read-only.
+      tests/docs-embeds.test.ts + tests/docs-embeds-chunk.test.ts
+      (node env — esbuild's realm invariant breaks under jsdom)
+- [x] 7.2 Green: embed view reuses the gallery mount pattern;
+      registry imported read-only. src/docs/embeds.ts (resolveDemo +
+      wireDocsEmbed), src/docs/content/demos.ts (curated page→demo
+      declarations), embed band in the shell view (stacks above prose
+      in both branches — D3's third assertion, owed from task 6).
 
 ## 8. Scrollytelling showcase
 

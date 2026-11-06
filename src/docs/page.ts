@@ -21,6 +21,10 @@ export interface PageData {
   readonly title: string;
   readonly statement: string;
   readonly description: string;
+  // The gallery demo this page embeds (task 7) — the id resolves
+  // through the gallery demo registry read-only, behind the
+  // dynamic-import boundary; pages that declare none render prose only.
+  readonly demo?: string;
 }
 
 // Greedy word wrap against the live label measure: corpus labels are
