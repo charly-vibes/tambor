@@ -19,7 +19,7 @@
 //   mounting plumbing over makeApp/dispatch — no app semantics of its
 //   own (tambor-cie gallery precedent).
 
-import { afterAll, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 // @ts-expect-error node:child_process has no type declarations here
 import { spawnSync } from "node:child_process";
 // @ts-expect-error node:path has no type declarations here
@@ -30,7 +30,6 @@ import { scanOf, type Found } from "./helpers/scan.ts";
 import { centreOf } from "./helpers/appview.ts";
 import { waitFor } from "./helpers/wait.ts";
 import { lastObserver, MockResizeObserver } from "./helpers/mock-ro.ts";
-import { acquireHeavyLock } from "./helpers/heavy-lock.ts";
 
 const TOOL = resolve("tools/gen_docs_content.py");
 const CORPUS = resolve("openspec/specs");
@@ -44,14 +43,9 @@ const JOURNEY = ["Getting started", "Guides", "Reference", "Examples"];
 const CURRENT = "▸ ";
 
 // Generate the build-time content into the gitignored generated dir
-// (idempotent — the generator wipes its own outdir), then import the
+// (atomic publication — tools/gen_docs_content.py), then import the
 // modules under test. Static imports would hoist past the generation
 // and fail on a fresh checkout where build-spa has not run yet.
-// The generation WIPE is a shared-tree mutation (spa-delivery/spa-
-// bundle run the same generator inside build-spa): acquire the heavy
-// lock before it — module scope, since the mutation precedes any hook.
-const heavyRelease = await acquireHeavyLock();
-afterAll(heavyRelease);
 spawnSync("python3", [TOOL, "--corpus", CORPUS, "--out", GENERATED], {
   encoding: "utf8",
 });

@@ -1,8 +1,9 @@
 // Purpose: cross-process advisory lock for the vitest heavy test files
 //   (CI-red 42082454763) — the files that mutate or pack shared build
-//   trees (dist/ via npm pack + prepack tsc, demo-dist/ via build-spa,
-//   src/docs/content/generated/ via the docs generator) acquire ONE
-//   global lock for their whole file lifetime, serialising them against
+//   trees (dist/ via npm pack + prepack tsc, demo-dist/ via build-spa
+//   — the docs generator now publishes atomically and needs no lock)
+//   acquire ONE global lock for their whole file lifetime,
+//   serialising them against
 //   each other while every other file keeps full vitest parallelism.
 // Responsibilities: atomic lock acquisition (mkdir is exclusive on
 //   POSIX), bounded spin-wait with jitter, stale-lock seizure by TTL
@@ -17,7 +18,7 @@
 //   ingests. The races are real (CI rerun green-on-retry + tarball
 //   failure at a no-op mirror commit), so exclusion must be explicit
 //   and per-file — which is what the consumers (beforeAll / top-level
-//   await + afterAll in the five heavy files) implement with this lock.
+//   await + afterAll in the heavy files) implement with this lock.
 
 // @ts-expect-error node builtin (tsconfig types exclude node; repo
 // test-local pin convention, e.g. spa-delivery.test.ts)

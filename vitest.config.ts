@@ -28,10 +28,12 @@ export default defineConfig({
     // pack shared trees — npm pack walks dist/ while another worker's
     // prepack tsc writes it (spa-delivery's tarball check failed on
     // exactly that interleaving), build-spa wipes demo-dist/ while
-    // spa-bundle reads the bundle, and the docs content generator
-    // wipes its outdir while docs tests import it. Warm-local tsc
+    // spa-bundle reads the bundle. (The docs content generator no
+    // longer needs exclusion: it publishes atomically — pages tmp+
+    // rename, registry written LAST as the publication point.)
+    // Warm-local tsc
     // (~1.5s emit) hides the windows; CI's cold emit (~10-20s)
-    // exposes them — local green proves nothing. The five heavy files
+    // exposes them — local green proves nothing. The heavy files
     // therefore exclude each other through a cross-process lock
     // (tests/helpers/heavy-lock.ts, held for each file's whole
     // lifetime). Suite-wide serialisation was tried and REJECTED: it

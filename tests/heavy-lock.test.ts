@@ -1,5 +1,5 @@
 // Purpose: behaviour contract for tests/helpers/heavy-lock.ts — the
-//   cross-process lock the five heavy vitest files use to serialise
+//   cross-process lock the heavy vitest files use to serialise
 //   against each other (CI-red 42082454763 follow-up).
 // Responsibilities: prove the four properties the production consumers
 //   rely on: (1) acquisition returns a release that frees the lock;

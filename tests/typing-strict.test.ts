@@ -15,7 +15,23 @@
 import { expect, it } from "vitest";
 // @ts-expect-error node:child_process has no type declarations here
 import { execSync } from "node:child_process";
+// @ts-expect-error node:fs has no type declarations here
+import { existsSync } from "node:fs";
+import { beforeAll } from "vitest";
 import { fixture, runTsc, STRICT_FLAGS } from "./helpers/tsc.ts";
+
+// Materialise the generated docs modules before any project-wide tsc
+// walk: on a fresh checkout src/docs/main.ts imports
+// content/generated/registry.ts, and the generator (spawned at import
+// time by the docs tests or a spa build) needs a second or two to
+// publish. Atomic publication makes partially-built trees never
+// INCONSISTENT, but ensure-before-read makes them never ABSENT at
+// resolution time — the p_strict/p_typescript flake family.
+beforeAll(() => {
+  if (!existsSync("src/docs/content/generated/registry.ts")) {
+    execSync("python3 tools/gen_docs_content.py", { stdio: "pipe" });
+  }
+}, 60_000);
 
 // p_strict — derives_from: typing.model.strict_compiler
 // generator: tsc over the library with the listed flags — predicate:

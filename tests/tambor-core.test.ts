@@ -10,7 +10,7 @@
 //   (tambor-272); the example-acceptance and host rows live in
 //   tambor-examples.test.ts and tambor-host.test.ts.
 
-import { expect, it } from "vitest";
+import { beforeAll, expect, it } from "vitest";
 import fc from "fast-check";
 
 // The Node builtins the build check needs, typed at the use site —
@@ -19,7 +19,7 @@ import fc from "fast-check";
 // @ts-expect-error node:child_process has no type declarations here
 import { execSync } from "node:child_process";
 // @ts-expect-error node:fs has no type declarations here
-import { readdirSync } from "node:fs";
+import { existsSync, readdirSync } from "node:fs";
 
 import {
   isGroup,
@@ -42,6 +42,16 @@ import {
 } from "../src/effects/counter.ts";
 import { rootRef, type Ref } from "../src/effects/ref.ts";
 import { hitTargetSize, interactiveNodes } from "../src/app/touch.ts";
+
+// Ensure the generated docs modules exist before p_typescript's
+// project-wide tsc walk (same materialise-before-resolve family as
+// typing-strict.test.ts): the registry must never be ABSENT when tsc
+// resolves src/docs/main.ts's import on a fresh tree.
+beforeAll(() => {
+  if (!existsSync("src/docs/content/generated/registry.ts")) {
+    execSync("python3 tools/gen_docs_content.py", { stdio: "pipe" });
+  }
+}, 60_000);
 
 // The View union: the type tags of the view.model node union plus the
 // group (a vector of nodes is itself a node — group_is_node). p_values

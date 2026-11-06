@@ -20,6 +20,7 @@ Rationale: pages are generated, never hand-edited; spec content is embedded
 
 import argparse
 import json
+import os
 import re
 import shutil
 import sys
@@ -116,6 +117,20 @@ def registry_module(pages: list[dict]) -> str:
     ) + page_loaders(pages)
 
 
+def atomic_write(path: Path, text: str) -> None:
+    # tmp + os.replace: Linux rename over an existing path is atomic —
+    # a concurrent reader (the CI-red 42082454763 family: p_strict/
+    # p_typescript typecheck src/** while a heavy build regenerates
+    # these modules) sees either the whole old file or the whole new
+    # one, never a truncated window. The tmp name carries the pid:
+    # concurrent generator invocations (two docs test files import-
+    # generating while a spa build regenerates the same tree) must
+    # never share one tmp file.
+    tmp = path.with_name(f"{path.name}.{os.getpid()}.tmp")
+    tmp.write_text(text)
+    os.replace(tmp, path)
+
+
 def emit(corpus: Path, out: Path) -> int:
     if not corpus.is_dir():
         fail(f"corpus not found: {corpus} — the corpus is the source of truth")
@@ -124,12 +139,26 @@ def emit(corpus: Path, out: Path) -> int:
         fail(f"no spec.md under {corpus}")
     pages = [parse_spec(p) for p in specs]
     # generated, never hand-edited: the tool owns the whole out dir, so a
-    # renamed corpus spec can never leave a stale page behind
-    shutil.rmtree(out, ignore_errors=True)
+    # renamed corpus spec can never leave a stale page behind.
+    # Publication order matters for concurrent readers: pages first
+    # (each atomically), registry LAST — the registry is the only entry
+    # point to page modules (static loaders), so no reader can ever
+    # resolve a specifier the swap has not already materialised. The
+    # post-sweep retires removed pages only after the new registry is
+    # live. (Replaces the old rmtree+plain-write, which opened a
+    # torn-tree window that transiently failed p_strict in the ah
+    # batch run, push 2026-11-05.)
     out.mkdir(parents=True, exist_ok=True)
     for pg in pages:
-        (out / f"{pg['name']}.ts").write_text(page_module(pg))
-    (out / "registry.ts").write_text(registry_module(pages))
+        atomic_write(out / f"{pg['name']}.ts", page_module(pg))
+    atomic_write(out / "registry.ts", registry_module(pages))
+    keep = {f"{pg['name']}.ts" for pg in pages} | {"registry.ts"}
+    for stale in out.iterdir():
+        # never sweep an in-flight tmp of a concurrent generator
+        if not stale.is_file() or stale.name.endswith(".tmp"):
+            continue
+        if stale.name not in keep:
+            stale.unlink(missing_ok=True)
     return len(pages)
 
 

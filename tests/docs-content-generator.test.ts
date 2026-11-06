@@ -14,9 +14,10 @@
 
 // @ts-expect-error node:child_process has no type declarations here
 import { spawnSync } from "node:child_process";
+// @ts-expect-error node:child_process has no type declarations here
+import { spawn as spawnAsync } from "node:child_process";
 // @ts-expect-error node:fs has no type declarations here
-import { mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs";
-// @ts-expect-error node:os has no type declarations here
+import { mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs";// @ts-expect-error node:os has no type declarations here
 import { tmpdir } from "node:os";
 // @ts-expect-error node:path has no type declarations here
 import { join, resolve } from "node:path";
@@ -148,3 +149,35 @@ it("p_docs_content_fail_loud: missing corpus exits non-zero naming the path", ()
   const said = `${run.stderr}${run.stdout}`;
   expect(said).toContain("docs-content-no-such-corpus");
 }, 60_000);
+
+// Behavioural guard (not a spec row): concurrent generator invocations
+// must never expose a torn tree. Two docs test files import-generate
+// while a spa build regenerates the same production dir (and ah's
+// batched run typechecks src/** mid-flight) — the atomic publication
+// order (pages tmp+rename, registry LAST) means any reader sees either
+// the whole old or the whole new module set. This test races two
+// generators into one fresh dir and verifies the after-state is
+// complete: every registry loader resolves to a real file, layout is
+// pages + registry only, exit codes clean.
+it("concurrent generators publish atomically into a shared out dir", async () => {
+  const out = mkdtempSync(join(tmpdir(), "docs-content-race-"));
+  const spawn = () =>
+    new Promise<number>((res) => {
+      const child = spawnAsync("python3", [TOOL, "--corpus", CORPUS, "--out", out]);
+      child.on("close", (code: number | null) => res(code ?? -1));
+    });
+  const codes = await Promise.all([spawn(), spawn(), spawn()]);
+  try {
+    expect(codes, "every concurrent generator exits 0").toEqual([0, 0, 0]);
+    const names = corpusNames().map((n) => `${n}.ts`);
+    const emitted = readdirSync(out).sort();
+    expect(emitted).toEqual([...names, "registry.ts"].sort());
+    // every loader specifier in the registry resolves to a real file
+    const registry = readFileSync(join(out, "registry.ts"), "utf8");
+    for (const m of registry.matchAll(/import\("\.\/([^"]+)"\)/g)) {
+      expect(() => readFileSync(join(out, m[1] ?? ""), "utf8")).not.toThrow();
+    }
+  } finally {
+    rmSync(out, { recursive: true, force: true });
+  }
+}, 120_000);
