@@ -100,12 +100,12 @@
 
 ## 9. Curated guides
 
-- [ ] 9.1 Red: content-check test — guide modules resolve every typed
+- [x] 9.1 Red: content-check test — guide modules resolve every typed
       page id against registry + guides, declare a journey group, and
       external http(s) URLs are extracted: malformed URL fails the
       build naming the page; well-formed URLs land in a link
       inventory for CI verification. tests/docs-guide-links.test.ts
-- [ ] 9.2 Green: `tools/check_docs_content.mjs` wired into the build +
+- [x] 9.2 Green: `tools/check_docs_content.mjs` wired into the build +
       a CI step verifying inventory URLs resolve.
 - [ ] 9.3 Red: guide substance test — quickstart module's snippets
       resolve to compiled TS sample modules (type-checked by the

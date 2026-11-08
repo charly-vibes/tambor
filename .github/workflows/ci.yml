@@ -212,6 +212,17 @@ jobs:
         # no-unnecessary-condition. Same command as `just lint`.
         run: npx eslint .
 
+      - name: docs content check + external link verification (add-docs-site 9.2)
+        # Curated guides resolve every typed id against the registry + other
+        # guides, and the external http(s) URLs they declare are verified live
+        # (design D8 — the typed-id graph + deterministic extraction; the build
+        # itself stays offline-safe, only this step touches the network). The
+        # gates job never runs build-spa, so generate the corpus content and
+        # run the build tool directly.
+        run: |
+          python3 tools/gen_docs_content.py
+          node tools/check_docs_content.mjs --verify
+
       - name: scaffold-debt report (non-blocking)
         run: tools/scaffold-debt.sh
 

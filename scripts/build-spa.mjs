@@ -41,6 +41,13 @@ for (const stale of [
 // renamed corpus spec can never ship a stale page.
 execFileSync("python3", ["tools/gen_docs_content.py"], { stdio: "pipe" });
 
+// docs content check (add-docs-site task 9): curated guides resolve
+// every typed id against the registry + other guides, and external
+// http(s) URLs land in a link inventory for CI verification — the
+// tool is offline-safe here (no --verify; only the CI step touches
+// the network, design D8).
+execFileSync("node", ["tools/check_docs_content.mjs"], { stdio: "pipe" });
+
 const result = await build({
   // explicit out labels: the two worker entries share the basename
   // worker.ts — [name] would collide them onto demo-dist/worker.js
