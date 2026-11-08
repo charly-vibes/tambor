@@ -28,7 +28,153 @@ export function checkGroups(pages: readonly GroupedPage[]): void {
 }
 
 // ──────────────────────────────────────────────────────────────────────
-// Guide links (add-docs-site task 9) — shared by the vitest suite and
+// Guide substance (add-docs-site task 9.3/9.4) — shared by the vitest
+// suite and the build-time tool: every guide page declares its Diátaxis
+// kind (D7) and the evidence that kind requires (tutorial: a sub-15-
+// minute duration plus compiled sample modules; how-to: one named task
+// and a verifiable outcome; explanation: prerequisites stated). The
+// registry ships empty (task 9.4 authors the pages); the check lands
+// first so authored content is gated from day one.
+
+import type { GuideKind } from "./guides.ts";
+
+// The minimal substance-declaration surface the check needs — GuidePage
+// (content/guides.ts) conforms structurally, so fixtures and the real
+// guides share one validator.
+export interface GuideSubstance {
+  readonly id: string;
+  readonly kind?: GuideKind;
+  readonly durationMinutes?: number;
+  readonly snippets?: readonly string[];
+  readonly task?: string;
+  readonly outcome?: string;
+  readonly prerequisites?: readonly string[];
+}
+
+// One substance failure: the page and what it is missing, joined into
+// the single report below (the guideLinkFailure precedent).
+interface GuideSubstanceFailure {
+  readonly guide: string;
+  readonly what: string;
+}
+
+// Every failure collected into one message — fail-loud with the full
+// report naming each page and its missing evidence.
+function guideSubstanceFailure(
+  failures: readonly GuideSubstanceFailure[],
+): Error {
+  return new Error(
+    `content check: guide substance failures: ${failures
+      .map((f) => `guide ${f.guide} ${f.what}`)
+      .join("; ")}`,
+  );
+}
+
+// The page's narrative quadrant gate (D7): a page without one of the
+// three kinds carries no evidence contract the check could enforce, so
+// it fails and the per-kind scan is skipped.
+function checkGuideKind(
+  page: GuideSubstance,
+  failures: GuideSubstanceFailure[],
+): boolean {
+  if (
+    page.kind !== "tutorial" &&
+    page.kind !== "how-to" &&
+    page.kind !== "explanation"
+  ) {
+    failures.push({
+      guide: page.id,
+      what: "does not declare a narrative kind (tutorial | how-to | explanation)",
+    });
+    return false;
+  }
+  return true;
+}
+
+// A tutorial's evidence: a positive integer duration within the
+// 15-minute quickstart bar and a non-empty snippet list whose ids all
+// resolve against the sample modules under src/docs/samples/.
+function checkTutorialEvidence(
+  page: GuideSubstance,
+  sampleIds: readonly string[],
+  failures: GuideSubstanceFailure[],
+): void {
+  const duration = page.durationMinutes;
+  if (
+    typeof duration !== "number" ||
+    !Number.isInteger(duration) ||
+    duration <= 0 ||
+    duration > 15
+  ) {
+    failures.push({
+      guide: page.id,
+      what: `declares an invalid quickstart duration: ${String(duration)}`,
+    });
+  }
+  const snippets = page.snippets ?? [];
+  if (snippets.length === 0) {
+    failures.push({ guide: page.id, what: "declares no sample snippet ids" });
+    return;
+  }
+  for (const snippet of snippets) {
+    if (sampleIds.indexOf(snippet) === -1) {
+      failures.push({
+        guide: page.id,
+        what: `references unknown sample id: ${snippet}`,
+      });
+    }
+  }
+}
+
+// A how-to's evidence: one named task and its verifiable outcome.
+function checkHowToEvidence(
+  page: GuideSubstance,
+  failures: GuideSubstanceFailure[],
+): void {
+  if ((page.task ?? "").trim().length === 0) {
+    failures.push({ guide: page.id, what: "declares no named task" });
+  }
+  if ((page.outcome ?? "").trim().length === 0) {
+    failures.push({ guide: page.id, what: "declares no verifiable outcome" });
+  }
+}
+
+// An explanation's evidence: prerequisites stated before the concepts.
+function checkExplanationEvidence(
+  page: GuideSubstance,
+  failures: GuideSubstanceFailure[],
+): void {
+  const prerequisites = page.prerequisites ?? [];
+  if (prerequisites.length === 0) {
+    failures.push({ guide: page.id, what: "declares no prerequisites" });
+  }
+}
+
+// The per-kind substance gate over curated guides (D7): every page
+// declares its kind; a tutorial declares a positive duration within the
+// 15-minute quickstart bar and a non-empty snippet list whose ids all
+// resolve against the sample modules the caller derived from disk; a
+// how-to declares a named task and a verifiable outcome; an explanation
+// declares prerequisites. Throws one Error naming every failing page
+// and what it is missing (fail-loud, checkGuideLinks precedent); an
+// empty registry passes (page existence is the suite's concern).
+export function checkGuideSubstance(
+  pages: readonly GuideSubstance[],
+  sampleIds: readonly string[],
+): void {
+  const failures: GuideSubstanceFailure[] = [];
+  for (const page of pages) {
+    if (!checkGuideKind(page, failures)) continue;
+    if (page.kind === "tutorial") {
+      checkTutorialEvidence(page, sampleIds, failures);
+    } else if (page.kind === "how-to") {
+      checkHowToEvidence(page, failures);
+    } else {
+      checkExplanationEvidence(page, failures);
+    }
+  }
+  if (failures.length > 0) throw guideSubstanceFailure(failures);
+}
 // the build-time tool tools/check_docs_content.mjs (which imports this
 // module through node's native TS type stripping): every link a curated
 // guide declares is either a typed page id resolving against the

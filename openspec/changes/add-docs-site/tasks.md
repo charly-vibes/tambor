@@ -107,11 +107,11 @@
       inventory for CI verification. tests/docs-guide-links.test.ts
 - [x] 9.2 Green: `tools/check_docs_content.mjs` wired into the build +
       a CI step verifying inventory URLs resolve.
-- [ ] 9.3 Red: guide substance test — quickstart module's snippets
+- [x] 9.3 Red: guide substance test — quickstart module's snippets
       resolve to compiled TS sample modules (type-checked by the
       build); how-to pages declare their named task and verifiable
       outcome. tests/docs-guide-substance.test.ts
-- [ ] 9.4 Green: author the starter pages — quickstart (tutorial:
+- [x] 9.4 Green: author the starter pages — quickstart (tutorial:
       working todo result, < 15 min, compiled snippets), 2–3 how-tos
       (compose a form; wire drag-scroll; keyboard focus across
       components), core model + when-not-to-use (explanations with

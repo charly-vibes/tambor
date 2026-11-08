@@ -22,12 +22,16 @@
 //   into an inventory CI can verify without the build ever touching the
 //   network.
 
-import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 // Node type stripping (default since 23.6): .ts imports with explicit
 // extensions, erasable syntax only.
-import { checkGroups, checkGuideLinks } from "../src/docs/content/check.ts";
+import {
+  checkGroups,
+  checkGuideLinks,
+  checkGuideSubstance,
+} from "../src/docs/content/check.ts";
 import { generatedPages } from "../src/docs/content/generated/registry.ts";
 import { guides } from "../src/docs/content/guides.ts";
 
@@ -77,6 +81,19 @@ const inventory = checkGuideLinks(
   guidePages,
   generatedPages.map((p) => p.id),
 );
+
+// The sample ids checkGuideSubstance matches snippet ids against —
+// derived here from the samples dir listing (the suite derives them
+// the same way), never inside the check itself which stays fs-free:
+// missing dir means no samples, and any declared snippet then fails.
+const samplesDir = resolve("src/docs/samples");
+const sampleIds = existsSync(samplesDir)
+  ? readdirSync(samplesDir)
+      .filter((f) => f.endsWith(".ts"))
+      .map((f) => f.slice(0, -3))
+      .sort()
+  : [];
+checkGuideSubstance(guidePages, sampleIds);
 
 // --- inventory ------------------------------------------------------------
 
