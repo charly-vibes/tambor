@@ -18,7 +18,8 @@
 
 import { build } from "esbuild";
 import { execFileSync } from "node:child_process";
-import { readFileSync, writeFileSync, rmSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync, rmSync } from "node:fs";
+import { gzipSync } from "node:zlib";
 
 const OUTDIR = "demo-dist";
 
@@ -56,6 +57,10 @@ const result = await build({
     { in: "src/spa/sw.ts", out: "sw" },
     { in: "src/examples/logo/worker.ts", out: "worker" },
     { in: "src/examples/notebook/worker.ts", out: "notebook-worker" },
+    // docs site (add-docs-site D6): second output tree under demo-dist/docs/.
+    // The explicit out label is required — a bare path would collide into
+    // demo-dist/main.js or clash with the spa entry under [name].
+    { in: "src/docs/main.ts", out: "docs/main" },
   ],
   outdir: OUTDIR,
   bundle: true,
@@ -63,9 +68,10 @@ const result = await build({
   splitting: true,
   minify: true,
   // stable entry names — index.html and the worker clients reference
-  // ./spa.js, ./worker.js, ./notebook-worker.js; chunks carry the
-  // content hashes (cache-first assets)
-  entryNames: "[name]",
+  // ./spa.js, ./worker.js, ./notebook-worker.js; [dir] keeps the docs
+  // entry's docs/main label under demo-dist/docs/ while dir-less labels
+  // stay at the outdir root; chunks carry the content hashes
+  entryNames: "[dir]/[name]",
   chunkNames: "chunks/[name]-[hash]",
   metafile: true,
   logLevel: "silent",
@@ -124,6 +130,18 @@ if (shell === root) {
 }
 writeFileSync(`${OUTDIR}/index.html`, shell);
 
+// the docs shell (add-docs-site D6): same root page with the bundle path
+// rewritten to the docs-local one — the root index.html's ./demo-dist/spa.js
+// reference becomes ./main.js (relative, correct under the /docs/ Pages
+// base). No manifest-link injection: the base index.html has none, and an
+// injected ./manifest.webmanifest would 404 from demo-dist/docs/.
+const docsShell = root.replace("./demo-dist/spa.js", "./main.js");
+if (docsShell === root) {
+  throw new Error("docs shell rewrite matched nothing — root index.html drifted");
+}
+mkdirSync(`${OUTDIR}/docs`, { recursive: true });
+writeFileSync(`${OUTDIR}/docs/index.html`, docsShell);
+
 const assets = [
   ...jsAssets,
   { url: "./index.html", bytes: Buffer.byteLength(shell) },
@@ -139,6 +157,53 @@ const totalKb =
 // the metafile is the docs stamp's size source (tools/stamp-docs.sh) and
 // the chunk-graph contract's fixture (tests/spa-delivery.test.ts)
 writeFileSync(`${OUTDIR}/meta.json`, JSON.stringify(result.metafile));
+
+// docs shell budget (add-docs-site D6): the recorded baseline assert.
+// DOCS_SHELL_GZIP_CEILING_BYTES is the measured initial-shell gzip from
+// task 10.2 — the twin of the same constant in
+// tests/helpers/docs-delivery-budget.ts (this script cannot import the
+// .ts seam). docsShellGzipBytes walks the metafile exactly like the
+// delivery test's staticClosure and adds the docs index.html.
+const DOCS_SHELL_GZIP_CEILING_BYTES = 30132;
+
+function staticClosureFor(entry, outputs) {
+  const seen = new Set([entry]);
+  const queue = [entry];
+  while (queue.length > 0) {
+    const current = queue.pop();
+    for (const imp of outputs[current]?.imports ?? []) {
+      if (
+        imp.external !== true &&
+        !seen.has(imp.path) &&
+        (imp.kind === undefined || imp.kind === "import-statement")
+      ) {
+        seen.add(imp.path);
+        queue.push(imp.path);
+      }
+    }
+  }
+  return seen;
+}
+
+function docsShellGzipBytes(entry, outputs) {
+  let total = 0;
+  for (const file of staticClosureFor(entry, outputs)) {
+    total += gzipSync(readFileSync(file)).length;
+  }
+  return total + gzipSync(readFileSync(`${OUTDIR}/docs/index.html`)).length;
+}
+
+const docsEntry = Object.keys(outputs).find(
+  (path) => outputs[path]?.entryPoint === "src/docs/main.ts",
+);
+if (!docsEntry) throw new Error("docs entry missing from esbuild output");
+const docsShellGzip = docsShellGzipBytes(docsEntry, outputs);
+if (docsShellGzip > DOCS_SHELL_GZIP_CEILING_BYTES) {
+  throw new Error(
+    `docs shell gzip ${docsShellGzip} B exceeds recorded baseline ` +
+      `${DOCS_SHELL_GZIP_CEILING_BYTES} B`,
+  );
+}
 const chunkCount = Object.keys(outputs).filter((p) => p.includes("/chunks/")).length;
 console.log(
   `spa build: ${Object.keys(outputs).length} outputs (${chunkCount} chunks), ${totalKb.toFixed(1)} kB total`,

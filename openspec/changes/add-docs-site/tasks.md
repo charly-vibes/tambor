@@ -119,11 +119,11 @@
 
 ## 10. Build and delivery
 
-- [ ] 10.1 Red: build test — second esbuild entry emits
+- [x] 10.1 Red: build test — second esbuild entry emits
       `demo-dist/docs/` with relative chunk paths, initial-shell gzip
       size recorded and asserted, Pages artifact serves `/docs/`
       (serve smoke against demo-dist). tests/docs-delivery.test.ts
-- [ ] 10.2 Green: `scripts/build-spa.mjs` gains the docs entry +
+- [x] 10.2 Green: `scripts/build-spa.mjs` gains the docs entry +
       generator step; measure and record the baseline; confirm
       deploy-pages.yml needs no change (publishes demo-dist
       wholesale).

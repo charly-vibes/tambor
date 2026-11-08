@@ -40,9 +40,15 @@ import {
 } from "../src/spa/sw.ts";
 
 // The unminified pre-change baseline (proposal.md: measured 56 KB gzip
-// on the monolithic bundle). The minified, chunked build must not
-// exceed it in total shipped gzip bytes.
-const BASELINE_GZIP_BYTES = 56 * 1024;
+// on the monolithic gallery bundle). The minified, chunked build must
+// not exceed it in total shipped gzip bytes. Re-recorded at task 10.2
+// (add-docs-site D6): demo-dist now also ships the docs site (entry +
+// page chunks), whose budget is its own recorded initial shell — the
+// gallery-only 56 KB can no longer bound the two-site tree, so the
+// guard's recorded baseline now covers the measured total (153680 B,
+// re-measured after the docs entry landed; any later growth beyond
+// this recorded total still fails).
+const BASELINE_GZIP_BYTES = 153_680;
 
 let heavyRelease: HeavyRelease | undefined;
 
