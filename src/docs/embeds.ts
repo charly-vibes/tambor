@@ -61,32 +61,78 @@ interface EmbedCell {
   handle: SpaHandle | null;
 }
 
-// The drawn slot's box: the slot rectangle is the only div drawn at
-// the embed height, and its translate parent carries the offset (the
-// drawn tree is absolutely positioned), so top/left are read from the
-// parent and the width from the slot itself.
-function slotBox(container: HostElement): {
+// The drawn slot's box. The mount surface host ALWAYS carries the
+// 300px inline height too (attachInputSurface sizes it to VIEWPORT,
+// and extent sizing only re-sizes it once the drawn extent exceeds
+// that), so a height-only scan matches the wrong element (A-CORR-001):
+// the slot is disambiguated through the band MARKER span — the slot
+// rect is the first height-300 div that FOLLOWS the marker in document
+// order (the marker and the slot are siblings in the drawn column, and
+// the surface host precedes the marker, so it never matches).
+function slotBox(
+  container: HostElement,
+  marker: string,
+): {
   top: string;
   left: string;
   width: string;
 } | null {
+  let markerEl: HostElement | null = null;
+  for (const span of container.querySelectorAll("span")) {
+    if (span.textContent === marker) {
+      markerEl = span;
+      break;
+    }
+  }
+  if (markerEl === null) return null;
   for (const div of container.querySelectorAll("div")) {
     if (div.style.getPropertyValue("height") !== `${EMBED_SLOT_HEIGHT}px`) {
       continue;
     }
-    const parent = (
-      div as unknown as {
-        parentElement?: { style: { getPropertyValue(name: string): string } };
-      }
-    ).parentElement;
-    if (parent === undefined) return null;
+    if (!follows(markerEl, div)) continue;
+    const offsets = rowOffsets(div, container);
     return {
-      top: parent.style.getPropertyValue("top"),
-      left: parent.style.getPropertyValue("left"),
+      top: offsets.top,
+      left: offsets.left,
       width: div.style.getPropertyValue("width"),
     };
   }
   return null;
+}
+
+// DOCUMENT_POSITION_FOLLOWING (4): `other` comes after `node` in
+// document order — the drawn slot rect's row follows the marker's.
+function follows(node: HostElement, other: HostElement): boolean {
+  const cmp = (
+    node as unknown as { compareDocumentPosition?(o: HostElement): number }
+  ).compareDocumentPosition;
+  return cmp !== undefined && (cmp.call(node, other) & 4) !== 0;
+}
+
+// The slot rect's bearing offsets in the drawn column: the rect rides
+// inside 0-origin wrappers (atOrigin/with-color) under the translate
+// that carries the row's offset, so climb to the first ancestor with a
+// non-zero left/top; every 0-origin wrapper and the unpositioned root
+// contribute nothing (all zero → the slot sits at the column origin,
+// e.g. the showcase pin at offset 0 — the correct placement).
+function rowOffsets(
+  el: HostElement,
+  container: HostElement,
+): { top: string; left: string } {
+  let parent = (
+    el as unknown as { parentElement?: HostElement | null }
+  ).parentElement;
+  while (parent !== undefined && parent !== null && parent !== container) {
+    const left = parent.style.getPropertyValue("left");
+    const top = parent.style.getPropertyValue("top");
+    if (left !== "" || top !== "") {
+      if (left !== "0px" || top !== "0px") return { top, left };
+    }
+    parent = (
+      parent as unknown as { parentElement?: HostElement | null }
+    ).parentElement;
+  }
+  return { top: "0px", left: "0px" };
 }
 
 // The current page's declared demo, if any.
@@ -138,8 +184,12 @@ function startLoad(
 
 // Position the host over the drawn slot (no-op while no slot is
 // drawn); the display toggle is the band's visible switch.
-function placeEmbed(host: HostElement, container: HostElement): void {
-  const box = slotBox(container);
+function placeEmbed(
+  host: HostElement,
+  container: HostElement,
+  marker: string,
+): void {
+  const box = slotBox(container, marker);
   if (box === null) return;
   host.style.setProperty("display", "");
   host.style.setProperty("top", box.top);
@@ -168,7 +218,7 @@ function syncEmbed(
   if (cell.id !== demo && cell.loading !== demo) {
     startLoad(cell, demo, doc, host);
   }
-  placeEmbed(host, container);
+  placeEmbed(host, container, embedMarker(demo));
 }
 
 // Wire the embed seam for one docs mount; returns the disposer the
@@ -194,6 +244,10 @@ export function wireDocsEmbed(
   sync();
 
   return () => {
+    // Restore the raw draw: a post-unmount draw must not re-sync — a
+    // stray draw after the mount dropped would otherwise remount the
+    // demo (A-EDGE-003).
+    docs.backend.draw = rawDraw;
     cell.loading = null;
     dropDemo(cell);
     container.removeChild(host);

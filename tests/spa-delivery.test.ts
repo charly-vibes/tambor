@@ -30,6 +30,7 @@ import { readFileSync, existsSync } from "node:fs";
 import { gzipSync } from "node:zlib";
 
 import { acquireHeavyLock, type HeavyRelease } from "./helpers/heavy-lock.ts";
+import { staticClosure, type MetaOutputs } from "./helpers/metafile.ts";
 
 import {
   CACHE_PREFIX,
@@ -45,10 +46,13 @@ import {
 // (add-docs-site D6): demo-dist now also ships the docs site (entry +
 // page chunks), whose budget is its own recorded initial shell — the
 // gallery-only 56 KB can no longer bound the two-site tree, so the
-// guard's recorded baseline now covers the measured total (153680 B,
+// guard's recorded baseline now covers the measured total (153815 B —
+// re-recorded 2026-11-09 after the review-fix wave grew the docs shell
+// by 135 B; same one-constant ritual as the docs budget seam: rebuild,
+// read the measured total this test reports, update HERE, stamp-docs),
 // re-measured after the docs entry landed; any later growth beyond
 // this recorded total still fails).
-const BASELINE_GZIP_BYTES = 153_680;
+const BASELINE_GZIP_BYTES = 153_815;
 
 let heavyRelease: HeavyRelease | undefined;
 
@@ -62,16 +66,9 @@ beforeAll(async () => {
 
 afterAll(() => heavyRelease?.());
 
-interface MetaOutput {
-  readonly bytes: number;
-  readonly entryPoints?: readonly string[];
-  readonly imports?: readonly { path: string; external?: boolean; kind?: string }[];
-  readonly inputs?: Readonly<Record<string, unknown>>;
-}
-
-function metafile(): Record<string, MetaOutput> {
+function metafile(): MetaOutputs {
   const meta = JSON.parse(readFileSync("demo-dist/meta.json", "utf8")) as {
-    outputs: Record<string, MetaOutput>;
+    outputs: MetaOutputs;
   };
   return meta.outputs;
 }
@@ -99,19 +96,10 @@ describe("spa delivery — p_minify_flag_lands", () => {
 describe("spa delivery — p_examples_split_out_of_initial_chunk", () => {
   it("no src/examples module is transitively imported by the initial chunk", () => {
     const outputs = metafile();
-    const seen = new Set<string>(["demo-dist/spa.js"]);
-    const queue = ["demo-dist/spa.js"];
-    while (queue.length > 0) {
-      const current = queue.pop()!;
-      for (const imp of outputs[current]?.imports ?? []) {
-        if (imp.external === true || seen.has(imp.path)) continue;
-        // only static import edges count — the demo chunks hang off
-        // dynamic-import edges (that IS the lazy boundary)
-        if (imp.kind !== undefined && imp.kind !== "import-statement") continue;
-        seen.add(imp.path);
-        queue.push(imp.path);
-      }
-    }
+    // only static import edges count — the demo chunks hang off
+    // dynamic-import edges (that IS the lazy boundary); the shared
+    // walk is helpers/metafile.ts (C-2: one traversal implementation)
+    const seen = staticClosure("demo-dist/spa.js", outputs);
     // every output in the initial chunk's closure must be free of
     // example-module inputs
     for (const path of seen) {

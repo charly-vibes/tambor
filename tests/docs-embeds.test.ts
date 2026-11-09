@@ -23,20 +23,51 @@
 
 // @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
-// @ts-expect-error node:child_process has no type declarations here
-import { spawnSync } from "node:child_process";
-// @ts-expect-error node:path has no type declarations here
-import { resolve } from "node:path";
 import { CONTAINER_SIZE_KEY } from "../src/effects/dispatch.ts";
+import { regenerateDocsContent } from "./helpers/docs-content.ts";
 import type { DocsHandle } from "../src/docs/main.ts";
-import type { HostDoc } from "../src/interop/domhost.ts";
+import type { HostDoc, HostElement } from "../src/interop/domhost.ts";
 import { scanOf } from "./helpers/scan.ts";
 import { waitFor } from "./helpers/wait.ts";
 import { lastObserver, MockResizeObserver } from "./helpers/mock-ro.ts";
 
-const TOOL = resolve("tools/gen_docs_content.py");
-const CORPUS = resolve("openspec/specs");
-const GENERATED = resolve("src/docs/content/generated");
+// DOCUMENT_POSITION_FOLLOWING (4): `other` comes after `node` in
+// document order — the drawn slot rect's row follows the marker's, so
+// the mount surface host div (which carries the same inline 300px
+// height but precedes the marker) is never matched.
+function docFollows(node: HostElement, other: HostElement): boolean {
+  const cmp = (
+    node as unknown as { compareDocumentPosition?(o: HostElement): number }
+  ).compareDocumentPosition;
+  return cmp !== undefined && (cmp.call(node, other) & 4) !== 0;
+}
+
+// The container-space offset of a drawn node: every positioned
+// ancestor's left/top sums to the node's layout position (the drawn
+// tree composites translate offsets over 0-origin atOrigin wrappers).
+function boxOffset(
+  el: HostElement,
+  container: HostElement,
+): { top: string; left: string } {
+  let top = 0;
+  let left = 0;
+  let parent = (
+    el as unknown as { parentElement?: HostElement | null }
+  ).parentElement;
+  while (parent !== undefined && parent !== null && parent !== container) {
+    left += px(parent.style.getPropertyValue("left"));
+    top += px(parent.style.getPropertyValue("top"));
+    parent = (
+      parent as unknown as { parentElement?: HostElement | null }
+    ).parentElement;
+  }
+  return { top: `${top}px`, left: `${left}px` };
+}
+
+function px(v: string): number {
+  const n = Number.parseFloat(v);
+  return Number.isFinite(n) ? n : 0;
+}
 
 // Generate the build-time content (atomic publication — the generator
 // owns its out dir), then import the modules under test. Static
@@ -48,10 +79,7 @@ const GENERATED = resolve("src/docs/content/generated");
 (globalThis as { ResizeObserver?: unknown }).ResizeObserver =
   MockResizeObserver;
 
-const gen = spawnSync("python3", [TOOL, "--corpus", CORPUS, "--out", GENERATED], {
-  encoding: "utf8",
-});
-if (gen.status !== 0) throw new Error(`content generator failed: ${gen.stderr}`);
+regenerateDocsContent();
 
 describe("docs embeds — p_docs_embeds_resolve_through_gallery_registry", () => {
   it("p_docs_embeds_resolve: a page declaring a demo resolves to the registry entry and load() yields an app", async () => {
@@ -130,6 +158,9 @@ describe("docs embeds — p_docs_embeds_stack_above_prose (D3 third assertion, o
 
   it("p_docs_embeds_stack: the mounted page's demo draws inside the container (spec: the drawn demo appears in the page)", async () => {
     const { mountDocs } = await import("../src/docs/main.ts");
+    const { embedMarker, EMBED_SLOT_HEIGHT } = await import(
+      "../src/docs/embeds.ts"
+    );
     const doc = (globalThis as { document?: unknown }).document;
     if (doc === undefined) throw new Error("no document in this environment");
     const host = doc as HostDoc;
@@ -149,6 +180,38 @@ describe("docs embeds — p_docs_embeds_stack_above_prose (D3 third assertion, o
       );
     });
     expect(appeared).toBe(true);
+
+    // A-CORR-001 (HIGH): the embed host must sit over the DRAWN slot
+    // box — not over the CSS mount surface. The surface host div carries
+    // the same inline height (VIEWPORT[1] === EMBED_SLOT_HEIGHT) and
+    // precedes the band marker, so a height-only scan returns the
+    // surface's box (empty top/left and the 300px surface width). Locate
+    // the slot rect as the first height-300 div FOLLOWING the marker in
+    // document order, read its box, and assert the host matches it.
+    const marker = [...container.querySelectorAll("span")].find(
+      (s) => s.textContent === embedMarker("counter"),
+    );
+    expect(marker, "band marker span drawn").toBeTruthy();
+    const slot = [...container.querySelectorAll("div")].find(
+      (d) =>
+        d.style.getPropertyValue("height") === `${EMBED_SLOT_HEIGHT}px` &&
+        docFollows(marker!, d),
+    );
+    expect(slot, "drawn slot rect after the marker").toBeTruthy();
+    const box = boxOffset(slot!, container);
+    const el = [...container.childNodes].find(
+      (c) => c.style.getPropertyValue("position") === "absolute",
+    );
+    expect(el, "embed host element").toBeTruthy();
+    expect(
+      el!.style.getPropertyValue("top"),
+      "host top equals the drawn slot's container offset (not 0px — the surface/0-origin wrapper match)",
+    ).toBe(box.top);
+    expect(el!.style.getPropertyValue("left")).toBe(box.left);
+    expect(
+      el!.style.getPropertyValue("width"),
+      "host width equals the drawn slot's width (not the surface's 300px)",
+    ).toBe(slot!.style.getPropertyValue("width"));
     docs.unmount();
   });
 });
