@@ -33,6 +33,11 @@ export interface PageData {
 // answer to "no horizontal overflow at 320 px" (design D3). Words
 // wider than the whole container ride as their own line (a line can
 // only shrink to its longest word).
+// NOTE (review A-EDGE-002, deferred): re-measuring the running
+// candidate per word is O(k²) in a line's word count; a running-width
+// accumulation with confirm-on-overflow is the recorded tightening.
+// Bounded by container width — below threshold until wrapping shows up
+// in a profile.
 function wrapLines(text: string, maxWidth: number): string[] {
   const measure = currentLabelMeasure();
   if (measure(text)[0] <= maxWidth) return [text];

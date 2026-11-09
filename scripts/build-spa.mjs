@@ -19,7 +19,6 @@
 import { build } from "esbuild";
 import { execFileSync } from "node:child_process";
 import { mkdirSync, readFileSync, writeFileSync, rmSync } from "node:fs";
-import { gzipSync } from "node:zlib";
 
 const OUTDIR = "demo-dist";
 
@@ -159,45 +158,21 @@ const totalKb =
 writeFileSync(`${OUTDIR}/meta.json`, JSON.stringify(result.metafile));
 
 // docs shell budget (add-docs-site D6): the recorded baseline assert.
-// DOCS_SHELL_GZIP_CEILING_BYTES is the measured initial-shell gzip from
-// task 10.2 — the twin of the same constant in
-// tests/helpers/docs-delivery-budget.ts (this script cannot import the
-// .ts seam). docsShellGzipBytes walks the metafile exactly like the
-// delivery test's staticClosure and adds the docs index.html.
-const DOCS_SHELL_GZIP_CEILING_BYTES = 30132;
-
-function staticClosureFor(entry, outputs) {
-  const seen = new Set([entry]);
-  const queue = [entry];
-  while (queue.length > 0) {
-    const current = queue.pop();
-    for (const imp of outputs[current]?.imports ?? []) {
-      if (
-        imp.external !== true &&
-        !seen.has(imp.path) &&
-        (imp.kind === undefined || imp.kind === "import-statement")
-      ) {
-        seen.add(imp.path);
-        queue.push(imp.path);
-      }
-    }
-  }
-  return seen;
-}
-
-function docsShellGzipBytes(entry, outputs) {
-  let total = 0;
-  for (const file of staticClosureFor(entry, outputs)) {
-    total += gzipSync(readFileSync(file)).length;
-  }
-  return total + gzipSync(readFileSync(`${OUTDIR}/docs/index.html`)).length;
-}
+// The ceiling and the measurement walk live in ONE place — the budget
+// seam (tests/helpers/docs-delivery-budget.ts), the same module the
+// delivery RED test imports (C-1: no twin constants or walks left to
+// drift). Node >= 23.6 strips types, so the .ts seam imports natively
+// (CI pins node 24).
+import {
+  DOCS_SHELL_GZIP_CEILING_BYTES,
+  measuredDocsShellGzip,
+} from "../tests/helpers/docs-delivery-budget.ts";
 
 const docsEntry = Object.keys(outputs).find(
   (path) => outputs[path]?.entryPoint === "src/docs/main.ts",
 );
 if (!docsEntry) throw new Error("docs entry missing from esbuild output");
-const docsShellGzip = docsShellGzipBytes(docsEntry, outputs);
+const docsShellGzip = measuredDocsShellGzip(docsEntry, outputs);
 if (docsShellGzip > DOCS_SHELL_GZIP_CEILING_BYTES) {
   throw new Error(
     `docs shell gzip ${docsShellGzip} B exceeds recorded baseline ` +

@@ -49,6 +49,10 @@ def parse_spec(path: Path) -> dict:
     sid = (ID.search(front.group(1)) or fail(f"{path}: no id")).group(1).strip()
     stmt = " ".join((STATEMENT.search(front.group(1)) or fail(f"{path}: no statement")).group(1).split())
     para = PURPOSE.search(text) or fail(f"{path}: no ## Purpose section for the one-line description")
+    # one-line description = the first Purpose sentence (B-05): the
+    # newline/space squash above turns a sentence-ending ".\n" into
+    # ". " so this split terminates exactly on the first sentence
+    # boundary — the description never spans two sentences.
     sent = re.sub(r"\s+", " ", para.group(1)).strip().split(". ")[0].rstrip(".")
     name = path.parent.name
     return {
@@ -127,6 +131,15 @@ def atomic_write(path: Path, text: str) -> None:
     # generating while a spa build regenerates the same tree) must
     # never share one tmp file.
     tmp = path.with_name(f"{path.name}.{os.getpid()}.tmp")
+    # Same-corpus assumption (B-02): the module text is a pure function
+    # of the corpus page — when regeneration is byte-identical to what
+    # is on disk, skip the write so mtimes stay stable (no churn, no
+    # downstream rebuild/watcher triggers). A real corpus change always
+    # changes the text, so the guard never masks one; publication
+    # ordering is preserved (registry still written last below, and
+    # unchanged files keep their tmp+replace behaviour untouched).
+    if path.is_file() and path.read_text() == text:
+        return
     tmp.write_text(text)
     os.replace(tmp, path)
 

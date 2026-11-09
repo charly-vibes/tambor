@@ -41,6 +41,10 @@ export const SCROLL_PATH: Path = [["keypath", "offset"]];
 // demo over the slot. In the showcase the whole band rides the pin
 // body (the marker and the slot pin together).
 export function embedBand(id: string): Elem[] {
+  // The full-width backdrop idiom (this shape, three sites in this
+  // file): each band differs in height/color intent and a helper would
+  // delete less than it adds — deliberate small duplication (review
+  // A-DRAFT-002 closed with this note).
   return [
     withColor(ambientColor("body"), label(embedMarker(id))),
     withColor(
@@ -52,6 +56,10 @@ export function embedBand(id: string): Elem[] {
 
 // The stacked height of elems placed by the vertical layout — the
 // running vstack offset totals (layout_reflows); nil for no elems.
+// NOTE (review A-EXC-001, deferred): an allocation-free extent fold
+// mirroring verticalLayout's gap formula would remove the two extra
+// layout builds per showcase derive (wheel-tick path). Measured below
+// the noise floor for now; revisit with scroll-profile data.
 function stackHeight(elems: readonly Elem[]): number {
   return height(verticalLayout(elems));
 }

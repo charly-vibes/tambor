@@ -21,8 +21,8 @@
 // pages are how-tos (one named task to a verifiable outcome), concept
 // pages are explanations (prerequisites stated upfront). The substance
 // check (checkGuideSubstance, check.ts) enforces each kind's evidence;
-// the fields are optional here so existing consumers keep compiling
-// and the registry stays empty until task 9.4 authors the pages.
+// the fields were introduced optional in task 9.3 so the check seam
+// could land before the registry shipped its six pages (task 9.4).
 export type GuideKind = "tutorial" | "how-to" | "explanation";
 
 export interface GuidePage {

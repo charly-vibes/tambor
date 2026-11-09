@@ -46,7 +46,7 @@ import { wireDocsHost } from "./host.ts";
 import { checkGroups } from "./content/check.ts";
 import { clearDocsDom, wireDocsDom } from "./dom.ts";
 import { ambientColor, resolveAmbient } from "./theme.ts";
-import { NAV, type NavGroup } from "./nav.ts";
+import { CURRENT, NAV, type NavGroup } from "./nav.ts";
 import { collapsedNav } from "./breakpoint.ts";
 import { pageView } from "./page.ts";
 import {
@@ -61,7 +61,7 @@ import { showcaseShell, stackedShell } from "./layout.ts";
 export type DocsHandle = SpaHandle;
 
 // The current-entry marker drawn on the nav label.
-const CURRENT = "▸ ";
+// (CURRENT lives in nav.ts — one home for the marker spelling.)
 
 interface DocsState {
   readonly page: string;
@@ -89,15 +89,7 @@ const EXTRA_ROOT: Path = [["keypath", "::extra"]];
 // The state step one effect makes, carrying every untouched field —
 // the dropdown's open flag and scratch tree survive navigation.
 function withFields(state: DocsState, patch: Partial<DocsState>): DocsState {
-  return {
-    page: state.page,
-    body: state.body,
-    focus: state.focus,
-    "open?": state["open?"],
-    "::extra": state["::extra"],
-    offset: state.offset,
-    ...patch,
-  };
+  return { ...state, ...patch };
 }
 
 // The docs dispatch, assigned once createDocsApp builds the app — the
@@ -142,9 +134,14 @@ function builtinEffect(state: DocsState, effect: Effect): DocsState {
   const next = defaultHandler(state, [effect], {}) as DocsState;
   const arg = effect[1];
   const value = effect[2];
+  // Structural page-path check (A-CLAR-002): the dropdown's derived set
+  // spells the same one-keypath path as PAGE_PATH; stringify-comparing
+  // serialized arrays was fragile and ran per effect.
   const navigates =
     effect[0] === "set" &&
-    JSON.stringify(arg) === JSON.stringify(PAGE_PATH) &&
+    Array.isArray(arg) &&
+    arg.length === 1 &&
+    (arg[0] as { keypath?: unknown }).keypath === "page" &&
     typeof value === "string" &&
     value !== state.page;
   return navigates ? selectPage(next, value as string) : next;
@@ -249,7 +246,7 @@ export function docsView(state: unknown, context: ViewContext): Elem {
   const size = contextSize(context);
   const demo = PAGE_DEMOS[page.name];
   const wide = !collapsedNav(size[0]);
-  const scroll: Vec2 = (s as { offset?: Vec2 }).offset ?? [0, 0];
+  const scroll: Vec2 = s.offset;
   // The breakpoint branch (task 6.2, design D3): below 600 px the nav
   // collapses to a top-bar dropdown; at or above it the journey-grouped
   // chrome renders. A demo page at or above the breakpoint composes the

@@ -25,7 +25,7 @@ import { describe, expect, it, beforeAll, afterAll } from "vitest";
 // the build runs in a child process — esbuild's node code inside the
 // jsdom environment trips the TextEncoder invariant
 // @ts-expect-error node builtin
-import { execSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 // @ts-expect-error node builtin
 import { readFileSync, readdirSync } from "node:fs";
 
@@ -87,9 +87,10 @@ beforeAll(async () => {
   // generator its outdir) — hold the heavy lock for this file's whole
   // lifetime so no other heavy file reads those trees mid-wipe.
   heavyRelease = await acquireHeavyLock();
-  // the build:spa recipe, verbatim (a child process: esbuild's node
-  // code cannot load inside the jsdom environment)
-  execSync("npm run build:spa", { stdio: "pipe" });
+  // the build:spa recipe via the direct node form (no npm indirection
+  // — same child-process call as spa-delivery/docs-delivery, C-9; a
+  // child process: esbuild's node code cannot load inside jsdom)
+  execFileSync("node", ["scripts/build-spa.mjs"], { stdio: "pipe" });
 }, 420_000);
 
 afterAll(() => heavyRelease?.());

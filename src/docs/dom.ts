@@ -21,11 +21,12 @@
 
 import { defeffect, type App, type Effect } from "../effects/dispatch.ts";
 import type { HostElement } from "../interop/domhost.ts";
-import { NAV } from "./nav.ts";
+import { CURRENT, NAV } from "./nav.ts";
 import { generatedPages, type GeneratedPage } from "./content/generated/registry.ts";
 
 // The current-entry marker the nav draws on the selected page.
-const CURRENT = "▸ ";
+// (CURRENT is owned by nav.ts — the draw side and this recognise side
+// share one marker spelling, A-DRAFT-001.)
 
 // The mounted docs instance the focus effect resolves its container
 // through — the effect registry is global, so the ref is per-mount and

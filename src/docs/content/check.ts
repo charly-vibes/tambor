@@ -1,10 +1,14 @@
-// Purpose: the docs content check (add-docs-site D7, scenario
-//   ungrouped_page_fails) — every page module declares its journey
-//   group, and a page assigned to no group fails naming the module.
+// Purpose: the docs content checks (add-docs-site D7/D8) — three
+//   gates shared by the vitest suite, the mount-time shell, and the
+//   build-time tool (tools/check_docs_content.mjs).
 // Responsibilities: checkGroups(pages) throws naming the offending
-//   modules when a page's group is missing or empty; the docs shell
-//   runs it at mount (fail-loud before any nav render) and the build
-//   wiring calls it over the emitted registry (task 9).
+//   modules when a page's group is missing or empty — the docs shell
+//   runs it at mount (fail-loud before any nav render) and the tool
+//   over the emitted registry ∪ guides; checkGuideLinks resolves every
+//   typed page id and extracts the external URL inventory (D8);
+//   checkGuideSubstance gates each Diátaxis kind's evidence (D7:
+//   tutorial duration + compiled snippets, how-to task + outcome,
+//   explanation prerequisites).
 // Rationale: a page no nav group claims is unreachable through the
 //   navigation alone, which the shell spec forbids — silent omission
 //   is exactly the failure mode this check exists to prevent.
@@ -33,8 +37,8 @@ export function checkGroups(pages: readonly GroupedPage[]): void {
 // kind (D7) and the evidence that kind requires (tutorial: a sub-15-
 // minute duration plus compiled sample modules; how-to: one named task
 // and a verifiable outcome; explanation: prerequisites stated). The
-// registry ships empty (task 9.4 authors the pages); the check lands
-// first so authored content is gated from day one.
+// seam landed before the content (task 9.3), then task 9.4 shipped six
+// authored pages — every one is gated from day one.
 
 import type { GuideKind } from "./guides.ts";
 

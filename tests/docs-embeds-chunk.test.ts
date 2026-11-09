@@ -26,6 +26,7 @@ import { spawnSync } from "node:child_process";
 import { resolve } from "node:path";
 import { build } from "esbuild";
 
+import { staticClosure, type MetaOutputs } from "./helpers/metafile.ts";
 const TOOL = resolve("tools/gen_docs_content.py");
 const CORPUS = resolve("openspec/specs");
 const GENERATED = resolve("src/docs/content/generated");
@@ -37,15 +38,6 @@ const gen = spawnSync("python3", [TOOL, "--corpus", CORPUS, "--out", GENERATED],
   encoding: "utf8",
 });
 if (gen.status !== 0) throw new Error(`content generator failed: ${gen.stderr}`);
-
-// The metafile output slice this file traverses — the same shape
-// tests/spa-delivery.test.ts asserts over.
-interface MetaOutput {
-  readonly bytes: number;
-  readonly entryPoint?: string;
-  readonly imports?: readonly { path: string; external?: boolean; kind?: string }[];
-  readonly inputs?: Readonly<Record<string, unknown>>;
-}
 
 describe("docs embeds — p_docs_embeds_example_modules_split_out_of_initial_docs_chunk", () => {
   it("p_docs_embeds_split: no src/examples input rides the docs entry's static-import closure; examples ride lazy chunks", async () => {
@@ -60,8 +52,7 @@ describe("docs embeds — p_docs_embeds_example_modules_split_out_of_initial_doc
       outdir: "out",
       chunkNames: "chunks/[name]-[hash]",
     });
-    const outputs = (result.metafile as { outputs: Record<string, MetaOutput> })
-      .outputs;
+    const outputs = (result.metafile as { outputs: MetaOutputs }).outputs;
     const entry = Object.keys(outputs).find(
       (p) => outputs[p]!.entryPoint === "src/docs/main.ts",
     );
@@ -69,18 +60,9 @@ describe("docs embeds — p_docs_embeds_example_modules_split_out_of_initial_doc
 
     // The static-import closure of the initial docs chunk — only
     // static edges count, the demo chunks hang off dynamic-import
-    // edges (that IS the lazy boundary; spa-delivery's traversal).
-    const seen = new Set<string>([entry!]);
-    const queue = [entry!];
-    while (queue.length > 0) {
-      const current = queue.pop()!;
-      for (const imp of outputs[current]?.imports ?? []) {
-        if (imp.external === true || seen.has(imp.path)) continue;
-        if (imp.kind !== undefined && imp.kind !== "import-statement") continue;
-        seen.add(imp.path);
-        queue.push(imp.path);
-      }
-    }
+    // edges (that IS the lazy boundary; the shared walk is
+    // helpers/metafile.ts, C-2).
+    const seen = staticClosure(entry!, outputs);
     for (const path of seen) {
       for (const input of Object.keys(outputs[path]?.inputs ?? {})) {
         expect(

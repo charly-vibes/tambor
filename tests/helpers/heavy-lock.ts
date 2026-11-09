@@ -22,7 +22,7 @@
 
 // @ts-expect-error node builtin (tsconfig types exclude node; repo
 // test-local pin convention, e.g. spa-delivery.test.ts)
-import { mkdirSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 
 // The timer global reached structurally (the ES2022 lib has no timer
 // declarations; same pattern as docs-keyboard.test.ts).
@@ -36,6 +36,7 @@ const proc = globalThis as unknown as {
   process: {
     readonly pid: number;
     readonly env: Record<string, string | undefined>;
+    kill(pid: number, signal: number): void;
     on(event: "exit", listener: () => void): void;
   };
 };
@@ -65,10 +66,31 @@ const DEFAULT_DIR = "target/locks";
 const DEFAULT_MAX_WAIT_MS = 300_000;
 const DEFAULT_TTL_MS = 240_000;
 
+function holderAlive(lockDir: string): boolean {
+  // The holder file records the owning worker's pid (forensics on
+  // acquisition); liveness is process.kill(pid, 0) — throws ESRCH for
+  // a dead pid, EPERM for an alive pid this process may not signal.
+  let pid: number;
+  try {
+    pid = Number.parseInt(readFileSync(`${lockDir}/holder`, "utf8").trim(), 10);
+  } catch {
+    return false; // unreadable/missing holder — treat as dead, seize
+  }
+  if (!Number.isInteger(pid) || pid <= 0) return false;
+  try {
+    proc.process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    // EPERM means the process exists but belongs to another user —
+    // still alive, so the lock must not be seized.
+    return (error as { code?: string }).code === "EPERM";
+  }
+}
+
 function stealIfStale(lockDir: string, ttlMs: number): boolean {
   // True when the caller should retry immediately: either the lock
   // vanished between the failed mkdir and the stat, or it is old
-  // enough (TTL) to be considered abandoned by a crashed worker.
+  // enough (TTL) AND its holder is dead — a crashed worker.
   let mtimeMs: number;
   try {
     mtimeMs = statSync(lockDir).mtimeMs;
@@ -76,6 +98,10 @@ function stealIfStale(lockDir: string, ttlMs: number): boolean {
     return true;
   }
   if (Date.now() - mtimeMs <= ttlMs) return false;
+  // Past the TTL we still never seize a LIVE holder — a long-running
+  // heavy file legitimately holds past the TTL, and a raced waiter
+  // must not steal its tree mid-wipe (C-4: liveness gates seizure).
+  if (holderAlive(lockDir)) return false;
   // Seizure is racy by construction (two stealers); the mkdir in the
   // spin below still elects exactly one winner — the loser re-enters
   // the loop.
@@ -125,7 +151,14 @@ export async function acquireHeavyLock(
   // surfaces as an attributable test-failing finding, never a hang.
   // The full-suite runs that actually flaked (testaruda exec, just
   // test, manual vitest) carry no AH_RUNNER and DO exclude.
-  if (proc.process.env["AH_RUNNER"] !== undefined) {
+  // The bypass is exact-value "1" (C-3): any other env value ("0",
+  // "") must keep full exclusion.
+  // Known gap (co-selection): ah check --run-tests batches ALL heavy
+  // files under AH_RUNNER=1 into one invocation, so two build-spa-
+  // spawning files (docs-delivery + spa-delivery) can still race each
+  // other on demo-dist unlocked inside that batch — narrow and
+  // attributable; an always-on demo-dist lock is the tracked ticket.
+  if (proc.process.env["AH_RUNNER"] === "1") {
     return () => {};
   }
   const name = options.name ?? "heavy";

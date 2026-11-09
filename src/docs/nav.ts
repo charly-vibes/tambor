@@ -8,6 +8,11 @@
 //   follow the reader journey, not the registry's flat order; curated
 //   groups are reserved headers until their pages land (tasks 4-8).
 
+// The current-page marker prefix, owned here (A-DRAFT-001): the nav
+// draws it (main.ts navEntry) and the DOM side recognises it
+// (dom.ts pageOfNavText) — one spelling so the two can never drift.
+export const CURRENT = "▸ ";
+
 export interface NavGroup {
   readonly id: string;
   readonly header: string;

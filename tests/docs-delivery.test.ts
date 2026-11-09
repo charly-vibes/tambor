@@ -32,12 +32,14 @@ import { readFile } from "node:fs/promises";
 // @ts-expect-error node:http has no type declarations here
 import { createServer, get as httpRequest } from "node:http";
 // @ts-expect-error node:path has no type declarations here
-import { join, resolve } from "node:path";
-// @ts-expect-error node:zlib has no type declarations here
-import { gzipSync } from "node:zlib";
+import { resolve } from "node:path";
 
 import { acquireHeavyLock, type HeavyRelease } from "./helpers/heavy-lock.ts";
-import { DOCS_SHELL_GZIP_CEILING_BYTES } from "./helpers/docs-delivery-budget.ts";
+import {
+  DOCS_SHELL_GZIP_CEILING_BYTES,
+  measuredDocsShellGzip,
+} from "./helpers/docs-delivery-budget.ts";
+import { staticClosure, type MetaOutputs } from "./helpers/metafile.ts";
 
 // demo-dist is a shared wiped tree with the other heavy files: hold
 // the heavy lock for this file's whole lifetime (spa-delivery
@@ -54,59 +56,20 @@ beforeAll(async () => {
 
 afterAll(() => heavyRelease?.());
 
-// --- metafile helpers (spa-delivery / docs-embeds-chunk idiom) --------
+// --- metafile helpers (shared walk lives in helpers/metafile.ts; the
+// local helpers below carry only this file's structural queries) ------
 
-interface MetaImport {
-  readonly path: string;
-  readonly external?: boolean;
-  readonly kind?: string;
-}
-
-interface MetaOutput {
-  readonly bytes: number;
-  readonly entryPoint?: string;
-  readonly imports?: readonly MetaImport[];
-  readonly inputs?: Readonly<Record<string, unknown>>;
-}
-
-interface MetaFile {
-  readonly outputs: Record<string, MetaOutput>;
-}
-
-function metafileOutputs(): MetaFile["outputs"] {
-  const meta = JSON.parse(readFileSync("demo-dist/meta.json", "utf8")) as MetaFile;
+function metafileOutputs(): MetaOutputs {
+  const meta = JSON.parse(readFileSync("demo-dist/meta.json", "utf8")) as {
+    outputs: MetaOutputs;
+  };
   return meta.outputs;
 }
 
-function docsEntryOutput(outputs: MetaFile["outputs"]): string | undefined {
+function docsEntryOutput(outputs: MetaOutputs): string | undefined {
   return Object.keys(outputs).find(
     (path) => outputs[path]?.entryPoint === "src/docs/main.ts",
   );
-}
-
-// A static-import edge rides the chunk's closure: locals only, and only
-// the eager import-statement kind — dynamic import() edges are the lazy
-// path that keeps generated page bodies out of the initial chunk.
-function isStaticImport(imp: MetaImport): boolean {
-  return (
-    imp.external !== true &&
-    (imp.kind === undefined || imp.kind === "import-statement")
-  );
-}
-
-function staticClosure(entry: string, outputs: MetaFile["outputs"]): Set<string> {
-  const seen = new Set<string>([entry]);
-  const queue = [entry];
-  while (queue.length > 0) {
-    const current = queue.pop()!;
-    for (const imp of outputs[current]?.imports ?? []) {
-      if (isStaticImport(imp) && !seen.has(imp.path)) {
-        seen.add(imp.path);
-        queue.push(imp.path);
-      }
-    }
-  }
-  return seen;
 }
 
 // A generated page body — the registry (the loader table) legitimately
@@ -116,15 +79,6 @@ function isPageBody(input: string): boolean {
     input.includes("src/docs/content/generated/") &&
     !input.endsWith("src/docs/content/generated/registry.ts")
   );
-}
-
-function initialShellGzipBytes(entry: string, outputs: MetaFile["outputs"]): number {
-  const files = [...staticClosure(entry, outputs)];
-  let total = 0;
-  for (const file of files) {
-    total += gzipSync(readFileSync(file)).length;
-  }
-  return total + gzipSync(readFileSync("demo-dist/docs/index.html")).length;
 }
 
 // --- static server (tests/e2e/serve.mjs idiom, rooted at demo-dist) ---
@@ -150,8 +104,12 @@ function serveDir(root: string): Promise<{ port: number; close: () => Promise<vo
   const server = createServer((req: HttpRequestLike, res: HttpResponseLike) => {
     let rel = decodeURIComponent((req.url ?? "/").split("?")[0]!);
     if (rel.endsWith("/")) rel += "index.html";
-    const file = join(root, rel);
-    if (!file.startsWith(root)) {
+    // C-8 traversal guard: resolve BOTH sides before the containment
+    // check — the old raw-startswith was a prefix match, so a sibling
+    // tree (or a ../-collapsed escape) could read outside the root.
+    const resolvedRoot = resolve(root);
+    const file = resolve(resolvedRoot, rel.replace(/^\//, ""));
+    if (!file.startsWith(`${resolvedRoot}/`)) {
       res.writeHead(403).end();
       return;
     }
@@ -261,19 +219,35 @@ describe("docs delivery — p_docs_initial_shell_stays_in_budget", () => {
     const entry = docsEntryOutput(outputs);
     expect(entry, "docs entry output in demo-dist/meta.json").toBeTruthy();
     if (entry === undefined) return;
-    expect(initialShellGzipBytes(entry, outputs)).toBeLessThanOrEqual(
+    expect(measuredDocsShellGzip(entry, outputs)).toBeLessThanOrEqual(
       DOCS_SHELL_GZIP_CEILING_BYTES,
     );
   });
 });
 
 describe("docs delivery — p_docs_index_serves_at_docs_path", () => {
-  it("p_docs_serve_smoke: a static server over demo-dist serves /docs/ with the docs index", async () => {
+  it("p_docs_serve_smoke: serves the docs shell, main.js and the first chunk it names; blocks traversal", async () => {
     const { port, close } = await serveDir("demo-dist");
     try {
-      const response = await httpGet(port, "/docs/");
-      expect(response.status).toBe(200);
-      expect(response.body).toContain("<html");
+      const index = await httpGet(port, "/docs/");
+      expect(index.status).toBe(200);
+      expect(index.body).toContain("<html");
+
+      // the Pages deploy path (C-5): the shell's script tag loads
+      // /docs/main.js, whose chunk refs are relative to it — each
+      // must resolve through the same server, not only on disk.
+      const main = await httpGet(port, "/docs/main.js");
+      expect(main.status).toBe(200);
+      expect(main.body).toContain("../chunks/");
+      const chunkRef = main.body.match(/\.\.\/chunks\/[A-Za-z0-9_.-]+/)?.[0];
+      expect(chunkRef, "main.js must name a chunk under ../chunks/").toBeTruthy();
+      const chunk = await httpGet(port, `/${chunkRef!.replace(/^\.\.\//, "")}`);
+      expect(chunk.status).toBe(200);
+      expect(chunk.body.length).toBeGreaterThan(0);
+
+      // C-8: traversal must 403, never read outside demo-dist
+      const escape = await httpGet(port, "/../../etc/passwd");
+      expect(escape.status).toBe(403);
     } finally {
       await close();
     }

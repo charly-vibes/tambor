@@ -5,9 +5,9 @@
 //   the 15-minute bar whose snippets name compiled sample modules under
 //   src/docs/samples/, a how-to declares one named task and a
 //   verifiable outcome, an explanation states prerequisites up front.
-//   The suite is RED until task 9.4 authors the registry (empty today:
-//   src/docs/content/guides.ts exports `guides = []`) and implements
-//   checkGuideSubstance (a throwing stub in check.ts today).
+//   The suite is GREEN on the settled state: task 9.4 authored six
+//   registry pages covering the quadrants and checkGuideSubstance is
+//   the implementation under test (no stub, no empty registry).
 // Responsibilities: regenerate the gitignored corpus content (the
 //   docs-guide-links precedent), then assert the real registry carries
 //   exactly the quadrant-evidence contract above and that every
