@@ -49,7 +49,7 @@ app.view(); // re-render this — it is a pure function of the new state
 Run the SPA locally:
 
     npm ci
-    npm run build:spa        # esbuild → demo-dist/ (<!-- stamp:bundle-size -->134.2 kB<!-- /stamp:bundle-size --> minified + chunked, ESM, no runtime deps; PWA shell incl.)
+    npm run build:spa        # esbuild → demo-dist/ (<!-- stamp:bundle-size -->451.5 kB<!-- /stamp:bundle-size --> minified + chunked, ESM, no runtime deps; PWA shell incl.)
     npx serve .              # then open http://localhost:3000
 
 Or run the test suite:
