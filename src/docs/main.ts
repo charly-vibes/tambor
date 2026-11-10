@@ -23,7 +23,10 @@
 //   own (tambor-cie gallery precedent), and the host is mountDemo
 //   reused wholesale — imported, not moved (task 2.2 helper clause).
 
-import { mountDemo, type SpaHandle } from "../spa/mount.ts";
+import {
+  configureLabelMeasure,
+} from "../views/nodes.ts";
+import { domMeasure, mountDemo, type SpaHandle } from "../spa/mount.ts";
 import {
   makeApp,
   defaultHandler,
@@ -344,4 +347,21 @@ export function mountDocs(doc: HostDoc, container: HostElement): DocsHandle {
       clearDocsDom();
     },
   };
+}
+
+// The self-boot (live Pages incident 2026-11-10): docs/main.js loads as
+// <script type="module"> and the entry mounts itself — the host page
+// never calls mountDocs (gallery spa/main.ts precedent). Guarded on a
+// document so non-browser consumers (vitest imports, the type-stripping
+// build tool) stay side-effect-free.
+const bootDoc = (globalThis as { document?: unknown }).document as
+  | HostDoc
+  | undefined;
+if (bootDoc !== undefined) {
+  const d: HostDoc = bootDoc;
+  // Real text metrics BEFORE any view construction (tambor-0rp): the
+  // layout math measures labels — browser metrics or the 'addcomplete'
+  // overlap class returns.
+  configureLabelMeasure(domMeasure(d));
+  mountDocs(d, d.getElementById("app") ?? d.body);
 }
