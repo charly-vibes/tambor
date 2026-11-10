@@ -89,3 +89,4 @@ tests/screenshots/
 # docs-site content (add-docs-site D2): generated at build from the
 corpus — never hand-edited, never committed
 src/docs/content/generated/
+_pages

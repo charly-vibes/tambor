@@ -12,6 +12,7 @@ export default tseslint.config(
     ignores: [
       "dist/",
       "demo-dist/",
+      "_pages/",
       "coverage/",
       "target/",
       "benchmarks/",

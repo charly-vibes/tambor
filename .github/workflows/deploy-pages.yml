@@ -63,12 +63,14 @@ jobs:
         # add-spa-delivery layout) + generated AI docs. Never
         # node_modules, tests, or specs — the whole repo must not become
         # the site.
-        run: |
-          rm -rf _pages
-          mkdir -p _pages
-          cp index.html _pages/
-          cp -r demo-dist _pages/demo-dist
-          cp -r ai _pages/ai
+        run: node tools/stage-pages.mjs
+        # The stager (tools/stage-pages.mjs) owns the layout: index.html
+        # + the built demo shell (demo-dist/ — hashed chunks, workers,
+        # sw.js, manifest; the add-spa-delivery layout) + generated AI
+        # docs, and LIFTS the docs site to /docs/ at the artifact root
+        # (add-docs-site D6 — the Pages artifact serves the docs index
+        # at /docs/). Never node_modules, tests, or specs — the whole
+        # repo must not become the site.
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

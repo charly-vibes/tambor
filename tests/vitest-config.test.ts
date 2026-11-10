@@ -9,7 +9,7 @@
 //   ah check --run-tests's single batched CI invocation past the step
 //   timeout and silently drops it into per-binding batch-fallback
 //   storms (CI run 42115074478 wedged >2h on exactly that); (2) each
-//   of the four heavy files imports the heavy-lock helper (the
+//   of the five heavy files imports the heavy-lock helper (the
 //   exclusion primitive for the dist/ and demo-dist/ races); (3) the junit reporter keeps its per-reporter outputFile
 //   (tambor-8rq) on the path the testaruda adapter ingests.
 // Rationale: the races are real (npm pack walks dist/ while another
@@ -42,6 +42,7 @@ const HEAVY_FILES = [
   "tests/spa-bundle.test.ts",
   "tests/spa-delivery.test.ts",
   "tests/docs-delivery.test.ts",
+  "tests/pages-staging.test.ts",
 ] as const;
 
 describe("vitest config — heavy_files_lock_and_parallel", () => {
