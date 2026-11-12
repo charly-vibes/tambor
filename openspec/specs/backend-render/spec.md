@@ -31,6 +31,7 @@ Membrane's only platform requirements are drawing primitives and an event loop t
 | text_backend_metrics | advisory | the text backend treats one cell as one unit of width and height, and apps are laid out in those units | [[backend.render]] |
 | a11y_mirror | advisory | the canvas backend keeps an offscreen accessibility tree mirroring interactive nodes | [[backend.render]] |
 | safe_area_respected | invariant | root content is inset by the safe-area insets on notched devices | [[backend.render]] |
+| cell_scale | invariant | when the dom backend is mounted with cellScale k > 1 the real-DOM path renders one unit as k px — root sized bounds times k, a scale(k) wrapper, 1px pre-scale text and zeroed button chrome — pointer positions and wheel deltas divide by k before routing while keyboard and clipboard pass through, and k = 1 draws byte-identically to no option | [[backend.render]] |
 
 ## Model
 
@@ -69,6 +70,7 @@ Membrane's only platform requirements are drawing primitives and an event loop t
 | p_text_metrics | unit | [[backend.render.text_backend_metrics]] | text backend | a label of 5 characters measures 5 by 1 |
 | p_a11y | unit | [[backend.render.a11y_mirror]] | views with buttons | one accessible node per interactive node |
 | p_safe_area | unit | [[backend.render.safe_area_respected]] | simulated insets | content stays inside the insets |
+| p_cell_scale | unit | [[backend.render.cell_scale]] | a labeled view mounted at cellScale 16 | the stage reserves bounds times 16 px, the wrapper scales 16, spans render 1px pre-scale, a pointer event at 32,48 routes to unit 2,3 and the k = 1 tree carries no stage wrapper |
 
 ## Requirements
 
@@ -178,4 +180,10 @@ Every property row SHALL be verified by exactly one dedicated scenario;
 - **WHEN** simulated insets
 - **THEN** content stays inside the insets
 - **VERIFIES** [[backend.render.p_safe_area]]
+
+#### Scenario: p_cell_scale
+
+- **WHEN** a labeled view mounted at cellScale 16
+- **THEN** the stage reserves bounds times 16 px, the wrapper scales 16, spans render 1px pre-scale, a pointer event at 32,48 routes to unit 2,3 and the k = 1 tree carries no stage wrapper
+- **VERIFIES** [[backend.render.p_cell_scale]]
 

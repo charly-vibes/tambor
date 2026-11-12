@@ -49,7 +49,7 @@ app.view(); // re-render this — it is a pure function of the new state
 Run the SPA locally:
 
     npm ci
-    npm run build:spa        # esbuild → demo-dist/ (<!-- stamp:bundle-size -->451.9 kB<!-- /stamp:bundle-size --> minified + chunked, ESM, no runtime deps; PWA shell incl.)
+    npm run build:spa        # esbuild → demo-dist/ (<!-- stamp:bundle-size -->453.9 kB<!-- /stamp:bundle-size --> minified + chunked, ESM, no runtime deps; PWA shell incl.)
     npx serve .              # then open http://localhost:3000
 
 Or run the test suite:
@@ -108,7 +108,7 @@ The full loop for a spec change:
     ah sync                         # derive/refresh contracts
     # 2. wire any new contract: append [[tests.shell]] scaffold binding
     #    (copy the pattern from an existing .espectacular/<spec>/*.toml)
-    ah check --run-tests            # verify all <!-- stamp:contract-count -->399 contracts<!-- /stamp:contract-count -->
+    ah check --run-tests            # verify all <!-- stamp:contract-count -->400 contracts<!-- /stamp:contract-count -->
 
 Enforcement (hard gates in `lefthook.yml`, mirrored in CI):
 

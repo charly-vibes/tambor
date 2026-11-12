@@ -47,13 +47,13 @@ import {
 // page chunks), whose budget is its own recorded initial shell — the
 // gallery-only 56 KB can no longer bound the two-site tree, so the
 // guard's recorded baseline now covers the measured total (153815 B —
-// re-recorded 2026-11-09 after the review-fix wave grew the docs shell
-// by 135 B (+23 B more on 2026-11-10 for the docs entry self-boot);
-// same one-constant ritual as the docs budget seam: rebuild,
-// read the measured total this test reports, update HERE, stamp-docs),
-// re-measured after the docs entry landed; any later growth beyond
-// this recorded total still fails).
-const BASELINE_GZIP_BYTES = 153_838;
+// re-recorded 2026-11-12 for the cellScale option (+647 B: stage/wrapper,
+// 1px clamp, pointer unscale and the isElem guard ride the shared
+// backend-render chunk); same one-constant ritual as the docs budget
+// seam: rebuild, read the measured total this test reports, update HERE,
+// stamp-docs), re-measured after the docs entry landed; any later growth
+// beyond this recorded total still fails).
+const BASELINE_GZIP_BYTES = 154_485;
 
 let heavyRelease: HeavyRelease | undefined;
 

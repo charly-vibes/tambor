@@ -51,6 +51,7 @@ export {
 export {
   origin,
   bounds,
+  isElem,
   width,
   height,
   children,

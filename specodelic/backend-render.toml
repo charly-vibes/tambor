@@ -101,3 +101,9 @@ id = "safe_area_respected"
 kind = "invariant"
 expr = "root content is inset by the safe-area insets on notched devices"
 traces_to = "[[backend.render]]"
+
+[[constraints]]
+id = "cell_scale"
+kind = "invariant"
+expr = "when the dom backend is mounted with cellScale k > 1 the real-DOM path renders one unit as k px — root sized bounds times k, a scale(k) wrapper, 1px pre-scale text and zeroed button chrome — pointer positions and wheel deltas divide by k before routing while keyboard and clipboard pass through, and k = 1 draws byte-identically to no option"
+traces_to = "[[backend.render]]"

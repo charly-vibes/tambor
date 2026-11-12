@@ -158,6 +158,22 @@ export function bounds(elem: Elem): Vec2 {
   return computed;
 }
 
+// Type guard for the corpus Elem union (tambor#1): true exactly for the
+// trees bounds() is total over — the node types SIZES covers, and
+// (possibly nested) arrays of them. The backend-only render shapes
+// (text-selection, text-cursor) and unknown foreign nodes are excluded;
+// bounds() throws on those.
+export function isElem(view: unknown): view is Elem {
+  if (Array.isArray(view)) return view.every(isElem);
+  return isElemNode(view);
+}
+
+function isElemNode(view: unknown): boolean {
+  if (typeof view !== "object" || view === null) return false;
+  if (!("type" in view) || typeof view.type !== "string") return false;
+  return SIZES[view.type] !== undefined;
+}
+
 export function width(elem: Elem): number {
   return bounds(elem)[0];
 }

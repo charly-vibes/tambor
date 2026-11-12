@@ -153,3 +153,11 @@ fn p_a11y() {
 fn p_safe_area() {
     todo_predicate!("content stays inside the insets");
 }
+
+// id: p_cell_scale
+// generator: a labeled view mounted at cellScale 16
+// predicate: the stage reserves bounds times 16 px, the wrapper scales 16, spans render 1px pre-scale, a pointer event at 32,48 routes to unit 2,3 and the k = 1 tree carries no stage wrapper
+#[test]
+fn p_cell_scale() {
+    todo_predicate!("the stage reserves bounds times 16 px, the wrapper scales 16, spans render 1px pre-scale, a pointer event at 32,48 routes to unit 2,3 and the k = 1 tree carries no stage wrapper");
+}
