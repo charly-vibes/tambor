@@ -77,6 +77,13 @@ e2e *files:
 e2e-visual:
     npx playwright test --config tests/e2e/playwright.config.ts visual-audit.spec.ts --project=desktop --reporter=line
 
+# Bombadil exploration for one demo: `just bombadil counter`. Builds
+# demo-dist, serves the fixture on BOMBADIL_PORT (default 4601) and runs
+# the pinned CLI for BOMBADIL_TIME_LIMIT (default 60s); traces land in
+# target/bombadil/<demo>/. Local exploration only — never a gate.
+bombadil demo:
+    tools/bombadil-run.sh {{demo}}
+
 # === Health Commands ===
 
 # testaruda config/store validation (same check pre-commit runs)

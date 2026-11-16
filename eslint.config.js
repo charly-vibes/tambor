@@ -17,6 +17,7 @@ export default tseslint.config(
       "target/",
       "benchmarks/",
       "experiments/",
+      "bombadil/",
       "**/*.mjs",
       "eslint.config.js",
       "vitest.config.ts",

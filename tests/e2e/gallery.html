@@ -17,6 +17,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- Favicon: a data URI so the fixture never requests /favicon.ico;
+         the 404 would surface as a console error and trip Bombadil's
+         noConsoleErrors default property (add-bombadil-exploration 2.5). -->
+    <link rel="icon" href="data:," />
     <title>tambor — gallery (e2e fixture)</title>
     <style>
       /* Same demo-shell font as index.html (tambor-v3s): the bundle

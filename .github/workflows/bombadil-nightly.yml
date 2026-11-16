@@ -1,0 +1,186 @@
+# Bombadil nightly exploration — NON-BLOCKING, exploratory only.
+#
+# Runs the pinned Bombadil browser driver against one demo per matrix leg
+# (counter / todo / select / plots), each against the static e2e fixture
+# served by tests/e2e/serve.mjs. A property violation fails that leg, which
+# is the signal to file a `bd` issue with the uploaded trace — it is not a
+# merge gate.
+#
+# This workflow is deliberately isolated from every gate:
+#   - it is not referenced by lefthook.yml (pre-push hooks),
+#   - it is not a required check in ci.yml (push/pull_request),
+#   - it is not part of `ah check --run-tests` or the vitest suite.
+# Only `schedule` and `workflow_dispatch` trigger it, so it cannot run on a
+# PR. See bombadil/README.md ("Nightly exploration workflow") for the
+# operator-facing contract.
+#
+# Action input mapping, verified against
+# https://github.com/antithesishq/bombadil-action/blob/v3/action.yml:
+#   origin        -> positional ORIGIN      (http://127.0.0.1:$PORT/?demo=…&debug=1)
+#   specification -> positional SPEC_FILE   (bombadil/<demo>.spec.ts)
+#   time-limit    -> --time-limit           (required by the action)
+#   output-path   -> --output-path          (trace.jsonl + screenshots)
+#   version       -> the @antithesishq/bombadil version to install/run
+# The action has no `headless` input: it runs `bombadil browser test`
+# headless itself, installs Chrome for Testing (chrome-version default
+# `stable`) into $RUNNER_TEMP and exports CHROME. It also defaults
+# `no-sandbox: true`, which GitHub-hosted Ubuntu runners need. `driver`
+# defaults to `browser`; it is set explicitly because `origin` is only
+# meaningful for the browser driver.
+
+name: Bombadil nightly
+
+on:
+  schedule:
+    # 05:17 UTC daily. Offset from the hour to avoid the cron stampede.
+    - cron: "17 5 * * *"
+  workflow_dispatch:
+    inputs:
+      demo:
+        description: Which demo to explore (unless "all")
+        type: choice
+        default: all
+        options:
+          - all
+          - counter
+          - todo
+          - select
+          - plots
+
+# One exploration at a time per branch: a fresh nightly run supersedes a
+# still-running one (the traces are exploratory, never a required result).
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # Narrow the matrix for a manual dispatch. Kept as a separate job so the
+  # explore job's matrix expression stays a plain fromJSON(); the ports are
+  # fixed per demo, so every matrix leg gets a job-unique PORT.
+  plan:
+    name: plan demos
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.plan.outputs.matrix }}
+    steps:
+      - id: plan
+        shell: bash
+        env:
+          REQUESTED: ${{ inputs.demo || 'all' }}
+        run: |
+          set -euo pipefail
+          case "$REQUESTED" in
+            all|counter|todo|select|plots) ;;
+            *) echo "::error::unknown demo input: $REQUESTED"; exit 1 ;;
+          esac
+          demos='[{"demo":"counter","port":4711},{"demo":"todo","port":4712},{"demo":"select","port":4713},{"demo":"plots","port":4714}]'
+          if [ "$REQUESTED" != "all" ]; then
+            demos=$(printf '%s' "$demos" | jq -c --arg d "$REQUESTED" '[.[] | select(.demo == $d)]')
+          fi
+          printf 'matrix=%s\n' "$demos" >> "$GITHUB_OUTPUT"
+
+  explore:
+    name: bombadil ${{ matrix.demo }}
+    needs: plan
+    runs-on: ubuntu-latest
+    # Bombadil must finish and write its trace well before the runner is
+    # killed: time-limit is 60s, install + build + Chrome download are the
+    # rest. (The action README: keep the job timeout above `time-limit`.)
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    env:
+      PORT: ${{ matrix.port }}
+      DEMO: ${{ matrix.demo }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Build the demo SPA
+        run: npm run build:spa
+
+      # The fixture server must outlive this step (the browser test is a
+      # separate action step), so it is backgrounded and its PID is kept.
+      # GitHub runs every step in its own shell, so no single trap can span
+      # the action step; the teardown is the pair of handlers: this step's
+      # EXIT trap kills the server if readiness itself fails, and the
+      # always() "Stop fixture server" step below covers every later exit
+      # path (success, violation, failure, cancellation).
+      - name: Start fixture server on port ${{ matrix.port }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p bombadil-logs
+          PORT="$PORT" node tests/e2e/serve.mjs >bombadil-logs/server.log 2>&1 &
+          pid=$!
+          echo "$pid" > .bombadil-server.pid
+
+          trap 'status=$?; if [ "$status" -ne 0 ] && kill -0 "$pid" 2>/dev/null; then kill "$pid" 2>/dev/null || true; wait "$pid" 2>/dev/null || true; fi' EXIT
+
+          for _ in $(seq 1 150); do
+            if ! kill -0 "$pid" 2>/dev/null; then
+              echo "::error::fixture server exited during startup"
+              cat bombadil-logs/server.log
+              exit 1
+            fi
+            if curl -fs --max-time 1 -o /dev/null \
+              "http://127.0.0.1:${PORT}/?demo=${DEMO}&debug=1"; then
+              echo "fixture ready on http://127.0.0.1:${PORT}"
+              exit 0
+            fi
+            sleep 0.2
+          done
+          echo "::error::fixture server not ready on port ${PORT} after 30s"
+          cat bombadil-logs/server.log
+          exit 1
+
+      # A violation exits 2 and fails the leg — intended: the trace in the
+      # uploaded artifact is the finding. `output-path` is workspace-local
+      # to this job, so all legs can share the directory name.
+      - name: Explore ${{ matrix.demo }}
+        uses: antithesishq/bombadil-action@v3
+        with:
+          driver: browser
+          version: 0.7.10
+          origin: "http://127.0.0.1:${{ matrix.port }}/?demo=${{ matrix.demo }}&debug=1"
+          specification: "bombadil/${{ matrix.demo }}.spec.ts"
+          time-limit: 60s
+          output-path: bombadil-output
+
+      # `if: always()` guarantees the trace survives a violation (exit 2)
+      # or any earlier failure. It cannot mask the job result: the job
+      # stays failed, and `if-no-files-found: warn` only downgrades a
+      # missing directory to an annotation, never to a pass.
+      - name: Upload bombadil output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          # v4 artifact names are unique per run, so the name carries the
+          # demo: a shared `bombadil-output` would collide across legs.
+          name: bombadil-output-${{ matrix.demo }}
+          path: bombadil-output
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Stop fixture server
+        if: always()
+        shell: bash
+        run: |
+          if [ -f .bombadil-server.pid ]; then
+            pid=$(cat .bombadil-server.pid)
+            if kill -0 "$pid" 2>/dev/null; then
+              kill "$pid" 2>/dev/null || true
+            fi
+            rm -f .bombadil-server.pid
+          fi
