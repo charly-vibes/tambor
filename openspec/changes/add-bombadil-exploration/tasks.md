@@ -110,11 +110,14 @@ Sections 6-8 land after the baseline suite is green.
       `if-no-files-found: warn`; set retention to 14 days; confirm the
       workflow is not referenced by `lefthook.yml`, `ci.yml` required
       checks or `ah check --run-tests`.
-- [ ] 7.3 Run the action once on a manual dispatch before trusting the
+- [x] 7.3 Run the action once on a manual dispatch before trusting the
       schedule; if Chrome managed mode hangs, document the `CHROME` +
-      external-attach fallback from the sandbox run.
-- [ ] 7.4 A manual dispatch for one demo completes and the artifact is
-      downloadable.
+      external-attach fallback from the sandbox run. (Dispatched
+      demo=counter: run 43932729307 succeeded; the action installed
+      Chrome for Testing itself — no CHROME fallback needed in CI.)
+- [x] 7.4 A manual dispatch for one demo completes and the artifact is
+      downloadable. (`bombadil-output-counter`, 5.7 MB, trace.jsonl
+      525 lines downloaded from the run.)
 - Acceptance: a manual dispatch produces a downloadable artifact; a
       second dispatch with no trace warns without masking the job status.
 
