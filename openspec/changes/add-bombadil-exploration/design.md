@@ -57,17 +57,22 @@ Import the default properties, but not the default action generators —
 they click nav and navigation controls. Export curated generators: real
 `<button>`/`<textarea>` clicks inside the stage (the drawn tree is real
 DOM since `tambor-huu`), surface clicks by geometry for the whole stage,
-drag, scroll and key presses. Re-exporting the default `clicks` alongside
-a filtered copy would still allow the unfiltered actions; the manual
-warns about exactly this, so the original is not exported.
+drag, scroll and key presses. Every fingerprinted action calls
+`getFingerprint` on the target element; the drawn tree has no `data-id`,
+so the structural-path fallback is expected. Re-exporting the default
+`clicks` alongside a filtered copy would still allow the unfiltered
+actions; the manual warns about exactly this, so the original is not
+exported at all.
 
 ### D5. Model assertions use the debug snapshot
 
 DOM text alone cannot distinguish "filter hides rows" from "delete
 removed rows". `__tambor.state()` and `__tambor.view()` let extractors
 return derived numbers (visible row count, filter name, open flag) and
-compare them to DOM counts. This is why `add-spa-test-seams` is a
-prerequisite, not an optional nicety.
+compare them to DOM counts. `state()` is plain app data; `view()` returns
+an `Elem` containing handler functions and must never be returned from an
+extractor directly — specs project the values they need into JSON. This
+is why `add-spa-test-seams` is a prerequisite, not an optional nicety.
 
 ### D6. No touch fuzzing in v1
 
@@ -89,13 +94,26 @@ specodelic change and would create a second spec source in the meantime.
 `package.json` pins the exact CLI (`0.7.10`); the workflow pins the action
 major (`@v3`) and its `version` input (`0.7.10`). The action's default
 version lags (0.7.3), so relying on it silently changes the tool. A bump
-is a dedicated change with a full local run.
+is a dedicated change with a full local run of every demo, a trace
+review, and an updated baseline before the nightly moves.
 
 ### D9. Chrome is the action's or the environment's job
 
 CI uses the action's Chrome for Testing install (cached). Locally the
 runner honors `CHROME=<path>`; the developer points it at the Playwright
 cache or a system Chrome. The runner never downloads a browser itself.
+The sandbox evaluation hit a managed-browser `Page.captureScreenshot`
+timeout and fell back to an externally launched Chromium attached with
+the external-test mode; that fallback is documented in the suite README
+and a manual action smoke run is required before the nightly is trusted.
+
+### D10. A mounted readiness gate
+
+The selected demo mounts behind a dynamic import. Action generators
+therefore return `[]` until the stage extractor sees `#demo > div`, and
+the spec's properties only start evaluating from the first mounted
+state. This removes the race where a run's first captured state is the
+`loading …` placeholder and makes the per-demo contract true.
 
 ## Risks / Trade-offs
 
@@ -114,3 +132,13 @@ cache or a system Chrome. The runner never downloads a browser itself.
   the matrix because that is where a real defect was found.
 - [Trace size] → artifact retention is bounded by the workflow's
   retention policy; local traces live under gitignored `target/`.
+- [Repeated local runs collide on the trace path] → the runner removes or
+  overwrites `target/bombadil/<demo>/`; two consecutive runs are part of
+  acceptance.
+- [The fixture server port is already taken] → the runner sets a dedicated
+  `PORT` (the server reads it) and fails loudly on collision.
+- [The fixture's missing favicon trips `noConsoleErrors`] → add
+  `<link rel="icon" href="data:,">` to `tests/e2e/gallery.html` and
+  verify with a default-spec run.
+- [The artifact upload fails when no trace was written] → set
+  `if-no-files-found: warn`; the job log remains the fallback evidence.

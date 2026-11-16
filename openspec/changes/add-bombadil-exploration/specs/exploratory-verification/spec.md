@@ -4,8 +4,9 @@
 
 The repository SHALL keep Bombadil specifications under `bombadil/` with
 their own DOM-enabled TypeScript configuration, outside the vitest
-include, the root tsconfig include and the eslint source scope, and SHALL
-pin the Bombadil package to an exact version.
+include, the root tsconfig include and eslint's source scope, and SHALL
+pin the Bombadil package to an exact version. `bombadil/` SHALL be listed
+in `eslint.config.js` ignores so `npx eslint .` does not process it.
 
 #### Scenario: suite typechecks independently
 
@@ -23,15 +24,18 @@ pin the Bombadil package to an exact version.
 ### Requirement: Per-demo exploratory runs
 
 Each exploratory run SHALL start at the e2e fixture with a single demo
-selected through the `demo` query parameter, and its exported action
-generators SHALL keep actions inside the demo stage so no run switches
-demos.
+selected through the `demo` query parameter. Action generators SHALL
+return no actions until the selected demo's drawn root exists, so the
+first actionable state is the mounted demo. Exported action generators
+SHALL keep actions inside the demo stage, and the default action
+generators SHALL NOT be exported.
 
 #### Scenario: run starts on the selected demo
 
-- **WHEN** a run starts with `?demo=virtual-list`
-- **THEN** the first captured state is the mounted virtual-list demo and
-  no nav click is required
+- **WHEN** a run starts with `?demo=plots`
+- **THEN** no action is generated while the loading placeholder is the
+  only stage content, and the first generated action occurs after the
+  plots demo is mounted
 
 #### Scenario: actions stay in the stage
 
@@ -39,18 +43,25 @@ demos.
 - **THEN** generated clicks and drags target `#demo > div` and no
   generated action targets a nav button
 
+#### Scenario: default actions are not re-exported
+
+- **WHEN** the top-level spec's exports are inspected
+- **THEN** the default `clicks`, `inputs`, `scroll` and navigation
+  generators are absent and only stage-scoped generators are present
+
 ### Requirement: Baseline property suite
 
-The suite SHALL export the browser default safety properties and at least
-the counter, todo, select and plots properties, each expected to pass at
-HEAD. A violation of any exported property SHALL produce exit code 2 and
-a trace.
+The suite SHALL export the browser default safety properties and
+dedicated counter, todo, select and plots properties, each expected to
+pass at HEAD. A violation of any exported property SHALL produce exit
+code 2 and a trace.
 
 #### Scenario: default safety properties are active
 
 - **WHEN** a demo run executes
 - **THEN** uncaught exceptions, unhandled promise rejections, console
-  errors and HTTP 4xx/5xx responses are checked on every captured state
+  errors and the initial navigation response status are checked on every
+  captured state
 
 #### Scenario: counter changes by at most one
 
@@ -61,27 +72,29 @@ a trace.
 #### Scenario: todo rows agree with model state
 
 - **WHEN** the todo demo is in any filter state
-- **THEN** the number of drawn todo rows equals the number of todos the
-  model's selected filter keeps
+- **THEN** the number of drawn todo rows (delete-X pairs divided by two)
+  equals the number of todos the model's selected filter keeps
 
 #### Scenario: select list follows the open flag
 
 - **WHEN** the select demo is captured in any state
-- **THEN** option rows are drawn exactly when the model's open flag is
-  true
+- **THEN** option labels inside the open list are drawn exactly when the
+  model's open flag is true
 
-#### Scenario: plots ops never raise
+#### Scenario: plots charts stay consistent
 
 - **WHEN** the plots demo receives any op ordering, including Pan or Zoom
   before Load
-- **THEN** no uncaught exception or unhandled rejection is recorded
+- **THEN** both charts draw the same band count, that count is between 0
+  and BAND_COUNT, and zero bands coincide with the `no data` summary
 
 ### Requirement: Local exploratory runner
 
-A single documented command SHALL build the SPA, start the static fixture
-server, run the pinned CLI against a named demo with a bounded time
-limit, stop the server on every exit path, and write the trace to a
-gitignored path.
+A single documented command SHALL accept a demo name, build the SPA,
+start the static fixture server on a dedicated port, run the pinned CLI
+against exactly that demo with a bounded time limit, stop the server on
+every exit path, and write the trace to a gitignored per-demo path.
+Repeated runs SHALL succeed without manual cleanup.
 
 #### Scenario: runner preserves the CLI status
 
@@ -89,23 +102,41 @@ gitignored path.
 - **THEN** the command exits non-zero and prints the trace path and the
   inspect/reproduce commands
 
-#### Scenario: server cleanup
+#### Scenario: repeated runs succeed
+
+- **WHEN** the same demo runs twice in a row
+- **THEN** both runs write a trace without an output-path collision
+
+#### Scenario: server cleanup and port isolation
 
 - **WHEN** the run completes, fails or is interrupted
-- **THEN** the fixture server process is stopped
+- **THEN** the fixture server process is stopped, and the run does not
+  reuse another server's port or bundle
+
+#### Scenario: fixture has no console noise
+
+- **WHEN** the default specification runs against the fixture
+- **THEN** no favicon or static-resource 404 appears as a console error
 
 ### Requirement: Non-blocking nightly workflow
 
 A scheduled workflow SHALL run the suite per demo with the pinned action
-and version, upload the trace artifact on every outcome, support manual
-dispatch for one demo, and SHALL NOT be part of pre-commit, pre-push, PR
-required checks or `ah check --run-tests`.
+and version, upload the trace artifact on every outcome (warning, not
+failure, when no trace exists), support manual dispatch for one demo,
+and SHALL NOT be part of pre-commit, pre-push, PR required checks or
+`ah check --run-tests`.
 
 #### Scenario: scheduled run publishes evidence
 
 - **WHEN** the nightly workflow completes with a violation
 - **THEN** the job reports failure, the trace artifact is downloadable,
   and required merge gates are unaffected
+
+#### Scenario: a failed run without a trace does not hide the failure
+
+- **WHEN** the run fails before writing `trace.jsonl`
+- **THEN** the artifact step warns instead of masking the job failure and
+  the job log remains available
 
 #### Scenario: manual single-demo dispatch
 
@@ -115,14 +146,15 @@ required checks or `ah check --run-tests`.
 ### Requirement: Violation triage loop
 
 A violation SHALL be reproducible from the retained trace, and the
-finding SHALL be filed with the demo, property, trace path and reproduce
-command. The property SHALL then be fixed, or removed from the suite
-until its precondition holds.
+finding SHALL be filed with the demo, property, trace path and the
+printed `--reproduce` command. That command omits the mutually exclusive
+`--time-limit` and `--exit-on-violation` flags. The property SHALL then
+be fixed, or removed from the suite until its precondition holds.
 
 #### Scenario: trace reproduces the violation
 
-- **WHEN** a retained trace is downloaded and replayed with the same
-  options
+- **WHEN** a retained trace is downloaded and replayed with the printed
+  command
 - **THEN** the same property violation is reported
 
 #### Scenario: finding is recorded
