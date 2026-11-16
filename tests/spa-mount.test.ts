@@ -10,7 +10,9 @@
 //   registers the corpus request-focus effect — a synthetic dispatch
 //   through the mounted app sets the focus state the textarea handlers
 //   emit against and focuses the input surface, and the app's view
-//   context carries that focus state (focus_ctx).
+//   context carries that focus state (focus_ctx), and (add-spa-test-seams)
+//   (4) the opt-in debug handle is published after the first draw, counts
+//   real draws only, exposes no write surface and is cleared on unmount.
 // Rationale: openspec/specs/example-todo/spec.md stays the design
 //   authority — the SPA changes no app semantics; it is the mounting
 //   plumbing the demo runs through (backend_portable, dom backend).
@@ -18,9 +20,9 @@
 //   (a real <textarea> focusing itself) already passes and proves
 //   nothing about the programmatic restoration path.
 
-import { describe, expect, it } from "vitest";
+import { beforeEach, afterEach, describe, expect, it } from "vitest";
 
-import { mountDemo } from "../src/spa/mount.ts";
+import { mountDemo, type DebugSnapshot } from "../src/spa/mount.ts";
 import { mountSpa } from "../src/spa/todo-spa.ts";
 import { spaFocusView } from "../src/spa/focus.ts";
 import { makeApp, lookupEffect } from "../src/effects/dispatch.ts";
@@ -243,6 +245,139 @@ describe("spa-mount — request-focus effect and focus context (tambor-e5n)", ()
     app.view();
 
     expect((seen as { focus?: unknown }).focus).toEqual(NEXT_TEXT_PATH);
+  });
+});
+
+// The opt-in debug global (add-spa-test-seams), reached structurally:
+// tsconfig carries no DOM lib, and the mount publishes it on globalThis.
+interface DebugGlobalLike {
+  __tambor?: DebugSnapshot;
+}
+
+function debugGlobal(): DebugGlobalLike {
+  return globalThis as DebugGlobalLike;
+}
+
+describe("spa-mount — opt-in debug snapshot (add-spa-test-seams)", () => {
+  beforeEach(() => {
+    delete debugGlobal().__tambor;
+  });
+
+  afterEach(() => {
+    delete debugGlobal().__tambor;
+  });
+
+  it("publishes the demo, live state, raw view and draw count after the initial draw", () => {
+    const doc = hostDoc();
+    const container = doc.createElement("div");
+    doc.body.appendChild(container);
+    // a stable view object makes the identity pin exact: app.view()
+    // returns this same tree, so the handle must return app.view()'s
+    // result — never a copy and never the cached/lane-wrapped tree
+    const tree = label("debug");
+    const app = makeApp({ view: () => tree, state: { n: 0 } });
+    const spa = mountDemo(doc, container, () => app, {
+      debug: true,
+      demo: "counter",
+    });
+
+    const handle = debugGlobal().__tambor;
+    if (handle === undefined) throw new Error("debug handle not published");
+    expect(handle.demo).toBe("counter");
+    expect(handle.state()).toBe(app.getState());
+    expect(handle.view()).toBe(app.view());
+    expect(handle.view()).toBe(tree);
+    expect(handle.drawCount()).toBeGreaterThanOrEqual(1);
+
+    // read-only-by-API: the exact surface is four reads — no setter, no
+    // dispatch, no mutation path (any added key fails this key set)
+    expect(Object.keys(handle).sort()).toEqual([
+      "demo",
+      "drawCount",
+      "state",
+      "view",
+    ]);
+    expect("dispatch" in handle).toBe(false);
+
+    spa.unmount();
+  });
+
+  it("counts actual draws: a state-changing dispatch advances, a no-intent event does not", () => {
+    const doc = hostDoc();
+    const container = doc.createElement("div");
+    doc.body.appendChild(container);
+    const app = makeApp({
+      view: (state) => label(`n=${(state as { n: number }).n}`),
+      state: { n: 0 },
+    });
+    const spa = mountDemo(doc, container, () => app, {
+      debug: true,
+      demo: "counter",
+    });
+    const handle = debugGlobal().__tambor;
+    if (handle === undefined) throw new Error("debug handle not published");
+    const mounted = handle.drawCount();
+    expect(mounted).toBeGreaterThanOrEqual(1);
+
+    // a forwarded event over the bare label: the router finds no
+    // handler, the intent list is empty, and the wire draws nothing
+    // (event_pure / empty_batch_noop), so the count must not move
+    const ME = mouseEventCtor();
+    spa.surface.host.dispatchEvent(
+      new ME("pointerdown", { clientX: 1, clientY: 1 }),
+    );
+    spa.surface.host.dispatchEvent(
+      new ME("pointerup", { clientX: 1, clientY: 1 }),
+    );
+    expect(handle.drawCount()).toBe(mounted);
+
+    // an async apply outside the wire (tambor-a45) re-draws once
+    app.dispatch([["set", [["keypath", "n"]], 3]]);
+    expect(handle.drawCount()).toBe(mounted + 1);
+    expect(container.textContent).toContain("n=3");
+
+    spa.unmount();
+  });
+
+  it("unmount deletes the handle; a mount without opts leaves the global alone", () => {
+    const doc = hostDoc();
+    const container = doc.createElement("div");
+    doc.body.appendChild(container);
+    const tree = label("x");
+
+    const debugMount = mountDemo(
+      doc,
+      container,
+      () => makeApp({ view: () => tree, state: {} }),
+      { debug: true, demo: "todo" },
+    );
+    expect(debugGlobal().__tambor).toBeDefined();
+    debugMount.unmount();
+    expect(debugGlobal().__tambor).toBeUndefined();
+
+    // no flag: the mount never creates the handle
+    const plain = mountDemo(doc, container, () =>
+      makeApp({ view: () => tree, state: {} }),
+    );
+    expect(debugGlobal().__tambor).toBeUndefined();
+    plain.unmount();
+    expect(debugGlobal().__tambor).toBeUndefined();
+
+    // a stale global belongs to nobody here: a non-debug mount neither
+    // overwrites nor clears it on unmount
+    const stale: DebugSnapshot = {
+      demo: "stale",
+      state: () => ({ stale: true }),
+      view: () => tree,
+      drawCount: () => 0,
+    };
+    debugGlobal().__tambor = stale;
+    const other = mountDemo(doc, container, () =>
+      makeApp({ view: () => tree, state: {} }),
+    );
+    expect(debugGlobal().__tambor).toBe(stale);
+    other.unmount();
+    expect(debugGlobal().__tambor).toBe(stale);
   });
 });
 

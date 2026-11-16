@@ -53,9 +53,13 @@ import {
 // seam: rebuild, read the measured total this test reports, update HERE,
 // stamp-docs), re-measured after the docs entry landed; re-recorded
 // 2026-11-16 to 154758 B for tambor-v3s (whenHostFontsReady + host-font
-// measure + inherited button font); any later growth beyond this
-// recorded total still fails).
-const BASELINE_GZIP_BYTES = 154_758;
+// measure + inherited button font); re-recorded 2026-11-16 to 155154 B
+// for add-spa-test-seams (query-string boot selection + opt-in debug
+// snapshot in the shared SPA entry + the boot/fallback e2e wiring);
+// re-recorded again the same day to 155204 B for that change's
+// pre-commit complexity split (mountAvailable/mountDemo helpers); any
+// later growth beyond this recorded total still fails).
+const BASELINE_GZIP_BYTES = 155_204;
 
 let heavyRelease: HeavyRelease | undefined;
 

@@ -1,7 +1,7 @@
 // Purpose: the SPA mount (tambor-e2y) — the testable core of the
 //   browser entry: a demo app drawn through DomBackend onto the
 //   real-DOM host adapter, driven by the corpus top-level wire.
-// Responsibilities: mountDemo(doc, container, create) — a DomBackend
+// Responsibilities: mountDemo(doc, container, create, opts?) — a DomBackend
 //   with the realDomFactory, and the subscription loop: every
 //   forwarded event routes through the corpus event router (dispatch),
 //   its intents go to app.dispatch, and the tree re-draws from
@@ -25,6 +25,11 @@
 //   scroll), pointer gestures capture the pointer and deliver a
 //   synthetic mouse-up on cancel/leave/lost-capture so no down state
 //   sticks, and IME composition text inserts like a paste.
+//   The opt-in debug snapshot (add-spa-test-seams) is mount plumbing
+//   too: when the caller asks for it, the mount publishes a read-only
+//   globalThis.__tambor handle AFTER the initial draw, naming the demo
+//   and returning the live app state, the raw app view and the draw
+//   count; unmount clears it so it never names an unmounted demo.
 // Rationale: openspec/specs/example-todo/spec.md is the design authority,
 //   with routeClick (backends.ts) as the host-side routing shape: the
 //   host dispatches the event and hands the intent list to the app's
@@ -61,6 +66,51 @@ export interface SpaHandle {
   readonly root: RealDomElement;
   readonly surface: RealDomElement;
   unmount(): void;
+}
+
+// The read-only debug snapshot (add-spa-test-seams): live accessors on
+// the mounted app, never copies.
+//
+// Design decision — read-only-by-API, not a deep-frozen snapshot or a
+// clone/projection. The handle holds function references and allocates
+// nothing on read: state() returns app.getState() (the spec's "equals
+// the app state" is identity, and a copy could never satisfy it),
+// view() returns the RAW app.view() derivation (never the wire's
+// cached or lane-wrapped tree, which is a draw detail), and there is
+// no setter and no dispatch on the handle. A clone/projection would
+// allocate a whole state/view tree per read and put a stale copy
+// between extractors and the app; deep-freezing the live objects would
+// mutate app-owned state (frozen state breaks any app that writes
+// through its own boxes) and still would not pin identity. Isolation
+// is enforced at the API surface, and the tests pin it: a fixed key
+// set with no write path.
+//
+// drawCount reads DomBackend.drawCount, which draw() increments — the
+// single draw path every actual draw goes through (the mount's initial
+// draw, wireDrawTail's state and lane draws, async re-renders, resizes).
+// A forwarded event that yields no intents draws nothing, so the count
+// does not move; debug on/off changes no drawn output.
+export interface DebugSnapshot {
+  /** The gallery demo id actually mounted ("" when unknown). */
+  readonly demo: string;
+  /** The live app state (identity, not a copy). */
+  state(): unknown;
+  /** The raw app view derivation, not the cached/lane-wrapped tree. */
+  view(): Elem;
+  /** Every actual backend draw since this mount was created. */
+  drawCount(): number;
+}
+
+export interface MountOptions {
+  /** Publish globalThis.__tambor after the initial draw. */
+  readonly debug?: boolean;
+  /** The demo id the snapshot names; defaults to "". */
+  readonly demo?: string;
+}
+
+// The host global, reached structurally (tsconfig carries no DOM lib).
+interface DebugGlobal {
+  __tambor?: DebugSnapshot;
 }
 
 // The demo viewport, used for both the app render context and the
@@ -277,22 +327,47 @@ function demoBackend(doc: HostDoc): DomBackend {
   });
 }
 
+// The opt-in debug snapshot (add-spa-test-seams), published only AFTER
+// the initial draw: a reader that sees the handle sees a demo that is
+// actually drawn. Without the flag no handle is ever created and no
+// cleanup is returned — a stale global from another page belongs to
+// nobody here and is left alone; the cleanup only clears the handle
+// THIS mount published, and only while it is still the mounted one.
+function wireDebugSnapshot(
+  app: App,
+  backend: DomBackend,
+  opts: MountOptions | undefined,
+): (() => void) | undefined {
+  if (opts === undefined || opts.debug !== true) return undefined;
+  const host = globalThis as DebugGlobal;
+  const snapshot: DebugSnapshot = {
+    demo: opts.demo ?? "",
+    state: () => app.getState(),
+    view: () => app.view(),
+    drawCount: () => backend.drawCount,
+  };
+  host.__tambor = snapshot;
+  return () => {
+    if (host.__tambor === snapshot) delete host.__tambor;
+  };
+}
+
 export function mountDemo(
   doc: HostDoc,
   container: HostElement,
   create: () => App,
+  opts?: MountOptions,
 ): SpaHandle {
   const app = create();
   const backend = demoBackend(doc);
   const wire = wireSurface(backend, app);
-  const route = wire.route;
 
   const root = backend.root as RealDomElement;
   container.appendChild(root.host);
 
   const surface = attachInputSurface(backend, root);
 
-  wireSurfaceInput(surface, route, backend);
+  wireSurfaceInput(surface, wire.route, backend);
 
   // Root height tracks the drawn extent per draw (tambor-8yn, extent.ts).
   wireExtentSizing(backend, root.host);
@@ -300,6 +375,8 @@ export function mountDemo(
   // The initial draw shares the wire's view cache: one derivation for
   // mount + first route (tambor-8xm).
   backend.draw(wire.viewFor());
+
+  const clearDebug = wireDebugSnapshot(app, backend, opts);
 
   return {
     backend,
@@ -310,6 +387,7 @@ export function mountDemo(
       // surface == root (tambor-huu): one host element to remove
       container.removeChild(root.host);
       setFocusSurface(null);
+      clearDebug?.();
     },
   };
 }

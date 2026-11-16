@@ -29,13 +29,17 @@ import { staticClosure, type MetaOutputs } from "./metafile.ts";
 // 2026-11-16 to 31495 B after tambor-v3s made the docs entry await the
 // shell font before view construction (whenHostFontsReady), the button
 // text now inherits the measured font, and the docs shell gained the
-// @font-face declaration.
+// @font-face declaration; re-recorded 2026-11-16 to 31584 B after
+// add-spa-test-seams added the query-string boot selection and the
+// opt-in debug snapshot to the SPA entry the docs bundle shares; the
+// same change's pre-commit complexity split (helpers extracted from
+// mountAvailable/mountDemo) re-measured at 31596 B.
 // Re-record ritual: when the docs entry or content ships a bigger
 // measured shell — run the build, read the measured gzip the test
 // reports, update THIS ONE constant, and run tools/stamp-docs.sh if
 // the demo-dist total changed too (it stamps README/EVALUATION from
 // the same metafile).
-export const DOCS_SHELL_GZIP_CEILING_BYTES = 31495;
+export const DOCS_SHELL_GZIP_CEILING_BYTES = 31596;
 
 // The measured shell gzip for a docs entry output: the gzip of every
 // file in its static-import closure (shared chunks ride the initial
