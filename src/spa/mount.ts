@@ -38,10 +38,9 @@
 //   renders as live DOM).
 
 import { DomBackend } from "../render/dom.ts";
-import { measureUnit } from "../render/backend.ts";
 import { type Elem, type Vec2, translate } from "../views/model.ts";
 import { wireExtentSizing } from "./extent.ts";
-import type { Font } from "../render/backend.ts";
+import { domMeasure } from "./font.ts";
 import {
   RealDomElement,
   realDomFactory,
@@ -262,46 +261,14 @@ function attachInputSurface(backend: DomBackend, root: RealDomElement): RealDomE
   return root;
 }
 
-// Real font metrics for the mount path (tambor-0rp): measure text the way
-// the emitted DOM spans will render it — canvas 2D measureText with the
-// mount/host CSS default font (16px system-ui). The demos draw with
-// font: null, and layout offsets come from measure, so without this the
-// unit measure (1px/char) under-measures real text and siblings overlap
-// in a real browser. jsdom has no canvas 2D context (getContext returns
-// null) — fall back to the unit measure; the structural contracts and
-// the jsdom suite do not need metrics, only the real browser does.
-// Exported for the browser entry (main.ts), which also feeds it to
-// configureLabelMeasure so VIEW-build-time layout (bounds/verticalLayout)
-// uses the same metrics the backend measures with.
-export function domMeasure(doc: HostDoc): (text: string, font?: Font | null) => Vec2 {
-  const unit = measureUnit;
-  try {
-    const canvas = doc.createElement("canvas");
-    const ctx = (canvas as unknown as {
-      getContext: (kind: string) => { font: string; measureText: (t: string) => { width: number } } | null;
-    }).getContext("2d");
-    if (!ctx) return unit;
-    ctx.font = '16px system-ui, sans-serif';
-    return (text, _font) => {
-      // multiline labels (textarea bodies): the width is the widest line,
-      // the height is one line-box per line — matches the pre-formatted
-      // span the DOM emission renders (tambor-0rp)
-      const lines = text.split("\n");
-      let width = 0;
-      for (const line of lines) {
-        const w = ctx.measureText(line).width;
-        if (w > width) width = w;
-      }
-      return [width, 16 * lines.length];
-    };
-  } catch {
-    return unit;
-  }
-}
+// The label measure/font seam lives in ./font.ts (tambor-v3s): re-exported
+// from here because the browser entries and the demo backend import it
+// from the mount module. `demoBackend` below uses the imported binding.
+export { domMeasure, whenHostFontsReady } from "./font.ts";
 
 // The demo backend: the real-DOM factory plus real font metrics
-// (tambor-0rp) — measure with the font the emitted spans inherit (16px
-// system-ui); jsdom falls back to the unit measure.
+// (tambor-0rp) — measure with the host's computed face; jsdom falls
+// back to the unit measure.
 function demoBackend(doc: HostDoc): DomBackend {
   return new DomBackend({
     createElement: realDomFactory(doc),

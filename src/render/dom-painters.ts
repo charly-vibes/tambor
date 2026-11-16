@@ -112,6 +112,11 @@ export function buildButton(_ctx: BuildCtx, node: DomNode, parent: ElementLike):
   // a real button element: natively accessible and selectable
   const el = _ctx.make("button");
   atOrigin(el);
+  // the emitted box is sized from the corpus measure, so the glyphs must
+  // use that same font: a <button> otherwise renders at the UA's 13.33px
+  // even though layout measured 16px (the audit's text.small finding,
+  // tambor-v3s) — inherit makes rendered == measured.
+  el.style["font"] = "inherit";
   // a corpus label is a single line and its spaces are layout (see
   // buildLabel) — pre keeps the measured box honest (tambor-0rp)
   el.style["white-space"] = "pre";

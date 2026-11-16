@@ -67,6 +67,16 @@ test-selected:
 test-justfile:
     tools/check-justfile.sh
 
+# Browser lane (fixture interactions + recorded risks); name specs to narrow:
+# just e2e gallery.spec.ts
+e2e *files:
+    npx playwright test --config tests/e2e/playwright.config.ts {{files}} --project=desktop --project=mobile-380 --reporter=line
+
+# Real-shell look-and-feel audit (tambor-v3s): built demo-dist page, every
+# demo, 320/380/800/1440, machine-readable report at test-results/visual-audit.json
+e2e-visual:
+    npx playwright test --config tests/e2e/playwright.config.ts visual-audit.spec.ts --project=desktop --reporter=line
+
 # === Health Commands ===
 
 # testaruda config/store validation (same check pre-commit runs)

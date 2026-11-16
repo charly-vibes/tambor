@@ -89,6 +89,19 @@ export async function open(page: Page): Promise<void> {
   await page.locator("nav button").first().waitFor({ state: "visible" });
 }
 
+// Open the REAL deployed shell (tambor-v3s): the built demo-dist page
+// GitHub Pages serves, with the shell's own CSS and layout. The fixture
+// above pins geometry for coordinate-driven interactions; appearance
+// assertions must run here, because the fixture's nav scroller and zero
+// body margin hide page-level overflow the shell actually has.
+export async function openSite(page: Page): Promise<void> {
+  await page.goto("/demo-dist/index.html");
+  await page.locator("nav button").first().waitFor({ state: "visible" });
+  // text metrics drive layout, so the shot/audit starts only after the
+  // bundled face has loaded
+  await page.evaluate("document.fonts.ready.then(() => true)");
+}
+
 // Switch demos through the real nav (plain DOM buttons outside the
 // corpus — the entry's mounting plumbing).
 export async function navTo(page: Page, title: string): Promise<void> {

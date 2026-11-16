@@ -38,6 +38,15 @@ export interface HostDoc {
   // callers degrade to the light scheme through colorSchemePref's
   // undefined-or-null contract (ui/theme MediaQueryFn).
   matchMedia?(query: string): { matches: boolean } | undefined | null;
+  // The font seams (tambor-v3s): the demo shell declares its font in
+  // CSS, so measure must read the family/size the drawn spans inherit
+  // instead of hardcoding a stack, and the browser entry waits for that
+  // face before view construction. Both are optional — jsdom and the
+  // structural host shims omit them and keep the unit/fallback path.
+  defaultView?: {
+    getComputedStyle(el: HostElement): { fontSize: string; fontFamily: string };
+  };
+  fonts?: { load(font: string): Promise<unknown>; ready?: Promise<unknown> };
 }
 
 // The structural element surface the adapter touches — a real DOM

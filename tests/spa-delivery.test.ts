@@ -51,9 +51,11 @@ import {
 // 1px clamp, pointer unscale and the isElem guard ride the shared
 // backend-render chunk); same one-constant ritual as the docs budget
 // seam: rebuild, read the measured total this test reports, update HERE,
-// stamp-docs), re-measured after the docs entry landed; any later growth
-// beyond this recorded total still fails).
-const BASELINE_GZIP_BYTES = 154_485;
+// stamp-docs), re-measured after the docs entry landed; re-recorded
+// 2026-11-16 to 154758 B for tambor-v3s (whenHostFontsReady + host-font
+// measure + inherited button font); any later growth beyond this
+// recorded total still fails).
+const BASELINE_GZIP_BYTES = 154_758;
 
 let heavyRelease: HeavyRelease | undefined;
 

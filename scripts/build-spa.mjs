@@ -18,7 +18,14 @@
 
 import { build } from "esbuild";
 import { execFileSync } from "node:child_process";
-import { mkdirSync, readFileSync, writeFileSync, rmSync } from "node:fs";
+import {
+  copyFileSync,
+  mkdirSync,
+  readFileSync,
+  statSync,
+  writeFileSync,
+  rmSync,
+} from "node:fs";
 
 const OUTDIR = "demo-dist";
 
@@ -34,6 +41,16 @@ for (const stale of [
 ]) {
   rmSync(stale, { force: true });
 }
+
+// demo-shell font (tambor-v3s): Inter latin, copied verbatim. The shell
+// CSS declares it and the bundle measures labels with it, so text
+// metrics and screenshots no longer depend on the viewing machine.
+mkdirSync(`${OUTDIR}/fonts`, { recursive: true });
+copyFileSync(
+  "assets/fonts/inter-latin.woff2",
+  `${OUTDIR}/fonts/inter-latin.woff2`,
+);
+const fontBytes = statSync(`${OUTDIR}/fonts/inter-latin.woff2`).size;
 
 // docs content (add-docs-site D2): generated TS data modules must exist
 // before esbuild bundles anything that imports them; the generator owns
@@ -115,16 +132,18 @@ writeFileSync(
 // the shell page: the root index.html with the bundle path rewritten to
 // the shell-local one and the manifest link injected
 const root = readFileSync("index.html", "utf8");
+const FONT_ROOT = `./${OUTDIR}/fonts/inter-latin.woff2`;
 const shell = root
   .replace(
     `./${OUTDIR}/spa.js`,
     "./spa.js",
   )
+  .replaceAll(FONT_ROOT, "./fonts/inter-latin.woff2")
   .replace(
     '<meta name="viewport"',
     '<link rel="manifest" href="./manifest.webmanifest" />\n    <meta name="theme-color" content="#1a1a2e" />\n    <meta name="viewport"',
   );
-if (shell === root) {
+if (shell === root || !shell.includes("./fonts/inter-latin.woff2")) {
   throw new Error("shell rewrite matched nothing — root index.html drifted");
 }
 writeFileSync(`${OUTDIR}/index.html`, shell);
@@ -133,9 +152,12 @@ writeFileSync(`${OUTDIR}/index.html`, shell);
 // rewritten to the docs-local one — the root index.html's ./demo-dist/spa.js
 // reference becomes ./main.js (relative, correct under the /docs/ Pages
 // base). No manifest-link injection: the base index.html has none, and an
-// injected ./manifest.webmanifest would 404 from demo-dist/docs/.
-const docsShell = root.replace("./demo-dist/spa.js", "./main.js");
-if (docsShell === root) {
+// injected ./manifest.webmanifest would 404 from demo-dist/docs/. The
+// font sits one directory up from the docs shell.
+const docsShell = root
+  .replace("./demo-dist/spa.js", "./main.js")
+  .replaceAll(FONT_ROOT, "../fonts/inter-latin.woff2");
+if (docsShell === root || !docsShell.includes("../fonts/inter-latin.woff2")) {
   throw new Error("docs shell rewrite matched nothing — root index.html drifted");
 }
 mkdirSync(`${OUTDIR}/docs`, { recursive: true });
@@ -145,6 +167,7 @@ const assets = [
   ...jsAssets,
   { url: "./index.html", bytes: Buffer.byteLength(shell) },
   { url: "./manifest.webmanifest", bytes: Buffer.byteLength(manifestJson) },
+  { url: "./fonts/inter-latin.woff2", bytes: fontBytes },
 ];
 writeFileSync(
   `${OUTDIR}/asset-manifest.json`,

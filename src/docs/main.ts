@@ -26,7 +26,7 @@
 import {
   configureLabelMeasure,
 } from "../views/nodes.ts";
-import { domMeasure, mountDemo, type SpaHandle } from "../spa/mount.ts";
+import { domMeasure, mountDemo, whenHostFontsReady, type SpaHandle } from "../spa/mount.ts";
 import {
   makeApp,
   defaultHandler,
@@ -359,6 +359,9 @@ const bootDoc = (globalThis as { document?: unknown }).document as
   | undefined;
 if (bootDoc !== undefined) {
   const d: HostDoc = bootDoc;
+  // The shell's font face must be ready before any view is built
+  // (tambor-v3s) — see spa/main.ts.
+  await whenHostFontsReady(d);
   // Real text metrics BEFORE any view construction (tambor-0rp): the
   // layout math measures labels — browser metrics or the 'addcomplete'
   // overlap class returns.

@@ -11,7 +11,7 @@
 //   state and route through the corpus wire (gallery.ts, mount.ts).
 //   All DOM access stays on the structural HostDoc/HostElement seam.
 
-import { mountDemo, domMeasure, type SpaHandle } from "./mount.ts";
+import { mountDemo, domMeasure, whenHostFontsReady, type SpaHandle } from "./mount.ts";
 import { DEMOS } from "./gallery.ts";
 import { configureLabelMeasure } from "../views/nodes.ts";
 import type { HostDoc, HostElement } from "../interop/domhost.ts";
@@ -22,6 +22,10 @@ const doc = (globalThis as { document?: unknown }).document as
 
 if (doc !== undefined) {
   const d: HostDoc = doc;
+  // The shell's font face must be ready before any view is built
+  // (tambor-v3s): layout offsets come from the measure, and measuring a
+  // fallback face then painting the declared one shifts labels.
+  await whenHostFontsReady(d);
   // Real text metrics BEFORE any view construction (tambor-0rp): layout
   // offsets are computed at view-build time from label measures, and the
   // emitted DOM renders glyphs at browser metrics — without this the two

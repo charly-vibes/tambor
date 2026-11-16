@@ -19,7 +19,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>tambor — gallery (e2e fixture)</title>
     <style>
-      body { font-family: system-ui, sans-serif; margin: 0; }
+      /* Same demo-shell font as index.html (tambor-v3s): the bundle
+         measures with the host's computed font, so the fixture must
+         declare the same face the pages declare. */
+      @font-face {
+        font-family: "Tambor UI";
+        src: url("/demo-dist/fonts/inter-latin.woff2") format("woff2");
+        font-weight: 100 900;
+        font-style: normal;
+        font-display: swap;
+      }
+      body { font-family: "Tambor UI", system-ui, sans-serif; margin: 0; }
       /* overflow-x on the nav itself: the 13-demo nav overflows the
          fixture viewport — without a nav-local scroller, Playwright's
          click on a fully-offscreen nav button scrolls the PAGE right

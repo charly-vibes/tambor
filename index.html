@@ -5,10 +5,50 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>tambor — gallery</title>
     <style>
-      body { font-family: system-ui, sans-serif; margin: 2rem; max-width: 40rem; }
-      canvas { touch-action: none; }
+      /* Deterministic demo-shell font (tambor-v3s): the bundle measures
+         labels with this font and the drawn spans render it, so layout
+         no longer depends on the viewing machine's system fonts. The
+         build rewrites this URL for the demo and docs shells. */
+      @font-face {
+        font-family: "Tambor UI";
+        src: url("./demo-dist/fonts/inter-latin.woff2") format("woff2");
+        font-weight: 100 900;
+        font-style: normal;
+        font-display: swap;
+      }
+      body {
+        font-family: "Tambor UI", system-ui, sans-serif;
+        margin: 2rem;
+        max-width: 40rem;
+      }
+      /* The drawn stage is 300 CSS px wide; 2rem page margins pushed it
+         past a 320px viewport. One shell margin for phones keeps the
+         stage inside the page (tambor-v3s). */
+      @media (max-width: 480px) {
+        body { margin: 0.5rem; }
+      }
+      /* Last-resort local scroller: a stage wider than the content box
+         scrolls inside the demo instead of widening the whole page. */
+      #demo { overflow-x: auto; }
       button { cursor: pointer; }
-      nav { display: flex; gap: 0.5rem; margin: 1rem 0; }
+      /* The nav grows with the demo registry. A horizontal chip scroller
+         keeps the selected demo above the fold (wrapping took 5 rows and
+         ~512px at 320px); the scroller is local, so the page itself never
+         overflows. The 44px floor is the corpus mobile_first target for
+         every interaction the shell owns. */
+      nav {
+        display: flex;
+        gap: 0.5rem;
+        margin: 1rem 0;
+        overflow-x: auto;
+        scrollbar-width: thin;
+      }
+      nav button {
+        font: inherit;
+        flex: none;
+        min-height: 44px;
+        padding: 0.5rem 0.75rem;
+      }
       nav button.active { font-weight: bold; }
       .blurb { color: #555; }
     </style>

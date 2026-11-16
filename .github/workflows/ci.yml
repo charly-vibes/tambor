@@ -39,12 +39,16 @@ jobs:
     # Real-browser gate: mount.ts's pointer-capture/IME/wheel/focus
     # hardening is only exercised in jsdom locally, which has no layout
     # or real IME (claude.ai chat 773745b6 robustness audit, finding #2).
-    # Scope = bench-apps smoke + notebook + risks specs. The notebook-380px
-    # overflow that originally excluded notebook.spec.ts was fixed in the
-    # 54j.9 wave (guard test notebook.spec.ts:73, 5/5 stable runs) and
-    # tambor-194 closed — the spec joined the gate (tambor-194). The
-    # gallery spec stays out: the chat saw environment-sensitive gallery
-    # failures (3 of 88); it stays out of a blocking gate until triaged.
+    # Scope = bench-apps smoke + notebook + risks + the real-shell visual
+    # audit. The notebook-380px overflow that originally excluded
+    # notebook.spec.ts was fixed in the 54j.9 wave (guard test
+    # notebook.spec.ts:73, 5/5 stable runs) and tambor-194 closed — the
+    # spec joined the gate (tambor-194). The gallery interaction spec
+    # stays out: the chat saw environment-sensitive gallery failures
+    # (3 of 88); it stays out of a blocking gate until triaged. The
+    # visual audit is deterministic (bundled demo font + pinned
+    # Chromium) and checks the built demo-dist shell, so it joins the
+    # gate while gallery.spec.ts does not.
     # Browser is pinned transitively: package-lock.json pins
     # @playwright/test, and `playwright install chromium` fetches the
     # browser build that exact version expects (author's build).
@@ -68,13 +72,16 @@ jobs:
       - name: playwright install (pinned chromium build)
         run: npx playwright install --with-deps chromium
 
-      # bench-apps smoke + notebook + risks against pinned Chromium, both
-      # projects (desktop + mobile-380 — the touch risks need hasTouch).
+      # bench-apps smoke + notebook + risks + real-shell visual audit
+      # against pinned Chromium, both projects (desktop + mobile-380 —
+      # the touch risks need hasTouch; the visual audit skips mobile and
+      # drives its own 320/380/800/1440 matrix on desktop).
       - name: playwright e2e smoke
         run: |
           npx playwright test \
             --config tests/e2e/playwright.config.ts \
             bench-apps-smoke.spec.ts notebook.spec.ts risks.spec.ts \
+            visual-audit.spec.ts \
             --project=desktop --project=mobile-380 \
             --reporter=line
 
