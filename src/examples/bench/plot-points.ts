@@ -14,7 +14,8 @@
 //   once), bandsFor (the naive per-window decimation), sliceIndex (the
 //   transform's band slice), panStart/zoomW (the pan wrap + zoom half
 //   rules), loadOp and the four op shapes (pan naive/tx, zoom naive/
-//   tx), summaryLine.
+//   tx — the naive pair is total over the pre-Load empty state),
+//   summaryLine.
 // Rationale: the naive and transform ops are pinned to leave the SAME
 //   drawn geometry — the window is always aligned to the fixed
 //   BAND_POINTS grid (PAN_STEP and every WIN_W are grid multiples), so
@@ -205,10 +206,18 @@ export function loadOp(state: PlotState): PlotState {
   };
 }
 
+// The naive ops' empty-state guard (tambor-yew): before Load there are
+// no points to decimate, so both naive ops are total — the op returns
+// the SAME state (no allocation, no pans increment) and the summary
+// keeps reading "no data". Only the naive shapes need the check: the
+// transform shapes slice an empty index and never read a point, so
+// they are already total.
+
 // The NAIVE pan: slide the window, copy it (the "copying point data"
 // hazard) and re-derive the decimation from the raw points (the
 // "re-deriving while panning" hazard) — for both linked charts.
 export function panNaiveOp(state: PlotState): PlotState {
+  if (state.points.length === 0) return state;
   const winStart = panStart(state);
   const end = winStart + state.winW;
   return {
@@ -238,6 +247,7 @@ export function panTxOp(state: PlotState): PlotState {
 
 // The NAIVE zoom: halve the window, copy it, re-derive its bands.
 export function zoomNaiveOp(state: PlotState): PlotState {
+  if (state.points.length === 0) return state;
   const winW = zoomW(state.winW);
   const end = state.winStart + winW;
   return {

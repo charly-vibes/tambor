@@ -132,6 +132,12 @@ test.describe("benchmark scenarios (bench apps)", () => {
           viewport: { width: 800, height: 900 },
         });
         const page = await context.newPage();
+        // Uncaught exceptions fail the scenario (tambor-yew): a click
+        // whose handler throws leaves the drawn text unchanged, so
+        // expectedText alone cannot tell a no-op from a crash — the
+        // bz2-ops-before-load row needs this to mean anything.
+        const pageErrors: string[] = [];
+        page.on("pageerror", (err) => pageErrors.push(String(err)));
 
         // The op click wire (tambor-54j.13/.17, the same genuine gap
         // both lanes filed): a scenario declaring
@@ -197,6 +203,7 @@ test.describe("benchmark scenarios (bench apps)", () => {
             scenario.expectedText,
           );
         }
+        expect(pageErrors, "uncaught page errors").toEqual([]);
 
         await context.close();
       }

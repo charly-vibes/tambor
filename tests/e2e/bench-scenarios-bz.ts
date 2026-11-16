@@ -4,8 +4,9 @@
 //   gate's file limit WITHOUT changing any scenario id (test names are
 //   contract bindings; the harness selects rows by id).
 // Responsibilities: the BZ1 stream-dashboard trio (tambor-54j.13), the
-//   BZ2 interactive-plots quintet (tambor-54j.14 — pan/zoom naive vs
-//   pan/zoom-as-transform over a decimated 100k domain), the BZ7
+//   BZ2 interactive-plots sextet (tambor-54j.14 — pan/zoom naive vs
+//   pan/zoom-as-transform over a decimated 100k domain, plus the
+//   tambor-yew Pan/Zoom-before-Load empty-state row), the BZ7
 //   spreadsheet trio (tambor-54j.19 — the full-recompute baseline vs
 //   the dependency-graph candidate over the same literal edits), and
 //   the BZ3 whiteboard octet (tambor-54j.15 — drag/resize/undo over a
@@ -30,6 +31,7 @@
 import type { Scenario } from "./bench-scenarios-shared.ts";
 import { buttonText } from "./bench-scenarios-shared.ts";
 import { SCENARIOS_BZ_ENV } from "./bench-scenarios-bz-env.ts";
+import { SCENARIOS_BZ_EMPTY } from "./bench-scenarios-bz-empty.ts";
 
 export const SCENARIOS_BZ: readonly Scenario[] = [
   {
@@ -392,5 +394,6 @@ export const SCENARIOS_BZ: readonly Scenario[] = [
     ops: 12,
     warmupOps: 1,
   },
+  ...SCENARIOS_BZ_EMPTY,
   ...SCENARIOS_BZ_ENV,
 ];

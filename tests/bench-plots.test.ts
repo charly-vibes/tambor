@@ -16,7 +16,10 @@
 //   windows (win 10000 for pan, w 10000 + win 0 for zoom),
 //   (g) summaryLine's exact guard strings, (h) the drawn surface: the
 //   loaded view draws ~1600 real path nodes (the decimation cost a
-//   canvas layer would remove — checked, not eyeballed).
+//   canvas layer would remove — checked, not eyeballed), (i) the naive
+//   ops' empty-state totality (tambor-yew): each returns plotState()
+//   unchanged without throwing, draws no bands, keeps "no data", and a
+//   following load is the normal loaded state.
 // Rationale: the keyed-table finding generalizes — a bench app whose
 //   measured op is a no-op produces overhead-only medians; each op's
 //   product is checked against independent recomputation, and the
@@ -77,6 +80,20 @@ function bandsEqual(
     x.length === y.length &&
     x.every((b, i) => b.lo === y[i]!.lo && b.hi === y[i]!.hi)
   );
+}
+
+// The state a normal load produces — asserted after the empty-state ops
+// so the guard cannot silently poison later ops.
+function expectLoaded(s: PlotState): void {
+  expect(s.points.length).toBe(PLOT_POINTS);
+  expect(s.indexA.length).toBe(BAND_COUNT);
+  expect(s.indexB.length).toBe(BAND_COUNT);
+  expect(s.winStart).toBe(0);
+  expect(s.winW).toBe(WIN_W);
+  expect(s.pans).toBe(0);
+  expect(s.drawA.length).toBe(WIN_W / BAND_POINTS);
+  expect(s.drawB.length).toBe(WIN_W / BAND_POINTS);
+  expect(summaryLine(s)).toBe(`pts ${PLOT_POINTS} win 0 w ${WIN_W} pans 0`);
 }
 
 describe("plot points", () => {
@@ -224,6 +241,38 @@ describe("pan wrap + zoom floor (the scenarios' guard arithmetic)", () => {
 
   it("summaryLine reads 'no data' before the load", () => {
     expect(summaryLine(plotState())).toBe("no data");
+  });
+});
+
+describe("the naive ops before Load (empty-state totality, tambor-yew)", () => {
+  it("pan naive over plotState is total: no throw, no bands, no counter", () => {
+    const empty = plotState();
+    let next: PlotState = empty;
+    expect(() => {
+      next = panNaiveOp(empty);
+    }).not.toThrow();
+    // Returned unchanged: no allocation, no window copy, no pans bump.
+    expect(next).toBe(empty);
+    expect(next.drawA.length).toBe(0);
+    expect(next.drawB.length).toBe(0);
+    expect(next.pans).toBe(0);
+    expect(summaryLine(next)).toBe("no data");
+    // The guard must not poison the op that follows it.
+    expectLoaded(loadOp(next));
+  });
+
+  it("zoom naive over plotState is total: no throw, no bands, no counter", () => {
+    const empty = plotState();
+    let next: PlotState = empty;
+    expect(() => {
+      next = zoomNaiveOp(empty);
+    }).not.toThrow();
+    expect(next).toBe(empty);
+    expect(next.drawA.length).toBe(0);
+    expect(next.drawB.length).toBe(0);
+    expect(next.pans).toBe(0);
+    expect(summaryLine(next)).toBe("no data");
+    expectLoaded(loadOp(next));
   });
 });
 
