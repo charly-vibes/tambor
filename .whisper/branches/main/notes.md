@@ -845,3 +845,46 @@
   Delta: LIVE INCIDENT — /tambor/docs/ rendered blank chrome (user screenshot). Root cause: docs entry only EXPORTED mountDocs; gallery spa/main.ts SELF-BOOTS at module evaluation — the docs bundle had no boot block, and every test mounted explicitly so 860 tests were blind to it. Fix c5ec937: boot block in src/docs/main.ts (document-guarded, configureLabelMeasure(domMeasure) pre-mount, #app ?? body) + tests/docs-boot.test.ts pinning the browser loading contract. Budgets re-recorded 30290/153838 (+23 B). PROVEN LIVE via headless Chromium on the live URL: 32 nav buttons, ▸ marker, zero errors. LESSON (binding): SPA entries need a self-boot CONTRACT TEST that imports the entry without explicit mount — byte/path smokes do not prove behavior; when driving staged trees ALWAYS re-run the stager after building (stale _pages bit once mid-debug).
   User note: their screenshot URL was charly-vibes.github.io ROOT = separate 'Charly Vibes' site (Oct 16); docs at /tambor/docs/, gallery at /tambor/demo-dist/.
   Next: 10.3 HITL (user, now observable live), 11.1/11.2 gates+archive (stage-pages.mjs = Pages layout home; add-spa-delivery 56 KB MODIFIED flag open; tambor-1iv P2 co-selection lock). Suite 862/862 @143 files.
+- 2026-11-10T21:34:08Z [id:f286b07e7b23135d3883b3584d0264572f2168d8a4c83904e936551079f1a0bd] (#resume-tambor-gwt) Format: 1
+  2026-11-10T21:34:00Z — quick stash (next; end of the incident-debug session)
+  Repo: cv/charly-vibes/tambor, branch main, HEAD 2dda8d0 PUSHED, in sync with origin/main, tree clean (except this note). Session: 01a1bd56-c87c-7167-b67a-306612acac69. Previous entry: 7894d9f2b398 (same session, minutes ago; this replaces it with end-of-session state — pointer semantics, no feature delta).
+  Objective: tambor-gwt — apply add-docs-site (docs SPA). Implementation 1-10.2 + review wave + /docs/ Pages lift + blank-page incident ALL DONE and live-proven.
+  Phase: green/review-closed; nothing in flight.
+  State at HEAD: live site verified by headless Chromium — https://charly-vibes.github.io/tambor/docs/ renders 32 nav buttons, ▸ marker, zero errors; CI + deploy-pages green at c5ec937. Latest fix commit 2dda8d0 is a notes pointer over c5ec937 (docs entry SELF-BOOT: src/docs/main.ts boot block + tests/docs-boot.test.ts; budgets 30290/153838).
+  Exact next action: (1) 10.3 HITL — user browser acceptance at 320/600/900 px, light+dark, on the LIVE /tambor/docs/ (also the first real-browser look at the showcase embed-slot fix 066cf10); findings fold back as view fixes. (2) 11.1 gates (just test, ah check --run-tests, lint, build). (3) 11.2 apply/archive: corpus spec docs-site dual-format (spk lint), ah sync the 15 no-toml change-overlay findings, archive add-docs-site — AND decide the add-spa-delivery flag: its Minified-spa-artifact requirement still states gallery-only 56 KB while the recorded two-site baseline is 153838 B (needs MODIFIED at that change's archive or folded here).
+  Ownership: tambor-gwt IN_PROGRESS (charly vibes, heartbeat renewed this session). Open tickets: tambor-1iv P2 (always-on demo-dist lock vs ah batch co-selection — CI-red race class, do before archive if cheap), 3tq P3, 8mr P3, yv7 P3; 2xq/xtc/cpd per bd ready.
+  Constraints (binding): SPA entries need self-boot contract tests — byte/path smokes do not prove behavior; after ANY rebuild re-run tools/stage-pages.mjs before browser-proving (stale _pages bit mid-debug); stamp-docs.sh only on a quiescent tree as its own step (heavy files rebuild demo-dist — mid-suite stamping caused a CI red); zero-headroom budgets are BY DESIGN — re-record via the ONE seam constant + ritual comment; push via setsid nohup as its OWN statement, verify pid via pgrep; qwen-token-plan-individual hit 429 quota this session — verify agent waves' partial work manually, or run inline.
+  Validation: suite 862/862 @143 files; tsc 0; eslint 0; pretender 0 new; ah deployed 0 findings; CI green c5ec937; live probe clean.
+  Blockers: none AFK — 10.3 is user-gated.
+- 2026-11-16T15:30:35Z [id:1d054cfabc2cbf737dd26668c0727e269e5388ef9bb50e2306bb21e27ab760a3] (#resume-bombadil-proposals) Format: 1
+  Timestamp: 2026-11-16T15:30:00Z
+  Repo: github.com/charly-vibes/tambor
+  Branch: main
+  HEAD: d09b0401a21748767edd9d33ff1bfeaf0e45eb42 (pushed; main in sync with origin/main)
+  Session: unknown (host did not expose an ID)
+  Task: Bombadil integration evaluation + OpenSpec proposals; Rule-of-5 review fixes applied.
+  
+  Objective: Evaluate integrating antithesishq/bombadil into tambor and produce approval-scope change proposals. Prior cotorreo threads (claude 3a63d34e..., kimi 1a1e1fc8..., synthesis 62e83d393323) established the fit and found a real plots crash; this session produced the repo-local design and fixed the Rule-of-5 review findings.
+  
+  Phase: review/commit closed. Proposals written, validated, reviewed, fixed, committed, pushed. No implementation started (OpenSpec approval gate).
+  
+  State:
+  - openspec/changes/add-spa-test-seams/ (0/14 tasks), capability spa-testability: ?demo=<id> exact/first-occurrence boot selection, failed-chunk fallback, ?debug read-only globalThis.__tambor (state/raw view/drawCount, clear on unmount/publish after mount), behavior-inertness, CI-gated tests/e2e/test-seams.spec.ts added to the e2e-smoke job (gallery.spec.ts stays out).
+  - openspec/changes/add-bombadil-exploration/ (0/27 tasks), capability exploratory-verification: pinned @antithesishq/bombadil 0.7.10 + action @v3, bombadil/ outside vitest/tsconfig with an eslint ignore, mounted readiness gate, stage-scoped actions with getFingerprint (default action generators not exported), baseline properties (counter ±1, todo delete-X-pairs/2, select open-flag labels, plots band-count consistency), runner (dedicated PORT, quoted URL, trace cleanup, CHROME), nightly non-blocking workflow (artifact if-no-files-found warn, 14-day retention), triage (printed --reproduce omits --time-limit/--exit-on-violation).
+  - Beads: tambor-yew (P2 bug: plots Pan/Zoom naive crash on empty state; still present at HEAD), tambor-bw8 (P2 execute spa seams; 0/14), tambor-e70 (P2 execute bombadil; 0/27; blocked by bw8 + yew). All created this session; titles/descriptions updated; open/unclaimed.
+  - Commit d09b040 "docs(openspec): apply rule-of-5 fixes to test seam and Bombadil proposals"; remote at d09b040.
+  
+  Decisions/constraints:
+  - Bombadil is a non-blocking nightly exploratory lane, not a gate replacement. One demo per run via ?demo; actions stay in #demo > div; no nav clicks.
+  - No native touch actions in 0.7.10; Playwright CDP touch remains authoritative.
+  - Expected-pass properties only; no expected-fail allowlist; known failures (380px overflow, 44px targets) stay in risks.spec.ts until fixed.
+  - No espectacular per-contract binding and no spk compile target in v1.
+  - __tambor.view() is the raw app.view(); the cached/lane-wrapped tree stays internal; extractors must project JSON, never return view().
+  - tambor-yew cause: plotState().points=[]; panNaiveOp/zoomNaiveOp call bandsFor -> points[i]![key]; tests always loadOp first.
+  - Operational: the sandbox hit a managed-Chrome Page.captureScreenshot timeout; fallback is CHROME + external attach; action-managed Chrome needs a manual smoke before the nightly is trusted.
+  
+  Authorization/blockers: Implementation MUST wait for user approval of the proposals. Then start tambor-yew (independent) and tambor-bw8; tambor-e70 only after both. Do not mutate tickets or commits from this stash.
+  
+  Validation: openspec validate add-spa-test-seams --strict and add-bombadil-exploration --strict => valid. Pre-push gates at d09b040 green: espectacular 73.8s, testaruda 81.4s/864 tests, tsc, eslint, pretender. Rule-of-5: TypeSafe verified 4 HIGH (0.35-0.73, below the 0.8 gate => human review recommended); 1 contradicted claim reframed as clarity. No unresolved HIGH defects in the proposals after fixes.
+  
+  Previous entry: none (new topic).
