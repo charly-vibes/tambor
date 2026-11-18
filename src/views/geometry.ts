@@ -91,6 +91,16 @@ function pathBounds(n: Node): Vec2 {
 
 type SizeFn = (n: Node) => Vec2;
 
+// The corpus button_bounds — label bounds plus 12 on each axis, floored
+// at 44 per axis (ui.mobile.mobile_first touch floor applied to what
+// the visitor sees; add-demo-visual-polish D2, tambor-8cu). geometry
+// owns the formula; dom-painters imports it so laid-out == rendered ==
+// hit-tested geometry.
+export function buttonBounds(labelBounds: Vec2): Vec2 {
+  const [w, h] = labelBounds;
+  return [Math.max(w + 12, 44), Math.max(h + 12, 44)];
+}
+
 // The [width, height] of an elem's bounds with respect to its origin.
 const SIZES: Readonly<Record<string, SizeFn>> = {
   "label": (n) => (n as { measure: MeasureFn }).measure((n as { text: string }).text),
@@ -110,9 +120,9 @@ const SIZES: Readonly<Record<string, SizeFn>> = {
   "with-stroke-width": (n) => groupBounds((n as { drawables: readonly Elem[] }).drawables),
   "handler": (n) => groupBounds((n as { drawables: readonly Elem[] }).drawables),
   "button": (n) => {
-    // button_bounds: label bounds plus 12 on each axis.
-    const [w, h] = bounds(label((n as { text: string }).text));
-    return [w + 12, h + 12];
+    // button_bounds: label bounds + 12, floored at 44 per axis
+    // (buttonBounds — the shared formula).
+    return buttonBounds(bounds(label((n as { text: string }).text)));
   },
   "checkbox": (n) => groupBounds([checkboxDraw((n as { checked: boolean }).checked)]),
 };

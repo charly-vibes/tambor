@@ -25,6 +25,7 @@
 
 import type { Page } from "@playwright/test";
 import { composite, contrast, parseColor } from "./audit-color.ts";
+import { buttonBounds } from "../../src/views/geometry.ts";
 import { SNAPSHOT, type ButtonInfo, type Snapshot, type TextInfo } from "./audit-snapshot.ts";
 
 export interface AuditIssue {
@@ -166,7 +167,11 @@ function sizeFinding(t: TextInfo): AuditIssue | null {
 }
 
 function driftFinding(t: TextInfo): AuditIssue | null {
-  if (t.measured < 0 || Math.abs(t.w - t.measured) <= 2) return null;
+  // expected box: shrink-to-fit for plain labels; for button labels the
+  // corpus button_bounds (label + 12 floored at 44/axis, tambor-8cu) —
+  // geometry.ts owns the formula so audit and renderer cannot drift
+  const expected = t.inButton ? buttonBounds([t.measured, 0])[0]! : t.measured;
+  if (t.measured < 0 || Math.abs(t.w - expected) <= 2) return null;
   return {
     rule: "text.measure-drift",
     severity: "error",

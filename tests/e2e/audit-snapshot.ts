@@ -33,6 +33,9 @@ export interface TextInfo extends Box {
   readonly fontSize: number;
   readonly clipped: boolean;
   readonly measured: number;
+  // the text sits inside a drawn <button>: its box is the corpus
+  // button_bounds (label + 12, floored at 44/axis), not shrink-to-fit
+  readonly inButton: boolean;
 }
 
 export interface Snapshot {
@@ -123,8 +126,10 @@ export const SNAPSHOT = `(() => {
         fontSize: parseFloat(cs.fontSize) || 0,
         clipped: el.scrollWidth > el.clientWidth + 1,
         // the emitted box should equal the host-font measure: labels are
-        // shrink-to-fit, buttons are label width + the corpus 12px pad
-        measured: measured < 0 ? -1 : measured + (isButton ? 12 : 0),
+        // shrink-to-fit, buttons carry the corpus button_bounds (the
+        // audit's drift rule applies the formula, geometry.ts owns it)
+        inButton: isButton,
+        measured: measured < 0 ? -1 : measured,
       };
     });
   return {

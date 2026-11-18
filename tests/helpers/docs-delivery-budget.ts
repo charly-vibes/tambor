@@ -33,13 +33,16 @@ import { staticClosure, type MetaOutputs } from "./metafile.ts";
 // add-spa-test-seams added the query-string boot selection and the
 // opt-in debug snapshot to the SPA entry the docs bundle shares; the
 // same change's pre-commit complexity split (helpers extracted from
-// mountAvailable/mountDemo) re-measured at 31596 B.
+// mountAvailable/mountDemo) re-measured at 31596 B; re-recorded
+// 2026-11-18 to 31599 B after add-demo-visual-polish D2 floored
+// button_bounds at 44px/axis (the shared geometry helper adds ~3 B
+// gzipped to the shared bundle).
 // Re-record ritual: when the docs entry or content ships a bigger
 // measured shell — run the build, read the measured gzip the test
 // reports, update THIS ONE constant, and run tools/stamp-docs.sh if
 // the demo-dist total changed too (it stamps README/EVALUATION from
 // the same metafile).
-export const DOCS_SHELL_GZIP_CEILING_BYTES = 31596;
+export const DOCS_SHELL_GZIP_CEILING_BYTES = 31599;
 
 // The measured shell gzip for a docs entry output: the gzip of every
 // file in its static-import closure (shared chunks ride the initial

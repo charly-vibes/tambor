@@ -20,6 +20,7 @@
 import type { ElementLike } from "./domsim.ts";
 import type { AnyDraw } from "./primitives.ts";
 import type { Color } from "../views/model.ts";
+import { buttonBounds } from "../views/geometry.ts";
 import { currentLabelMeasure } from "../views/nodes.ts";
 
 // A drawable node, as the draw tree actually carries it.
@@ -120,13 +121,15 @@ export function buildButton(_ctx: BuildCtx, node: DomNode, parent: ElementLike):
   // a corpus label is a single line and its spaces are layout (see
   // buildLabel) — pre keeps the measured box honest (tambor-0rp)
   el.style["white-space"] = "pre";
-  // the emitted box IS the corpus button_bounds: label bounds + 12 on each
-  // axis (geometry.ts) — browser-intrinsic padding/border would inflate the
+  // the emitted box IS the corpus button_bounds via the shared formula
+  // (geometry.ts buttonBounds): label bounds + 12, floored at 44/axis
+  // (tambor-8cu) — browser-intrinsic padding/border would inflate the
   // rendered box past the layout math and collide with siblings. Explicit
   // size + border-box keeps rendered == laid-out == hit-tested geometry.
   const [tw, th] = currentLabelMeasure()(node.text ?? "");
-  el.style["width"] = `${tw + 12}px`;
-  el.style["height"] = `${th + 12}px`;
+  const [bw, bh] = buttonBounds([tw, th]);
+  el.style["width"] = `${bw}px`;
+  el.style["height"] = `${bh}px`;
   el.style["box-sizing"] = "border-box";
   el.style["padding"] = "0";
   el.style["margin"] = "0";

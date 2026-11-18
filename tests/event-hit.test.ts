@@ -151,11 +151,12 @@ it("p_button: only a down inside returns on-click", () => {
     clicks.push(pos as Vec2);
     return [["clicked"]];
   });
-  // label "ok" measures [2, 1]; button bounds are [14, 13]
+  // label "ok" measures [2, 1]; button bounds are the floor [44, 44]
+  // (button_bounds + 12 floored at 44/axis, tambor-8cu)
   expect(dispatch(view, mouseDown([8, 6]))).toEqual([["clicked"]]);
   expect(dispatch(view, mouseUp([8, 6]))).toEqual([]);
-  expect(dispatch(view, mouseDown([14, 6]))).toEqual([]);
-  expect(dispatch(view, mouseDown([8, 13]))).toEqual([]);
+  expect(dispatch(view, mouseDown([45, 6]))).toEqual([]);
+  expect(dispatch(view, mouseDown([8, 45]))).toEqual([]);
   expect(clicks).toEqual([[8, 6]]);
 
   // Generalized property: interior downs fire exactly once with the
@@ -174,8 +175,9 @@ it("p_button: only a down inside returns on-click", () => {
         expect(dispatch(btn, mouseDown([ax, ay]))).toEqual([["clicked"]]);
         expect(local).toEqual([[ax, ay]]);
         expect(dispatch(btn, mouseUp([ax, ay]))).toEqual([]);
-        expect(dispatch(btn, mouseDown([len + 13, ay]))).toEqual([]);
-        expect(dispatch(btn, mouseDown([ax, 13]))).toEqual([]);
+        // exterior: x past the 44px floor regardless of label length
+        expect(dispatch(btn, mouseDown([len + 45, ay]))).toEqual([]);
+        expect(dispatch(btn, mouseDown([ax, 45]))).toEqual([]);
         expect(local).toEqual([[ax, ay]]);
       },
     ),

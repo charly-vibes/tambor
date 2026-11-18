@@ -17,17 +17,23 @@
 
 ## 2. 44px button floor (tambor-8cu)
 
-- [ ] 2.1 Red: `p_button_bounds` (view-model vitest + specodelic
+- [x] 2.1 Red: `p_button_bounds` (view-model vitest + specodelic
       proptest scaffold) asserts `max(label + [12,12], [44,44])`
       componentwise; fails against the current +12 result.
-- [ ] 2.2 Green: shared `buttonBounds` helper in `geometry.ts`
+- [x] 2.2 Green: shared `buttonBounds` helper in `geometry.ts`
       (label + 12 floored at 44/axis); `dom-painters.ts` consumes it.
-- [ ] 2.3 Re-pin dependent goldens in the same commit family: counter
+- [x] 2.3 Re-pin dependent goldens in the same commit family: counter
       `p_buttons`, todo `p_add`/`p_item_layout` relatives, dropdown
       `p_header_toggle`/`p_header_label`; contract TOMLs re-derived
       (`ah check` green).
+- [ ] 2.4 Re-layout the demos whose rows were tuned to 28px buttons:
+      52 `root.off-root-text` findings across the bench demos
+      (spreadsheet 51, tracker, dashboard-derived, keyed-table,
+      environment, review-faults, ...) after the floor landed. Adjust
+      each demo's translates/spacers so text returns inside the drawn
+      root; audit quiet.
 - Acceptance: `just e2e-visual` reports zero `target.below-44px`
-  findings; no overflow error floors trip at 320px.
+  findings (done) and zero `root.off-root-text` findings (2.4).
 
 ## 3. Select demo clip
 

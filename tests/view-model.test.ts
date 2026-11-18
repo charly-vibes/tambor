@@ -281,13 +281,17 @@ it("p_measure: label bounds equal the stub output", () => {
 });
 
 // p_button_bounds — derives_from: view.model.button_bounds
-// generator: random label text — predicate: bounds equal label bounds
-// plus [12, 12]
-it("p_button_bounds: bounds equal label bounds plus [12, 12]", () => {
+// generator: random label text — predicate: bounds equal the
+// componentwise maximum of (label bounds plus [12, 12]) and [44, 44]
+// (the corpus touch floor applied to what the visitor sees;
+// add-demo-visual-polish D2)
+it("p_button_bounds: bounds equal label bounds plus [12, 12], floored at [44, 44]", () => {
   fc.assert(
     fc.property(fc.string({ maxLength: 30 }), (text) => {
       const [lw, lh] = bounds(label(text));
-      expect(bounds(button(text))).toEqual([lw + 12, lh + 12]);
+      const [bw, bh] = bounds(button(text));
+      expect(bw).toEqual(Math.max(lw + 12, 44));
+      expect(bh).toEqual(Math.max(lh + 12, 44));
     }),
   );
 });
