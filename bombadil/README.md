@@ -104,11 +104,11 @@ npx bombadil browser test --headless --time-limit 60s \
 | Demo (`just bombadil <demo>`) | Spec | Property | Status |
 | --- | --- | --- | --- |
 | `counter` | `counter.spec.ts` | `counterTransitions`: the value moves by -1/0/+1 between states | implemented, expected-pass |
-| `todo` | `todo.spec.ts` | model/DOM agreement: visible rows match `state()` + filter | change task 4 |
-| `select` | `select.spec.ts` | option labels exist exactly while the model says open | change task 5.1 |
-| `plots` | `plots.spec.ts` | both draws agree, band count is 0..BAND_COUNT, 0 bands ⇔ "no data" | change task 5.2 |
+| `todo` | `todo.spec.ts` | model/DOM agreement: visible rows match `state()` + filter | implemented, expected-pass |
+| `select` | `select.spec.ts` | option labels exist exactly while the model says open | implemented, expected-pass |
+| `plots` | `plots.spec.ts` | both draws agree, band count is 0..BAND_COUNT, 0 bands ⇔ "no data" | implemented, expected-pass |
 
-Only `counter` exists today; the runner rejects a demo without a spec.
+All four demos have specs; the runner rejects a demo without a spec.
 
 ## Trace and triage loop
 
