@@ -888,3 +888,37 @@
   Validation: openspec validate add-spa-test-seams --strict and add-bombadil-exploration --strict => valid. Pre-push gates at d09b040 green: espectacular 73.8s, testaruda 81.4s/864 tests, tsc, eslint, pretender. Rule-of-5: TypeSafe verified 4 HIGH (0.35-0.73, below the 0.8 gate => human review recommended); 1 contradicted claim reframed as clarity. No unresolved HIGH defects in the proposals after fixes.
   
   Previous entry: none (new topic).
+- 2026-11-18T22:05:41Z [id:e1d945f72624becf635c5367ba6625ea78f9ec700aac2fb3eb1ff69ef1b0be1c] (#resume-tambor-queue) Format: 1
+  Timestamp: 2026-11-18T22:05:02Z
+  Repo: github.com/charly-vibes/tambor
+  Branch: main
+  HEAD: 99a3a01435b8ebd2f0e6b89eeb2e648c007093e8 (pushed; main in sync with origin/main)
+  Session: unknown (host did not expose an ID)
+  Task: post-queue state after add-demo-visual-polish landed end-to-end (orchestrated implementation session).
+  
+  Objective: continuation state for the next ticket pick on main; add-demo-visual-polish itself is DONE and closed (nothing in flight).
+  
+  Phase: commit/push closed. Tree clean. No uncommitted work.
+  
+  State:
+  - add-demo-visual-polish complete: 17/17 tasks (notes appended at the bottom of openspec/changes/add-demo-visual-polish/tasks.md). OpenSpec `archive` command NOT run (deliberate: main specs are specodelic tables, MODIFIED headers can't match; the delta sync was applied by hand — toggle_render/header_label/button_bounds rows + property/scenario THENs; ah sync refreshed 3 contract hashes).
+  - Audit gates: text.contrast + target.below-44px are ERROR floors and just e2e-visual runs the 22-demo x 4-viewport matrix in LIGHT and DARK.
+  - Theme: src/ui/ambient-theme.ts (roles -> tokens, live matcher, scheme flip clears the render cache); new `muted` token (light 0.45 / dark 0.75); token inks (foreground/muted/accent/border) emit var(--tambor-*) so the scheme resolves at paint time. Chromium's emulated matchMedia WOBBLES during early page init (false -> true -> false, no change event): do not "fix" this with JS polling; the CSS-var emission plus the watcher in src/spa/main.ts (SETTLE_FRAMES=120 + MQL change listener) is the mechanism. danger and background stay literal (svg attribute pins / surface token).
+  - dom-painters: collapsed with-color fills size from their shape extent (settleFillExtents) — the select selected-row accent paints now; previously white-on-white.
+  - bombadil: lib/visual.ts facts + properties in counter/todo/select + 13 new bench specs + gallery shell spec; 18-demo sweep green at BOMBADIL_TIME_LIMIT=20s. select carries a documented carve-out for the corpus-pinned white-on-[0,0.48,1] 4.02:1 pair.
+  - fit.ts wrapText keeps the joining space as a trailing space on non-final lines; labels are white-space:pre so the audit oracle stays exact.
+  
+  Exact next action: pick the next ticket with the user — tambor-90p (gallery inspector; was blocked by fkv, now unblocked, wants to land between phase 2 and phase 3 which have both shipped), or tambor-2ep / tambor-bva change executions; tambor-1iv and tambor-2xq are small P2s. Nothing is claimed.
+  
+  Ownership: closed this session: tambor-71u, tambor-8cu, tambor-fkv. Open/new: tambor-bc2 (needs a row_visuals decision: darker light accent or different label ink; dark accent already [0,0.31,0.8]), tambor-jeo (15 pretender hotspots adopted into pretender-baseline.json — refactor visual.ts surface/facts split when next touched). Older in_progress untouched: tambor-72m, tambor-gwt (docs-site 10.3 HITL + 11.x apply still pending from the 11-10 handoff).
+  
+  Constraints (binding):
+  - Zero-headroom budgets re-recorded this session: docs shell gzip 34281 B (tests/helpers/docs-delivery-budget.ts), spa js gzip 157027 B (tests/spa-delivery.test.ts), README stamp 459.6 kB (tools/stamp-docs.sh). ANY bundle/docs change -> re-record that ONE seam constant in the same commit + run stamp-docs.sh on a quiescent tree; CI stamp gate is invisible to local pre-push.
+  - pretender --staged gate fails on NEW findings; adopt only with a ticket (see tambor-jeo).
+  - fit.ts is the single wrap rule; wrapLines duplication is gone from docs/page.ts.
+  - clickDrawnText (tests/e2e/drive.ts) window-scrolls to off-screen drawn targets; tests/e2e/gallery.spec.ts logo tests now await the worker reply via expect().toContainText.
+  - bombadil needs CHROME=<playwright chromium path> (no chrome on PATH).
+  
+  Validation: vitest 909/909; tsc/eslint/typecheck:bombadil 0; just e2e-visual green (light+dark); ah check 0 (3 contracts synced); spk lint 0 issues; openspec validate --strict valid; bench bz3-seed/bz4-build expectedText guards green; pre-push lanes green at push.
+  
+  Previous entry: none (new topic).
