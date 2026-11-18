@@ -9,5 +9,10 @@ spacers. The ink is characterized by its accessibility floor, not by a
 literal value: any gray meeting the floor satisfies this requirement.
 
 The deployed scenario [[example.todo.p_toggle_render]] continues to
-verify this requirement; its THEN gains "and readable (contrast
-≥ 4.5:1)" at archive time.
+verify this requirement at archive time.
+
+#### Scenario: p_toggle_render
+
+- **WHEN** options all, active, complete with selected active
+- **THEN** active is plain and the other two are gray, clickable, and readable (contrast ≥ 4.5:1)
+- **VERIFIES** [[example.todo.p_toggle_render]]

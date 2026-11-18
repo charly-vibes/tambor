@@ -2,17 +2,20 @@
 //   deterministic DOM audit against the built demo-dist page GitHub Pages
 //   serves, at four viewports, across every registry demo.
 // Responsibilities: mount each demo, snapshot the live drawn DOM, write
-//   test-results/visual-audit.json (the triage artifact), fail on the
-//   error floors (page/nav overflow, missing root, root out of viewport,
-//   content spill) and on console/page errors.
+//   test-results/visual-audit.json (the triage artifact for the light
+//   pass), fail on the error floors (page/nav overflow, missing root,
+//   root out of viewport, content spill, low-contrast text, drawn
+//   buttons under the 44px floor) in BOTH color schemes, and on
+//   console/page errors. The dark pass exists because the shell swaps
+//   its tokens per scheme (add-demo-visual-polish task 6.3).
 // Rationale: the existing gallery lane drives the coordinate fixture,
 //   whose zero body margin and nav-local scroller hide shell-level
-//   overflow (the 13-demo registry used to widen the page to ~1571px at
-//   every width up to 1440). Appearance must be measured on the artifact,
-//   not the fixture. Warnings (drawn <button> mirror heights under the
-//   44px corpus floor, low-contrast/small text, clipping) are recorded but
-//   not blocking until their corpus fixes land; vision stays on demand
-//   and is never part of this gate.
+//   overflow (the registry used to widen the page to ~1571px at every
+//   width up to 1440). Appearance must be measured on the artifact, not
+//   the fixture. The contrast and 44px rules are error floors since the
+//   corpus fixes landed (task 4); the remaining warnings (small text,
+//   clipping, sampling cap) stay advisory so a red gate always means a
+//   regression, never a known gap.
 
 // @ts-expect-error node builtin (tsconfig types exclude node)
 import { mkdirSync, writeFileSync } from "node:fs";
@@ -44,21 +47,34 @@ test.describe("visual audit — real shell", () => {
     });
     page.on("pageerror", (err) => consoleErrors.push(String(err)));
 
-    const reports: AuditReport[] = [];
-    await openSite(page);
-    for (const viewport of VIEWPORTS) {
-      await page.setViewportSize(viewport);
-      for (const demo of DEMOS) {
-        await navTo(page, demo.title);
-        reports.push(await auditDrawnDom(page, demo.id));
+    // One full matrix pass in the requested scheme. The shell resolves
+    // its tokens at boot, so the scheme must be emulated BEFORE the
+    // page loads — the light pass keeps the triage artifact, and the
+    // dark pass proves the same error floors hold on the inverted
+    // palette (task 6.3).
+    const auditMatrix = async (
+      scheme: "light" | "dark",
+    ): Promise<AuditReport[]> => {
+      await page.emulateMedia({ colorScheme: scheme });
+      const reports: AuditReport[] = [];
+      await openSite(page);
+      for (const viewport of VIEWPORTS) {
+        await page.setViewportSize(viewport);
+        for (const demo of DEMOS) {
+          await navTo(page, demo.title);
+          reports.push(await auditDrawnDom(page, demo.id));
+        }
       }
-    }
+      return reports;
+    };
 
+    const light = await auditMatrix("light");
     mkdirSync("test-results", { recursive: true });
     writeFileSync(
       "test-results/visual-audit.json",
-      `${JSON.stringify(reports, null, 2)}\n`,
+      `${JSON.stringify(light, null, 2)}\n`,
     );
+    const reports = [...light, ...(await auditMatrix("dark"))];
 
     const errors = reports.flatMap((report) =>
       report.issues

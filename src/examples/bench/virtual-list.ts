@@ -6,8 +6,8 @@
 // Responsibilities: VirtualListState (count, offset, mode),
 //   LIST_COUNT_PATH/OFFSET_PATH/MODE_PATH, the op builders — drawAll /
 //   windowAll (10k items, whole-view vs windowed mode), scrollRows
-//   (+1 row, the measured op) — and virtualListView: a control row of
-//   op buttons over the mode's body.
+//   (+1 row, the measured op) — and virtualListView: a two-row control
+//   stack (draw strategies over the scroll op) above the mode's body.
 // Rationale: no benchmark-specific fast paths: every op is an ordinary
 //   ["update", …] intent applied by the registry-aware dispatcher. The
 //   whole-view mode is the honest failing-before meter (tambor-54j.8.2):
@@ -105,8 +105,12 @@ function wholeView(state: VirtualListState): Elem {
   return (verticalLayout(body) ?? readout) as Elem;
 }
 
-// The control row shared by both modes: the two draw strategies (the
-// measured setup ops) and the scroll op both modes measure.
+// The control stack shared by both modes: the two draw strategies (the
+// measured setup ops) on the first row and the scroll op both modes
+// measure on the second. The rows are stacked rather than laid side by
+// side because the single row measured 326px — beyond the 300px bench
+// container (add-demo-visual-polish); every button and handler is
+// unchanged, only the row break moves.
 function controlsRow(state: VirtualListState): Elem {
   const scrollOp = (): IntentList => [["update", OFFSET_PATH, scrollRows(1)]];
   const drawOp = (mode: ListMode): IntentList => [
@@ -114,14 +118,16 @@ function controlsRow(state: VirtualListState): Elem {
     ["update", MODE_PATH, (): ListMode => mode],
     ["update", OFFSET_PATH, (): number => 0],
   ];
-  return (horizontalLayout([
+  const drawRow = horizontalLayout([
     button("Draw all 10k", (): IntentList => drawOp("full")),
     spacer(5, 0),
     button("Window 10k", (): IntentList => drawOp("window")),
-    spacer(5, 0),
+  ]) as readonly Elem[];
+  const scrollRow = horizontalLayout([
     button("Scroll down", scrollOp),
     ...(state.mode === "window" ? [spacer(5, 0)] : []),
-  ]) ?? labelNode("")) as Elem;
+  ]) as readonly Elem[];
+  return (verticalLayout([drawRow, scrollRow]) ?? labelNode("")) as Elem;
 }
 
 // The windowed body: the components.virtual_list component drawing
@@ -157,7 +163,7 @@ function windowedView(state: VirtualListState): Elem {
   return [head, translate(0, headH + 10, component) as Elem];
 }
 
-// The virtual-list view: the control row over the mode's body.
+// The virtual-list view: the control stack over the mode's body.
 export function virtualListView(state: VirtualListState): Elem {
   if (state.mode === "window") return windowedView(state);
   const controls = controlsRow(state);

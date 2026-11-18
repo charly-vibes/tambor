@@ -4,8 +4,9 @@
 // Responsibilities: SNAPSHOT (a string expression evaluated in the page)
 //   reads document/nav/root overflow, drawn element boxes, leaf-text boxes
 //   with colour/background/font, button targets, and the host-font
-//   measured width for each text box; the exported interfaces describe
-//   that payload.
+//   measured width of each text box's painted run (the trailing
+//   separator space included — labels paint with white-space: pre);
+//   the exported interfaces describe that payload.
 // Rationale: the repo tsconfig has no DOM lib (tambor's structural-seam
 //   rule), so the snapshot is a string like risks.spec.ts's evaluate
 //   bodies. Keeping it out of audit.ts leaves the rules file readable and
@@ -105,6 +106,14 @@ export const SNAPSHOT = `(() => {
     ctx.font = cs.fontStyle + " " + cs.fontWeight + " " + cs.fontSize + " " + cs.fontFamily;
     let w = 0;
     for (const line of String(text).split("\\n")) {
+      // views/fit.ts keeps the joining space on every non-final wrapped
+      // line, and the DOM painter emits labels with white-space: pre
+      // (dom-painters buildLabel) — so that trailing space does paint and
+      // does widen the span's box (measured: one space ≈ 5px at 16px).
+      // Layout positions the label by the same untrimmed measure, so the
+      // oracle must measure untrimmed too: trimming here would under-count
+      // by that space and fire text.measure-drift against a box that
+      // legitimately still has it.
       w = Math.max(w, ctx.measureText(line).width);
     }
     return w;

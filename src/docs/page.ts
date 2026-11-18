@@ -9,9 +9,14 @@
 // Rationale: generated registry rows and hand-written guide modules
 //   (tasks 4-5) must render through the same renderer so the docs
 //   chrome cannot fork per source — the Elem shape is the contract.
+//   Wrapping is not re-derived here: prose goes through the view layer's
+//   one wrap rule (views/fit.ts `wrapText`), so the docs and the demos
+//   cannot drift on where lines break or whether the joining space
+//   survives into the drawn spans.
 
-import { currentLabelMeasure, label, withColor } from "../views/nodes.ts";
+import { label, withColor } from "../views/nodes.ts";
 import type { Elem } from "../views/model.ts";
+import { wrapText } from "../views/fit.ts";
 import { VIEWPORT } from "../spa/viewport.ts";
 import { ambientColor } from "./theme.ts";
 
@@ -27,38 +32,10 @@ export interface PageData {
   readonly demo?: string;
 }
 
-// Greedy word wrap against the live label measure: corpus labels are
-// single-line by definition (tambor-0rp), so prose lines that exceed
-// the container become several single-line labels — the pure-realm
-// answer to "no horizontal overflow at 320 px" (design D3). Words
-// wider than the whole container ride as their own line (a line can
-// only shrink to its longest word).
-// NOTE (review A-EDGE-002, deferred): re-measuring the running
-// candidate per word is O(k²) in a line's word count; a running-width
-// accumulation with confirm-on-overflow is the recorded tightening.
-// Bounded by container width — below threshold until wrapping shows up
-// in a profile.
-function wrapLines(text: string, maxWidth: number): string[] {
-  const measure = currentLabelMeasure();
-  if (measure(text)[0] <= maxWidth) return [text];
-  const lines: string[] = [];
-  let line = "";
-  for (const word of text.split(" ")) {
-    const candidate = line === "" ? word : line + " " + word;
-    if (line === "" || measure(candidate)[0] <= maxWidth) {
-      line = candidate;
-    } else {
-      lines.push(line);
-      line = word;
-    }
-  }
-  if (line !== "") lines.push(line);
-  return lines;
-}
-
-// One wrapped body-role label per fitted line.
+// One coloured body-role label per fitted line: the lines come from the
+// view layer's single wrap rule, so this file owns no wrap loop.
 function wrappedRole(text: string, role: "heading" | "body", maxWidth: number): Elem[] {
-  return wrapLines(text, maxWidth).map((line) =>
+  return wrapText(text, maxWidth).map((line) =>
     withColor(ambientColor(role), label(line)),
   );
 }

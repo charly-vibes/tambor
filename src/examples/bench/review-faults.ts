@@ -11,7 +11,9 @@
 //   a still-submitted item at its own session), ackNext/rejectNext (the
 //   honest deliveries), submitAll, the three injections —
 //   injectDuplicateAck / injectStaleAck / injectLostAck — phaseCounts,
-//   countsLine/faultLine/faultLabel, reviewFaultsView and
+//   countsLine/faultLine/faultLabel, reviewFaultsView (two stacked
+//   control rows, the two summary lines and every fault-log row as
+//   fitted labels, all inside the drawn stage) and
 //   createReviewFaultsApp.
 // Rationale: the tambor claim this bench scores: a typed discriminated
 //   union in plain state plus pure handlers gives Elm-grade correctness
@@ -23,18 +25,18 @@
 //   ["update", …] intent through the registry-aware dispatcher — the
 //   fault machinery is the app, not a benchmark side door; the vitest
 //   suite (tests/bench-review-faults.test.ts) is the scoring harness.
+//   Fault-log rows are state-derived, so their text is as long as the
+//   echo they record; every drawn line therefore goes through
+//   fittedLabels against the live measure — a state the suite never
+//   mounts still cannot push a label box across the stage edge.
 
-import {
-  button,
-  label as labelNode,
-  spacer,
-  type Elem,
-} from "../../views/model.ts";
+import { button, spacer, type Elem } from "../../views/model.ts";
 import { horizontalLayout, verticalLayout } from "../../views/layout.ts";
 import type { IntentList } from "../../events/bubble.ts";
 import type { Path } from "../../effects/paths.ts";
 import { makeApp, type App } from "../../effects/dispatch.ts";
 import { VIEWPORT } from "../../spa/viewport.ts";
+import { fittedLabels } from "../../views/fit.ts";
 
 // The queue size the bench holds (200 review items).
 export const ITEM_COUNT = 200;
@@ -243,30 +245,40 @@ function opButton(text: string, op: (s: ReviewState) => ReviewState): Elem {
   return button(text, (): IntentList => [["update", REVIEW_PATH, op]]);
 }
 
-// The view: the control row, the queue summary, the fault summary,
-// then the newest fault entries as a label stack. Pure view — every
+// The view: two stacked control rows (one row of six measures 579 px
+// after the 44 px button floor), the queue summary, the fault summary,
+// then the newest fault entries. The two summary lines and every
+// state-derived fault row run through fittedLabels so a long line
+// becomes several single-line labels instead of a box crossing the
+// stage edge; rows and their order are untouched. Pure view — every
 // number is derived from the plain state, nothing cached.
 export function reviewFaultsView(state: ReviewFaultsState): Elem {
   const s = state.review;
-  const controls = horizontalLayout([
-    opButton("Submit all", submitAll),
-    spacer(5, 0),
-    opButton("Ack next", ackNext),
-    spacer(5, 0),
-    opButton("Reject next", rejectNext),
-    spacer(5, 0),
-    opButton("Duplicate ack", injectDuplicateAck),
-    spacer(5, 0),
-    opButton("Stale ack", injectStaleAck),
-    spacer(5, 0),
-    opButton("Drop ack", injectLostAck),
-  ]) as Elem;
-  const log = s.faults.slice(-8).map((e) => labelNode(faultLabel(e)));
+  const controls = verticalLayout(
+    [
+      horizontalLayout([
+        opButton("Submit all", submitAll),
+        spacer(5, 0),
+        opButton("Ack next", ackNext),
+        spacer(5, 0),
+        opButton("Reject next", rejectNext),
+      ]) as Elem,
+      horizontalLayout([
+        opButton("Duplicate ack", injectDuplicateAck),
+        spacer(5, 0),
+        opButton("Stale ack", injectStaleAck),
+        spacer(5, 0),
+        opButton("Drop ack", injectLostAck),
+      ]) as Elem,
+    ],
+    6,
+  ) as Elem;
+  const log = s.faults.slice(-8).flatMap((e) => fittedLabels(faultLabel(e)));
   const body = [
     controls,
     spacer(0, 10),
-    labelNode(countsLine(s)),
-    labelNode(faultLine(s)),
+    ...fittedLabels(countsLine(s)),
+    ...fittedLabels(faultLine(s)),
     ...log,
   ] as readonly Elem[];
   return (verticalLayout(body) ?? controls) as Elem;

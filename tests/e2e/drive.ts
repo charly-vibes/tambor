@@ -132,32 +132,71 @@ export async function clickDrawnText(
   page: Page,
   text: string,
 ): Promise<void> {
-  const el = page.locator("#demo").getByText(text, { exact: true }).last();
+  const locate = (): Locator =>
+    page.locator("#demo").getByText(text, { exact: true }).last();
   // tambor-4h6: the preceding interaction's repaint lands on the next
   // animation frame, so locating + reading the box immediately can see
   // a not-yet-attached (or mid-swap) element — the logo smoke failed
   // 1-of-4 reruns with "no drawn element with text: Run". Wait for
   // visibility (auto-retries through the transient absence), then
   // settle a double rAF so the draw has flushed before the box read.
-  await el.waitFor({ state: "visible" });
-  await page.evaluate(
-    () =>
-      new Promise<void>((resolve) => {
-        const raf = (
-          globalThis as unknown as {
-            requestAnimationFrame?: (cb: () => void) => number;
-          }
-        ).requestAnimationFrame;
-        if (raf === undefined) {
-          resolve();
-          return;
-        }
+  const settle = async (): Promise<void> => {
+    await page.evaluate(async () => {
+      // structural seam: the repo tsconfig has no DOM lib
+      const host = globalThis as unknown as {
+        requestAnimationFrame?: (cb: () => void) => number;
+      };
+      const raf = host.requestAnimationFrame;
+      if (raf === undefined) return;
+      // the repo lib target is pre-es2024: the executor form is the
+      // only shape Promise offers here
+      await new Promise<void>((resolve) => {
         raf(() => raf(() => resolve()));
-      }),
-  );
-  const box = await el.boundingBox();
+      });
+    });
+  };
+  const el = locate();
+  await el.waitFor({ state: "visible" });
+  await settle();
+  const box = await scrollIntoViewIfOffscreen(page, () => locate(), settle);
   if (box === null) throw new Error(`no drawn element with text: ${text}`);
   await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+}
+
+
+// The drawn world can grow past the viewport (the logo fold, the 800px
+// scripted stage floor): a real visitor scrolls before clicking. Scroll
+// the WINDOW by the measured delta rather than asking the element to
+// scroll itself — the logo's drawn tree swaps nodes on re-derive, and
+// element-targeted scrolling fails with "not attached" mid-swap.
+// Re-locate after the scroll; returns the (possibly re-read) box.
+async function scrollIntoViewIfOffscreen(
+  page: Page,
+  locate: () => Locator,
+  settle: () => Promise<void>,
+): Promise<{ x: number; y: number; width: number; height: number } | null> {
+  const el = locate();
+  await el.waitFor({ state: "visible" });
+  const box = await el.boundingBox();
+  const viewport = page.viewportSize();
+  if (
+    box === null ||
+    viewport === null ||
+    (box.y >= 0 && box.y + box.height <= viewport.height)
+  ) {
+    return box;
+  }
+  const delta = box.y + box.height / 2 - viewport.height / 2;
+  await page.evaluate((dy) => {
+    const win = globalThis as unknown as {
+      scrollBy?: (x: number, y: number) => void;
+    };
+    win.scrollBy?.(0, dy);
+  }, delta);
+  await settle();
+  const relocated = locate();
+  await relocated.waitFor({ state: "visible" });
+  return relocated.boundingBox();
 }
 
 // The view-space point of a drawn element's live box origin: the

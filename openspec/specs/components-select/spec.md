@@ -15,7 +15,7 @@ Port of `dropdown` and `dropdown-list` from `basic_components.cljc`. `options` i
 | id | kind | expr | traces_to |
 |----|------|------|-----------|
 | header_toggles | invariant | a pointer down on the header returns the effect that updates open? with logical not | [[components.select]] |
-| header_label | invariant | the header shows the label of the first option whose value equals selected, and a gray no selection text when none matches or selected is nil | [[components.select]] |
+| header_label | invariant | the header shows the label of the first option whose value equals selected, and a gray no selection text when none matches or selected is nil; the gray meets the 4.5:1 contrast floor against the light-shell background | [[components.select]] |
 | list_when_open | invariant | the list is part of the view only when open? is true | [[components.select]] |
 | row_select_effect | invariant | a pointer down on a row returns select with the selected path and the row value | [[components.select]] |
 | select_closes | invariant | the dropdown rewrites a select intent into select followed by the effect that sets open? to false | [[components.select]] |
@@ -45,7 +45,7 @@ Port of `dropdown` and `dropdown-list` from `basic_components.cljc`. `options` i
 | id | kind | derives_from | generator | predicate |
 |----|------|--------------|-----------|-----------|
 | p_header_toggle | unit | [[components.select.header_toggles]] | open? false then true | the effect flips open? |
-| p_header_label | unit | [[components.select.header_label]] | options this, that, the-other and selected that | label is That, and with nil it is no selection |
+| p_header_label | unit | [[components.select.header_label]] | options this, that, the-other and selected that | label is That, and with nil it is no selection meeting the 4.5:1 contrast floor |
 | p_list_open | unit | [[components.select.list_when_open]] | open? both values | list nodes exist only when open |
 | p_row_effect | unit | [[components.select.row_select_effect]] | click second row | effect is select with the selected path and that |
 | p_select_closes | unit | [[components.select.select_closes]] | a select intent | output is select then set open? false |
@@ -71,7 +71,7 @@ Every property row SHALL be verified by exactly one dedicated scenario;
 #### Scenario: p_header_label
 
 - **WHEN** options this, that, the-other and selected that
-- **THEN** label is That, and with nil it is no selection
+- **THEN** label is That, and with nil it is no selection meeting the 4.5:1 contrast floor
 - **VERIFIES** [[components.select.p_header_label]]
 
 #### Scenario: p_list_open

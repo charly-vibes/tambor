@@ -87,6 +87,21 @@ fixture server, removes the previous output directory, preserves the CLI exit
 status, and kills the server on every exit path (EXIT/INT/TERM). Two
 consecutive runs need no manual cleanup.
 
+The gallery shell has its own spec but no registry demo id of its own: the
+runner keys `bombadil/<demo>.spec.ts`, so `just bombadil gallery` sends
+`?demo=gallery`, which `boot-selection.ts` resolves to the first registry
+entry (`todo`). The shell — nav, `#demo` container, fixture stage CSS — is
+whatever demo mounts behind it, so the spec measures shell geometry only.
+
+```sh
+BOMBADIL_TIME_LIMIT=20s just bombadil gallery   # shell spec, demo falls back to todo
+npx bombadil browser test --headless --time-limit 20s \
+  "http://localhost:4601/?demo=todo&debug=1" bombadil/gallery.spec.ts
+```
+
+The second form assumes the fixture server is already running (see the
+direct command below); the demo id only has to be a mountable registry entry.
+
 Equivalent direct command (fixture already running):
 
 ```sh
@@ -107,8 +122,15 @@ npx bombadil browser test --headless --time-limit 60s \
 | `todo` | `todo.spec.ts` | model/DOM agreement: visible rows match `state()` + filter | implemented, expected-pass |
 | `select` | `select.spec.ts` | option labels exist exactly while the model says open | implemented, expected-pass |
 | `plots` | `plots.spec.ts` | both draws agree, band count is 0..BAND_COUNT, 0 bands ⇔ "no data" | implemented, expected-pass |
+| `gallery` (shell) | `gallery.spec.ts` | `navTargets`: every nav chip is ≥44×44; `stageCentred`: `#demo > div` gutters differ by ≤2px (content box) | implemented, expected-pass |
+| `dashboard-derived`, `editor`, `environment`, `keyed-table`, `logo`, `review-faults`, `save-restore-5k`, `spreadsheet`, `stream-dashboard`, `time-travel-10k`, `tracker`, `virtual-list`, `whiteboard` | `<demo>.spec.ts` (one each) | `textStaysInsideRoot`: no leaf text escapes the 300px drawn root in any state; `noClippedText`: no leaf text is clipped by its own box | implemented, expected-pass |
 
-All four demos have specs; the runner rejects a demo without a spec.
+The 13 geometry specs above plus `counter`, `todo`, `select` and `plots`
+(the behavioral properties) cover every demo that has a spec today; demos
+without one (`form-200`, `log-stream`, `notebook`, `todomvc`, …) are rejected
+by the runner until a spec lands. `gallery` is not a registry demo id, so the
+runner's `?demo=gallery` mounts the first entry (`todo`) behind the same shell
+(see Run).
 
 ## Trace and triage loop
 

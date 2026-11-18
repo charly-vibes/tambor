@@ -84,6 +84,14 @@ interface DocsState {
   readonly offset: Vec2;
 }
 
+// The window media-query seam: real browsers expose matchMedia on the
+// window (globalThis), NOT on the document, so the HostDoc seam only
+// covers shims (jsdom/test doubles). mountDocs tries the doc seam first
+// and falls through to the host, then to null (light scheme).
+const mmHost = globalThis as {
+  matchMedia?: (query: string) => { matches: boolean } | undefined | null;
+};
+
 // The paths the dropdown component speaks (gallery idiom).
 const PAGE_PATH: Path = [["keypath", "page"]];
 const OPEN_PATH: Path = [["keypath", "open?"]];
@@ -319,8 +327,12 @@ function appBackend(): Backend {
 export function mountDocs(doc: HostDoc, container: HostElement): DocsHandle {
   // The theme ambient resolves once per mount through the host's
   // media-query seam (task 5.2): every view derivation then reads the
-  // matched scheme's token colors without touching ui/theme.
-  resolveAmbient((query) => doc.matchMedia?.(query) ?? null);
+  // matched scheme's token colors without touching ui/theme. Real
+  // browsers hang matchMedia on the window, so the doc seam covers
+  // shims and the host matcher is the live-browser path.
+  resolveAmbient(
+    (query) => doc.matchMedia?.(query) ?? mmHost.matchMedia?.(query) ?? null,
+  );
   const handle = mountDemo(doc, container, createDocsApp);
   liveBackend.backend = handle.backend;
   // The host seams: the keyboard activation of a nav control and the

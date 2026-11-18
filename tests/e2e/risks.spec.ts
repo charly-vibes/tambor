@@ -15,6 +15,7 @@
 //   reads (bd comment tambor-y9d.4 lists the same findings).
 
 import { expect, test, type Page } from "@playwright/test";
+import { parseColor } from "./audit-color.ts";
 import {
   clickDrawnText,
   clickView,
@@ -30,6 +31,39 @@ const TODO_TA: readonly [number, number] = [31, 10.5];
 // The count of drawn delete-X red rectangles: 2 per todo row.
 async function redRows(page: Page): Promise<number> {
   return page.locator('#demo > div div[style*="rgb(255, 0, 0)"]').count();
+}
+
+// The computed body ink: the shell CSS declares the --tambor-* palette
+// and switches it on the prefers-color-scheme media query, so these are
+// the resolved values a visitor actually sees (string body: the repo
+// tsconfig has no DOM lib).
+async function bodyInk(
+  page: Page,
+): Promise<{ background: string; foreground: string }> {
+  return (await page.evaluate(
+    `(() => {
+      const cs = getComputedStyle(document.body);
+      return { background: cs.backgroundColor, foreground: cs.color };
+    })()`,
+  )) as { background: string; foreground: string };
+}
+
+// The WCAG 2.x sRGB linearisation of one 0..255 channel.
+function linearChannel(value: number): number {
+  const c = value / 255;
+  return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+}
+
+// WCAG 2.x relative luminance of a computed rgb() color; parseColor
+// (audit-color.ts) owns the string form the browser returns.
+function luminanceOf(style: string): number {
+  const rgb = parseColor(style);
+  if (rgb === null) throw new Error(`unparsed computed color: ${style}`);
+  return (
+    0.2126 * linearChannel(rgb[0]) +
+    0.7152 * linearChannel(rgb[1]) +
+    0.0722 * linearChannel(rgb[2])
+  );
 }
 
 test.describe("risk: keep-node swap / live textarea (todo)", () => {
@@ -154,12 +188,12 @@ test.describe("risk: small screens (380px)", () => {
   });
 });
 
-test.describe("risk: small screens at 380px", () => {
-  // FINDING (recorded, expected-fail on the 380px project): the nav row
-  // overflows the 380px viewport by ~8px (scrollWidth 388) — horizontal
-  // panning on a small phone.
+test.describe("small screens at 380px", () => {
+  // Was a recorded expected-fail (~8px nav overflow). add-demo-visual-
+  // polish task 5.2 replaced the fixture blurb's fixed width with
+  // max-width and centred the stage, so the page no longer widens; the
+  // check stays as a regular regression guard.
   test("no horizontal overflow at 380px", async ({ page }, testInfo) => {
-    test.fail(true, "nav row overflows the 380px viewport by ~8px");
     test.skip(testInfo.project.name !== "mobile-380", "380px project only");
     await open(page);
     const [scrollWidth, clientWidth] = (await page.evaluate(
@@ -187,46 +221,43 @@ test.describe("risk: dark-mode tokens", () => {
   });
 });
 
-test.describe("risk: dark-mode tokens are unwired", () => {
+test.describe("risk: dark-mode tokens are consumed", () => {
   test.use({ colorScheme: "dark" });
 
-  // FINDING (recorded, expected-fail): the tokens exist (ui/theme.ts
-  // resolves every token in both schemes — its contract tests pass),
-  // but the gallery SPA never consumes them: the page CSS and the
-  // drawn colors are light-scheme literals, so emulating
-  // prefers-color-scheme dark changes nothing on screen.
-  test("the page carries dark-scheme CSS rules", async ({ page }) => {
-    test.fail(true, "gallery never consumes the theme tokens: no dark-scheme rules exist");
+  // The shell palette is CSS (the media query paints it), and the drawn
+  // demos read the ambient matcher live, so emulating dark must change
+  // what is painted, not just what matchMedia reports. Both comparisons
+  // are fresh pages under their own media emulation.
+  test("emulated dark repaints the body and inverts the ink", async ({
+    page,
+  }) => {
     await open(page);
-    // the ideal: the stylesheet carries prefers-color-scheme rules the
-    // tokens would live behind
-    const hasDarkRules = (await page.evaluate(
-      `(() => {
-        for (const sheet of Array.from(document.styleSheets)) {
-          for (const rule of Array.from(sheet.cssRules)) {
-            const text = rule.constructor.name === "CSSMediaRule"
-              ? rule.conditionText
-              : "";
-            if (text.includes("prefers-color-scheme: dark")) return true;
-          }
-        }
-        return false;
-      })()`,
-    )) as boolean;
-    expect(hasDarkRules).toBe(true);
+    const dark = await bodyInk(page);
+    await page.emulateMedia({ colorScheme: "light" });
+    await open(page);
+    const light = await bodyInk(page);
+
+    expect(dark.background).not.toBe(light.background);
+    const darkBackground = luminanceOf(dark.background);
+    expect(darkBackground).toBeLessThan(0.2);
+    expect(luminanceOf(dark.foreground)).toBeGreaterThan(darkBackground);
+    // the light run stays the readable light shell (the fallback story)
+    expect(luminanceOf(light.background)).toBeGreaterThan(0.2);
+    expect(luminanceOf(light.foreground)).toBeLessThan(
+      luminanceOf(light.background),
+    );
   });
 });
 
-test.describe("risk: touch targets", () => {
-  // FINDING (recorded, expected-fail): the native buttons render at
-  // ~21px height (nav 41–75×21, drawn 72×21) — under every mobile
-  // touch-target floor (44px Apple / 48dp Material); the corpus draws
-  // geometry in unit-space (buttons ~1 unit tall), so the DOM mirrors
-  // inherit the browser's intrinsic 21px button height.
+test.describe("touch targets", () => {
+  // Was a recorded expected-fail (native buttons ~21px tall). The
+  // corpus button_bounds floor (max(label + 12, 44) per axis, task 2 of
+  // add-demo-visual-polish) and the shell nav's 44px minimum landed, so
+  // every native button now meets the floor; the check stays as a
+  // regular regression guard.
   test("every native button meets the 44px touch-target floor", async ({
     page,
   }) => {
-    test.fail(true, "buttons render ~21px tall: under the 44px touch-target floor");
     await open(page);
     const sizes = (await page.evaluate(
       `Array.from(document.querySelectorAll("nav button, #demo > div button"))

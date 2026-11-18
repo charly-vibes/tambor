@@ -1,8 +1,9 @@
 // Purpose: the textarea component — the basic_components.cljc port of
 //   `textarea` (and its `textarea-light` variant).
 // Responsibilities: the component view (bordered by default with
-//   padding 5 on x and 2 on y and a 0.65 gray stroke; the light variant
-//   has no border and a 0.97 gray fill; a selection draws a highlight
+//   padding 5 on x and 2 on y and an ambient border-role stroke whose
+//   light value is the 0.65 gray; the light variant has no border and
+//   a 0.97 gray fill; a selection draws a highlight
 //   over its range; a focused textarea draws a translucent gray
 //   cursor), and the event handlers that return the editing intents:
 //   a pointer down inside yields request-focus followed by the cursor
@@ -30,6 +31,8 @@
 import { onPairs, type Intent } from "../../events/bubble.ts";
 import { bounds, label, rectangle, translate, withColor, withStyle, type Color, type Elem, type Vec2 } from "../../views/model.ts";
 import type { Path } from "../../effects/paths.ts";
+import { ambientColor } from "../../ui/ambient-theme.ts";
+import { tokenValue } from "../../ui/theme.ts";
 import { fixedMetrics, type Metrics } from "./buffer.ts";
 import { DEFAULT_TEXTAREA_PROFILE, type TextareaExtra, type TextareaProfile } from "./edit.ts";
 import { onClipboard, onKeyPress, onMouseDown, onMouseMove, onMouseUp, selectionRange, type TextareaCtx } from "./handlers.ts";
@@ -37,8 +40,10 @@ import { onClipboard, onKeyPress, onMouseDown, onMouseMove, onMouseUp, selection
 // The variants of border_default: bordered is the default.
 export type TextareaVariant = "bordered" | "light";
 
-// border_default colors.
-export const BORDER_COLOR: Color = [0.65, 0.65, 0.65];
+// border_default colors. BORDER_COLOR is the light border token (the
+// corpus value); the drawn stroke reads the ambient border role at
+// render time (add-demo-visual-polish D6).
+export const BORDER_COLOR: Color = tokenValue("border", "light");
 export const LIGHT_FILL: Color = [0.97, 0.97, 0.97];
 
 // selection_drawn: a selection draws a highlight over its range and a
@@ -128,7 +133,7 @@ function textareaFrame(
 ): Elem {
   return variant === "light"
     ? [withStyle("fill", withColor(LIGHT_FILL, rectangle(bw, bh))), body]
-    : [withStyle("stroke", withColor(BORDER_COLOR, rectangle(bw + 10, bh + 4))), translate(padX, padY, body)];
+    : [withStyle("stroke", withColor(ambientColor("border"), rectangle(bw + 10, bh + 4))), translate(padX, padY, body)];
 }
 
 // The textarea component: the framed, handler-wrapped view.

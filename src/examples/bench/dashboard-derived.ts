@@ -7,8 +7,9 @@
 //   numbers), bumpOne/bumpHundred (one / 100 series edits), the derive
 //   helpers — summarize (one pass), medianOf/topThird (one sort),
 //   histogram (8 buckets), thresholdFlags, rollingMean, deltaOf —
-//   deriveTiles (the 20 tile lines), dashboardView (control row +
-//   tile grid), and createDashboardDerivedApp.
+//   deriveTiles (the 20 tile lines), tileGrid (label bands packed by the
+//   live label measure), dashboardView (control row + tile grid), and
+//   createDashboardDerivedApp.
 // Rationale: the point of the benchmark is the honest cost of "many
 //   derived values" over plain data — there is no memo, no computed,
 //   no lazy: every tile is re-derived from the same series on every
@@ -21,15 +22,21 @@
 //   the op reads what it needs from the dispatcher, never a closure.
 //   The demo starts empty so "Seed" is the untimed setup op (scenario
 //   dashboard-build) and Bump / Bump 100 cycle as the timed ops
-//   (scenario dashboard-bump).
+//   (scenario dashboard-bump). The tile bands are packed against the
+//   renderer's own label measure (fit.ts's packRows) rather than a
+//   fixed five per row: the 44 px button floor widened the control rows,
+//   and a tuned column count drew past the 300 px root (add-demo-visual-
+//   polish task 4.x).
 
 import {
   button,
+  currentLabelMeasure,
   label as labelNode,
   spacer,
   type Elem,
 } from "../../views/model.ts";
 import { horizontalLayout, verticalLayout } from "../../views/layout.ts";
+import { packRows } from "../../views/fit.ts";
 import type { IntentList } from "../../events/bubble.ts";
 import type { Path } from "../../effects/paths.ts";
 import { makeApp, type App } from "../../effects/dispatch.ts";
@@ -210,14 +217,18 @@ export function deriveTiles(series: readonly number[]): readonly string[] {
   ];
 }
 
-// The tile grid: the 20 lines chunked into rows of five labels.
+// The tile grid: the 20 lines greedily packed into bands whose measured
+// label widths stay inside the 300 px drawn root. A fixed five per row
+// was tuned to the old 28 px buttons; at the 44 px floor that row ran to
+// x ≈ 412, so the column count follows the live label measure instead.
 function tileGrid(tiles: readonly string[], fallback: Elem): Elem {
-  const rows: Elem[] = [];
-  for (let i = 0; i < tiles.length; i += 5) {
-    rows.push(
-      horizontalLayout(tiles.slice(i, i + 5).map((t) => labelNode(t))) as Elem,
-    );
-  }
+  const measure = currentLabelMeasure();
+  // +1 per tile budgets the one-pixel gap horizontalLayout puts between
+  // neighbours, so the band's painted width — not just the sum of the
+  // labels — stays inside 300.
+  const rows = packRows(tiles, (t) => measure(t)[0] + 1).map(
+    (band) => horizontalLayout(band.map((t) => labelNode(t))) as Elem,
+  );
   return (verticalLayout(rows) ?? fallback) as Elem;
 }
 

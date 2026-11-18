@@ -57,9 +57,17 @@ import {
 // for add-spa-test-seams (query-string boot selection + opt-in debug
 // snapshot in the shared SPA entry + the boot/fallback e2e wiring);
 // re-recorded again the same day to 155204 B for that change's
-// pre-commit complexity split (mountAvailable/mountDemo helpers); any
-// later growth beyond this recorded total still fails).
-const BASELINE_GZIP_BYTES = 155_204;
+// pre-commit complexity split (mountAvailable/mountDemo helpers);
+// re-recorded 2026-11-18 to 156159 B for add-demo-visual-polish (ambient
+// theme seam installed by the SPA entry, shell token publishing, and the
+// bombadil visual-facts module boundary); re-recorded again the same day
+// to 156868 B for the token-ink CSS-var emission (cssVarColor maps
+// foreground/muted/accent/border inks to --tambor-* vars so the drawn
+// tree follows the scheme without JS timing) and the collapsed-fill
+// extent settle; any later growth beyond this recorded total still
+// fails); 157027 B after the archive sync regenerated the docs corpus
+// content chunks.
+const BASELINE_GZIP_BYTES = 157_027;
 
 let heavyRelease: HeavyRelease | undefined;
 

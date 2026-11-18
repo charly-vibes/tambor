@@ -22,7 +22,7 @@ Port of the `membrane.ui` records: Label, Rectangle, RoundedRectangle, Path, Ima
 | group_is_node | invariant | a vector or list of nodes behaves as a group node whose children are its elements, and nil behaves as an empty node | [[view.model]] |
 | make_node_roundtrip | invariant | makeNode(node, children(node)) deep-equals node | [[view.model]] |
 | text_measure_injected | invariant | label size comes from an injected measure function so bounds work headless and per backend | [[view.model]] |
-| button_bounds | invariant | button bounds equal label bounds plus 12 on each axis | [[view.model]] |
+| button_bounds | invariant | button bounds equal the componentwise maximum of (label bounds plus [12, 12]) and [44, 44] — the corpus touch floor applied to the drawn mirror | [[view.model]] |
 | set_size_single_child | invariant | setWidth and setHeight on a handler wrapper succeed only when it has exactly one child and otherwise throw | [[view.model]] |
 | checkbox_geometry | invariant | the ui checkbox is a 12 by 12 rounded square with radius 2, gray stroke when unchecked, and when checked a blue fill and border [0.2, 0.56, 0.99] with a white check path through [2, 6], [5, 9], [10, 2] | [[view.model]] |
 | style_wrappers_transparent | invariant | WithColor, WithStyle and WithStrokeWidth do not change bounds of their children | [[view.model]] |
@@ -54,7 +54,7 @@ Port of the `membrane.ui` records: Label, Rectangle, RoundedRectangle, Path, Ima
 | p_group | unit | [[view.model.group_is_node]] | vectors with nil members | children are the elements and nil members measure [0, 0] |
 | p_roundtrip | unit | [[view.model.make_node_roundtrip]] | random trees | makeNode(n, children(n)) deep-equals n |
 | p_measure | unit | [[view.model.text_measure_injected]] | stub measure fn | label bounds equal the stub output |
-| p_button_bounds | unit | [[view.model.button_bounds]] | random label text | bounds equal label bounds plus [12, 12] |
+| p_button_bounds | unit | [[view.model.button_bounds]] | random label text | bounds equal max(label bounds plus [12, 12], [44, 44]) componentwise |
 | p_set_size | unit | [[view.model.set_size_single_child]] | wrappers with one and two children | one child succeeds and two children throws |
 | p_checkbox_geometry | unit | [[view.model.checkbox_geometry]] | checked true and false | bounds are 12 by 12 in both states and only the checked view has the check path |
 | p_style | unit | [[view.model.style_wrappers_transparent]] | random colors and styles | bounds equal the unwrapped bounds |
@@ -117,7 +117,7 @@ Every property row SHALL be verified by exactly one dedicated scenario;
 #### Scenario: p_button_bounds
 
 - **WHEN** random label text
-- **THEN** bounds equal label bounds plus [12, 12]
+- **THEN** bounds equal max(label bounds plus [12, 12], [44, 44]) componentwise
 - **VERIFIES** [[view.model.p_button_bounds]]
 
 #### Scenario: p_set_size

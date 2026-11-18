@@ -16,20 +16,76 @@
         font-style: normal;
         font-display: swap;
       }
+      /* The shell palette — the ONE duplication of src/ui/theme.ts,
+         which stays the single source of the values: each token here is
+         that file's per-scheme value with the 0..1 channel scaled to
+         0..255 and rounded, and tests/theme-css-sync.test.ts reads this
+         block and fails on any drift. The palette lives in CSS because
+         CSS must pick the scheme on the FIRST paint: Chromium can
+         answer the dark media query wrong while the page initialises
+         (~450ms late, without a change event), so a script-resolved
+         palette paints the wrong shell before it can recover.
+         The muted token is the accessible secondary ink (inactive
+         option labels, the demo blurb prose): light [0.45] is 4.75:1
+         on the white background, dark [0.75] is ~9:1 on the dark
+         background — the 4.5:1 floor in both schemes. */
+      :root {
+        --tambor-background: rgb(255, 255, 255);
+        --tambor-foreground: rgb(26, 26, 26);
+        --tambor-accent: rgb(0, 122, 255);
+        --tambor-border: rgb(166, 166, 166);
+        --tambor-danger: rgb(255, 0, 0);
+        --tambor-muted: rgb(115, 115, 115);
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --tambor-background: rgb(31, 31, 36);
+          --tambor-foreground: rgb(242, 242, 242);
+          --tambor-accent: rgb(0, 79, 204);
+          --tambor-border: rgb(89, 89, 89);
+          --tambor-danger: rgb(255, 89, 89);
+          --tambor-muted: rgb(191, 191, 191);
+        }
+      }
+      /* Auto inline margins centre the capped column in the viewport; the
+         2rem padding is the reading gutter. Padding (not margin) keeps
+         the gutter at every width — with width:auto an auto horizontal
+         margin collapses to 0, so a margin-only gutter would vanish on
+         tablets. max-width is the 40rem measure plus both gutters, so
+         the text measure is unchanged. Centring the column is what
+         gives the drawn stage equal left/right gutters at wide
+         viewports (add-demo-visual-polish 5.2). */
+      /* Shell ink: the palette above switches with the media query, so
+         the shell is theme-correct on first paint with NO script and no
+         inline custom properties (an inline write would outrank the
+         media query). spa/main.ts only installs the same host matcher
+         for the DRAWN demo, which resolves these tokens through
+         ui/theme.ts. */
       body {
         font-family: "Tambor UI", system-ui, sans-serif;
-        margin: 2rem;
-        max-width: 40rem;
+        margin: 2rem auto;
+        max-width: calc(40rem + 4rem);
+        padding-inline: 2rem;
+        background: var(--tambor-background);
+        color: var(--tambor-foreground);
       }
-      /* The drawn stage is 300 CSS px wide; 2rem page margins pushed it
-         past a 320px viewport. One shell margin for phones keeps the
-         stage inside the page (tambor-v3s). */
+      /* The drawn stage is 300 CSS px wide; 2rem gutters pushed it past
+         a 320px viewport. One shell gutter for phones keeps the stage
+         inside the page (tambor-v3s). */
       @media (max-width: 480px) {
-        body { margin: 0.5rem; }
+        body {
+          margin: 0.5rem auto;
+          padding-inline: 0.5rem;
+        }
       }
       /* Last-resort local scroller: a stage wider than the content box
          scrolls inside the demo instead of widening the whole page. */
       #demo { overflow-x: auto; }
+      /* The mount pins the drawn root to the 300px render viewport, so
+         auto inline margins centre it in the content box: equal gutters
+         at every width, no fixed left offset, and the root's own box
+         stays the measurable pointer origin (5.2). */
+      #demo > div { margin-inline: auto; }
       button { cursor: pointer; }
       /* The nav grows with the demo registry. A horizontal chip scroller
          keeps the selected demo above the fold (wrapping took 5 rows and
@@ -46,11 +102,48 @@
       nav button {
         font: inherit;
         flex: none;
+        /* 44px on both axes is the corpus mobile_first floor for every
+           interaction the shell owns (5.1). */
+        min-width: 44px;
         min-height: 44px;
-        padding: 0.5rem 0.75rem;
+        padding: 0.5rem 0.875rem;
+        /* Chip chrome: the row reads as controls, not floating text. The
+           fill is a foreground tint over the background token, so both
+           schemes keep a chip surface that sits off the page. */
+        border: 1px solid var(--tambor-border);
+        border-radius: 6px;
+        background: color-mix(
+          in srgb,
+          var(--tambor-foreground) 5%,
+          var(--tambor-background)
+        );
+        color: var(--tambor-foreground);
       }
-      nav button.active { font-weight: bold; }
-      .blurb { color: #555; }
+      /* The active chip is the demo on screen: bold weight (as before)
+         plus an accent tint/border, with the accent ring drawn inside
+         the box so the scroller's measured width never grows. A tint,
+         not a solid accent fill, keeps the foreground token readable on
+         the chip in BOTH schemes. */
+      nav button.active {
+        font-weight: bold;
+        background: color-mix(
+          in srgb,
+          var(--tambor-accent) 15%,
+          var(--tambor-background)
+        );
+        border-color: var(--tambor-accent);
+        box-shadow: inset 0 0 0 2px var(--tambor-accent);
+      }
+      /* Blurb: the muted token (the secondary ink, AA-readable in both
+         schemes), 1.5 leading and a measure short enough to read
+         comfortably (5.2). Auto inline margins keep it with the centred
+         stage rather than pinned to the column's left edge. */
+      .blurb {
+        color: var(--tambor-muted);
+        line-height: 1.5;
+        max-width: 380px;
+        margin-inline: auto;
+      }
     </style>
   </head>
   <body>

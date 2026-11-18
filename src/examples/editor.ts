@@ -14,7 +14,10 @@
 //   the view is spaFocusView-wrapped so the corpus request-focus effect
 //   (registered per mount by the SPA input surface) flows to the
 //   textarea as context focus, and every edit rides app.dispatch so the
-//   mount's draw wire stays the only path (tambor-a45).
+//   mount's draw wire stays the only path (tambor-a45). The SEED buffer
+//   is hard-wrapped to short lines: the view paints it as one unwrapped
+//   label, so the seed text — not a textarea change — is what keeps the
+//   drawn box inside the 300 px demo root.
 
 import {
   defaultHandler,
@@ -46,14 +49,20 @@ const EXTRA_PATH: Path = [["keypath", "textarea-state"]];
 
 // The seeded markdown: multi-line, with an accented word (a combining
 // mark under NFC-free typing) and a ZWJ family emoji, so the demo shows
-// cluster-aware cursor movement and deletion.
+// cluster-aware cursor movement and deletion. Every line is hard-wrapped
+// to at most 34 characters: the painter draws the whole buffer as ONE
+// label and the textarea does not wrap, so a longer line would overdraw
+// the demo's 300 px root.
 const SEED = [
   "# slide deck",
   "",
   "- café — édité",
   "- family 👨‍👩‍👧 flag 🇺🇸",
   "",
-  "Click a line, then: shift+arrows select, ctrl+z undo, up and down keep the column.",
+  "Click a line, then:",
+  "shift+arrows select,",
+  "ctrl+z undo, up and down",
+  "keep the column.",
 ].join("\n");
 
 // The editing intents the extended textarea emits and the handler routes

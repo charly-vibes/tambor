@@ -5,10 +5,11 @@
 //   padding on y and rounded corners of 4 (list_geometry); rows are at
 //   least 44 px tall on touch devices (touch_rows); a pointer down on a
 //   row returns select with the selected path and the row value
-//   (row_select_effect); the selected row has a blue fill with a white
-//   label and a hovered row a light gray fill (row_visuals); per-row
-//   hover flags live in extra keyed by the row's hover key, entered on
-//   mouse-move over the body and left on a global mouse-move outside
+//   (row_select_effect); the selected row fill is the ambient accent
+//   role with a white label and a hovered row a light gray fill
+//   (row_visuals); per-row hover flags live in extra keyed by the
+//   row's hover key, entered on mouse-move over the body and left on a
+//   global mouse-move outside
 //   (row_hover_keyed, with the effect shapes from components.hover).
 // Rationale: openspec/specs/components-select/spec.md is the design authority — never
 //   improvise semantics beyond its constraint rows. The box is the list
@@ -16,12 +17,17 @@
 //   presence in the tree is what "the list is part of the view" reads
 //   as. Each row draws a spacer at its full extent so the row is
 //   clickable across its width without inventing fills for plain rows.
-//   The corpus pins the selected blue [0, 0.48, 1], the hovered light
-//   gray [0.976, 0.976, 0.976] and the white label.
+//   The corpus pins the selected blue, the hovered light gray
+//   [0.976, 0.976, 0.976] and the white label. The blue is not a literal
+//   here: the drawn fill is the ambient accent role resolved at render
+//   time (add-demo-visual-polish D6), and SELECTED_FILL names the light
+//   accent token the corpus and the bombadil carve-out pin.
 
 import { defineComponent, type Props } from "../../model/component.ts";
 import type { Path } from "../../effects/paths.ts";
 import { MIN_TARGET } from "../../app/touch.ts";
+import { ambientColor } from "../../ui/ambient-theme.ts";
+import { tokenValue } from "../../ui/theme.ts";
 import {
   label as labelNode,
   on,
@@ -37,8 +43,10 @@ import {
 import type { Options } from "./types.ts";
 import { hoverFlag, hoverKey } from "./hover.ts";
 
-// row_visuals colors, pinned by the corpus.
-export const SELECTED_FILL: Color = [0, 0.48, 1];
+// row_visuals colors, pinned by the corpus. SELECTED_FILL is the light
+// accent token (the corpus value); the drawn fill reads the ambient
+// accent role at render time (D6).
+export const SELECTED_FILL: Color = tokenValue("accent", "light");
 export const HOVER_FILL: Color = [0.976, 0.976, 0.976];
 export const WHITE: Color = [1, 1, 1];
 
@@ -85,11 +93,11 @@ export const dropdownList = defineComponent(
       const isSelected = value === selected;
       const hoverPath: Path = [...$extra, ["keypath", hoverKey(value)]];
 
-      // row_visuals: the selected row has a blue fill with a white
-      // label; a hovered row has a light gray fill
+      // row_visuals: the selected row has the ambient accent fill with
+      // a white label; a hovered row has a light gray fill
       const visuals: Elem[] = [spacer(rowWidth, rowHeight)];
       if (isSelected) {
-        visuals.push(withColor(SELECTED_FILL, rectangle(rowWidth, rowHeight)));
+        visuals.push(withColor(ambientColor("accent"), rectangle(rowWidth, rowHeight)));
         visuals.push(withColor(WHITE, labelNode(text)));
       } else if (hovered) {
         visuals.push(withColor(HOVER_FILL, rectangle(rowWidth, rowHeight)));

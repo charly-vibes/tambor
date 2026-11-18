@@ -42,7 +42,7 @@ import { staticClosure, type MetaOutputs } from "./metafile.ts";
 // reports, update THIS ONE constant, and run tools/stamp-docs.sh if
 // the demo-dist total changed too (it stamps README/EVALUATION from
 // the same metafile).
-export const DOCS_SHELL_GZIP_CEILING_BYTES = 31599;
+export const DOCS_SHELL_GZIP_CEILING_BYTES = 34281;
 
 // The measured shell gzip for a docs entry output: the gzip of every
 // file in its static-import closure (shared chunks ride the initial

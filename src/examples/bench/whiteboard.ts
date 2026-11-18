@@ -2,9 +2,10 @@
 //   business suite: a 10k-shape scene with drag, resize, undo and
 //   remote cursors, mounted as an ordinary gallery demo through the
 //   same makeApp/SPA mount path as every other corpus app.
-// Responsibilities: whiteboardView (three control rows + summary line +
-//   the drawn scene window + the cursor markers) and
-//   createWhiteboardApp; the op shapes live in whiteboard-scene.ts.
+// Responsibilities: whiteboardView (three control rows + the summary
+//   line fitted to stage-width labels + the drawn scene window + the
+//   cursor markers) and createWhiteboardApp; the op shapes live in
+//   whiteboard-scene.ts.
 // Rationale: every op is an ordinary ["update", …] intent applied by
 //   the registry-aware dispatcher — no benchmark-specific path. The
 //   drawn scene is the honest scene-layer cost: the ~700 shapes the
@@ -20,7 +21,6 @@
 
 import {
   button,
-  label as labelNode,
   rectangle,
   spacer,
   translate,
@@ -29,6 +29,7 @@ import {
   type Elem,
 } from "../../views/model.ts";
 import { horizontalLayout, verticalLayout } from "../../views/layout.ts";
+import { fittedLabels } from "../../views/fit.ts";
 import type {IntentList } from "../../events/bubble.ts";
 import type { Path } from "../../effects/paths.ts";
 import { makeApp, type App } from "../../effects/dispatch.ts";
@@ -137,13 +138,15 @@ function controlRows(appOf: () => App): readonly Elem[] {
 }
 
 // The whiteboard view: the control rows, the summary (the no-op guard
-// line), then the scene + cursor layers — a pure function of state.
+// line, one label per fitted line — a single line overflowed the
+// 300 px stage), then the scene + cursor layers — a pure function of
+// state.
 export function whiteboardView(state: WBState, appOf: () => App): Elem {
-  const summary = labelNode(summaryLine(state)) as Elem;
+  const summary = fittedLabels(summaryLine(state)) as readonly Elem[];
   const body = [
     ...controlRows(appOf),
     spacer(0, 4),
-    summary,
+    ...summary,
     spacer(0, 4),
     sceneLayer(state.shapes),
     cursorLayer(state.cursors.users),

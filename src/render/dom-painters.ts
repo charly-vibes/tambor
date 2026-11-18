@@ -3,7 +3,8 @@
 // Responsibilities: element construction for label, button, rectangle,
 //   rounded rectangle, translate, rotate/scale/scissor, with-color,
 //   with-style, with-stroke-width, handler, text-selection, text-cursor,
-//   image, arc and path; plus the at-origin helper every emission uses.
+//   image, arc and path; plus the at-origin helper every emission uses
+//   and the fill extent a with-color wrapper paints.
 // Rationale: the corpus draw model composites EVERYTHING at the current
 //   origin — a bare sequence superimposes its children there (canvas and
 //   text backends paint each child at the same origin), and only translate
@@ -15,13 +16,45 @@
 //   to anchor to the document, and in-flow siblings stacked as text lines
 //   instead of superimposing — 'addcomplete' overdraw). Draw order parity:
 //   absolutely positioned siblings with auto z-index stack in DOM order,
-//   which is the paint order the canvas backend uses.
+//   which is the paint order the canvas backend uses. A with-color
+//   wrapper's background is the fill its shape content would paint
+//   (canvas fillStyle), so the wrapper must have a box: 100% of the
+//   containing block in normal flow, the shapes' own extent when that
+//   block has none (an absolutely positioned group of absolute children
+//   collapses to 0×0 and the percentage resolves to nothing — the
+//   selected-row accent never painted).
 
 import type { ElementLike } from "./domsim.ts";
 import type { AnyDraw } from "./primitives.ts";
-import type { Color } from "../views/model.ts";
+import {
+  height as elemHeight,
+  isElem,
+  width as elemWidth,
+  type Color,
+  type Vec2,
+} from "../views/model.ts";
 import { buttonBounds } from "../views/geometry.ts";
 import { currentLabelMeasure } from "../views/nodes.ts";
+import { cssVarColor } from "../ui/ambient-theme.ts";
+
+// The color a STYLE property paints: a token value emits the CSS custom
+// property (the browser resolves it at paint time against the cascade,
+// timing-proof against a host that reports the scheme late — the
+// dark-scheme audit; ambient-theme.cssVarColor maps only ink roles), any
+// other color stays the literal rgb. The svg ATTRIBUTE stroke path
+// (svgStroke's p.attrs["stroke"]) does NOT go through this: attributes
+// cannot carry var() and the danger red pin must stay byte-stable.
+function cssColor(
+  color: Color | undefined,
+  literal: string | undefined,
+): string {
+  // stroke mode with no color draws the default ink (canvas stroke
+  // semantics): no Color to map, straight to the literal fallback
+  if (color === undefined) return literal ?? "currentColor";
+  // a var() mapping wins; the literal rgb is the fallback for
+  // non-token colors and the `undefined` ink (currentColor cascade)
+  return cssVarColor(color) ?? literal ?? "currentColor";
+}
 
 // A drawable node, as the draw tree actually carries it.
 export interface DomNode {
@@ -67,6 +100,18 @@ export interface BuildCtx {
   // so selected-row blue, hover gray and gray no-selection text show on
   // the DOM backend too.
   ink?: string | undefined;
+  // The fill wrappers awaiting their extent (settleFillExtents): a
+  // percentage size cannot resolve while the tree is still detached —
+  // builders append bottom-up, so every wrapper is measured after the
+  // root build attaches the whole tree.
+  fills?: FillRequest[];
+}
+
+// A fill wrapper awaiting its extent: the element, and the area its
+// shape content paints (measured from the wrapper's own origin).
+export interface FillRequest {
+  readonly el: ElementLike;
+  readonly extent: Vec2;
 }
 export type DomPainter = (ctx: BuildCtx, node: DomNode, parent: ElementLike) => void;
 
@@ -93,8 +138,11 @@ export function buildLabel(ctx: BuildCtx, node: DomNode, parent: ElementLike): v
   // text ink (tambor-2jz): the threaded with-color ink paints the span
   // (canvas fillStyle semantics); a label's own color, when the draw tree
   // carries one, paints it directly. No color inherits — the span stays
-  // whatever the host cascade gives it.
-  const ink = ctx.ink ?? nodeColor(node);
+  // whatever the host cascade gives it. Style-painted token inks emit the
+  // custom property (see cssColor); the svg attribute path stays literal.
+  const literal = nodeColor(node);
+  const ink = ctx.ink ??
+    (node.color ? cssColor(node.color, literal) : literal);
   if (ink) el.style["color"] = ink;
   // Corpus spaces are LAYOUT: centredLabel pads with space runs to centre
   // text in its measured box (counter_label_width et al) — the measure
@@ -147,11 +195,11 @@ export function buildRectangle(ctx: BuildCtx, node: DomNode, parent: ElementLike
   el.style["height"] = `${node.height ?? 0}px`;
   const color = nodeColor(node);
   const style = ctx.style ?? "fill";
-  if (color && style !== "stroke") el.style["background"] = color;
+  if (color && style !== "stroke") el.style["background"] = cssColor(node.color!, color);
   if (style === "stroke" || style === "stroke-and-fill") {
     // a stroked rectangle outlines its box (canvas stroke semantics);
     // stroke mode with no color draws the default ink
-    el.style["border"] = `1px solid ${color ?? "currentColor"}`;
+    el.style["border"] = `1px solid ${cssColor(node.color!, color ?? "currentColor")}`;
     el.style["box-sizing"] = "border-box";
   }
   parent.appendChild(el);
@@ -180,37 +228,147 @@ export function buildWithStyle(ctx: BuildCtx, node: DomNode, parent: ElementLike
   ctx.style = prev;
 }
 
+// The drawables a fill paint covers: canvas fill (setStyle) fills a
+// rectangle's or rounded rectangle's own box, and nothing else in a
+// group — glyphs take the ink as their text color and path strokes take
+// it as their stroke.
+const FILLED_TYPES: Readonly<Record<string, true>> = {
+  "rectangle": true,
+  "rounded-rectangle": true,
+};
+
+// The wrappers that keep their children at the wrapper's own origin, so
+// a shape below one is still filled from (0, 0).
+const SAME_ORIGIN_TYPES: Readonly<Record<string, true>> = {
+  "with-color": true,
+  "with-style": true,
+  "with-stroke-width": true,
+  "handler": true,
+  "rotate": true,
+  "scale": true,
+  "scissor": true,
+};
+
+// The area a fill wrapper is itself responsible for painting, measured
+// from its own origin: the union of the boxes of the shapes it wraps.
+// Nil when the wrapper must not become an area fill — text and paths
+// carry the ink in their own painters, and a translate moves its
+// content away from the wrapper's origin, where a wrapper box could not
+// follow it without moving the children (position semantics stay the
+// draw tree's). The boxes are the corpus ones (views/model width and
+// height), the same numbers buildRectangle emits.
+function fillExtent(drawables: readonly AnyDraw[]): Vec2 | null {
+  let w = 0;
+  let h = 0;
+  let found = false;
+  for (const d of drawables) {
+    if (d == null) continue;
+    if (Array.isArray(d)) {
+      const extent = fillExtent(d);
+      if (extent === null) return null;
+      w = Math.max(w, extent[0]);
+      h = Math.max(h, extent[1]);
+      found = true;
+      continue;
+    }
+    const n = d as DomNode;
+    if (FILLED_TYPES[n.type] === true && isElem(n)) {
+      w = Math.max(w, elemWidth(n));
+      h = Math.max(h, elemHeight(n));
+      found = true;
+      continue;
+    }
+    if (n.type === "spacer") continue; // lays out, paints nothing
+    if (SAME_ORIGIN_TYPES[n.type] === true && n.drawables !== undefined) {
+      const extent = fillExtent(n.drawables);
+      if (extent === null) return null;
+      w = Math.max(w, extent[0]);
+      h = Math.max(h, extent[1]);
+      found = true;
+      continue;
+    }
+    return null;
+  }
+  return found ? [w, h] : null;
+}
+
+// Size the fill wrappers collected during a root build. 100% of the
+// containing block is a fill's area whenever that block has one (normal
+// flow); a block with no box of its own — an absolutely positioned
+// group whose children are all absolute, the dropdown body — resolves
+// the percentage to 0×0 and the fill paints nothing (the selected row's
+// accent, row_visuals). A wrapper with no box but with shapes is sized
+// to their extent: its children are absolute at their offsets, so the
+// size gives the background something to cover and moves nothing.
+// The measurement has to wait for the whole tree: builders create
+// elements detached and append bottom-up, and a detached element has no
+// box at all (a browser reports a zero rect for it), so settling
+// per-wrapper during the build would misread every wrapper as collapsed.
+// Every box is read before any style write — a write between reads
+// dirties the layout again and costs a reflow per wrapper. Wrappers with
+// no fill area are never queued.
+export function settleFillExtents(ctx: BuildCtx): void {
+  const fills = ctx.fills;
+  if (fills === undefined) return;
+  ctx.fills = [];
+  const collapsed: FillRequest[] = [];
+  for (const req of fills) {
+    const r = req.el.getBoundingClientRect();
+    if (r.width !== 0 || r.height !== 0) continue;
+    const [w, h] = req.extent;
+    if (w <= 0 || h <= 0) continue;
+    collapsed.push(req);
+  }
+  for (const req of collapsed) {
+    req.el.style["width"] = `${req.extent[0]}px`;
+    req.el.style["height"] = `${req.extent[1]}px`;
+  }
+}
+
 export function buildWrapperWithColor(ctx: BuildCtx, node: DomNode, parent: ElementLike): void {
   const el = ctx.make("div");
   atOrigin(el);
   const color = nodeColor(node);
   const style = ctx.style ?? "fill";
+  const fills = color !== undefined && style !== "stroke";
   // the stroke ink threads for the subtree (svg path/arc read it) and the
   // text ink threads to spans (tambor-2jz) — the canvas counterpart is
   // setStyle: with-color sets the fill and stroke color
   const prevStroke = ctx.stroke;
   const prevInk = ctx.ink;
   if (color) {
+    // the stroke ink threads LITERAL for the subtree (svg path/arc paint
+    // it through a stroke ATTRIBUTE, which cannot carry var() and whose
+    // corpus pins stay byte-stable); the text ink threads the var() form
+    // so spans resolve per scheme at paint time
     ctx.stroke = color;
-    ctx.ink = color;
+    ctx.ink = cssColor(node.color!, color);
   }
-  if (color && style !== "stroke") {
-    el.style["background"] = color;
+  if (fills) {
+    el.style["background"] = cssColor(node.color!, color);
     // canvas fill paints the whole clip extent — an auto-sized wrapper has
     // zero extent, so the background would paint nothing (tambor-2jz audit:
     // no element had both a background and non-zero width). The wrapper
-    // covers its containing origin (the nearest positioned ancestor).
+    // covers its containing origin (the nearest positioned ancestor);
+    // sizeCollapsedFill covers the shapes when that origin has no box.
     el.style["width"] = "100%";
     el.style["height"] = "100%";
   }
   if (color && (style === "stroke" || style === "stroke-and-fill")) {
-    el.style["border"] = `1px solid ${color}`;
+    el.style["border"] = `1px solid ${cssColor(node.color!, color)}`;
     el.style["box-sizing"] = "border-box";
   }
   for (const child of node.drawables ?? []) ctx.build(child, el);
   ctx.stroke = prevStroke;
   ctx.ink = prevInk;
   parent.appendChild(el);
+  // settle once the whole tree is attached (a detached element has no
+  // box, so the percentage cannot be read here); wrappers without a fill
+  // area are never measured
+  if (fills) {
+    const extent = fillExtent(node.drawables ?? []);
+    if (extent !== null) (ctx.fills ??= []).push({ el, extent });
+  }
 }
 
 // with-stroke-width: the width governs how DESCENDANTS stroke (canvas

@@ -6,7 +6,7 @@
 //   cursor 0), STEPS_PATH/CURSOR_PATH, the op builders — appendSteps
 //   (10k fresh steps, ids continue), advanceCursor (cursor follows the
 //   appended steps), scrubTo (absolute cursor set), undoOne (cursor −1,
-//   never below 0), and timeTravelView (a control row of op buttons
+//   never below 0), and timeTravelView (two control rows of op buttons
 //   over the visible prefix stack).
 // Rationale: no benchmark-specific fast paths — the keyed-table-faithful
 //   reading of time travel: the log is plain data that is never
@@ -119,18 +119,22 @@ function stepLabel(step: Step): Elem {
   return labelNode(`step ${step.id} — ${step.label}`);
 }
 
-// The time-travel view: the control row, the cursor readout, then the
+// The time-travel view: the control rows, the cursor readout, then the
 // visible prefix as a label stack. The stack is re-derived from the
 // plain state on every view call — the honest whole-view measure.
 export function timeTravelView(state: TimeTravelState): Elem {
-  const controls = horizontalLayout([
+  // Two rows of two buttons: the four 44px-floor buttons measure
+  // 80+100+107+86 with 7px gaps — one row overflows the 300px drawn
+  // root, two rows of two stay inside it.
+  const row1 = horizontalLayout([
     button("Build 10k", (): IntentList => [
       ["update", STEPS_PATH, (steps: readonly Step[]) => appendSteps(steps)],
       ["update", CURSOR_PATH, advanceCursor],
     ] as IntentList),
     spacer(5, 0),
     opButton("Scrub to 5k", scrubTo(SCRUB_TARGET)),
-    spacer(5, 0),
+  ]) as Elem;
+  const row2 = horizontalLayout([
     opButton("Scrub to 10k", scrubTo(STEP_CHUNK)),
     spacer(5, 0),
     opButton("Undo one", undoOne),
@@ -139,8 +143,15 @@ export function timeTravelView(state: TimeTravelState): Elem {
     `${Math.min(state.cursor, state.steps.length)}/${state.steps.length}`,
   );
   const visible = state.steps.slice(0, state.cursor).map(stepLabel);
-  const body = [controls, spacer(0, 10), readout, ...visible] as readonly Elem[];
-  return (verticalLayout(body) ?? controls) as Elem;
+  const body = [
+    row1,
+    spacer(0, 4),
+    row2,
+    spacer(0, 10),
+    readout,
+    ...visible,
+  ] as readonly Elem[];
+  return (verticalLayout(body) ?? row1) as Elem;
 }
 
 // The bench app: the ordinary registry-aware makeApp mount, the same

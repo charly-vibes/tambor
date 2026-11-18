@@ -3,9 +3,17 @@
 // Responsibilities: rowExtraPath / ROW_EXTRA_PATH (the per-row textarea
 //   scratch), todoItem (item_layout, item_bindings, delete_emits,
 //   complete_toggles), and toggle (toggle_render, toggle_sets_filter).
+//   The delete-X strokes are the ambient danger role; the unselected
+//   toggle labels are the ambient muted role.
 // Rationale: openspec/specs/example-todo/spec.md is the design authority. Split from
 //   todo.ts so no file carries both the app shell and the item
-//   vocabulary (tambor-272). No behavior beyond the corpus.
+//   vocabulary (tambor-272). No behavior beyond the corpus. The delete
+//   X reads ambientColor("danger") at render time
+//   (add-demo-visual-polish D6): danger.light is exactly the red stroke
+//   example.todo.delete_x_geometry pins, and the dark scheme lifts it.
+//   The toggle's unselected labels read ambientColor("muted") at render
+//   time: muted.light is the accessible 4.5:1 gray (D1) and the dark
+//   scheme lifts it to keep the floor on the dark background.
 
 import {
   label as labelNode,
@@ -16,7 +24,6 @@ import {
   translate,
   withStrokeWidth,
   path,
-  type Color,
   type Elem,
 } from "../../views/model.ts";
 import { horizontalLayout } from "../../views/layout.ts";
@@ -24,12 +31,13 @@ import type { Path } from "../../effects/paths.ts";
 import { textarea } from "../../components/textarea/textarea.ts";
 import { initialTextareaExtra } from "../../components/textarea/edit.ts";
 import type { TodoItem } from "./todo.ts";
+import { ambientColor } from "../../ui/ambient-theme.ts";
 
 export function deleteX(): Elem {
-  const red: Color = [1, 0, 0];
+  const danger = ambientColor("danger");
   return [
-    withStrokeWidth(3, withColor(red, path([0, 0], [10, 10]))),
-    withStrokeWidth(3, withColor(red, path([10, 0], [0, 10]))),
+    withStrokeWidth(3, withColor(danger, path([0, 0], [10, 10]))),
+    withStrokeWidth(3, withColor(danger, path([10, 0], [0, 10]))),
   ];
 }
 
@@ -84,21 +92,19 @@ export function todoItem(todo: TodoItem, $todo: Path, extraPath: Path = ROW_EXTR
   ];
 }
 
-// The gray of the unselected toggle options (toggle_render) — the
-// accessible gray meeting the 4.5:1 contrast floor
-// (add-demo-visual-polish D1; tambor-71u).
-const GRAY: Color = [0.45, 0.45, 0.45];
-
 // The toggle (toggle_render, toggle_sets_filter): the option labels,
-// the selected one plain and the others gray and clickable, separated
+// the selected one plain and the others muted and clickable, separated
 // by 5 px spacers; clicking a non-selected option returns set with the
 // selected path and that option, and the selected option itself handles
-// nothing.
+// nothing. The muted ink is the ambient role resolved at render time —
+// the accessible inactive ink meeting the 4.5:1 floor in both schemes
+// (add-demo-visual-polish D1; tambor-71u).
 export function toggle(
   options: readonly string[],
   selected: string,
   $selected: Path,
 ): Elem {
+  const muted = ambientColor("muted");
   const out: Elem[] = [];
   options.forEach((opt, i) => {
     if (i > 0) out.push(spacer(5, 0));
@@ -106,7 +112,7 @@ export function toggle(
       out.push(labelNode(opt));
     } else {
       out.push(
-        on("mouse-down", () => [["set", $selected, opt]], withColor(GRAY, labelNode(opt))),
+        on("mouse-down", () => [["set", $selected, opt]], withColor(muted, labelNode(opt))),
       );
     }
   });

@@ -7,8 +7,8 @@
 //   ITEMS_PATH/SAVED_PATH and the collect-one save/restore paths,
 //   build5k (5000 fresh items), checksumOf (FNV-1a over the items),
 //   serialise (whole state → one string), restoreFrom (string → items,
-//   checksum-verified), saveRestore5kView (control row + status line),
-//   and createSaveRestore5kApp.
+//   checksum-verified), saveRestore5kView (control row + status line
+//   wrapped through fittedLabels), and createSaveRestore5kApp.
 // Rationale: the point of the benchmark is that state is plain data —
 //   save is serialise, restore is parse, and neither traverses the
 //   component tree. No benchmark-specific fast paths: every op is an
@@ -20,15 +20,18 @@
 //   the measured op is serialise/parse + a small re-derive, not 5k
 //   drawn rows; the demo starts empty so "Build 5k" is the untimed
 //   setup op (scenario save-restore-5k) and Save/Restore cycle as the
-//   timed ops.
+//   timed ops. The summary is one drawn line only while it fits: past
+//   the 300 px stage it becomes stacked fitted labels (label text is
+//   single-line by definition), and statusLine still returns the one
+//   string the tests assert on.
 
 import {
   button,
-  label as labelNode,
   spacer,
   type Elem,
 } from "../../views/model.ts";
 import { horizontalLayout, verticalLayout } from "../../views/layout.ts";
+import { fittedLabels } from "../../views/fit.ts";
 import type { IntentList } from "../../events/bubble.ts";
 import type { Path } from "../../effects/paths.ts";
 import { makeApp, type App } from "../../effects/dispatch.ts";
@@ -138,9 +141,11 @@ export function statusLine(state: SaveRestoreState): string {
   return state.saved === "" ? `${base} · nothing saved` : `${base} · saved ${state.saved.length} B`;
 }
 
-// The view: the control row, a spacer, the status line. The buttons'
-// update intents route through the app's dispatcher; the drawn label
-// is pure view — the serialise/parse happens in the state, not here.
+// The view: the control row, a spacer, then the status line as fitted
+// labels — stacked when the summary is wider than the 300 px stage, so
+// every drawn label stays inside it. The buttons' update intents route
+// through the app's dispatcher; the drawn labels are pure view — the
+// serialise/parse happens in the state, not here.
 export function saveRestore5kView(state: SaveRestoreState): Elem {
   const controls = horizontalLayout([
     opButton("Build 5k", ITEMS_PATH, () => build5k()),
@@ -149,8 +154,8 @@ export function saveRestore5kView(state: SaveRestoreState): Elem {
     spacer(5, 0),
     opButton("Restore", RESTORE_PATH, restoreOp),
   ]) as Elem;
-  const body = [controls, spacer(0, 10), labelNode(statusLine(state))] as const;
-  return (verticalLayout([...body]) ?? controls) as Elem;
+  const body = [controls, spacer(0, 10), ...fittedLabels(statusLine(state))];
+  return (verticalLayout(body) ?? controls) as Elem;
 }
 
 // The bench app: the ordinary registry-aware makeApp mount, the same

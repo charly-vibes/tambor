@@ -21,7 +21,7 @@ Acceptance spec from `src/membrane/example/todo.cljc` (and `terminal_todo.clj`, 
 | delete_removes_item | invariant | applying delete at a todo path removes exactly that todo from the underlying list, keeping the order of the rest | [[example.todo]] |
 | complete_toggles | invariant | a pointer down on a checkbox toggles the complete flag of that todo only | [[example.todo]] |
 | list_spacing | invariant | todo-list is a vertical layout with a spacer of height 5 interposed between rows | [[example.todo]] |
-| toggle_render | invariant | in toggle the selected option is a plain label and every other option is a clickable label in gray [0.8, 0.8, 0.8] separated by 5 px spacers | [[example.todo]] |
+| toggle_render | invariant | in toggle the selected option is a plain label and every other option is a clickable label in gray ink whose contrast against the light-shell background is at least 4.5:1, separated by 5 px spacers | [[example.todo]] |
 | toggle_sets_filter | invariant | clicking a non-selected option returns set with the selected path and that option, and the selected option itself handles nothing | [[example.todo]] |
 | filter_default | invariant | selected-filter defaults to the unfiltered option | [[example.todo]] |
 | filter_fns | invariant | unfiltered shows every todo, active shows todos with complete? false and complete shows todos with complete? true | [[example.todo]] |
@@ -67,7 +67,7 @@ Acceptance spec from `src/membrane/example/todo.cljc` (and `terminal_todo.clj`, 
 | p_delete | unit | [[example.todo.delete_removes_item]] | todos first, second, third and delete the first | list becomes second, third |
 | p_complete | unit | [[example.todo.complete_toggles]] | click the second checkbox | only the second todo becomes complete |
 | p_spacing | unit | [[example.todo.list_spacing]] | three todos | row offsets differ by row height plus 5 plus the gap |
-| p_toggle_render | unit | [[example.todo.toggle_render]] | options all, active, complete with selected active | active is plain and the other two are gray and clickable |
+| p_toggle_render | unit | [[example.todo.toggle_render]] | options all, active, complete with selected active | active is plain and the other two are gray, clickable, and readable (contrast ≥ 4.5:1) |
 | p_toggle | unit | [[example.todo.toggle_sets_filter]] | click on the active label | effect is set selected-filter to active, and a click on the selected label returns nothing |
 | p_filter_default | unit | [[example.todo.filter_default]] | no selected-filter | the unfiltered option is selected and three rows render |
 | p_filter_fns | unit | [[example.todo.filter_fns]] | todos first, second, third with third complete | unfiltered shows 3, active shows first and second, complete shows third |
@@ -136,7 +136,7 @@ Every property row SHALL be verified by exactly one dedicated scenario;
 #### Scenario: p_toggle_render
 
 - **WHEN** options all, active, complete with selected active
-- **THEN** active is plain and the other two are gray and clickable
+- **THEN** active is plain and the other two are gray, clickable, and readable (contrast ≥ 4.5:1)
 - **VERIFIES** [[example.todo.p_toggle_render]]
 
 #### Scenario: p_toggle

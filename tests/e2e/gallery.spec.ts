@@ -60,6 +60,39 @@ test.describe("gallery smoke + screenshots", () => {
   }
 });
 
+test.describe("shell layout", () => {
+  // add-demo-visual-polish task 5.1/5.2: the nav is interaction the
+  // shell owns, so every chip meets the 44 px mobile_first floor, and
+  // the stage sits centred with equal gutters instead of floating
+  // top-left. Both are measured on the fixture the bench and gallery
+  // lanes drive, so the geometry every scripted click resolves through
+  // is the geometry a visitor sees.
+  test("nav targets meet 44px and the stage is centred", async ({
+    page,
+  }, testInfo) => {
+    await page.setViewportSize({ width: 800, height: 900 });
+    await gotoDemo(page, "counter");
+    const boxes = await page.locator("nav button").evaluateAll((els) =>
+      els.map((el) => {
+        const rect = el.getBoundingClientRect();
+        return { w: rect.width, h: rect.height };
+      }),
+    );
+    expect(boxes.length).toBe(DEMO_IDS.length);
+    for (const box of boxes) {
+      expect(box.w).toBeGreaterThanOrEqual(44);
+      expect(box.h).toBeGreaterThanOrEqual(44);
+    }
+    const stage = await page.locator("#demo > div").boundingBox();
+    expect(stage).not.toBeNull();
+    const viewport = page.viewportSize()!;
+    const left = stage!.x;
+    const right = viewport.width - (stage!.x + stage!.width);
+    expect(Math.abs(left - right)).toBeLessThanOrEqual(2);
+    await shot(page, "shell-layout", testInfo.project.name);
+  });
+});
+
 test.describe("counter", () => {
   test("inc and dec move the label", async ({ page }, testInfo) => {
     await gotoDemo(page, "counter");
@@ -136,18 +169,20 @@ test.describe("logo", () => {
     // run-applied apply bypassed the mount's draw wire — the fold stayed
     // 0/0 on screen forever. Fixed by drawing after every app.dispatch.
     await clickDrawnText(page, "Run");
-    expect(await drawnText(page)).toContain("1/1");
+    // the worker reply rides an async boundary: wait for the fold to
+    // grow instead of sampling the running state
+    await expect(page.locator("#demo > div")).toContainText("1/1");
     await shot(page, "logo-after-run", testInfo.project.name);
   });
 
   test("Clear world empties the fold", async ({ page }, testInfo) => {
     await gotoDemo(page, "logo");
     await clickDrawnText(page, "Run");
-    expect(await drawnText(page)).toContain("1/1");
+    await expect(page.locator("#demo > div")).toContainText("1/1");
     // the buttons row shifted with the grown world — the drawn box of
     // "Clear world" IS the live position (DOM ground truth)
     await clickDrawnText(page, "Clear world");
-    expect(await drawnText(page)).toContain("0/0");
+    await expect(page.locator("#demo > div")).toContainText("0/0");
     await shot(page, "logo-after-clear", testInfo.project.name);
   });
 
@@ -160,7 +195,7 @@ test.describe("logo", () => {
     for (let i = 0; i < 3; i++) {
       await clickDrawnText(page, "Run");
     }
-    expect(await drawnText(page)).toContain("3/3");
+    await expect(page.locator("#demo > div")).toContainText("3/3");
     await shot(page, "logo-3-entries", testInfo.project.name);
     // the track: the 150-wide rectangle of the time-travel row — located
     // in the LIVE drawn DOM (a 150px-wide absolute div), not replayed
@@ -174,17 +209,19 @@ test.describe("logo", () => {
     // so mid-drag tracking (slider_gesture's move updates) is dead and
     // every value update re-derives the world, shifting the layout
     // under the pointer (recorded findings, HITL review).
+    await track.scrollIntoViewIfNeeded();
     const box = await track.boundingBox();
     if (box === null) throw new Error("slider track has no box");
     await page.mouse.click(box.x + 35, box.y + box.height / 2);
-    expect(await drawnText(page)).toContain("0/3");
+    await expect(page.locator("#demo > div")).toContainText("0/3");
     await shot(page, "logo-after-slider-pointerdown", testInfo.project.name);
     // a second pointerdown further right maps to entry 2 — the LIVE
     // box again (the locator re-resolves after the world re-derived)
+    await track.scrollIntoViewIfNeeded();
     const box2 = await track.boundingBox();
     if (box2 === null) throw new Error("slider track has no box");
     await page.mouse.click(box2.x + box2.width - 35, box2.y + box2.height / 2);
-    expect(await drawnText(page)).toContain("2/3");
+    await expect(page.locator("#demo > div")).toContainText("2/3");
     await shot(page, "logo-after-slider-tap-right", testInfo.project.name);
   });
 });

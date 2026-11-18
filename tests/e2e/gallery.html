@@ -1,18 +1,27 @@
 <!doctype html>
 <!-- Purpose: the Playwright fixture page (tambor-y9d.4) — loads the real
      dist/spa.js bundle (same entry index.html loads) with test-only CSS
-     that pins the demo surface and the drawn root to a known 300×300
-     origin so scripted pointer coordinates (view-space centreOf points)
-     map 1:1 onto client coordinates.
-     Responsibilities: host #app for the SPA entry; overlay the surface
-     canvas on the drawn root so every pointer event lands on the
-     surface listener (the corpus wire's input seam — the drawn buttons
-     are display-only accessibility mirrors); touch-action none so touch
-     drags reach the pointer listeners.
-     Rationale: index.html is outside this ticket's ownership set and
-     has no surface-origin pinning, so the fixture re-hosts the same
-     bundle. The bundle itself is untouched — everything below the
-     mount seam is the real artifact. -->
+     that pins the demo surface to the corpus 300px render width and
+     centres the drawn root with a measured (not assumed) origin, so
+     scripted pointer coordinates (view-space centreOf points) map 1:1
+     onto client coordinates.
+     Responsibilities: host #app for the SPA entry; keep the drawn root
+     pointer-events-enabled and measurable (since tambor-huu the drawn
+     root IS the input surface — no separate canvas is mounted — so the
+     corpus wire's pointer seam listens on it); keep the 800px scripted
+     height floor and the nav a local horizontal scroller; carry
+     the shell restyle add-demo-visual-polish 5.1/5.2 pins (44px nav chips,
+     centred stage, blurb typography) and the 6.2 theme consumption —
+     the shell ink reads the --tambor-* properties THIS page declares
+     (the same per-scheme palette index.html carries, guarded against
+     ui/theme.ts drift by tests/theme-css-sync.test.ts), switched by the
+     prefers-color-scheme media query so the fixture is theme-correct on
+     first paint; the SPA entry installs only the matcher the drawn
+     demo's tokens resolve through.
+     Rationale: the scripted pointer math depends on the drawn root's
+     box, so the fixture owns that geometry instead of inheriting the
+     shipped shell's; the bundle itself is untouched — everything below
+     the mount seam is the real artifact. -->
 <html lang="en">
   <head>
     <meta charset="utf-8" />
@@ -33,17 +42,90 @@
         font-style: normal;
         font-display: swap;
       }
-      body { font-family: "Tambor UI", system-ui, sans-serif; margin: 0; }
+      /* The shell palette — the same duplication of src/ui/theme.ts's
+         per-scheme tokens index.html carries (0..1 channel scaled to
+         0..255, rounded); ui/theme.ts stays the single source and
+         tests/theme-css-sync.test.ts fails if either page drifts. The
+         palette is CSS, not script, because the scheme must land on
+         the FIRST paint: Chromium can answer the dark media query
+         wrong while the page initialises (~450ms late, no change
+         event), and an inline custom property would outrank this
+         media query for the rest of the session.
+         The muted token is the accessible secondary ink (inactive
+         option labels, the demo blurb prose): light [0.45] is 4.75:1
+         on the white background, dark [0.75] is ~9:1 on the dark
+         background — the 4.5:1 floor in both schemes. */
+      :root {
+        --tambor-background: rgb(255, 255, 255);
+        --tambor-foreground: rgb(26, 26, 26);
+        --tambor-accent: rgb(0, 122, 255);
+        --tambor-border: rgb(166, 166, 166);
+        --tambor-danger: rgb(255, 0, 0);
+        --tambor-muted: rgb(115, 115, 115);
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --tambor-background: rgb(31, 31, 36);
+          --tambor-foreground: rgb(242, 242, 242);
+          --tambor-accent: rgb(0, 79, 204);
+          --tambor-border: rgb(89, 89, 89);
+          --tambor-danger: rgb(255, 89, 89);
+          --tambor-muted: rgb(191, 191, 191);
+        }
+      }
+      body {
+        font-family: "Tambor UI", system-ui, sans-serif;
+        margin: 0;
+        /* Shell ink rides the --tambor-* properties the palette above
+           declares for both pages (add-demo-visual-polish 6.2), so the
+           fixture and the built shell switch schemes together on first
+           paint; spa/main.ts only installs the matcher the DRAWN demo
+           resolves through, never a document-root style write. */
+        background: var(--tambor-background);
+        color: var(--tambor-foreground);
+      }
       /* overflow-x on the nav itself: the 13-demo nav overflows the
          fixture viewport — without a nav-local scroller, Playwright's
          click on a fully-offscreen nav button scrolls the PAGE right
-         and the drawn stage (pinned at x=8) lands offscreen-left, so
-         every scripted stage click misses (tambor-54j.13, found by
-         the BZ1 bench's op clicks). The nav scrolls within itself;
-         the page and the stage origin never move. */
+         and the centred drawn stage drifts offscreen-left, so every
+         scripted stage click misses (tambor-54j.13, found by the BZ1
+         bench's op clicks). The nav scrolls within itself; the page
+         and the stage origin never move. */
       nav { display: flex; gap: 0.5rem; padding: 0.5rem; overflow-x: auto; }
-      nav button { cursor: pointer; }
-      nav button.active { font-weight: bold; }
+      /* Shell-owned chips: 44px on both axes (the corpus mobile_first
+         floor, add-demo-visual-polish 5.1) with real chip chrome, so
+         the fixture measures the same targets a visitor gets. The row
+         stays a local scroller — never a page-wide overflow. */
+      nav button {
+        font: inherit;
+        cursor: pointer;
+        flex: none;
+        min-width: 44px;
+        min-height: 44px;
+        padding: 0.5rem 0.875rem;
+        border: 1px solid var(--tambor-border);
+        border-radius: 6px;
+        background: color-mix(
+          in srgb,
+          var(--tambor-foreground) 5%,
+          var(--tambor-background)
+        );
+        color: var(--tambor-foreground);
+      }
+      /* active chip: bold weight plus an accent tint/border; the ring is
+         inset so the scroller's measured width never grows. The tint
+         (not a solid accent fill) keeps foreground-token ink readable
+         in both schemes. */
+      nav button.active {
+        font-weight: bold;
+        background: color-mix(
+          in srgb,
+          var(--tambor-accent) 15%,
+          var(--tambor-background)
+        );
+        border-color: var(--tambor-accent);
+        box-shadow: inset 0 0 0 2px var(--tambor-accent);
+      }
       /* The 300-wide demo stage. Since tambor-huu the drawn root IS the
          input surface (no separate canvas is mounted), so it must stay
          pointer-events-enabled and reach the full 800px stage — the
@@ -61,16 +143,32 @@
            push the blurb down in normal flow instead of drawing over
            it (the fixed 800px + absolute blurb was the spill). */
         min-height: 800px;
-        margin: 0.5rem;
+        /* Auto inline margins centre the 300px stage: equal gutters at
+           320 and 800 instead of a fixed 8px left offset. The stage box
+           itself is unchanged, so scripted coordinates still resolve
+           from its measured origin (add-demo-visual-polish 5.2). */
+        margin: 0.5rem auto;
       }
       /* the blurb flows AFTER the drawn root (main.ts appends it post-
-         mount), so grown content pushes it down instead of overlapping */
-      #demo > p.blurb { width: 380px; }
+         mount), so grown content pushes it down instead of overlapping.
+         The muted token keeps the ink AA-readable in both schemes;
+         1.5 leading, and max-width (not a fixed width) so it shrinks
+         with the 300px stage and never widens the page (5.2). */
+      #demo > p.blurb {
+        color: var(--tambor-muted);
+        line-height: 1.5;
+        max-width: 380px;
+        /* stays with the centred stage in the wider desktop column */
+        margin-inline: auto;
+      }
       #demo > div {
         /* below-fold reach floor: min-height (not height!important) so
            the mount's inline extent height can grow past it while a
            short demo still keeps the full 800px scripted stage */
         min-height: 800px;
+        /* same centring seam on the drawn root: auto margins, never a
+           fixed left offset */
+        margin-inline: auto;
       }
     </style>
   </head>

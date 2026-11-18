@@ -59,6 +59,8 @@ import { dispatch } from "../events/dispatch.ts";
 import { phaseTimers } from "../events/phase-timers.ts";
 import { type TamborEvent } from "../events/event.ts";
 import { wireSurfaceInput } from "./surface-input.ts";
+import { ambientScheme } from "../ui/ambient-theme.ts";
+import type { Scheme } from "../ui/theme.ts";
 
 export interface SpaHandle {
   readonly backend: DomBackend;
@@ -148,15 +150,47 @@ function laneTransform(lane: LaneStore): Vec2 {
   return [x, y];
 }
 
+// The scheme the last DERIVED tree resolved with (recorded by the
+// route-time view cache at derive time, not at paint time): the
+// shell's boot-scheme watcher compares the host's live answer against
+// this, because the query answer WOBBLES during early page init and a
+// boot-vs-now comparison never converges.
+let drawnScheme: Scheme | null = null;
+
+// True when the host's live answer equals the scheme of the last
+// derived tree.
+export function drawnSchemeIs(scheme: Scheme): boolean {
+  return drawnScheme !== null && drawnScheme === scheme;
+}
+
+// The route-time view cache: state + container size + ambient scheme
+// key the derived tree. The scheme belongs in the key because the
+// theme resolves at render time — a flip without a state change would
+// otherwise serve the pre-flip view forever. ambientScheme() also
+// OBSERVES the flip (clearing the component render cache) before the
+// derive, so the rebuild sees the new ink; a session whose scheme never
+// changes compares an equal string and keeps its cached view.
 function viewCache(app: App, size: () => unknown): () => Elem {
-  let cache: { state: unknown; size: unknown; view: Elem } | null = null;
+  let cache: {
+    state: unknown;
+    size: unknown;
+    scheme: Scheme;
+    view: Elem;
+  } | null = null;
   return () => {
     const state = app.getState();
     const box = size();
-    if (cache !== null && cache.state === state && cache.size === box)
+    const scheme = ambientScheme();
+    drawnScheme = scheme;
+    if (
+      cache !== null &&
+      cache.state === state &&
+      cache.size === box &&
+      cache.scheme === scheme
+    )
       return cache.view;
     const view = app.view();
-    cache = { state, size: box, view };
+    cache = { state, size: box, scheme, view };
     return view;
   };
 }
@@ -186,6 +220,10 @@ function laneOverlay(app: App): Elem | null {
 // with the drag overlay appended on top while a drag entry carries a
 // renderer (lane-only draw, state re-derive and async re-render
 // alike — lane wins on position, state wins on structure).
+// The lane transform wrapper (interaction-lane): every draw — cached
+// or freshly derived — carries the lane's pan/scroll offset, so the
+// scheme the last draw resolved is recorded right after it (main.ts's
+// boot-scheme watcher compares the host's live answer against this).
 function drawWire(
   backend: DomBackend,
   app: App,
@@ -358,6 +396,11 @@ export function mountDemo(
   create: () => App,
   opts?: MountOptions,
 ): SpaHandle {
+  // Observe the ambient scheme before anything derives (the view cache
+  // observes it too): a mount that lands AFTER a flip starts with a
+  // cleared component render cache, so its first derive builds the new
+  // scheme's trees instead of replaying the pre-flip cached ones.
+  ambientScheme();
   const app = create();
   const backend = demoBackend(doc);
   const wire = wireSurface(backend, app);

@@ -90,14 +90,17 @@ describe("dom backend layout parity (tambor-0rp)", () => {
   // clip extent — a DOM wrapper with auto size has zero extent, so its
   // background paints nothing (the audit finding: no element had both a
   // background and non-zero width). A non-stroke fill wrapper covers its
-  // containing origin with width/height 100%.
+  // containing origin with width/height 100%; when the containing block
+  // has no box at all (the shim reports 0×0, like the dropdown's
+  // absolutely positioned body), it is sized to the shape it wraps so the
+  // fill still paints (the selected-row accent, tests/dom-painters-with-color).
   it("gives a fill-mode with-color wrapper a background over non-zero extent", () => {
     const backend = new DomBackend({ containerSize: [300, 300] });
     backend.draw(withColor([1, 0, 0], rectangle(10, 5)));
     const wrap = backend.root.children[0]!;
     expect(wrap.style["background"]).toBe("rgba(255, 0, 0, 1)");
-    expect(wrap.style["width"]).toBe("100%");
-    expect(wrap.style["height"]).toBe("100%");
+    expect(wrap.style["width"]).toBe("10px");
+    expect(wrap.style["height"]).toBe("5px");
   });
 
   // primitive_set parity (tambor-0rp round 3): path and arc DRAW on the

@@ -152,7 +152,7 @@ function contrastFinding(t: TextInfo): AuditIssue | null {
   if (ratio >= 4.5) return null;
   return {
     rule: "text.contrast",
-    severity: "warn",
+    severity: "error",
     detail: `${JSON.stringify(t.text)} contrast ${ratio.toFixed(2)} < 4.5`,
   };
 }
@@ -209,7 +209,7 @@ function checkTargetSizes(s: Snapshot, issues: AuditIssue[]): void {
     if (b.w < 44 || b.h < 44) {
       addIssue(
         issues,
-        "warn",
+        "error",
         "target.below-44px",
         `${b.where} button ${JSON.stringify(b.text)} is ${b.w}x${b.h} (corpus mobile_first floor is 44x44)`,
       );
@@ -239,8 +239,10 @@ function checkTargetOverlaps(s: Snapshot, issues: AuditIssue[]): void {
   }
 }
 
-// Evaluate the floors. Errors are site-breaking; warnings are known
-// corpus/shell gaps with an owning issue recorded in the detail.
+// Evaluate the floors. Errors are site-breaking or accessibility
+// regressions (contrast and the 44px target floor are error floors
+// since add-demo-visual-polish task 4); warnings are known corpus/shell
+// gaps with an owning issue recorded in the detail.
 function evaluate(demo: string, s: Snapshot): AuditReport {
   const issues: AuditIssue[] = [];
   checkDocument(s, issues);

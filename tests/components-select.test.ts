@@ -1,7 +1,9 @@
 // Purpose: executable contract tests for the components.select spec — the
 //   dropdown/dropdown-list port from basic_components.cljc.
 // Responsibilities: encode each converted row's generator and predicate
-//   as a vitest + fast-check property, one test per converted property.
+//   as a vitest + fast-check property, one test per converted property,
+//   plus the drawn-layout check that the open list is translated below
+//   the header (bare sequence children share the origin).
 // Rationale: openspec/specs/components-select/spec.md is the design authority; each
 //   predicate here mirrors a Properties row (generator + predicate
 //   text) of that spec. No vacuous predicates: every check encodes its
@@ -26,6 +28,7 @@ import {
   type Elem,
   type Label,
   type Node,
+  type TranslateNode,
   type WithColorNode,
 } from "../src/views/model.ts";
 import { dropdown } from "../src/components/select/dropdown.ts";
@@ -110,6 +113,31 @@ const isListNode = (n: Node): n is Node & { type: "rounded-rectangle" } =>
 const isRect = (n: Node): n is Node & { type: "rectangle" } => n.type === "rectangle";
 const isLabel = (n: Node): n is Label => n.type === "label";
 const isWithColor = (n: Node): n is WithColorNode => n.type === "with-color";
+const isTranslate = (n: Node): n is TranslateNode => n.type === "translate";
+
+// A node paired with the y its translate ancestors give it. Painters
+// superimpose bare-sequence children at the same origin, so only
+// translate offsets separate the drawn positions.
+interface Placed<T extends Node> {
+  readonly node: T;
+  readonly y: number;
+}
+
+function placedNodes<T extends Node>(
+  elem: Elem,
+  pred: (n: Node) => n is T,
+  dy = 0,
+): Placed<T>[] {
+  if (elem == null) return [];
+  if (isGroup(elem)) return elem.flatMap((child) => placedNodes(child, pred, dy));
+  const node = elem as Node;
+  // a translate moves its drawable; every other node sits at its
+  // parent's offset
+  const y = node.type === "translate" ? dy + (node as TranslateNode).y : dy;
+  const out: Placed<T>[] = pred(node) ? [{ node: node as T, y }] : [];
+  for (const child of children(node)) out.push(...placedNodes(child, pred, y));
+  return out;
+}
 
 function colorsEqual(a: Color, b: Color): boolean {
   return a.length === b.length && a.every((v, i) => v === b[i]);
@@ -207,6 +235,37 @@ it("p_list_open: list nodes exist only when open", () => {
   );
 });
 
+// p_list_offset — derives_from: components.select.list_when_open
+// generator: open? true
+// predicate: the list starts below the header label
+it("p_list_offset: the open list starts below the header label", () => {
+  // the header label's own measured height (the renderer's measure)
+  const closed = dropdownView({ "::extra": {} }, "that");
+  const headerLabel = collect(closed, isLabel)[0]!;
+  const headerHeight = headerLabel.measure(headerLabel.text)[1];
+
+  const open = dropdownView({ "::extra": {} }, "that", { "open?": true });
+  // the translate carrying the list box: a bare-sequence child would
+  // share the header's origin, so the list only sits below the header
+  // when a translate precedes it
+  const list = placedNodes(open, isTranslate).find(
+    (p) => collect(p.node.drawable, isListNode).length === 1,
+  );
+  expect(list).toBeDefined();
+  // a 4 px gap below the header's bottom edge
+  expect(list!.y).toBeGreaterThanOrEqual(headerHeight + 4);
+
+  // every row label is drawn below the header's bottom edge
+  const rows = placedNodes(list!.node.drawable, isLabel, list!.y);
+  expect(rows.map((p) => p.node.text)).toEqual(["This", "That", "The Other"]);
+  for (const row of rows) {
+    expect(row.y).toBeGreaterThanOrEqual(headerHeight + 4);
+  }
+
+  // closed: no list, the header alone at the origin
+  expect(collect(closed, isListNode).length).toBe(0);
+});
+
 // p_row_effect — derives_from: components.select.row_select_effect
 // generator: click second row
 // predicate: effect is select with the selected path and that
@@ -224,8 +283,10 @@ it("p_select_closes: output is select then set open? false", () => {
   const view = dropdownView({ "::extra": {} }, null, { "open?": true });
   // the dropdown's open? scratch is wherever the header toggle writes
   const $open = (dispatchEvent(view, mouseDown([0, 0]))[0] as unknown[])[1] as Path;
-  // a select intent through the open dropdown comes out expanded
-  const intents = dispatchEvent(view, mouseDown([5, 8 + 5 + 2]));
+  // a select intent through the open dropdown comes out expanded — the
+  // click targets the "that" row where the translate draws it
+  const that = placedNodes(view, isLabel).find((p) => p.node.text === "That")!;
+  const intents = dispatchEvent(view, mouseDown([5, that.y + 2]));
   expect(intents).toEqual([
     ["select", $SELECTED, "that"],
     ["set", $open, false],

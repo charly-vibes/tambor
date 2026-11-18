@@ -7,8 +7,8 @@
 //   (the §4.3 rendering-every-row hazard vs the virtual-window
 //   candidate), filterNaive/filterMemo (the recomputed-filters hazard
 //   vs the memoised-derived-paths candidate) and editOptimistic — plus
-//   trackerView (two control rows, the status line, the five-column
-//   board) and createTrackerApp.
+//   trackerView (two control rows, the fitted status labels, the
+//   five-column board packed into bands) and createTrackerApp.
 // Rationale: the op strategies live in tracker-board.ts as pure
 //   functions over plain state; this file is only the view. Every
 //   button is an ordinary ["update", …] intent applied by the
@@ -17,15 +17,21 @@
 //   state.drawIds (the plots-precedent draw-in-state), so the naive
 //   and candidate ops differ only in what they put there; the status
 //   line (counts + revision checksum) is the no-op guard both variants
-//   must leave identical.
+//   must leave identical. The 44 px touch floor grew every control
+//   row, so the drawn surface now fits the stage by composition: the
+//   status string becomes several labels (fittedLabels keeps the same
+//   words) and the five columns pack into horizontal bands measured
+//   against the viewport, each band stacked inside the root.
 
 import {
   button,
   label as labelNode,
   spacer,
+  width,
   type Elem,
 } from "../../views/model.ts";
 import { horizontalLayout, verticalLayout } from "../../views/layout.ts";
+import { fittedLabels, packRows } from "../../views/fit.ts";
 import type { IntentList } from "../../events/bubble.ts";
 import type { Path } from "../../effects/paths.ts";
 import { makeApp, type App } from "../../effects/dispatch.ts";
@@ -79,14 +85,31 @@ function boardColumn(key: string, state: TrackerState, col: number): Elem {
   return (verticalLayout(body) ?? header) as Elem;
 }
 
-// The board: the five columns side by side.
+// The one-pixel gap the layout combinators insert between siblings:
+// band packing counts it so a band's drawn width cannot exceed the
+// stage by its internal gaps alone.
+const BOARD_GAP = 1;
+
+// The board: the five columns, packed into horizontal bands whose
+// measured width (column plus the inter-column gap) fits the viewport,
+// with the bands stacked — same model, same column contents, just
+// reflowed for the post-44 px stage.
 function board(state: TrackerState): Elem {
   const columns = COLUMN_KEYS.map((key, c) => boardColumn(key, state, c));
-  return (horizontalLayout(columns) ?? labelNode("no board")) as Elem;
+  const bands = packRows(
+    columns,
+    (column) => width(column) + BOARD_GAP,
+    VIEWPORT[0],
+  );
+  const bandRows = bands.map(
+    (band) => horizontalLayout(band, BOARD_GAP) ?? labelNode("no board"),
+  );
+  return (verticalLayout(bandRows, BOARD_GAP) ??
+    labelNode("no board")) as Elem;
 }
 
-// The tracker view: the control rows, the status line, then the board
-// — a pure function of the plain-data state.
+// The tracker view: the control rows, the fitted status labels, then
+// the board — a pure function of the plain-data state.
 export function trackerView(state: TrackerState): Elem {
   const row1 = horizontalLayout([
     opButton("Seed", SEED_INTENT),
@@ -107,7 +130,7 @@ export function trackerView(state: TrackerState): Elem {
     spacer(0, 4),
     row2,
     spacer(0, 4),
-    labelNode(statusLine(state)),
+    ...fittedLabels(statusLine(state)),
     spacer(0, 4),
     board(state),
   ] as readonly Elem[];

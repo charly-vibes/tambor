@@ -26,17 +26,27 @@ export const TOKENS: readonly string[] = [
   "accent",
   "border",
   "danger",
+  "muted",
 ];
 
 // The explicit per-theme values. The accent reuses the corpus's
-// selected fill (components.select row_visuals); the danger tone
-// echoes the delete X red (example.todo delete_x_geometry).
+// selected fill (components.select row_visuals): light is the pinned
+// [0, 0.48, 1]; dark is deeper so the white selected-row label keeps
+// ~6.9:1 contrast (white on the old [0.3, 0.6, 1] was only ~2.4:1).
+// The danger light tone is the delete-X stroke red [1, 0, 0] pinned
+// by example.todo.delete_x_geometry; dark lifts it to [1, 0.35, 0.35]
+// so the stroke stays readable on the dark background.
+// The muted tone is the accessible inactive ink (toggle_render's
+// unselected options, the select header's no-selection text): light
+// [0.45, 0.45, 0.45] is 4.75:1 on white, dark [0.75, 0.75, 0.75] is
+// ~9:1 on the dark background — the 4.5:1 floor in both schemes.
 const VALUES: Readonly<Record<string, Readonly<Record<Scheme, Color>>>> = {
   background: { light: [1, 1, 1], dark: [0.12, 0.12, 0.14] },
   foreground: { light: [0.1, 0.1, 0.1], dark: [0.95, 0.95, 0.95] },
-  accent: { light: [0, 0.48, 1], dark: [0.3, 0.6, 1] },
+  accent: { light: [0, 0.48, 1], dark: [0, 0.31, 0.8] },
   border: { light: [0.65, 0.65, 0.65], dark: [0.35, 0.35, 0.35] },
-  danger: { light: [0.85, 0.1, 0.1], dark: [1, 0.3, 0.3] },
+  danger: { light: [1, 0, 0], dark: [1, 0.35, 0.35] },
+  muted: { light: [0.45, 0.45, 0.45], dark: [0.75, 0.75, 0.75] },
 };
 
 // The value of a token in a scheme; every token resolves in every

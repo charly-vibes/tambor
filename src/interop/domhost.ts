@@ -33,9 +33,12 @@ export interface HostDoc {
   createElementNS?(namespace: string, tag: string): HostElement;
   body: HostElement;
   getElementById(id: string): HostElement | null;
-  // The media-query seam (add-docs-site task 5.2): real Documents and
-  // jsdom expose matchMedia natively; the structural shim omits it and
-  // callers degrade to the light scheme through colorSchemePref's
+  // The media-query seam (add-docs-site task 5.2): real browsers hang
+  // matchMedia on the window (globalThis), NOT on the document, so this
+  // optional document member exists for shims that route queries
+  // through the doc (jsdom test doubles, structural hosts). Entries
+  // therefore try this seam first, then the window's matchMedia, and
+  // degrade to the light scheme through colorSchemePref's
   // undefined-or-null contract (ui/theme MediaQueryFn).
   matchMedia?(query: string): { matches: boolean } | undefined | null;
   // The font seams (tambor-v3s): the demo shell declares its font in

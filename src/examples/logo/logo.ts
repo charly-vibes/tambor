@@ -13,9 +13,10 @@
 //   (canvas.ts: trace segments, turtle marker, halo handles), the
 //   inspector pane (inspector.ts), the time-travel slider bound to the
 //   cursor, the ◀ ▶ stepper buttons, the example and procedure buttons,
-//   the corpus textarea bound to src, the run-outcome/error label — and
-//   the corpus App wire (view/dispatch/getState) over makeOpsApp for
-//   mountDemo.
+//   the corpus textarea bound to src, the run-outcome/error label, the
+//   empty-world procedure placeholder wrapped into stage-wide labels
+//   (views/fit.ts) — and the corpus App wire (view/dispatch/getState)
+//   over makeOpsApp for mountDemo.
 // Rationale: the wanna-chat session demo (insights/dynamic-environment.md)
 //   is the design authority for the fold/liveness semantics;
 //   openspec/specs/interop-model/spec.md governs the per-app seam
@@ -23,7 +24,10 @@
 //   state) and openspec/specs/example-todo/spec.md the textarea and
 //   wrapOn wiring the SPA runs through. All widgets are corpus
 //   components: slider (components.numeric), textarea
-//   (components.textarea), buttons returning effect vectors.
+//   (components.textarea), buttons returning effect vectors. Corpus
+//   labels are single-line (tambor-0rp), so the placeholder line that
+//   outgrew the 300 px stage becomes several labels rather than a CSS
+//   patch; fittedLabels measures against the renderer's own measure.
 
 import { makeOpsApp } from "../../interop/app.ts";
 import { makeRunner } from "./worker-client.ts";
@@ -66,6 +70,7 @@ import {
 } from "./select.ts";
 import { logoCanvas } from "./canvas.ts";
 import { inspectorPane } from "./inspector.ts";
+import { fittedLabels } from "../../views/fit.ts";
 
 // runLogo moved to run.ts (the typed outcome module) — re-exported here so
 // the demo's public surface keeps its shape (tambor-y9d.10).
@@ -221,7 +226,8 @@ function editor(s: LogoState, focus: unknown): Elem {
   const examples: Elem[] = Object.keys(shown).map((k) =>
     fxButton(k, "set", SRC_PATH, shown[k]),
   );
-  const errLabel: Elem = s.err.length === 0 ? null : labelNode(s.err);
+  const errLabel: Elem =
+    s.err.length === 0 ? null : verticalLayout(fittedLabels(s.err));
   const ta: Elem = textarea({
     text: s.src,
     textPath: SRC_PATH,
@@ -242,12 +248,17 @@ function editor(s: LogoState, focus: unknown): Elem {
 export const TEXTAREA_EXTRA_PATH: Path = step("::extra", "logo-src");
 
 // The procedure row: every definition loads back into the editor.
+// The empty-world placeholder is wider than the 300 px stage, and a
+// corpus label is single-line by definition, so it rides as several
+// labels — the same words, stacked where the one label sat.
 function procsRow(w: World): Elem {
   const names = Object.keys(w.procs);
   const btns: Elem[] = names.map((k) =>
     fxButton(`${k} ✎`, "set", SRC_PATH, procText(k, w.procs[k] as Proc)),
   );
-  const none: Elem = labelNode("None yet — define one with to name :arg … end.");
+  const none: Elem = verticalLayout(
+    fittedLabels("None yet — define one with to name :arg … end."),
+  );
   return names.length === 0 ? none : btns;
 }
 

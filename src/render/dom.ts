@@ -48,6 +48,7 @@ import {
   buildWithStyle,
   buildWrapperWithColor,
   buildWrapperWithStrokeWidth,
+  settleFillExtents,
 } from "./dom-painters.ts";
 
 // The 1px pre-scale grid (cellScale > 1, tambor#1): text renders at 1px
@@ -254,15 +255,21 @@ export class DomBackend implements BackendContract {
     if (view == null) return this;
     // One ctx per root build: the mutable style field threads the
     // with-style mode down the subtree across recursive calls
-    // (tambor-0rp — a fresh ctx per recursion would drop it).
+    // (tambor-0rp — a fresh ctx per recursion would drop it); the fill
+    // list collects the with-color wrappers that need their extent
+    // settled once the tree is attached.
     const ctx: BuildCtx = {
       make: (tag: string) => this.make(tag),
       build: (v: AnyDraw, p: ElementLike) => this.buildWith(ctx!, v, p),
       style: undefined as string | undefined,
       stroke: undefined as string | undefined,
       strokeWidth: undefined as number | undefined,
+      fills: [],
     };
     this.buildWith(ctx, view, parent);
+    // the tree is attached bottom-up, so percentage sizes only resolve
+    // now (see settleFillExtents)
+    settleFillExtents(ctx);
     return this;
   }
 

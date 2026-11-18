@@ -156,12 +156,24 @@ export const stageDrag = dragActions.when(mounted);
 export const stageScroll = scrollActions.when(mounted);
 export const stageKeys = keyActions.when(mounted);
 
+// A pre-mount placeholder: Bombadil aborts a run with "no actions
+// available" when every exported generator is gated on `mounted` and the
+// first captured state is the `loading …` shell — the logo demo's
+// dynamic chunk lost that race. `Wait` is inert and disappears the
+// moment the draw lands, so the normal exploration stays click-driven.
+const waitForMount = actions((): ActionTemplate[] =>
+  mounted.current ? [] : ["Wait"],
+);
+
 // The composite a spec normally exports: clicks dominate (the reachable
 // state space of the demos is click-driven), with drag/scroll/keys for
 // texture. The individual generators stay exported for narrower specs.
+// The composite itself is NOT gated: every member gates on `mounted`
+// individually, and `waitForMount` covers the pre-mount state.
 export const stageActions = weighted([
   [8, stageClicks],
   [2, stageDrag],
   [2, stageScroll],
   [1, stageKeys],
-]).when(mounted);
+  [1, waitForMount],
+]);

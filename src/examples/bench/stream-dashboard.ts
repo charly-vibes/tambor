@@ -4,10 +4,11 @@
 //   mounted as an ordinary gallery demo through the same makeApp/SPA
 //   mount path as every other corpus app.
 // Responsibilities: buildTickers (the 500-ticker setup op),
-//   streamDashboardView (control row + summary + book + ticker rows),
-//   the two stream op shapes — the NAIVE pump (one dispatch per
-//   message) and the FRAME op (a whole burst folded into one update
-//   intent) — and createStreamDashboardApp.
+//   streamDashboardView (control rows + summary + the top-of-book line
+//   and every ticker row line fitted through fittedLabels), the two
+//   stream op shapes — the NAIVE pump (one dispatch per message) and the
+//   FRAME op (a whole burst folded into one update intent) — and
+//   createStreamDashboardApp.
 // Rationale: BZ1's likely failure is "one dispatch + full re-derive
 //   per message" at ≈5k msg/s. The two op buttons make that a
 //   measurement instead of a claim: both deliver the SAME BURST
@@ -26,6 +27,14 @@
 //   Canvas sparklines and per-row memo are the programme's candidate
 //   components (benchmarks-and-findings §4.8), deliberately not built
 //   here: this lane measures the dispatch-shape pair only.
+//   The drawn text lines are themselves state-derived — the top-of-book
+//   read, and each row's sym, price, change and sparkline all move under
+//   the stream — so a line that fit the 300 px drawn root at build can
+//   outgrow it after a burst. Both run through fittedLabels (the same
+//   pure-realm wrap the summary uses), so the drawn width is bounded in
+//   ANY state, not just the initial one; row order, row count and the
+//   exact words stay put, a long line just occupies several stacked
+//   lines.
 
 import {
   button,
@@ -34,6 +43,7 @@ import {
   type Elem,
 } from "../../views/model.ts";
 import { horizontalLayout, verticalLayout } from "../../views/layout.ts";
+import { fittedLabels } from "../../views/fit.ts";
 import type { IntentList } from "../../events/bubble.ts";
 import type { App } from "../../effects/dispatch.ts";
 import { VIEWPORT } from "../../spa/viewport.ts";
@@ -106,36 +116,51 @@ function summaryLine(state: StreamState): Elem {
   ) as Elem;
 }
 
-// The stream view: the control row, the summary, the top-of-book
-// line, then the 500 ticker rows (one label each, sparkline inline).
-// The naive button takes the app accessor because its op IS a run of
-// dispatches; the other buttons are ordinary intent-list handlers.
+// The stream view: the control rows, the summary, the top-of-book
+// line (fitted like the rows), then the 500 ticker rows (each row's
+// string wrapped through fittedLabels, sparkline inline). The naive
+// button takes the app accessor because its op IS a run of dispatches;
+// the other buttons are ordinary intent-list handlers.
 export function streamDashboardView(
   state: StreamState,
   appOf: () => App,
 ): Elem {
-  const controls = horizontalLayout([
+  // Two control rows: the three ops do not fit one 300 px stage (the
+  // log-stream note), so the build/naive pair and the frame op stack.
+  const opsRow = horizontalLayout([
     opButton("Build 500", (state: unknown) => buildTickers(state as StreamState)),
     spacer(5, 0),
     button("Stream naive", (): IntentList => {
       naivePump(appOf(), BURST);
       return [];
     }),
-    spacer(5, 0),
+  ]) as Elem;
+  const frameRow = horizontalLayout([
     opButton("Stream frame", frameBurst),
   ]) as Elem;
-  const rows = (verticalLayout(state.tickers.map((t) => labelNode(tickerLine(t)) as Elem)) ??
-    []) as readonly Elem[];
+  // The ticker rows: each row STRING is state-derived (sym, price,
+  // change, sparkline all move with the stream), so it wraps through
+  // fittedLabels — one single-line label per line, spread into the same
+  // stack in row order. Row order, the drawn rows and the exact words
+  // are unchanged; a long row simply takes several lines instead of
+  // crossing the 300 px stage.
+  const rows = state.tickers.flatMap((t) => fittedLabels(tickerLine(t)));
+  // The top-of-book line is state-derived on the same terms: five
+  // ranked entries joined by " · " measure ~500 px at this stage (the
+  // widest drawn line in the app), so it wraps through fittedLabels
+  // like the rows instead of anchoring an over-wide label.
   const body = [
-    controls,
+    opsRow,
+    spacer(0, 4),
+    frameRow,
     spacer(0, 10),
     summaryLine(state),
     spacer(0, 2),
-    labelNode(`book ${bookTop(state.tickers, BOOK_DEPTH)}`) as Elem,
+    ...fittedLabels(`book ${bookTop(state.tickers, BOOK_DEPTH)}`),
     spacer(0, 10),
     ...rows,
   ] as readonly Elem[];
-  return (verticalLayout(body) ?? controls) as Elem;
+  return (verticalLayout(body) ?? opsRow) as Elem;
 }
 
 // The bench app: the ordinary registry-aware makeApp mount, the same

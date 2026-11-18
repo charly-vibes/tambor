@@ -2,33 +2,66 @@
 //   builds the demo nav and boots the selected gallery demo into #app.
 // Responsibilities: reach the document structurally (no lib.dom — the
 //   core stays DOM-free; this entry only touches the HostDoc surface),
-//   render one nav button per gallery demo (DEMOS) plus a content
-//   container, and mount the active demo via mountDemo; switching
-//   demos unmounts the previous handle and mounts the next. The first
-//   mount follows the query string (boot-selection.ts: ?demo=<id>), and
-//   ?debug=1 opts the mount's read-only snapshot in for every mount
-//   (unmount clears it, so a loading demo exposes nothing); a demo
-//   whose module fails to load falls forward to the first
-//   DIFFERENT demo that mounts. Falls back to body when #app is missing.
+//   install the ambient theme matcher before anything mounts (the shell
+//   palette itself is CSS: the pages declare the --tambor-* tokens and
+//   switch them on the prefers-color-scheme media query, so this entry
+//   writes NO custom property on the document root — an inline value
+//   would outrank the media query), correct a scheme the host reported
+//   wrong at boot with one extra draw of the current demo (never a
+//   remount: the demo state must survive), render one nav button per
+//   gallery demo (DEMOS) plus a content container, and mount the active
+//   demo via mountDemo; switching demos unmounts the previous handle and
+//   mounts the next. The first mount follows the query string
+//   (boot-selection.ts: ?demo=<id>), and ?debug=1 opts the mount's
+//   read-only snapshot in for every mount (unmount clears it, so a
+//   loading demo exposes nothing); a demo whose module fails to load
+//   falls forward to the first DIFFERENT demo that mounts. Falls back
+//   to body when #app is missing.
 // Rationale: the gallery is mounting plumbing — nav buttons are plain
 //   DOM outside the corpus; every demo's semantics live in its view +
 //   state and route through the corpus wire (gallery.ts, mount.ts).
 //   All DOM access stays on the structural HostDoc/HostElement seam.
-//   Deep links never dead-end: ?demo=<id> opens the exact registry
-//   entry, and an unloadable chunk (a stale content hash after a deploy,
-//   an offline cache gap) still lands on a mountable demo — or a static
-//   error — instead of a blank stage plus an unhandled rejection.
+//   The theme install hands the host matcher to the ambient cell, which
+//   resolves the scheme on EVERY draw, so the drawn demo and the CSS
+//   shell converge on one host answer. Deep links never dead-end:
+//   ?demo=<id> opens the exact registry entry, and an unloadable chunk
+//   (a stale content hash after a deploy, an offline cache gap) still
+//   lands on a mountable demo — or a static error — instead of a blank
+//   stage plus an unhandled rejection.
 
-import { mountDemo, domMeasure, whenHostFontsReady, type SpaHandle } from "./mount.ts";
+import {
+  domMeasure,
+  drawnSchemeIs,
+  mountDemo,
+  whenHostFontsReady,
+  type SpaHandle,
+} from "./mount.ts";
 import { DEMOS, type DemoDef } from "./gallery.ts";
 import { bootSelection } from "./boot-selection.ts";
 import { configureLabelMeasure } from "../views/nodes.ts";
+import { ambientScheme, resolveAmbientTheme } from "../ui/ambient-theme.ts";
+import { colorSchemePref, type MediaQueryFn } from "../ui/theme.ts";
 import type { App } from "../effects/dispatch.ts";
 import type { HostDoc, HostElement } from "../interop/domhost.ts";
 
 const doc = (globalThis as { document?: unknown }).document as
   | HostDoc
   | undefined;
+
+// The window media-query seam: real browsers expose matchMedia on the
+// window (globalThis), NOT on the document, so the HostDoc seam only
+// covers shims (jsdom/test doubles). The matcher tries the doc seam
+// first and falls through to the host, then to null (light scheme).
+const mmHost = globalThis as {
+  matchMedia?: (query: string) => { matches: boolean } | undefined | null;
+};
+
+// The animation-frame seam, reached structurally (tsconfig carries no
+// DOM lib). Called as a METHOD of the host global — a detached
+// requestAnimationFrame throws "Illegal invocation" in real browsers.
+const frameHost = globalThis as {
+  requestAnimationFrame?: (cb: () => void) => unknown;
+};
 
 // One selection's candidate order: the requested demo is attempted
 // first, the rest follow in registry order, so the fallback is the
@@ -54,6 +87,20 @@ function blurb(d: HostDoc, text: string): HostElement {
 
 if (doc !== undefined) {
   const d: HostDoc = doc;
+  // The host's media seam, LIVE: every ambient resolution asks the host
+  // again, so a scheme the page only learns about later still reaches
+  // the next draw — no cached palette to invalidate. The doc seam comes
+  // first (shims route queries through the document), the window second
+  // (real browsers hang matchMedia there), else null → light.
+  const hostMatch: MediaQueryFn = (query) =>
+    d.matchMedia?.(query) ?? mmHost.matchMedia?.(query) ?? null;
+  // The theme installs before anything mounts: the ambient cell holds
+  // this matcher and every demo view resolves it per draw. NOTHING is
+  // written on the document root — the shell palette is the pages' CSS
+  // (index.html and the e2e fixture declare the tokens and switch them
+  // on the prefers-color-scheme media query), and an inline --tambor-*
+  // value would outrank that media query for the rest of the session.
+  resolveAmbientTheme(hostMatch);
   // The shell's font face must be ready before any view is built
   // (tambor-v3s): layout offsets come from the measure, and measuring a
   // fallback face then painting the declared one shifts labels.
@@ -73,6 +120,59 @@ if (doc !== undefined) {
 
   let current: SpaHandle | undefined;
   let selectToken = 0;
+  // The scheme correction arms once, with the first mount.
+  let schemeWatchArmed = false;
+
+  // Chromium answers the dark query WRONG while the page is still
+  // initialising, and the answer WOBBLES: probes recorded
+  // prefers-color-scheme:dark as false during module evaluation, TRUE by
+  // 450ms, then false again at the first draw — sometimes without ever
+  // firing a change event, sometimes flipping a second later. A
+  // boot-vs-now comparison therefore never converges. Two layers cover
+  // it: (1) the media query's OWN change event re-arms the watcher (a
+  // real OS flip and a Playwright emulateMedia both fire it), and (2) a
+  // frame-polled settle window catches the event-less wobble. The
+  // watcher compares the host's LIVE answer against the scheme the last
+  // actual draw resolved (mount.ts records it after every draw); on a
+  // mismatch it re-installs the matcher, observes the flip (clearing
+  // the props-keyed component cache) and re-draws the CURRENT demo once
+  // — a draw, not a remount, because the demo state must survive.
+  const SETTLE_FRAMES = 120;
+  let stable = SETTLE_FRAMES;
+  const check = (): void => {
+    const handle = current;
+    if (handle === undefined) return;
+    const scheme = colorSchemePref(hostMatch);
+    if (!drawnSchemeIs(scheme)) {
+      resolveAmbientTheme(hostMatch);
+      // Observe the flip BEFORE the draw: the observation clears the
+      // props-keyed component cache, so the re-derived tree rebuilds
+      // every ambient-colored component instead of replaying the
+      // pre-flip cached ink for components that assemble first.
+      ambientScheme();
+      handle.backend.draw(handle.app.view());
+      stable = 0;
+    } else if (stable < SETTLE_FRAMES) {
+      stable += 1;
+    } else {
+      return;
+    }
+    frameHost.requestAnimationFrame?.(check);
+  };
+  // The change event re-arms the settle window, so a flip that arrives
+  // after the watcher went idle still repaints.
+  const armSchemeWatch = (): void => {
+    stable = 0;
+    frameHost.requestAnimationFrame?.(check);
+  };
+  // Structural media-query seam: the MQL carries addEventListener in
+  // real browsers; jsdom shims expose only { matches }, and `?.` keeps
+  // them on the frame-polled settle path.
+  const darkQuery = mmHost.matchMedia?.call(mmHost, "prefers-color-scheme: dark") as {
+    matches: boolean;
+    addEventListener?: (type: string, cb: () => void) => void;
+  } | undefined | null;
+  darkQuery?.addEventListener?.("change", armSchemeWatch);
 
   // Query state, parsed ONCE (boot-selection.ts): ?demo=<id> picks the
   // registry entry whose id matches exactly; absent, unknown or
@@ -157,6 +257,13 @@ if (doc !== undefined) {
     });
     content.appendChild(blurb(d, demo.blurb));
     markActive(index);
+    // The first mount arms the scheme correction: the drawn demo is the
+    // only layer that can still show the wrong scheme — the shell CSS
+    // switched on the media query before any script ran.
+    if (!schemeWatchArmed) {
+      schemeWatchArmed = true;
+      armSchemeWatch();
+    }
   }
 
   // The all-demos-failed state: a static message in place of the

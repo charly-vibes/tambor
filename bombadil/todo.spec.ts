@@ -1,19 +1,23 @@
-// Purpose: the todo demo's expected-pass property — the rows the stage
-//   draws always equal the rows the model says the selected filter shows
-//   (design D2: properties ship green at HEAD, so a red run is a new
-//   finding).
+// Purpose: the todo demo's expected-pass properties — the rows the stage
+//   draws always equal the rows the model says the selected filter shows,
+//   and the drawn text stays readable and its targets tappable (design
+//   D2: properties ship green at HEAD, so a red run is a new finding).
 // Responsibilities: derive the expected visible-row count from
 //   `__tambor.state()` (the `todos` array under the selected filter,
 //   mirroring examples/todo/todo.ts's filterFn and todoRows); count the
 //   drawn rows from the delete X every todoItem renders; assert the
-//   closure form from tasks.md 3.2 over consecutive states; export the
-//   shared stage actions, one todo-scoped click generator and the safety
-//   properties.
+//   closure form from tasks.md 3.2 over consecutive states; assert the
+//   visual floors from lib/visual.ts (`contrastViolations === 0` for the
+//   filter/row labels, `undersizedTargets === 0` for the Add Todo button);
+//   export the shared stage actions, one todo-scoped click generator and
+//   the safety properties.
 // Rationale: the model is the app's own state (design D5), while the
 //   drawn count is the DomBackend's DOM ground truth, so the property is
 //   a genuine model/DOM agreement check — not a DOM-text heuristic. The
 //   closure form catches both a wrong draw at the captured state and a
-//   draw that lags the model by one captured state.
+//   draw that lags the model by one captured state. The visual floors
+//   cover what the model cannot: an unselected filter label is gray text
+//   on the page surface, and the one real <button> must clear 44x44.
 //
 // Row marker — the delete X of examples/todo/items.ts deleteX():
 //   `withStrokeWidth(3, withColor([1, 0, 0], path([0, 0], [10, 10])))`
@@ -46,6 +50,7 @@ import type {
   State,
 } from "@antithesishq/bombadil/browser";
 import { handle } from "./lib/model.ts";
+import { visualFacts } from "./lib/visual.ts";
 import {
   mounted,
   readStageGeometry,
@@ -390,5 +395,29 @@ export const todoRowsMatchModel = always(
       if (!current.stagePresent || current.demo !== "todo") return true;
       return agrees(current);
     });
+  }),
+);
+
+// --- visual floors --------------------------------------------------------
+
+// Readability (lib/visual.ts): every drawn label must clear WCAG AA
+// against the surface behind it. The todo stage's gray is the risk case —
+// an unselected filter option renders as gray TEXT (no fill), so it is
+// measured against the page surface, not against another demo's ink.
+// Gated on mount: the pre-mount placeholder has no stage and the
+// extractor's zeroed counts must not fail the property.
+export const textReadable = always(
+  now(() => {
+    const facts = visualFacts.current;
+    return !facts.stagePresent || facts.contrastViolations === 0;
+  }),
+);
+
+// Reachability: the stage's one real <button> (`Add Todo`) is drawn at the
+// corpus button_bounds, so a sub-44px box is an emitted-DOM regression.
+export const touchTargets = always(
+  now(() => {
+    const facts = visualFacts.current;
+    return !facts.stagePresent || facts.undersizedTargets === 0;
   }),
 );

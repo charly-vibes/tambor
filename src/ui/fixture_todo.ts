@@ -18,7 +18,9 @@
 //   ui-mobile.md's design authority: thumb_zone_actions moves the
 //   primary action to a bottom bar, and no_horizontal_overflow places
 //   unbounded content (a long description) inside a horizontal
-//   scrollview. Test fixture for the ui-mobile contracts; the
+//   scrollview. The toggle row's inactive labels read the ambient muted
+//   role, so their inactive ink follows the scheme instead of a
+//   scheme-blind literal. Test fixture for the ui-mobile contracts; the
 //   example.todo contracts themselves remain their own spec's property
 //   set. No behavior beyond the corpus.
 
@@ -44,6 +46,7 @@ import { scrollview } from "../components/scrollview/scrollview.ts";
 import { textarea } from "../components/textarea/textarea.ts";
 import { initialTextareaExtra } from "../components/textarea/edit.ts";
 import { locate } from "./overflow.ts";
+import { ambientColor } from "./ambient-theme.ts";
 
 // The todo item shape of the example (example.todo).
 export interface TodoItem {
@@ -137,16 +140,17 @@ export interface MobileTodoView {
 // third (thumb_zone_actions). A description wider than the remaining
 // row width is placed inside a horizontal scrollview
 // (no_horizontal_overflow).
-// The filter toggle row: selected plain, others gray, 5 px spacers
-// (toggle_render).
+// The filter toggle row: selected plain, others muted, 5 px spacers
+// (toggle_render). The inactive labels read the ambient muted role at
+// render time (the accessible 4.5:1 inactive ink in both schemes).
 function toggleRow(state: TodoState): Elem {
   const options = ["all", "active", "complete"] as const;
-  const gray: Color = [0.8, 0.8, 0.8];
+  const muted = ambientColor("muted");
   const children: Elem[] = [];
   options.forEach((opt, i) => {
     if (i > 0) children.push(spacer(5, 0));
     children.push(
-      opt === state["selected-filter"] ? labelNode(opt) : withColor(gray, labelNode(opt)),
+      opt === state["selected-filter"] ? labelNode(opt) : withColor(muted, labelNode(opt)),
     );
   });
   return horizontalLayout(children)!;

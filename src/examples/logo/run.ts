@@ -10,17 +10,23 @@
 //   path); applyRun (the typed apply — ok appends and moves the cursor,
 //   failed records the message, a stale reply is ignored by its echoed id);
 //   stopLogo (running → terminated only); outcomeLabel (the status/error
-//   label the view renders).
+//   lines the view renders, word-wrapped to the stage width).
 // Rationale: per the typed-outcome lens (wanna) the Worker boundary must
 //   return typed answers — terminate() kills the spinning worker and the
 //   state records the kill. The interpreter fold itself stays pure: these
 //   handlers are plain state → state functions plus the two hooks; the
 //   sync fallback keeps today's bounded behavior for hosts without a
-//   Worker (tests, jsdom) so the demo degrades, never hangs.
+//   Worker (tests, jsdom) so the demo degrades, never hangs. Corpus labels
+//   are single-line, so every outcome branch runs through fittedLabels: a
+//   long terminated or interpreter message becomes stacked labels inside
+//   the 300 px root instead of one label escaping it. The terminated amber
+//   is darkened enough to clear the 4.5:1 AA floor on the white shell.
 
 import type { LogoState } from "./logo.ts";
 import { derive, type LogoEntry } from "./interpreter.ts";
 import { WORKER_BUDGET, type RunRequest, type RunResponse } from "./worker-main.ts";
+import { fittedLabels } from "../../views/fit.ts";
+import { verticalLayout } from "../../views/layout.ts";
 import { label as labelNode, withColor, type Color, type Elem } from "../../views/model.ts";
 
 /** The run lifecycle as typed state: `running` while the off-thread
@@ -43,8 +49,9 @@ export interface RunHooks {
 // The error label's color (moved from logo.ts — the label lives here now).
 const ERROR: Color = [0.7, 0.149, 0.118];
 
-// The terminated-run label's color: amber, distinct from a red failure.
-const KILLED: Color = [0.87, 0.45, 0.05];
+// The terminated-run label's color: amber, distinct from a red failure,
+// darkened to ≈6.9:1 on white so the ink clears the AA floor.
+const KILLED: Color = [0.55, 0.28, 0];
 
 // run: keep entries[0..cursor], append the editor source, validate by
 // deriving, move the cursor to the end — or record the typed failure
@@ -102,11 +109,21 @@ export function stopLogo(s: LogoState): LogoState {
 }
 
 // The status/error label: running and terminated get their own typed
-// labels; otherwise today's error label (blank filler when clean).
+// labels; otherwise today's error label (blank filler when clean). Every
+// branch is fitted, and the ink rides each fitted LINE (never the stack):
+// a with-color wrapper around a group sizes itself from the stage
+// percentage rules and shifts the whole demo below the fold.
 export function outcomeLabel(o: RunOutcome, err: string): Elem {
-  if (o.kind === "running") return labelNode("running — off-thread; Stop kills it");
-  if (o.kind === "terminated") {
-    return withColor(KILLED, labelNode("terminated — the runaway program was killed"));
+  if (o.kind === "running") {
+    const text = "running — off-thread; Stop kills it";
+    return verticalLayout(fittedLabels(text)) ?? labelNode(text);
   }
-  return withColor(ERROR, err.length === 0 ? labelNode(" ") : labelNode(err));
+  if (o.kind === "terminated") {
+    const text = "terminated — the runaway program was killed";
+    const lines = fittedLabels(text).map((line) => withColor(KILLED, line));
+    return verticalLayout(lines) ?? labelNode(text);
+  }
+  const text = err.length === 0 ? " " : err;
+  const lines = fittedLabels(text).map((line) => withColor(ERROR, line));
+  return verticalLayout(lines) ?? labelNode(text);
 }

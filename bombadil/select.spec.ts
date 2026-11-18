@@ -1,12 +1,16 @@
-// Purpose: the dropdown demo's expected-pass property — the option rows
+// Purpose: the dropdown demo's expected-pass properties — the option rows
 //   are part of the drawn tree exactly while the model's `open?` flag is
-//   true (design D2: properties ship green at HEAD, so a red run is a new
+//   true, and the drawn text stays readable, unclipped and tappable
+//   (design D2: properties ship green at HEAD, so a red run is a new
 //   finding).
 // Responsibilities: extract the model's open flag (`__tambor.state()`'s
 //   `open?`) and, from the same captured state, the labels drawn inside
-//   the open list; assert the two agree on every state; export the shared
-//   safety properties, the stage actions, and a select-scoped click
-//   generator (the header has no interactive DOM element, so the stage's
+//   the open list; assert the two agree on every state; assert the visual
+//   floors from lib/visual.ts (`contrastViolations === 0`,
+//   `undersizedTargets === 0`, `clippedTexts === 0`) with the one
+//   documented corpus carve-out below; export the shared safety
+//   properties, the stage actions, and a select-scoped click generator
+//   (the header has no interactive DOM element, so the stage's
 //   button/role targeting alone can never open the list).
 // Rationale: the dropdown draws its header always and appends
 //   dropdown-list only when open? (list_when_open), so option labels are
@@ -14,16 +18,29 @@
 //   translate wrappers offset below the header (list_geometry), which is
 //   the DOM shape that separates a row label from the header label even
 //   when both carry the same option text. Extractors must return JSON:
-//   they project numbers, strings and fingerprints, never DOM nodes.
+//   they project numbers, strings and fingerprints, never DOM nodes. The
+//   text rules matter most here: the header renders a gray no-selection
+//   label, and rows are one-line labels whose box must not clip them.
+//
+// Carve-out — the selected row's label. `components.select.row_visuals`
+// pins a WHITE label on the blue `[0, 0.48, 1]` row fill (SELECTED_FILL,
+// emitted as rgb(0, 122, 255)); that combination measures 4.02:1, below
+// the 4.5:1 floor. It is a corpus accessibility defect, not a demo
+// regression, so the extractor skips contrast on that one surface and
+// asserts every other text box strictly. The exemption is keyed on the
+// painted surface colour, so a future row that repaints on a different
+// fill is measured again.
 
-import { always } from "@antithesishq/bombadil";
+import { always, now } from "@antithesishq/bombadil";
 import { actions, extract, getFingerprint } from "@antithesishq/bombadil/browser";
 import type {
   ActionTemplate,
   Fingerprint,
   State,
 } from "@antithesishq/bombadil/browser";
+import { SELECTED_FILL } from "../src/components/select/list.ts";
 import { handle } from "./lib/model.ts";
+import { readVisualFacts, type VisualFacts } from "./lib/visual.ts";
 import {
   mounted,
   readStageGeometry,
@@ -37,6 +54,15 @@ import {
 // generators are deliberately not exported — they would click the demo
 // nav.
 export * from "./lib/actions.ts";
+
+// The visual floors for this demo. The one exemption is the corpus-pinned
+// selected-row fill:
+// corpus carve-out: components.select.row_visuals pins white on
+// [0, 0.48, 1] (rgb(0, 122, 255), 4.02:1) below the 4.5:1 floor; tracked
+// as a corpus accessibility defect. Every other surface is asserted.
+const selectVisual = extract<VisualFacts>((state) =>
+  readVisualFacts(state, [SELECTED_FILL]),
+);
 
 // The dropdown's options, in draw order (src/spa/gallery.ts OPTIONS).
 const OPTION_LABELS = ["Uno", "Dos", "Tres"] as const;
@@ -155,3 +181,38 @@ export const optionLabelsMatchOpen = always(() => {
     drawn.every((text, index) => text === OPTION_LABELS[index])
   );
 });
+
+// --- visual floors --------------------------------------------------------
+
+// Readability (lib/visual.ts): leaf text must clear WCAG AA against the
+// surface behind it. Measured per captured state, so a state that repaints
+// a label over its surface is judged where it renders, not from the model.
+// The cell's one exemption is the pinned selected-row fill (see the
+// carve-out above); every other text box is asserted. Gated on mount: the
+// pre-mount placeholder has no stage and the extractor's zeroed counts
+// must not fail the property.
+export const textReadable = always(
+  now(() => {
+    const facts = selectVisual.current;
+    return !facts.stagePresent || facts.contrastViolations === 0;
+  }),
+);
+
+// Reachability: the dropdown draws no <button>, so this floor only holds
+// vacuously today — it is exported to catch a future row/header that the
+// backend emits as a real target below 44x44.
+export const touchTargets = always(
+  now(() => {
+    const facts = selectVisual.current;
+    return !facts.stagePresent || facts.undersizedTargets === 0;
+  }),
+);
+
+// The rows are one-line labels (white-space: pre, line-height 1): their
+// box must hold the glyphs, never crop them.
+export const noClippedText = always(
+  now(() => {
+    const facts = selectVisual.current;
+    return !facts.stagePresent || facts.clippedTexts === 0;
+  }),
+);

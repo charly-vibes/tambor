@@ -3,7 +3,7 @@
 //   rows, mounted as an ordinary gallery demo through the same
 //   makeApp/SPA mount path as every other corpus app.
 // Responsibilities: KeyedRow/KeyedTableState, keyedTableState (empty
-//   rows), KEYED_ROWS_PATH, keyedTableView (a control row of op buttons
+//   rows), KEYED_ROWS_PATH, keyedTableView (three bands of op buttons
 //   over the row stack), and the op builders — buildRows (1000 fresh
 //   rows), replaceEveryTenth (10% relabel), swapFirstTwo (2-row swap),
 //   removeEveryHundredth (~10 rows), appendRows (1k more rows).
@@ -23,6 +23,13 @@
 //   on the row object's identity, and the ops preserve the identity of
 //   every row they don't touch (structural sharing), so a whole-view
 //   re-derive after an op rebuilds only the changed rows' labels.
+//
+//   The controls stack in bands rather than one row: the drawn stage is
+//   300 px wide, and after the 44 px button floor (add-demo-visual-
+//   polish) the five-button row measured 488 px, so consecutive ops
+//   pair into bands that each fit — still plain horizontalLayout rows
+//   in one verticalLayout, so the click targets and their order are the
+//   ones the bench scenarios bind by button text.
 
 import {
   button,
@@ -131,24 +138,40 @@ function rowLabel(row: KeyedRow): Elem {
 // the cache; the view body stays a pure function of state.
 const rowNode = memo(rowLabel);
 
-// The keyed-table view: the control row, a spacer, then the row stack.
+// The keyed-table view: the control bands, a spacer, then the row stack.
 // The buttons' update intents route through the app's dispatcher; the
 // rows are plain labels — pure view, no state of their own.
+//
+// The ops split, in order, into bands of at most two buttons: the
+// single five-button row measured 488 px against the 300 px stage once
+// the 44 px button floor landed (add-demo-visual-polish). Each pair
+// fits (208 px, 202 px) and the tail button stands alone (92 px);
+// three in a band would miss by a pixel. The spacer(5, 0) gaps inside
+// a band are the ones the single row carried.
 export function keyedTableView(state: KeyedTableState): Elem {
-  const controls = horizontalLayout([
+  const band1 = horizontalLayout([
     opButton("Build 1000", buildRows),
     spacer(5, 0),
     opButton("Replace 10%", replaceEveryTenth),
-    spacer(5, 0),
+  ]) as Elem;
+  const band2 = horizontalLayout([
     opButton("Swap Rows", swapFirstTwo),
     spacer(5, 0),
     opButton("Remove 10", removeEveryHundredth),
-    spacer(5, 0),
-    opButton("Append 1k", appendRows),
   ]) as Elem;
+  // A single-button band needs no row: the tail op stands alone.
+  const tail = opButton("Append 1k", appendRows);
   const rows = (verticalLayout(state.rows.map(rowNode)) ?? []) as readonly Elem[];
-  const body = [controls, spacer(0, 10), ...rows] as readonly Elem[];
-  return (verticalLayout(body) ?? controls) as Elem;
+  const body = [
+    band1,
+    spacer(0, 4),
+    band2,
+    spacer(0, 4),
+    tail,
+    spacer(0, 10),
+    ...rows,
+  ] as readonly Elem[];
+  return (verticalLayout(body) ?? band1) as Elem;
 }
 
 // The bench app: the ordinary registry-aware makeApp mount, the same
