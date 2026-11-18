@@ -10,6 +10,7 @@
 import { expect, it } from "vitest";
 import fc from "fast-check";
 
+import { contrast } from "./e2e/audit-color.ts";
 import { call, render } from "../src/model/component.ts";
 import { defaultHandler, makeApp, type Effect } from "../src/effects/dispatch.ts";
 import { select as selectPath, type Path } from "../src/effects/paths.ts";
@@ -155,6 +156,17 @@ it("p_header_label: label is That, and with nil it is no selection", () => {
   const grays = collect(nil, isWithColor)
     .filter((w) => w.color.length === 3 && w.color[0] === w.color[1] && w.color[1] === w.color[2]);
   expect(grays.length).toBeGreaterThan(0);
+  // the gray is characterized by the accessibility floor, not a literal
+  // (add-demo-visual-polish D1): contrast ≥ 4.5:1 against the
+  // light-shell white
+  for (const w of grays) {
+    const ink8bit: readonly [number, number, number] = [
+      Math.round(w.color[0]! * 255),
+      Math.round(w.color[1]! * 255),
+      Math.round(w.color[2]! * 255),
+    ];
+    expect(contrast(ink8bit, [255, 255, 255])).toBeGreaterThanOrEqual(4.5);
+  }
   expect(
     grays.some((w) => collect(w.drawables as Elem, isLabel).some((l) => l.text === "no selection")),
   ).toBe(true);

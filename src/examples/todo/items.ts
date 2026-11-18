@@ -84,8 +84,10 @@ export function todoItem(todo: TodoItem, $todo: Path, extraPath: Path = ROW_EXTR
   ];
 }
 
-// The gray of the unselected toggle options (toggle_render).
-const GRAY: Color = [0.8, 0.8, 0.8];
+// The gray of the unselected toggle options (toggle_render) — the
+// accessible gray meeting the 4.5:1 contrast floor
+// (add-demo-visual-polish D1; tambor-71u).
+const GRAY: Color = [0.45, 0.45, 0.45];
 
 // The toggle (toggle_render, toggle_sets_filter): the option labels,
 // the selected one plain and the others gray and clickable, separated

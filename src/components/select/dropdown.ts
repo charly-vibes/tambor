@@ -31,8 +31,10 @@ import { onPairs, type EventElem } from "../../events/bubble.ts";
 import type { Options } from "./types.ts";
 import { dropdownList } from "./list.ts";
 
-// The gray of the "no selection" text — the corpus says gray only.
-export const NO_SELECTION_COLOR: Color = [0.6, 0.6, 0.6];
+// The gray of the "no selection" text — the corpus says gray only; the
+// value is the accessible gray meeting the 4.5:1 floor
+// (add-demo-visual-polish D1; tambor-71u).
+export const NO_SELECTION_COLOR: Color = [0.45, 0.45, 0.45];
 export const NO_SELECTION = "no selection";
 
 // Logical not, the header toggle's update function (header_toggles).

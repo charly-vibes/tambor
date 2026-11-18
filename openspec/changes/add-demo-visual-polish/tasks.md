@@ -2,14 +2,14 @@
 
 ## 1. Accessible gray (tambor-71u)
 
-- [ ] 1.1 Red: `tests/example-todo-filters.test.ts` `p_toggle_render`
+- [x] 1.1 Red: `tests/example-todo-filters.test.ts` `p_toggle_render`
       asserts inactive-option ink contrast ≥ 4.5:1 against white
       instead of the [0.8, 0.8, 0.8] literal; the same assertion lands
       on the dropdown no-selection label test (`components-select`).
       Both fail.
-- [ ] 1.2 Green: repaint `GRAY` in `src/examples/todo/items.ts` and the
+- [x] 1.2 Green: repaint `GRAY` in `src/examples/todo/items.ts` and the
       dropdown no-selection ink to [0.45, 0.45, 0.45]; both tests pass.
-- [ ] 1.3 Spec deltas: MODIFIED `toggle_render` (example-todo) and
+- [x] 1.3 Spec deltas: MODIFIED `toggle_render` (example-todo) and
       `header_label` (components-select) restate gray as the 4.5:1
       floor; scenarios updated; `spk lint` green on the corpus.
 - Acceptance: `just e2e-visual` reports zero `text.contrast` findings

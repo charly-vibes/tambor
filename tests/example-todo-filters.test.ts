@@ -14,6 +14,7 @@
 import { expect, it } from "vitest";
 import fc from "fast-check";
 
+import { contrast } from "./e2e/audit-color.ts";
 import {
   bounds,
   type Elem,
@@ -82,10 +83,20 @@ it("p_toggle_render: active is plain and the other two are gray and clickable", 
   const active = byText("active");
   expect(active.underColor).toBe(false);
   expect(active.underHandler).toBe(false);
-  // every other option is a clickable label in gray [0.8, 0.8, 0.8],
-  // separated by 5 px spacers
+  // every other option is a clickable label in gray — characterized by
+  // the accessibility floor, not a literal (add-demo-visual-polish D1):
+  // gray (r = g = b) with contrast ≥ 4.5:1 against the light-shell
+  // white, separated by 5 px spacers
   const colorWrap = scanOf(t).find((g) => g.node.type === "with-color")!.node as WithColorNode;
-  expect(colorWrap.color).toEqual([0.8, 0.8, 0.8]);
+  const [r, g, b] = [colorWrap.color[0]!, colorWrap.color[1]!, colorWrap.color[2]!];
+  expect(r).toBe(g);
+  expect(g).toBe(b);
+  const ink8bit: readonly [number, number, number] = [
+    Math.round(r * 255),
+    Math.round(g * 255),
+    Math.round(b * 255),
+  ];
+  expect(contrast(ink8bit, [255, 255, 255])).toBeGreaterThanOrEqual(4.5);
   for (const text of ["all", "complete"]) {
     const f = byText(text);
     expect(f.underColor).toBe(true);
