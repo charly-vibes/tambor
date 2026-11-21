@@ -8,15 +8,15 @@ default = "testaruda-adapter-typescript"
 [adapters.extensions]
 # Map file extensions to adapter binaries.
 # Adapters must be installed on PATH or specified as absolute paths.
-".rs" = "testaruda-adapter-rust"
-".py" = "testaruda-adapter-python"
+# TypeScript-only stack: the python/clojure mappings were removed —
+# every .py/.clj file scanned yielded 0 test items, and the tests-pass
+# oracle read that as "incomplete adapter evidence" → conservative
+# fallback → exit 10 on otherwise-green runs (scripts/*.py are build
+# tooling, not tests).
 ".ts" = "testaruda-adapter-typescript"
 ".tsx" = "testaruda-adapter-typescript"
 ".mts" = "testaruda-adapter-typescript"
 ".cts" = "testaruda-adapter-typescript"
-".clj" = "testaruda-adapter-clojure"
-".cljs" = "testaruda-adapter-clojure"
-".cljc" = "testaruda-adapter-clojure"
 
 [discover]
 # Directory/file names to exclude from discover walks.
