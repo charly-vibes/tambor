@@ -111,7 +111,9 @@ describe("spa lane overlay (tambor-54j.3 Phase 4)", () => {
   it("p_lane_overlay_drawn: the drag stream draws the overlay on top, deriving nothing", () => {
     const doc = hostDoc();
     const { app, derives } = dragApp();
-    const spa = mountDemo(doc, containerIn(doc), () => app);
+    // per-event draw accounting is the point here — the coalesced
+    // deferral would batch the paints (add-frame-coalescing D3 opt-out)
+    const spa = mountDemo(doc, containerIn(doc), () => app, { mode: "immediate" });
     const draws = captureDraws(spa);
     const d0 = derives();
 
@@ -142,7 +144,9 @@ describe("spa lane overlay (tambor-54j.3 Phase 4)", () => {
   it("p_lane_overlay_drawn: a mid-drag state change re-derives but keeps the overlay", () => {
     const doc = hostDoc();
     const { app, derives } = dragApp();
-    const spa = mountDemo(doc, containerIn(doc), () => app);
+    // per-event draw accounting is the point here — the coalesced
+    // deferral would batch the paints (add-frame-coalescing D3 opt-out)
+    const spa = mountDemo(doc, containerIn(doc), () => app, { mode: "immediate" });
     const draws = captureDraws(spa);
     const d0 = derives();
 
@@ -165,7 +169,9 @@ describe("spa lane overlay (tambor-54j.3 Phase 4)", () => {
   it("p_lane_overlay_drawn: the commit draw carries no overlay", () => {
     const doc = hostDoc();
     const { app } = dragApp();
-    const spa = mountDemo(doc, containerIn(doc), () => app);
+    // per-event draw accounting is the point here — the coalesced
+    // deferral would batch the paints (add-frame-coalescing D3 opt-out)
+    const spa = mountDemo(doc, containerIn(doc), () => app, { mode: "immediate" });
     const draws = captureDraws(spa);
 
     // drag, then commit: mouse-up writes the state and clears the lane

@@ -2,10 +2,10 @@
 
 ### Requirement: Default frame coalescing
 
-The SPA mount SHALL coalesce multiple dispatches that arrive within one
-animation frame into exactly one view derivation and draw for that
-frame, while applying every dispatch's effects synchronously and in
-dispatch order.
+The SPA mount SHALL coalesce multiple dispatches that arrive at the
+mount's routed event wire within one animation frame into exactly one
+view derivation and draw for that frame, while applying every
+dispatch's effects synchronously and in dispatch order.
 
 #### Scenario: burst of dispatches paints once
 
@@ -19,6 +19,13 @@ dispatch order.
   an effect that reads state written by the first
 - **THEN** the second dispatch observes the first dispatch's applied
   state, as with uncoalesced dispatch
+
+#### Scenario: app-handle dispatch bypasses coalescing
+
+- **WHEN** dispatches arrive through the app handle's dispatch, outside
+  the mount's routed event wire
+- **THEN** each dispatch re-draws synchronously, without waiting for
+  an animation frame
 
 ### Requirement: Opt-out mode
 

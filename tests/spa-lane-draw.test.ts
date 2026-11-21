@@ -73,7 +73,9 @@ describe("spa lane draw boundary (tambor-54j.3 Phase 2)", () => {
       on("mouse-move", () => [
         ["lane", "pan", (old: unknown) => [((old as Vec2 | undefined)?.[0] ?? 0) + 5, 0]],
       ], label(`n=${(state as { n: number }).n}`)));
-    const spa = mountDemo(doc, container, () => app);
+    // per-event draw/derive accounting is the point here — the coalesced
+    // deferral would batch the paints (add-frame-coalescing D3 opt-out)
+    const spa = mountDemo(doc, container, () => app, { mode: "immediate" });
     const draws = captureDraws(spa);
     const d0 = derives();
     const w0 = draws.count();
@@ -103,7 +105,9 @@ describe("spa lane draw boundary (tambor-54j.3 Phase 2)", () => {
       on("mouse-move", () => [
         ["lane", "pan", () => [12, 34]],
       ], button("add", () => [["set", [["keypath", "n"]], (state as { n: number }).n + 1]])));
-    const spa = mountDemo(doc, container, () => app);
+    // per-event draw/derive accounting is the point here — the coalesced
+    // deferral would batch the paints (add-frame-coalescing D3 opt-out)
+    const spa = mountDemo(doc, container, () => app, { mode: "immediate" });
     const draws = captureDraws(spa);
 
     // pan first (lane-only), then a real state change
@@ -125,7 +129,9 @@ describe("spa lane draw boundary (tambor-54j.3 Phase 2)", () => {
     const container = containerIn(doc);
     const { app } = countingApp((state) =>
       button("add", () => [["set", [["keypath", "n"]], (state as { n: number }).n + 1]]));
-    const spa = mountDemo(doc, container, () => app);
+    // per-event draw/derive accounting is the point here — the coalesced
+    // deferral would batch the paints (add-frame-coalescing D3 opt-out)
+    const spa = mountDemo(doc, container, () => app, { mode: "immediate" });
     const draws = captureDraws(spa);
 
     spa.backend.deliver(mouseDown([1, 1]));
@@ -138,7 +144,9 @@ describe("spa lane draw boundary (tambor-54j.3 Phase 2)", () => {
     const doc = hostDoc();
     const container = containerIn(doc);
     const { app, derives } = countingApp((state) => label(`n=${(state as { n: number }).n}`));
-    const spa = mountDemo(doc, container, () => app);
+    // per-event draw/derive accounting is the point here — the coalesced
+    // deferral would batch the paints (add-frame-coalescing D3 opt-out)
+    const spa = mountDemo(doc, container, () => app, { mode: "immediate" });
     const draws = captureDraws(spa);
     const d0 = derives();
     const w0 = draws.count();

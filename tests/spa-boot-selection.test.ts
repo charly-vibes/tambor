@@ -82,6 +82,7 @@ describe("bootSelection — debug", () => {
     expect(bootSelection("?demo=counter&debug=1", demos)).toEqual({
       demoIndex: 1,
       debug: true,
+      mode: "coalesced",
     });
   });
 });
@@ -114,6 +115,7 @@ describe("bootSelection — malformed input", () => {
     expect(bootSelection("?demo=todo", [])).toEqual({
       demoIndex: 0,
       debug: false,
+      mode: "coalesced",
     });
   });
 });

@@ -60,6 +60,45 @@ the rAF guard may defer without coalescing") — **supported at BZ1
 scale (T)**. The rAF guard coalesces nothing here: 80 queued repaint
 callbacks each re-derive; the guard defers, it does not dedupe.
 
+### H2 follow-up — add-frame-coalescing default-on re-run (tambor-bva,
+### 2026-11-21, commit ae50888a2)
+
+Re-run of both BZ1 stream scenarios with the mount's frame-coalescing
+layer landed and on by default (`mountSpa` mode `coalesced`), same app,
+same machine profile (Chrome 156.0.8078.4, CDP CPU ×4), production
+bundle:
+
+| scenario | runs | median ms | p90 ms | vs pre-coalescing |
+|---|---|---|---|---|
+| bz1-stream-naive (80 dispatches / op) | 3 | **10 101** | 10 456 | ~unchanged (7 812 → 10 101; same order, variance + throttle noise) |
+| bz1-stream-frame (1 dispatch / op) | 15 | **233** | 258 | **1.64× faster** (383 → 233) |
+
+Protocol note: the naive run uses the original 3-run protocol (the
+harness's playwright test timeout is 900 s; at ~8.5 s/op the default
+15 runs exceed it — the earlier "hang" suspicion was this budget, not
+a frozen page). The frame run rode the default 15 runs.
+
+**The headline correction**: the default-on layer does NOT flip the
+naive wiring. `naivePump` calls `app.dispatch` on the core App handle
+(`src/examples/bench/stream-dashboard.ts:94-98`) — below the mount
+boundary — and D1 deliberately coalesces only the mount's *routed
+surface dispatch* (`wireSurface`'s paint seam). The proposal's claim
+that the default "flips the naive BZ1 wiring from ~7.8 s/op to
+~383 ms/op without changing app code" is therefore wrong as
+implemented: an app whose burst dispatches through the core handle
+keeps the un-coalesced path, and the measured naive number moves only
+by noise. What the default DOES buy, measured: the routed frame op
+drops 383 → 233 ms (the mount wrapper no longer draws per dispatch),
+and every demo routed through the surface (all gallery ops) is
+coalesced without opt-in. An app that wants burst coalescing must
+route its dispatches through the mount boundary — the frame pump's
+one-intent shape (or a surface-dispatched pump), not `app.dispatch`.
+
+The frame op's 233 ms is now BELOW bz1-build's 370 ms — the fold-then-
+draw path is cheaper than a single 500-row build draw, because the
+coalesced paint skips the per-burst redundant derives the old mount
+wrapper paid per routed dispatch.
+
 ### Candidates not built in this lane (D/O)
 
 - **Canvas sparklines** (§4.8 canvas layer taking data by reference):

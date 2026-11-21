@@ -15,7 +15,7 @@
 
 import { describe, expect, it } from "vitest";
 
-import { mountDemo } from "../src/spa/mount.ts";
+import { mountDemo, type SpaHandle } from "../src/spa/mount.ts";
 import { DEMOS } from "../src/spa/gallery.ts";
 import { counter } from "../src/components/numeric/counter.ts";
 import { dropdown } from "../src/components/select/dropdown.ts";
@@ -23,7 +23,7 @@ import { render, call } from "../src/model/component.ts";
 import { scanOf } from "./helpers/scan.ts";
 import { centreOf } from "./helpers/appview.ts";
 import type { Elem, Label } from "../src/views/model.ts";
-import type { HostDoc, HostElement } from "../src/interop/domhost.ts";
+import type { HostDoc } from "../src/interop/domhost.ts";
 
 function hostDoc(): HostDoc {
   return (globalThis as { document?: unknown }).document as HostDoc;
@@ -41,10 +41,13 @@ function mouseEventCtor(): new (
   ) => unknown;
 }
 
-function clickAt(surface: { host: HostElement }, x: number, y: number): void {
+function clickAt(spa: SpaHandle, x: number, y: number): void {
   const ME = mouseEventCtor();
-  surface.host.dispatchEvent(new ME("pointerdown", { clientX: x, clientY: y }));
-  surface.host.dispatchEvent(new ME("pointerup", { clientX: x, clientY: y }));
+  spa.surface.host.dispatchEvent(new ME("pointerdown", { clientX: x, clientY: y }));
+  spa.surface.host.dispatchEvent(new ME("pointerup", { clientX: x, clientY: y }));
+  // add-frame-coalescing: the routed repaint is paint-deferred (D2),
+  // so force the pending frame before the caller reads the drawn DOM
+  spa.flush();
 }
 
 describe("gallery — every demo mounts and interacts", () => {
@@ -74,7 +77,7 @@ describe("gallery — every demo mounts and interacts", () => {
     // click the "+" label drawable — the router hit-tests to its button handler
     const plus = scanOf(view).find((f) => (f.node as Label).text === "+")!;
     const [x, y] = centreOf(plus);
-    clickAt(spa.surface, x, y);
+    clickAt(spa, x, y);
 
     expect(container.textContent).toContain("6");
     spa.unmount();
@@ -103,7 +106,7 @@ describe("gallery — every demo mounts and interacts", () => {
     // open the list: click the header (its handler draws "no selection")
     const header = scanOf(headerView).find((f) => (f.node as Label).text === "no selection")!;
     let [x, y] = centreOf(header);
-    clickAt(spa.surface, x, y);
+    clickAt(spa, x, y);
     expect(container.textContent).toContain("Uno");
 
     // select "Dos": the list is open, so the fresh view draws its rows
@@ -112,7 +115,7 @@ describe("gallery — every demo mounts and interacts", () => {
     ) as Elem;
     const row = scanOf(openView).find((f) => (f.node as Label).text === "Dos")!;
     [x, y] = centreOf(row);
-    clickAt(spa.surface, x, y);
+    clickAt(spa, x, y);
 
     expect(container.textContent).toContain("Dos");
     expect(container.textContent).not.toContain("Uno");

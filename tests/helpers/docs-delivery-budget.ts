@@ -36,13 +36,23 @@ import { staticClosure, type MetaOutputs } from "./metafile.ts";
 // mountAvailable/mountDemo) re-measured at 31596 B; re-recorded
 // 2026-11-18 to 31599 B after add-demo-visual-polish D2 floored
 // button_bounds at 44px/axis (the shared geometry helper adds ~3 B
-// gzipped to the shared bundle).
+// gzipped to the shared bundle); re-recorded 2026-11-21 to 34309 B
+// against the in-flight working tree (the tambor-ilc sw change itself
+// is outside the docs entry's static closure — sw.js is a standalone
+// entry with no importers — so this bump comes from other spa edits
+// riding the same build); re-recorded 2026-11-21 again to 34464 B for
+// add-frame-coalescing (tambor-bva): the mount-boundary coalescer,
+// wireSurface paint seam, and boot-selection mode parsing ship in the
+// shared spa bundle the docs shell loads (mount.ts is the npm ./spa
+// subpath and initial chunk by design, add-spa-delivery); re-recorded
+// 2026-11-21 once more to 34490 B for the RO5U fixes (unmount drop
+// guard on the coalescer rides the same shared bundle).
 // Re-record ritual: when the docs entry or content ships a bigger
 // measured shell — run the build, read the measured gzip the test
 // reports, update THIS ONE constant, and run tools/stamp-docs.sh if
 // the demo-dist total changed too (it stamps README/EVALUATION from
 // the same metafile).
-export const DOCS_SHELL_GZIP_CEILING_BYTES = 34281;
+export const DOCS_SHELL_GZIP_CEILING_BYTES = 34490;
 
 // The measured shell gzip for a docs entry output: the gzip of every
 // file in its static-import closure (shared chunks ride the initial

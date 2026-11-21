@@ -13,8 +13,9 @@
 //   demo via mountDemo; switching demos unmounts the previous handle and
 //   mounts the next. The first mount follows the query string
 //   (boot-selection.ts: ?demo=<id>), and ?debug=1 opts the mount's
-//   read-only snapshot in for every mount (unmount clears it, so a
-//   loading demo exposes nothing); a demo whose module fails to load
+//   read-only snapshot in for every mount (?mode=immediate opts out of
+//   the frame-coalesced paint, add-frame-coalescing D3; unmount clears
+//   the snapshot, so a loading demo exposes nothing); a demo whose module fails to load
 //   falls forward to the first DIFFERENT demo that mounts. Falls back
 //   to body when #app is missing.
 // Rationale: the gallery is mounting plumbing — nav buttons are plain
@@ -254,6 +255,7 @@ if (doc !== undefined) {
     current = mountDemo(d, content, () => app, {
       debug: selection.debug,
       demo: demo.id,
+      mode: selection.mode,
     });
     content.appendChild(blurb(d, demo.blurb));
     markActive(index);

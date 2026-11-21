@@ -58,7 +58,7 @@ Two timing guarantees the deferral needs explicitly:
 ### D3. Opt-out shape
 
 `mountSpa`/`mountDemo` currently take no options object — the change
-adds one carrying the mode (`coalesce: false` restores today's
+adds one carrying the mode (`mode: "immediate"` restores today's
 behavior); the SPA handle exposes the active mode for tests.
 Custom `dispatch` already bypasses everything and stays untouched.
 

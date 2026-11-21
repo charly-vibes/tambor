@@ -137,6 +137,9 @@ describe("docs shell — journey nav and content pane", () => {
     const target = "View Model";
     const [x, y] = centreOf(navEntryOf(docs.app.view(), target));
     clickAt(docs.surface, x, y);
+    // add-frame-coalescing: the routed repaint is paint-deferred (D2),
+    // so force the pending frame before reading the drawn DOM
+    docs.flush();
     const text = container.textContent;
     expect(text).toContain(target); // the pane renders the selected page
     expect(text).toContain("computable origin, bounds and children"); // statement

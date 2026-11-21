@@ -36,6 +36,25 @@ import { createLogoApp } from "../src/examples/logo/logo.ts";
 import type { ButtonNode } from "../src/views/model.ts";
 import type { HostDoc } from "../src/interop/domhost.ts";
 
+// A dispatched click's repaint is frame-deferred under the default
+// coalesced mount (add-frame-coalescing D2) — the same read-your-writes
+// gap drive.ts settles for the spec pages (tambor-4h6). The bundle
+// boots itself from #app, so there is no handle to flush(): await the
+// same double-rAF settle before reading drawn text.
+async function settle(): Promise<void> {
+  // structural seam: the repo tsconfig has no DOM lib
+  const host = globalThis as unknown as {
+    requestAnimationFrame?: (cb: () => void) => number;
+  };
+  const raf = host.requestAnimationFrame;
+  if (raf === undefined) return;
+  // the repo lib target is pre-es2024: the executor form is the
+  // only shape Promise offers here
+  await new Promise<void>((resolve) => {
+    raf(() => raf(() => resolve()));
+  });
+}
+
 // jsdom's document, reached structurally (no lib.dom in tsconfig)
 function hostDoc(): HostDoc {
   return (globalThis as { document?: unknown }).document as HostDoc;
@@ -177,6 +196,7 @@ describe("spa bundle — demo-dist/spa.js mounts the logo demo", () => {
     expect(run).toBeDefined();
     const [x, y] = runCentre();
     clickAt(run as unknown as HostEl, x, y);
+    await settle();
 
     expect((demo as HostEl).textContent).toContain("1/1");
   });
@@ -204,6 +224,7 @@ describe("spa bundle — demo-dist/spa.js mounts the logo demo", () => {
     );
     expect(build).toBeDefined();
     clickAt(build as unknown as HostEl, 0, 0);
+    await settle();
 
     expect((demo as HostEl).textContent).toContain("row 999");
   });

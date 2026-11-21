@@ -14,12 +14,12 @@
 
 import { describe, expect, it } from "vitest";
 
-import { mountDemo } from "../src/spa/mount.ts";
+import { mountDemo, type SpaHandle } from "../src/spa/mount.ts";
 import { DEMOS } from "../src/spa/gallery.ts";
 import { scanOf } from "./helpers/scan.ts";
 import { centreOf } from "./helpers/appview.ts";
 import type { ButtonNode } from "../src/views/model.ts";
-import type { HostDoc, HostElement } from "../src/interop/domhost.ts";
+import type { HostDoc } from "../src/interop/domhost.ts";
 
 function hostDoc(): HostDoc {
   return (globalThis as { document?: unknown }).document as HostDoc;
@@ -37,10 +37,13 @@ function mouseEventCtor(): new (
   ) => unknown;
 }
 
-function clickAt(surface: { host: HostElement }, x: number, y: number): void {
+function clickAt(spa: SpaHandle, x: number, y: number): void {
   const ME = mouseEventCtor();
-  surface.host.dispatchEvent(new ME("pointerdown", { clientX: x, clientY: y }));
-  surface.host.dispatchEvent(new ME("pointerup", { clientX: x, clientY: y }));
+  spa.surface.host.dispatchEvent(new ME("pointerdown", { clientX: x, clientY: y }));
+  spa.surface.host.dispatchEvent(new ME("pointerup", { clientX: x, clientY: y }));
+  // add-frame-coalescing: the routed repaint is paint-deferred (D2),
+  // so force the pending frame before the caller reads the drawn DOM
+  spa.flush();
 }
 
 function buttonCentre(spa: { app: { view(): unknown } }, text: string): readonly [number, number] {
@@ -75,7 +78,7 @@ describe("logo gallery demo — the world is a fold", () => {
   const spa = mountDemo(doc, container, () => defApp);
 
     const [x, y] = buttonCentre(spa, "Run");
-    clickAt(spa.surface, x, y);
+    clickAt(spa, x, y);
 
     expect(container.textContent).toContain("1/1");
     // the spiral example's 66 segments are now drawn
@@ -94,8 +97,8 @@ describe("logo gallery demo — the world is a fold", () => {
     const defApp = await def.load();
   const spa = mountDemo(doc, container, () => defApp);
 
-    clickAt(spa.surface, ...buttonCentre(spa, "Run"));
-    clickAt(spa.surface, ...buttonCentre(spa, "◀"));
+    clickAt(spa, ...buttonCentre(spa, "Run"));
+    clickAt(spa, ...buttonCentre(spa, "◀"));
 
     expect(container.textContent).toContain("0/1");
     const view = spa.app.view() as never;
@@ -114,10 +117,10 @@ describe("logo gallery demo — the world is a fold", () => {
   const spa = mountDemo(doc, container, () => defApp);
 
     // Switch to Spanish: the example loaders become the ES set.
-    clickAt(spa.surface, ...buttonCentre(spa, "Español"));
-    clickAt(spa.surface, ...buttonCentre(spa, "cuadrado"));
+    clickAt(spa, ...buttonCentre(spa, "Español"));
+    clickAt(spa, ...buttonCentre(spa, "cuadrado"));
     // The Spanish square: repite 4 [avanza 80 giraderecha 90].
-    clickAt(spa.surface, ...buttonCentre(spa, "Run"));
+    clickAt(spa, ...buttonCentre(spa, "Run"));
 
     expect(container.textContent).toContain("1/1");
     const view = spa.app.view() as never;
@@ -135,7 +138,7 @@ describe("logo gallery demo — the world is a fold", () => {
     const defApp = await def.load();
   const spa = mountDemo(doc, container, () => defApp);
 
-    clickAt(spa.surface, ...buttonCentre(spa, "Run"));
+    clickAt(spa, ...buttonCentre(spa, "Run"));
     const haloCount = (view: unknown): number =>
       scanOf(view as never).filter(
         (f) =>
@@ -151,7 +154,7 @@ describe("logo gallery demo — the world is a fold", () => {
       (f) => f.node.type === "path" && (f.node as { points: readonly unknown[] }).points.length === 4,
     );
     expect(turtle).toBeDefined();
-    clickAt(spa.surface, ...centreOf(turtle!));
+    clickAt(spa, ...centreOf(turtle!));
 
     // the halo draws four handles and the inspector shows the fields
     expect(haloCount(spa.app.view())).toBe(before + 4);
@@ -169,14 +172,14 @@ describe("logo gallery demo — the world is a fold", () => {
     const defApp = await def.load();
   const spa = mountDemo(doc, container, () => defApp);
 
-    clickAt(spa.surface, ...buttonCentre(spa, "Run"));
+    clickAt(spa, ...buttonCentre(spa, "Run"));
     const turtle = scanOf(spa.app.view() as never).find(
       (f) => f.node.type === "path" && (f.node as { points: readonly unknown[] }).points.length === 4,
     )!;
-    clickAt(spa.surface, ...centreOf(turtle));
+    clickAt(spa, ...centreOf(turtle));
     expect(container.textContent).toContain("inspector — turtle");
 
-    clickAt(spa.surface, ...buttonCentre(spa, "✕"));
+    clickAt(spa, ...buttonCentre(spa, "✕"));
     expect(container.textContent).not.toContain("inspector — turtle");
     expect(
       scanOf(spa.app.view() as never).filter(
@@ -196,7 +199,7 @@ describe("logo gallery demo — the world is a fold", () => {
     const defApp = await def.load();
   const spa = mountDemo(doc, container, () => defApp);
 
-    clickAt(spa.surface, ...buttonCentre(spa, "Run"));
+    clickAt(spa, ...buttonCentre(spa, "Run"));
     // a segment whose bbox is a real area (spiral turns ~91° per step):
     // the topmost segment covering the click point is the one selected
     const seg = scanOf(spa.app.view() as never).find(
@@ -209,7 +212,7 @@ describe("logo gallery demo — the world is a fold", () => {
           (f.node as { points: readonly (readonly [number, number])[] }).points[1]![1],
     );
     expect(seg).toBeDefined();
-    clickAt(spa.surface, ...centreOf(seg!));
+    clickAt(spa, ...centreOf(seg!));
 
     expect(container.textContent).toMatch(/inspector — segment \d+/);
     expect(container.textContent).toContain("x1:");

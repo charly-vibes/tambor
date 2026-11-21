@@ -5,7 +5,12 @@
 //   with the realDomFactory, and the subscription loop: every
 //   forwarded event routes through the corpus event router (dispatch),
 //   its intents go to app.dispatch, and the tree re-draws from
-//   app.view(). (The original todo wiring — createTodoApp/mountSpa —
+//   app.view(). The routed draw tail's paint policy is the frame
+//   coalescer (add-frame-coalescing D1/D2, mountSpa boundary): state
+//   applies synchronously in dispatch order, the derive+draw paints at
+//   most once per animation frame by default ("coalesced"), flush()
+//   drains a pending draw synchronously, "immediate" and hosts without
+//   requestAnimationFrame restore the per-dispatch synchronous draw. (The original todo wiring — createTodoApp/mountSpa —
 //   moved to todo-spa.ts with add-spa-delivery: a static example
 //   import here pulled src/examples/todo into every initial chunk.)
 //   Wheel input has no backend
@@ -62,11 +67,25 @@ import { wireSurfaceInput } from "./surface-input.ts";
 import { ambientScheme } from "../ui/ambient-theme.ts";
 import type { Scheme } from "../ui/theme.ts";
 
+// The dispatch/coalescing mode (add-frame-coalescing D3): "coalesced"
+// paints once per animation frame, "immediate" restores the
+// per-dispatch repaint. Default "coalesced".
+export type SpaMode = "coalesced" | "immediate";
+
 export interface SpaHandle {
   readonly backend: DomBackend;
   readonly app: App;
   readonly root: RealDomElement;
   readonly surface: RealDomElement;
+  /** The active coalescing mode (add-frame-coalescing D3). */
+  readonly mode: SpaMode;
+  /**
+   * Flush any pending coalesced draw synchronously (add-frame-coalescing
+   * D2) so DOM readers after a dispatch see the painted tree. In
+   * "immediate" mode and the no-rAF fallback nothing is ever pending,
+   * so this is a no-op there.
+   */
+  flush(): void;
   unmount(): void;
 }
 
@@ -108,6 +127,61 @@ export interface MountOptions {
   readonly debug?: boolean;
   /** The demo id the snapshot names; defaults to "". */
   readonly demo?: string;
+  /**
+   * The dispatch/coalescing mode (add-frame-coalescing): "coalesced"
+   * (default) paints once per animation frame, "immediate" restores the
+   * per-dispatch repaint.
+   */
+  readonly mode?: SpaMode;
+}
+
+// The frame-coalescing painter (add-frame-coalescing D2): the coalescer
+// owns the single scheduling call per frame — repeated paints inside one
+// frame keep only the latest draw closure, the frame callback paints
+// exactly once, and flush() drains a pending draw synchronously (the
+// frame callback sees the cleared pending flag and no-ops, so a flush
+// and its own rAF never double-draw). "immediate" mode and hosts
+// without requestAnimationFrame skip the coalescer entirely: the draw
+// tail runs synchronously per dispatch (the no-rAF path must never add
+// a never-flush state, D2).
+function frameCoalescer(frame: (cb: () => void) => unknown): {
+  paint(draw: () => void): void;
+  flush(): void;
+  drop(): void;
+} {
+  let pending: (() => void) | null = null;
+  let scheduled = false;
+  let dead = false;
+  return {
+    paint(draw: () => void): void {
+      if (dead) return;
+      pending = draw;
+      if (scheduled) return;
+      scheduled = true;
+      frame(() => {
+        scheduled = false;
+        if (dead) return;
+        if (pending !== null) {
+          const drawNow = pending;
+          pending = null;
+          drawNow();
+        }
+      });
+    },
+    flush(): void {
+      if (pending === null) return;
+      const draw = pending;
+      pending = null;
+      draw();
+    },
+    // Kills the coalescer (unmount seam): the pending draw is discarded
+    // and any already-scheduled frame callback no-ops — a post-unmount
+    // frame must not re-derive and draw into the detached tree.
+    drop(): void {
+      dead = true;
+      pending = null;
+    },
+  };
 }
 
 // The host global, reached structurally (tsconfig carries no DOM lib).
@@ -304,7 +378,11 @@ interface Wire {
   viewFor(): Elem;
 }
 
-function wireSurface(backend: DomBackend, app: App): Wire {
+function wireSurface(
+  backend: DomBackend,
+  app: App,
+  paint?: (draw: () => void) => void,
+): Wire {
   // Phase-timer seams (tambor-54j.1, opt-in): derive is accumulated
   // over the view derivations of the wire (a cache hit records a ~zero
   // span), handler is the routing plus the intent application, and the
@@ -327,7 +405,15 @@ function wireSurface(backend: DomBackend, app: App): Wire {
       rerender.setRouted(false);
     }
     phaseTimers.endSpan();
-    wireDrawTail(backend, app, viewFor, wrap, intents);
+    // The paint policy (add-frame-coalescing D2): the default runs the
+    // draw tail synchronously per routed event ("immediate", today's
+    // behavior); the coalesced mount hands in a painter that defers the
+    // tail to once per animation frame. Empty intents never paint
+    // (event_pure) in either mode.
+    if (intents.length === 0) return;
+    (paint ?? ((draw: () => void) => draw()))(() =>
+      wireDrawTail(backend, app, viewFor, wrap, intents),
+    );
   };
   backend.subscribe(route);
   return { route, viewFor };
@@ -401,9 +487,24 @@ export function mountDemo(
   // cleared component render cache, so its first derive builds the new
   // scheme's trees instead of replaying the pre-flip cached ones.
   ambientScheme();
+  // The coalescing mode (add-frame-coalescing D2/D3): "immediate" and
+  // the no-rAF fallback run today's synchronous per-dispatch draw; the
+  // coalesced default defers the draw tail to one paint per animation
+  // frame with flush() draining a pending draw. rAF is reached
+  // structurally and called as a METHOD of the host global (a detached
+  // requestAnimationFrame throws "Illegal invocation" in real browsers).
+  const mode: SpaMode = opts?.mode ?? "coalesced";
+  const frameHost = globalThis as {
+    requestAnimationFrame?: (cb: () => void) => number;
+  };
+  const raf = frameHost.requestAnimationFrame;
+  const coalescer =
+    mode === "coalesced" && typeof raf === "function"
+      ? frameCoalescer((cb) => raf.call(globalThis, cb))
+      : undefined;
   const app = create();
   const backend = demoBackend(doc);
-  const wire = wireSurface(backend, app);
+  const wire = wireSurface(backend, app, coalescer?.paint);
 
   const root = backend.root as RealDomElement;
   container.appendChild(root.host);
@@ -426,11 +527,19 @@ export function mountDemo(
     app,
     root,
     surface,
+    mode,
+    // Drains the pending coalesced draw (D2): only the coalesced
+    // default ever has one pending, so this is a no-op in "immediate"
+    // mode and the no-rAF fallback.
+    flush: () => coalescer?.flush(),
     unmount: () => {
       // surface == root (tambor-huu): one host element to remove
       container.removeChild(root.host);
       setFocusSurface(null);
       clearDebug?.();
+      // post-unmount frames must not re-derive + draw into the detached
+      // tree: kill the coalescer after the debug seam is cleared
+      coalescer?.drop();
     },
   };
 }

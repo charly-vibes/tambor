@@ -2,8 +2,9 @@
 //   the todoApp view and todoState mounted through the corpus wire.
 // Responsibilities: createTodoApp (registry-aware dispatcher: defeffect
 //   effects like add-todo apply, focus-context merged via spaFocusView)
-//   and mountSpa(doc, container) — DomBackend with the realDomFactory
-//   plus mountDemo's subscription loop.
+//   and mountSpa(doc, container, opts?) — DomBackend with the realDomFactory
+//   plus mountDemo's subscription loop (opts carries the frame-coalescing
+//   mode, add-frame-coalescing D3).
 // Rationale: add-spa-delivery moved this wiring OUT of mount.ts —
 //   mount.ts is the npm ./spa subpath and the initial SPA chunk; a
 //   static todoApp import there pulled src/examples/todo into every
@@ -15,7 +16,7 @@ import { todoApp, todoState, type TodoState } from "../examples/todo/todo.ts";
 import { makeApp, type App } from "../effects/dispatch.ts";
 import { spaFocusView } from "./focus.ts";
 import { VIEWPORT } from "./viewport.ts";
-import { mountDemo, type SpaHandle } from "./mount.ts";
+import { mountDemo, type MountOptions, type SpaHandle } from "./mount.ts";
 import type { HostDoc, HostElement } from "../interop/domhost.ts";
 
 // The focus entry is merged into the context the view sees (tambor-e5n):
@@ -31,6 +32,10 @@ export function createTodoApp(): App {
   });
 }
 
-export function mountSpa(doc: HostDoc, container: HostElement): SpaHandle {
-  return mountDemo(doc, container, createTodoApp);
+export function mountSpa(
+  doc: HostDoc,
+  container: HostElement,
+  opts?: MountOptions,
+): SpaHandle {
+  return mountDemo(doc, container, createTodoApp, opts);
 }

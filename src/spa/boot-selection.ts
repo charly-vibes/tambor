@@ -2,11 +2,14 @@
 //   the gallery entry's first mount: ?demo=<id> opens that registry
 //   entry, and ?debug=1 asks the mount seam for its debug handle.
 // Responsibilities: bootSelection(search, demos) maps location.search
-//   onto { demoIndex, debug }: the FIRST `demo` value selects the demo
-//   whose id matches EXACTLY (case- and whitespace-sensitive); an
+//   onto { demoIndex, debug, mode }: the FIRST `demo` value selects the
+//   demo whose id matches EXACTLY (case- and whitespace-sensitive); an
 //   absent, unknown or malformed value selects the first registry
 //   entry; `debug` is true only when the first `debug` value is
-//   exactly "1". Pure — no DOM and no imports from the mount — and it
+//   exactly "1"; `mode` is "immediate" only when the first `mode` value
+//   is exactly "immediate" (the frame-coalescing opt-out,
+//   add-frame-coalescing D3), else "coalesced". Pure — no DOM and no
+//   imports from the mount — and it
 //   never throws on any query string.
 // Rationale: the boot rules live outside main.ts so they are testable
 //   without a browser (the e2e seam spec drives the same rules through
@@ -21,11 +24,14 @@
 export interface BootSelection {
   readonly demoIndex: number;
   readonly debug: boolean;
+  /** The mount's frame-coalescing mode (add-frame-coalescing D3). */
+  readonly mode: "coalesced" | "immediate";
 }
 
-// The two query parameters the entry understands.
+// The query parameters the entry understands.
 const DEMO_PARAM = "demo";
 const DEBUG_PARAM = "debug";
+const MODE_PARAM = "mode";
 
 // Structural view of URLSearchParams: the parser needs one method, and
 // `get` is first-occurrence-wins by definition.
@@ -73,5 +79,8 @@ export function bootSelection(
   return {
     demoIndex: index < 0 ? 0 : index,
     debug: param.get(DEBUG_PARAM) === "1",
+    // add-frame-coalescing D3: only an exact "immediate" opts out of
+    // the coalesced default — every other value lands on the default.
+    mode: param.get(MODE_PARAM) === "immediate" ? "immediate" : "coalesced",
   };
 }

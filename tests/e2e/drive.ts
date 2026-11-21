@@ -7,7 +7,9 @@
 //   centreOf pattern the jsdom contract tests use) and translate
 //   view-space points to client coordinates through the fixture stage
 //   box; clickView/dragView drive the real pointer wire; drawnText
-//   reads the drawn tree's text for state assertions; shot() captures
+//   reads the drawn tree's text for state assertions (settling the
+//   double rAF first — the routed click's repaint is frame-deferred,
+//   add-frame-coalescing task 1.5 / tambor-4h6); shot() captures
 //   named per-demo-per-state screenshots.
 // Rationale: the SPA's input seam is the surface canvas — the drawn
 //   buttons are display-only accessibility mirrors (buildButton), so
@@ -128,6 +130,28 @@ export async function clickView(page: Page, p: ViewPoint): Promise<void> {
 // replaces in-process replay coordinates wherever the live state shifts
 // positions: the browser layout uses real text metrics (configured at the
 // bundle entry), which a node-side replay cannot reproduce.
+// The tambor-4h6 settle, shared by every helper that reads the drawn
+// DOM after a dispatch (add-frame-coalescing task 1.5): the routed
+// interaction's repaint lands on the next animation frame, so a double
+// rAF must settle before any box/text read — and so must the read
+// itself, because clickDrawnText's click is itself a dispatch whose
+// deferred paint is pending when it returns.
+async function settleFrames(page: Page): Promise<void> {
+  await page.evaluate(async () => {
+    // structural seam: the repo tsconfig has no DOM lib
+    const host = globalThis as unknown as {
+      requestAnimationFrame?: (cb: () => void) => number;
+    };
+    const raf = host.requestAnimationFrame;
+    if (raf === undefined) return;
+    // the repo lib target is pre-es2024: the executor form is the
+    // only shape Promise offers here
+    await new Promise<void>((resolve) => {
+      raf(() => raf(() => resolve()));
+    });
+  });
+}
+
 export async function clickDrawnText(
   page: Page,
   text: string,
@@ -140,27 +164,15 @@ export async function clickDrawnText(
   // 1-of-4 reruns with "no drawn element with text: Run". Wait for
   // visibility (auto-retries through the transient absence), then
   // settle a double rAF so the draw has flushed before the box read.
-  const settle = async (): Promise<void> => {
-    await page.evaluate(async () => {
-      // structural seam: the repo tsconfig has no DOM lib
-      const host = globalThis as unknown as {
-        requestAnimationFrame?: (cb: () => void) => number;
-      };
-      const raf = host.requestAnimationFrame;
-      if (raf === undefined) return;
-      // the repo lib target is pre-es2024: the executor form is the
-      // only shape Promise offers here
-      await new Promise<void>((resolve) => {
-        raf(() => raf(() => resolve()));
-      });
-    });
-  };
   const el = locate();
   await el.waitFor({ state: "visible" });
-  await settle();
-  const box = await scrollIntoViewIfOffscreen(page, () => locate(), settle);
+  await settleFrames(page);
+  const box = await scrollIntoViewIfOffscreen(page, () => locate());
   if (box === null) throw new Error(`no drawn element with text: ${text}`);
   await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+  // the click itself dispatched: its deferred repaint must land before
+  // any caller reads the drawn DOM (add-frame-coalescing task 1.5)
+  await settleFrames(page);
 }
 
 
@@ -173,7 +185,6 @@ export async function clickDrawnText(
 async function scrollIntoViewIfOffscreen(
   page: Page,
   locate: () => Locator,
-  settle: () => Promise<void>,
 ): Promise<{ x: number; y: number; width: number; height: number } | null> {
   const el = locate();
   await el.waitFor({ state: "visible" });
@@ -193,7 +204,7 @@ async function scrollIntoViewIfOffscreen(
     };
     win.scrollBy?.(0, dy);
   }, delta);
-  await settle();
+  await settleFrames(page);
   const relocated = locate();
   await relocated.waitFor({ state: "visible" });
   return relocated.boundingBox();
@@ -256,8 +267,12 @@ export async function dragView(
   await page.mouse.up();
 }
 
-// The drawn tree's full text: the state's rendered mirror.
+// The drawn tree's full text: the state's rendered mirror. Settles the
+// double rAF first (add-frame-coalescing task 1.5): the caller's click
+// was itself a dispatch whose repaint is pending on the next frame
+// when this helper runs, so reading immediately would race the draw.
 export async function drawnText(page: Page): Promise<string> {
+  await settleFrames(page);
   return await page.locator("#demo > div").innerText();
 }
 

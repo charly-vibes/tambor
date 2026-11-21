@@ -104,7 +104,9 @@ test("60 Hz stream over the wire: zero derivations, one draw per event, one cach
   const doc = hostDoc();
   const container = containerIn(doc);
   const { app, derives } = dragApp("lane");
-  const spa = mountDemo(doc, container, () => app);
+  // per-event draw accounting is the point here — the coalesced
+  // deferral would batch the paints (add-frame-coalescing D3 opt-out)
+  const spa = mountDemo(doc, container, () => app, { mode: "immediate" });
   const { draws, trees } = drawSpy(spa);
   const d0 = derives();
   const w0 = draws();
@@ -137,7 +139,9 @@ test(
       for (const arm of order) {
         const container = containerIn(doc);
         const { app } = dragApp(arm);
-        const spa = mountDemo(doc, container, () => app);
+        // per-event cost metering: coalescing would batch the paints
+        // (add-frame-coalescing D3 opt-out)
+        const spa = mountDemo(doc, container, () => app, { mode: "immediate" });
         // warmup (untimed): pays the first-draw costs
         spa.backend.deliver(mouseMove([1, 1]));
         spa.backend.deliver(mouseMove([2, 1]));

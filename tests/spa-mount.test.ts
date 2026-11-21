@@ -81,6 +81,10 @@ describe("spa-mount — todo example in a live document", () => {
     spa.surface.host.dispatchEvent(new ME("pointerdown", { clientX: x, clientY: y }));
     spa.surface.host.dispatchEvent(new ME("pointerup", { clientX: x, clientY: y }));
 
+    // add-frame-coalescing: the routed repaint is paint-deferred (D2),
+    // so force the pending frame before reading the drawn DOM
+    spa.flush();
+
     const text = container.textContent;
     expect(text).not.toContain("first");
     expect(text).not.toContain("second");

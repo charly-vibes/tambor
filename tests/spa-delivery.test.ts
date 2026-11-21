@@ -66,8 +66,12 @@ import {
 // tree follows the scheme without JS timing) and the collapsed-fill
 // extent settle; any later growth beyond this recorded total still
 // fails); 157027 B after the archive sync regenerated the docs corpus
-// content chunks.
-const BASELINE_GZIP_BYTES = 157_027;
+// content chunks; 157256 B re-recorded 2026-11-21 for add-frame-coalescing
+// (tambor-bva): the mount-boundary coalescer, wireSurface paint seam,
+// boot-selection mode parsing, and handle flush ship in the shared
+// backend-render/spa chunks (+229 B gzipped); re-recorded again to
+// 157281 B the same day for the RO5U unmount drop guard (+25 B).
+const BASELINE_GZIP_BYTES = 157_281;
 
 let heavyRelease: HeavyRelease | undefined;
 

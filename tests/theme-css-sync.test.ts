@@ -30,8 +30,13 @@ import { resolve } from "node:path";
 import { TOKENS, tokenValue, type Scheme } from "../src/ui/theme.ts";
 
 // The pages that declare the shell palette (repo-root relative: vitest
-// runs with the repo root as cwd).
-const PAGES: readonly string[] = ["index.html", "tests/e2e/gallery.html"];
+// runs with the repo root as cwd). The describes below spell each page
+// literally instead of looping over this list: a describe built from a
+// runtime array produces test names no static indexer can see, and the
+// testaruda store then drifts every run (exit-10 uncalibrated at the
+// gate with zero real failures — names the catalog never learned). Two
+// pages, spelled out; add the next page as its own describe block.
+// Repo-root relative: vitest runs with the repo root as cwd.
 
 // The light block: the first :root declaration left once the dark media
 // block is removed, so the order of the two blocks in the file is free.
@@ -85,33 +90,65 @@ function expectTokenSet(block: Map<string, string>, where: string): void {
 }
 
 describe("theme CSS sync — the pages' palette against ui/theme.ts", () => {
-  for (const page of PAGES) {
-    describe(page, () => {
-      const html = readFileSync(resolve(page), "utf8");
-      const { light, dark } = paletteBlocks(html);
+  // The three palette assertions are spelled out per page (not hoisted
+  // into a helper): its registered from a helper function lose their
+  // describe chain in static test discovery, and the testaruda store
+  // then never learns the runtime names (same exit-10 drift as the
+  // dynamic titles). Lexical nesting is the contract here.
 
-      it("declares exactly the ui/theme.ts tokens in both blocks", () => {
-        expectTokenSet(light, `${page} light :root`);
-        expectTokenSet(dark, `${page} dark :root`);
-      });
+  describe("index.html", () => {
+    const { light, dark } = paletteBlocks(
+      readFileSync(resolve("index.html"), "utf8"),
+    );
 
-      it("light values are tokenValue(token, 'light') as rgb()", () => {
-        for (const token of TOKENS) {
-          expect(light.get(`--tambor-${token}`), `--tambor-${token}`).toBe(
-            cssColor(token, "light"),
-          );
-        }
-      });
-
-      it("dark values are tokenValue(token, 'dark') as rgb()", () => {
-        for (const token of TOKENS) {
-          expect(dark.get(`--tambor-${token}`), `--tambor-${token}`).toBe(
-            cssColor(token, "dark"),
-          );
-        }
-      });
+    it("declares exactly the ui/theme.ts tokens in both blocks", () => {
+      expectTokenSet(light, "index.html light :root");
+      expectTokenSet(dark, "index.html dark :root");
     });
-  }
+
+    it("light values are tokenValue(token, 'light') as rgb()", () => {
+      for (const token of TOKENS) {
+        expect(light.get(`--tambor-${token}`), `--tambor-${token}`).toBe(
+          cssColor(token, "light"),
+        );
+      }
+    });
+
+    it("dark values are tokenValue(token, 'dark') as rgb()", () => {
+      for (const token of TOKENS) {
+        expect(dark.get(`--tambor-${token}`), `--tambor-${token}`).toBe(
+          cssColor(token, "dark"),
+        );
+      }
+    });
+  });
+
+  describe("tests/e2e/gallery.html", () => {
+    const { light, dark } = paletteBlocks(
+      readFileSync(resolve("tests/e2e/gallery.html"), "utf8"),
+    );
+
+    it("declares exactly the ui/theme.ts tokens in both blocks", () => {
+      expectTokenSet(light, "tests/e2e/gallery.html light :root");
+      expectTokenSet(dark, "tests/e2e/gallery.html dark :root");
+    });
+
+    it("light values are tokenValue(token, 'light') as rgb()", () => {
+      for (const token of TOKENS) {
+        expect(light.get(`--tambor-${token}`), `--tambor-${token}`).toBe(
+          cssColor(token, "light"),
+        );
+      }
+    });
+
+    it("dark values are tokenValue(token, 'dark') as rgb()", () => {
+      for (const token of TOKENS) {
+        expect(dark.get(`--tambor-${token}`), `--tambor-${token}`).toBe(
+          cssColor(token, "dark"),
+        );
+      }
+    });
+  });
 
   it("spa/main.ts writes no --tambor-* inline property", () => {
     // The install once published the palette on documentElement; an
