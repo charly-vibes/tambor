@@ -15,7 +15,18 @@
 //   navigator.webdriver guard is what keeps OTHER e2e specs
 //   SW-free (this spec drives registration deliberately).
 
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
+
+// The repo tsconfig carries no DOM lib (core stays DOM-free), so the
+// CacheStorage global the evaluate callbacks reach in the browser is
+// declared structurally here — same shape src/spa/sw.ts gives its
+// SwGlobal.caches. These declarations only satisfy tsc; the calls
+// execute against the real browser CacheStorage inside page.evaluate.
+declare const caches: {
+  has(name: string): Promise<boolean>;
+  keys(): Promise<string[]>;
+  open(name: string): Promise<unknown>;
+};
 
 test.describe("service worker — offline shell", () => {
   test("first visit installs, offline reload serves the cached shell", async ({
@@ -46,5 +57,55 @@ test.describe("service worker — offline shell", () => {
     } finally {
       await context.setOffline(false);
     }
+  });
+});
+
+// tambor-ilc: the prune loop must be scoped to this app's own cache
+// generations (CACHE_PREFIX "tambor-spa") — a deploy invalidates
+// tambor-spa-* caches by construction, but a foreign app's caches in
+// the same origin's CacheStorage are not ours to delete. These specs
+// drive the real built worker: caches are seeded through
+// page.evaluate BEFORE the ?sw=1 reload registers the worker (the
+// webdriver guard keeps the first visit registration-free), so the
+// prune runs against a CacheStorage that already holds a foreign
+// cache plus tambor generations.
+test.describe("service worker — prune is prefix-scoped", () => {
+  // loads the shell registration-free (webdriver guard), seeds the
+  // given cache names, then reloads with ?sw=1 and waits for the
+  // worker to go active — install's prune has run by then
+  async function seedAndInstall(
+    page: Page,
+    seed: readonly string[],
+  ): Promise<void> {
+    await page.goto("/demo-dist/index.html");
+    await page.evaluate((names) => {
+      return Promise.all(names.map((n) => caches.open(n)));
+    }, [...seed]);
+    await page.goto("/demo-dist/index.html?sw=1");
+    await page.evaluate(() => {
+      const nav = globalThis as {
+        navigator?: { serviceWorker?: { ready: Promise<unknown> } };
+      };
+      return nav.navigator?.serviceWorker?.ready;
+    });
+  }
+
+  test("install keeps caches outside the tambor-spa prefix", async ({
+    page,
+  }) => {
+    await seedAndInstall(page, ["other-app-v1"]);
+    const foreignSurvives = await page.evaluate(() =>
+      caches.has("other-app-v1"),
+    );
+    expect(foreignSurvives).toBe(true);
+  });
+
+  test("install prunes stale tambor-spa generations, keeping the current one", async ({
+    page,
+  }) => {
+    await seedAndInstall(page, ["tambor-spa-v-old-generation"]);
+    const keys = await page.evaluate(() => caches.keys());
+    expect(keys).toHaveLength(1);
+    expect(String(keys[0])).toMatch(/^tambor-spa-/);
   });
 });

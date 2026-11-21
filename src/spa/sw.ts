@@ -2,12 +2,13 @@
 //   the installable/offline shell for the gallery demo build: hashed
 //   assets served cache-first, navigation network-first with a cache
 //   fallback, cache name content-hash versioned so a deploy invalidates
-//   the previous cache and the activate handler prunes it.
+//   the previous cache and install prunes stale generations
+//   (prefix-scoped to CACHE_PREFIX).
 // Responsibilities: pure, unit-testable serving logic — cacheNameFor
 //   (content-derived cache version), isNavigation, respond (the
 //   strategy) — plus the runtime wiring (install precaches the asset
-//   manifest's URL list, activate prunes old caches, fetch routes
-//   through respond) guarded so non-SW runtimes (vitest/jsdom, plain
+//   manifest's URL list, install prunes stale CACHE_PREFIX caches,
+//   fetch routes through respond) guarded so non-SW runtimes (vitest/jsdom, plain
 //   node) never touch the lifecycle.
 // Rationale: openspec/changes/add-spa-delivery/specs/distribution-packaging
 //   is the design authority. Source stays TypeScript (esbuild emits the
@@ -137,9 +138,11 @@ async function install(g: SwGlobal): Promise<void> {
   const name = cacheNameFor(manifestText);
   await precache(g, name, manifestText);
   // content-hash versioned cache: a new deploy computes a new name, so
-  // every pre-existing generation is stale by construction — prune it.
+  // every pre-existing generation is stale by construction — prune it
+  // (prefix-scoped: caches outside CACHE_PREFIX belong to other apps).
   for (const key of await g.caches!.keys()) {
-    if (key !== name) await g.caches!.delete(key);
+    if (key !== name && key.startsWith(CACHE_PREFIX))
+      await g.caches!.delete(key);
   }
 }
 
