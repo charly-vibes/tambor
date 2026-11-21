@@ -1,0 +1,5 @@
+---
+tags: [pipeline-run:tdd-ro5u-2026-11-21-tambor-bva-execute-add-frame-coalescing, pipeline-step:green]
+---
+
+GREEN tambor-bva: coalescing landed per D1-D3 — frameCoalescer owns single-rAF scheduling (latest draw wins, flush drains pending, flush+frame never double-draw); wireSurface paint seam (empty-intent events never paint, either mode); mountDemo mode default coalesced, immediate + no-rAF = today's sync per-dispatch draw; boot-selection ?mode=immediate opt-out; main.ts plumbing; e2e drive.ts settleFrames (task 1.5, tambor-4h6 root cause). Test accommodations per orchestrator decision (a): flush() added to racing DOM-read tests (spa-mount, gallery, logo-gallery, docs-shell) — assertion logic byte-identical; mode:immediate for per-event draw-accounting tests (spa-lane-draw, spa-wire-floor, spa-lane-overlay, lane-60hz-bench); bench-stream-dashboard untouched (bare makeApp, no mount, no DOM reads). Rig fix: todo demo carries no textarea edit bridge — insert-text registered per-demo (editor example) — rig registers minimal membrane-profile seam so pastes exercise the live dispatch path. Verified: spa-mount-coalesce 4/4, tsc --noEmit clean.
