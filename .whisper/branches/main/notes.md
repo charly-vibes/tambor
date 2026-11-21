@@ -922,3 +922,50 @@
   Validation: vitest 909/909; tsc/eslint/typecheck:bombadil 0; just e2e-visual green (light+dark); ah check 0 (3 contracts synced); spk lint 0 issues; openspec validate --strict valid; bench bz3-seed/bz4-build expectedText guards green; pre-push lanes green at push.
   
   Previous entry: none (new topic).
+- 2026-11-21T13:38:32Z [id:0ce49adcb4aef55b594187a64a51b3299a9c47549ec426e1f2d1774f40af2bb7] (#resume-solidjs-runtime-workstream) Format: 1
+  Timestamp: 2026-11-21T13:20:00Z
+  Repo: charly-vibes/tambor (~/para/areas/dev/gh/charly/tambor)
+  Branch: main · HEAD: 5244eda · Session: 2026-11-21T12-17-17-733Z_01a1fe0a
+  Task: SolidJS-lessons workstream — proposal, tickets, reviews, fixes (quick stash)
+  
+  OBJECTIVE: Improve tambor runtime/rendering per the 2026-11-20 external
+  evaluation (cotorreo claude/a87f80ee + chatgpt/6b00b858), grounded at 85d46ae.
+  
+  CURRENT PHASE: commit — all work committed and pushed (54de0bf, 2ebbb96, 5244eda).
+  
+  CURRENT STATE:
+  - openspec/changes/add-runtime-invalidation/ authored, openspec validate
+  --strict PASS. Scope after rule-of-5 round 1: ChangeSet (known/unknown,
+  changedIds dropped) + frozen DispatchCommit + App.subscribe + TWO-LEVEL
+  identity checks (per-child reuse in buildChildrenOf via WeakMap<Elem,range>,
+  positional only + whole-view short-circuit). Pins: sequence starts at 1;
+  coalescing merges paints never commits; throw isolation re-thrown after
+  pass; unsubscribe snapshot; immutability precondition spec'd.
+  - docs/reference/runtime-roadmap-2026-11.md committed = source of truth
+  (corpus transcripts are external evidence only).
+  - Tickets: tambor-ilc P1 afk/S READY (sw activate prune deletes all non-current
+  origin caches — CACHE_PREFIX not consulted; sw.ts:141-42; TDD: failing test
+  first in tests/e2e/sw.spec.ts). Chain: bva (frame-coalescing 0/12) BLOCKS
+  1cr (M1 exec, afk/L) BLOCKS {ap8 M2 keyed, 3mf inspector}. 9qo scopes → 8yl
+  host-interop. ry3 scheduler ← bva. All labeled lane+complexity, metadata.files
+  +base_commit set; 3 stringified files fields repaired (bva, 2ep, b00); 90p
+  re-anchored post-fe73293.
+  - ah check --changes add-runtime-invalidation: 19 no-toml = EXPECTED at
+  proposal stage (precedent: frame-coalescing carries 4); TOMLs authored at
+  execution via `ah scenario new`, gated by task 5.2.
+  
+  NEXT ACTION: `bd update tambor-ilc --claim` — sw prune scoping fix (P1, small,
+  pure TDD). Or resume tambor-bva (12 unchecked tasks) to unlock the M1 chain.
+  
+  KEY DECISIONS: per-child reuse in M1 (review CORR-001 fix, option a); keyed
+  matching stays in ap8; unknown ChangeSet ⇒ full rebuild (stale output
+  impossible); open-question in ilc converted to deterministic 3-step branch.
+  
+  VALIDATION: full suite 909/909 @ 85d46ae; all 3 commits through lefthook green
+  (incl. contract-drift-gate ~130s). Validation commands: just test-full,
+  ah check --run-tests, openspec validate add-runtime-invalidation --strict.
+  
+  UNRESOLVED: SCOPE-001 author/execute ticket convention mixed (1cr execute-only
+  vs ap8 bundled) — user preference; stale epic-orchestrator run from Oct-15
+  (y9d.3 re-runs, step 3/7) still active — candidate for wai close. Context ran
+  long this session — recommend /clear after closing.
