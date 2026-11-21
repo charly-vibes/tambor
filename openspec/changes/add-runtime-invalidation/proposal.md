@@ -21,19 +21,26 @@ it), so "what changed" can be known without dependency tracking.
 - `App` gains an additive `subscribe(listener)` delivering an immutable
   `DispatchCommit { previousState, state, changes, sequence }` after
   each top-level dispatch; existing call sites compile unchanged.
-- A `ChangeSet` type — `{ kind: "known", paths, changedIds }` or
+- A `ChangeSet` type — `{ kind: "known", paths }` or
   `{ kind: "unknown", reason }` — published on every commit. Built-in
   path edits report their paths; arbitrary handler functions report
   `unknown`. A ChangeSet is a rendering hint, never state authority;
   `unknown` triggers the conservative full derive (today's behavior).
-- The DOM painter gains an identity short-circuit: when a derive yields
-  a view identity-equal to the last drawn view, `draw()` skips the
-  rebuild (`children.length = 0` + rebuild becomes a no-op for that
-  frame). This is Solid's "work proportional to what changed", paid in
-  identity, not signals.
-- The mount's `wireDrawTail`/`wireRerender` paths consume the identity
-  short-circuit so coalesced frames that derive to an unchanged view do
-  not repaint at all.
+- The DOM builder gains **per-child identity reuse**: when assembling
+  the element tree, a child Elem identity-equal to the child built at
+  the same position in the previous frame reuses that frame's DOM
+  subtree untouched (a weak Elem→range map recorded during build);
+  any mismatch rebuilds conservatively. This is the mechanism that
+  makes a streaming tail cheap in a long memo-stable history — Solid's
+  "work proportional to what changed", paid in identity, not signals.
+- `draw()` additionally gains a whole-view short-circuit: when the
+  derived view is identity-equal to the last drawn view, the rebuild is
+  skipped entirely (`children.length = 0` becomes a no-op). This
+  covers visually-unchanged frames — no-op dispatches, undrawn-slice
+  changes, coalesced frames that cancel out.
+- The mount's `wireDrawTail`/`wireRerender` paths consume both identity
+  checks so coalesced frames that derive to an unchanged view do not
+  repaint at all.
 - Opt-in draw/derive counters extend the existing phase-timers seam
   (tambor-54j.1) so B0-style benchmarks can attribute wins.
 
@@ -50,15 +57,19 @@ it), so "what changed" can be known without dependency tracking.
 ## Impact
 
 - Affected specs: `app-runtime-invalidation` (new capability spec).
-- Affected code: `src/core.ts` + `src/effects/dispatch.ts` (commit
-  publication, subscribe), `src/render/dom.ts` (identity short-circuit),
-  `src/spa/mount.ts` (view cache + wire paths), `src/interop/index.ts`
-  (barrel export).
-- Risk: a wrong identity short-circuit silently shows stale UI. The
-  conservative rule is that ANY `unknown` ChangeSet, lane change, or
-  overlay change forces a full rebuild; the short-circuit fires only on
-  identity-equal derived views with no overlay and no lane movement.
+- Affected code: `src/effects/dispatch.ts` (makeApp: commit
+  publication, subscribe on the App handle), `src/render/dom.ts` +
+  `src/render/dom-painters.ts` (whole-view short-circuit, per-child
+  reuse in `buildChildrenOf`), `src/spa/mount.ts` (view cache + wire
+  paths), `src/index.ts` + `src/interop/index.ts` (barrel export;
+  `src/core.ts` re-exports only).
+- Risk: a wrong identity check silently shows stale UI. The
+  conservative rules are that ANY `unknown` ChangeSet, lane change, or
+  overlay change forces a full rebuild, and per-child reuse fires only
+  on identity match at the same position — fresh-but-structurally-equal
+  children rebuild, never splice.
 - Benchmarks: extend findings-bz.md §BZ1 with a "1 streaming message in
   a 1,000-message history" scenario; acceptance requires the flat
-  83 ms/op to drop measurably while the BZ1 state-equivalence contract
-  stays green.
+  83 ms/op to drop measurably with the DOM-mutation count pinned to the
+  changed rows (reuse evidence), while the BZ1 state-equivalence
+  contract stays green.
