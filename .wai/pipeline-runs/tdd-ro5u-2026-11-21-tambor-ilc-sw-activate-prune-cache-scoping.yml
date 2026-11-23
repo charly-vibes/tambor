@@ -2,8 +2,9 @@ run_id: tdd-ro5u-2026-11-21-tambor-ilc-sw-activate-prune-cache-scoping
 pipeline: tdd-ro5u
 topic: tambor-ilc sw activate prune cache scoping
 created_at: '2026-11-21T13:48:44.391925925+00:00'
-current_step: 3
-approvals: {}
+current_step: 8
+approvals:
+  green: '2026-11-21T16:42:52.498468799+00:00'
 epic: null
 child_issues: []
 child_runs: []
