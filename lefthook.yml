@@ -19,6 +19,11 @@
 # restored here and in ci.yml.
 
 pre-commit:
+  commands:
+# sad:managed:start
+    sad-check:
+      run: sad check
+# sad:managed:end
   parallel: true
   jobs:
     - name: espectacular-structural
@@ -35,6 +40,12 @@ pre-commit:
       run: ah sync --check
 
 pre-push:
+  commands:
+# sad:managed:start
+    sad-check:
+      # Timing wrapped for the gate-cost distribution (tambor-j44 contract).
+      run: tools/gate-timing.sh sad-check sad check
+# sad:managed:end
   jobs:
     - name: espectacular-contracts
       # Timing wrapped for the gate-cost distribution (tambor-j44).
