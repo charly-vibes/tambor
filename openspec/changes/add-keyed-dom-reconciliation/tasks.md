@@ -127,9 +127,9 @@
 
 ## 6. Gates
 
-- [ ] 6.1 Full suite green (`just test-full`); `ah check --run-tests`
+- [x] 6.1 Full suite green (`just test-full`); `ah check --run-tests`
       green.
-- [ ] 6.2 `openspec validate add-keyed-dom-reconciliation --strict`
+- [x] 6.2 `openspec validate add-keyed-dom-reconciliation --strict`
       exits 0 (all four deltas).
 - [ ] 6.3 On approval, spec deltas deployed per the authored-directly
       corpus convention (tambor-41q): the new
