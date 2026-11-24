@@ -39,13 +39,13 @@ import {
   type Elem,
 } from "../src/views/model.ts";
 
-// components.select.row_visuals: the accent fill [0, 0.48, 1] and the
+// components.select.row_visuals: the accent fill [0, 0.42, 1] and the
 // white label. jsdom's CSSOM serialises an opaque rgba() as rgb().
 // The accent is a token ink: style properties emit var(--tambor-accent)
 // (the browser resolves it at paint time). The white is background-light,
 // deliberately NOT mapped — a surface token is never an ink, so the
 // selected-row label stays literal white in both schemes.
-const ACCENT: readonly number[] = [0, 0.48, 1];
+const ACCENT: readonly number[] = [0, 0.42, 1];
 const WHITE: readonly number[] = [1, 1, 1];
 const ACCENT_CSS = "var(--tambor-accent)";
 const WHITE_CSS = "rgb(255, 255, 255)";

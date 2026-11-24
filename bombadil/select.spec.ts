@@ -22,14 +22,12 @@
 //   text rules matter most here: the header renders a gray no-selection
 //   label, and rows are one-line labels whose box must not clip them.
 //
-// Carve-out — the selected row's label. `components.select.row_visuals`
-// pins a WHITE label on the blue `[0, 0.48, 1]` row fill (SELECTED_FILL,
-// emitted as rgb(0, 122, 255)); that combination measures 4.02:1, below
-// the 4.5:1 floor. It is a corpus accessibility defect, not a demo
-// regression, so the extractor skips contrast on that one surface and
-// asserts every other text box strictly. The exemption is keyed on the
-// painted surface colour, so a future row that repaints on a different
-// fill is measured again.
+// The selected row's label needs no carve-out any more: row_visuals
+// darkened the accent to [0, 0.42, 1] (rgb(0, 107, 255), 4.62:1) in
+// tambor-bc2, so white-on-accent meets the 4.5:1 floor and every text
+// box is asserted strictly. (The exemption used to be keyed on the
+// painted SELECTED_FILL surface colour while the corpus pinned
+// [0, 0.48, 1] at 4.02:1.)
 
 import { always, now } from "@antithesishq/bombadil";
 import { actions, extract, getFingerprint } from "@antithesishq/bombadil/browser";
@@ -38,7 +36,6 @@ import type {
   Fingerprint,
   State,
 } from "@antithesishq/bombadil/browser";
-import { SELECTED_FILL } from "../src/components/select/list.ts";
 import { handle } from "./lib/model.ts";
 import { readVisualFacts, type VisualFacts } from "./lib/visual.ts";
 import {
@@ -55,13 +52,11 @@ import {
 // nav.
 export * from "./lib/actions.ts";
 
-// The visual floors for this demo. The one exemption is the corpus-pinned
-// selected-row fill:
-// corpus carve-out: components.select.row_visuals pins white on
-// [0, 0.48, 1] (rgb(0, 122, 255), 4.02:1) below the 4.5:1 floor; tracked
-// as a corpus accessibility defect. Every other surface is asserted.
+// The visual floors for this demo. No exemptions: the corpus-pinned
+// selected-row fill now clears the floor (tambor-bc2 darkened the
+// accent), so every surface is asserted.
 const selectVisual = extract<VisualFacts>((state) =>
-  readVisualFacts(state, [SELECTED_FILL]),
+  readVisualFacts(state, []),
 );
 
 // The dropdown's options, in draw order (src/spa/gallery.ts OPTIONS).

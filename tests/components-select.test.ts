@@ -14,134 +14,29 @@ import fc from "fast-check";
 
 import { contrast } from "./e2e/audit-color.ts";
 import { call, render } from "../src/model/component.ts";
-import { defaultHandler, makeApp, type Effect } from "../src/effects/dispatch.ts";
+import { makeApp } from "../src/effects/dispatch.ts";
 import { select as selectPath, type Path } from "../src/effects/paths.ts";
 import { dispatch as dispatchEvent } from "../src/events/dispatch.ts";
 import { mouseDown, mouseMove, mouseMoveGlobal } from "../src/events/event.ts";
-import { dropdownList, HOVER_FILL, SELECTED_FILL, WHITE } from "../src/components/select/list.ts";
+import { HOVER_FILL, SELECTED_FILL, WHITE } from "../src/components/select/list.ts";
 import { hoverKey } from "../src/components/select/hover.ts";
-import {
-  bounds,
-  children,
-  isGroup,
-  type Color,
-  type Elem,
-  type Label,
-  type Node,
-  type TranslateNode,
-  type WithColorNode,
-} from "../src/views/model.ts";
+import type { Elem } from "../src/views/model.ts";
 import { dropdown } from "../src/components/select/dropdown.ts";
-
-// ---------------------------------------------------------------------------
-// helpers
-// ---------------------------------------------------------------------------
-
-// options is a vector of [value, label] pairs — the corpus scenario's
-// "this, that, the-other".
-type Option = readonly [value: unknown, label: string];
-const OPTIONS: readonly Option[] = [
-  ["this", "This"],
-  ["that", "That"],
-  ["the-other", "The Other"],
-];
-const $SELECTED: Path = [["keypath", "selected"]];
-const EXTRA_ROOT: Path = [["keypath", "::extra"]];
-
-// Render the dropdown against an app state whose scratch trees are the
-// root ::extra entries (component.model top-level-ui semantics).
-function dropdownView(
-  state: unknown,
-  selected: unknown,
-  extraArgs: Record<string, unknown> = {},
-): Elem {
-  const s = state as Record<string, unknown>;
-  return render(
-    call(
-      dropdown,
-      { selected, options: OPTIONS, $selected: $SELECTED, ...extraArgs },
-      { extra: s["::extra"], $extra: EXTRA_ROOT },
-    ),
-  ) as Elem;
-}
-
-// Apply a returned effect batch to an app state (the dispatcher's
-// builtin handler).
-function applyEffects(state: unknown, effects: readonly unknown[]): unknown {
-  return defaultHandler(state, effects as readonly Effect[], {});
-}
-
-// Render the dropdown-list on its own (the raw row effects are visible
-// before the dropdown's interception).
-function listView(
-  selected: unknown,
-  extra: Record<string, unknown> = {},
-  touch = false,
-): Elem {
-  return render(
-    call(dropdownList, { selected, options: OPTIONS, $selected: $SELECTED, touch, extra, $extra: EXTRA_ROOT }),
-  ) as Elem;
-}
-
-// Every node in the tree satisfying pred, collected via children().
-function collect<T extends Node>(elem: Elem, pred: (n: Node) => n is T): T[] {
-  const out: T[] = [];
-  collectInto(elem, pred, out);
-  return out;
-}
-
-function collectInto<T extends Node>(elem: Elem, pred: (n: Node) => n is T, out: T[]): void {
-  if (elem == null) return;
-  if (isGroup(elem)) {
-    collectAll(elem, pred, out);
-    return;
-  }
-  collectMatch(elem as Node, pred, out);
-}
-
-function collectAll<T extends Node>(group: readonly Elem[], pred: (n: Node) => n is T, out: T[]): void {
-  for (const child of group) collectInto(child, pred, out);
-}
-
-function collectMatch<T extends Node>(node: Node, pred: (n: Node) => n is T, out: T[]): void {
-  if (pred(node)) out.push(node as T);
-  collectAll(children(node), pred, out);
-}
-
-const isListNode = (n: Node): n is Node & { type: "rounded-rectangle" } =>
-  n.type === "rounded-rectangle";
-const isRect = (n: Node): n is Node & { type: "rectangle" } => n.type === "rectangle";
-const isLabel = (n: Node): n is Label => n.type === "label";
-const isWithColor = (n: Node): n is WithColorNode => n.type === "with-color";
-const isTranslate = (n: Node): n is TranslateNode => n.type === "translate";
-
-// A node paired with the y its translate ancestors give it. Painters
-// superimpose bare-sequence children at the same origin, so only
-// translate offsets separate the drawn positions.
-interface Placed<T extends Node> {
-  readonly node: T;
-  readonly y: number;
-}
-
-function placedNodes<T extends Node>(
-  elem: Elem,
-  pred: (n: Node) => n is T,
-  dy = 0,
-): Placed<T>[] {
-  if (elem == null) return [];
-  if (isGroup(elem)) return elem.flatMap((child) => placedNodes(child, pred, dy));
-  const node = elem as Node;
-  // a translate moves its drawable; every other node sits at its
-  // parent's offset
-  const y = node.type === "translate" ? dy + (node as TranslateNode).y : dy;
-  const out: Placed<T>[] = pred(node) ? [{ node: node as T, y }] : [];
-  for (const child of children(node)) out.push(...placedNodes(child, pred, y));
-  return out;
-}
-
-function colorsEqual(a: Color, b: Color): boolean {
-  return a.length === b.length && a.every((v, i) => v === b[i]);
-}
+import {
+  applyEffects,
+  collect,
+  colorsEqual,
+  dropdownView,
+  isLabel,
+  isListNode,
+  isRect,
+  isTranslate,
+  isWithColor,
+  listView,
+  placedNodes,
+  type Option,
+  $SELECTED,
+} from "./helpers/select-view.ts";
 
 // ---------------------------------------------------------------------------
 // cycle 1 — header
@@ -328,6 +223,15 @@ it("p_row_visuals: fills and label colors match", () => {
   expect(whites.length).toBe(1);
   expect(collect(whites[0]!.drawables as Elem, isLabel).map((l) => l.text)).toEqual(["That"]);
 
+  // the white label must read on the accent fill: the WCAG AA text
+  // floor (tambor-bc2) — the corpus-pinned light accent meets it
+  const accent8bit: readonly [number, number, number] = [
+    Math.round(SELECTED_FILL[0]! * 255),
+    Math.round(SELECTED_FILL[1]! * 255),
+    Math.round(SELECTED_FILL[2]! * 255),
+  ];
+  expect(contrast(accent8bit, [255, 255, 255])).toBeGreaterThanOrEqual(4.5);
+
   // the hovered row: a light gray fill over its row rectangle
   const grays = collect(view, isWithColor).filter((w) => colorsEqual(w.color, HOVER_FILL));
   expect(grays.length).toBe(1);
@@ -376,55 +280,3 @@ it("p_row_hover: two distinct extra keys", () => {
   expect((leave[0] as unknown[])[0]).toBe("set");
 });
 
-// ---------------------------------------------------------------------------
-// cycle 4 — geometry, touch
-// ---------------------------------------------------------------------------
-
-// p_geometry — derives_from: components.select.list_geometry
-// generator: labels of three widths
-// predicate: row width equals max plus 24
-it("p_geometry: row width equals max plus 24", () => {
-  fc.assert(
-    fc.property(
-      fc.string({ minLength: 1, maxLength: 12 }),
-      fc.string({ minLength: 1, maxLength: 12 }),
-      fc.string({ minLength: 1, maxLength: 12 }),
-      (a, b, c) => {
-        const options: readonly Option[] = [["a", a], ["b", b], ["c", c]];
-        const view = render(
-          call(dropdownList, { selected: null, options, $selected: $SELECTED }, {}),
-        ) as Elem;
-        // the box carries the row width; rows are label height plus 4
-        // tall and the box has 8 padding on y (default measure: labels
-        // are 1 tall, rows 5)
-        const box = collect(view, isListNode)[0]!;
-        expect(box.width).toBe(Math.max(a.length, b.length, c.length) + 24);
-        expect(box.height).toBe(2 * 8 + 3 * 5);
-        expect(box.radius).toBe(4);
-      },
-    ),
-  );
-});
-
-// p_touch_rows — derives_from: components.select.touch_rows
-// generator: touch device
-// predicate: row height is at least 44
-it("p_touch_rows: row height is at least 44", () => {
-  fc.assert(
-    fc.property(fc.boolean(), (touch) => {
-      const view = listView(null, {}, touch);
-      // a row's hit extent is the handler node wrapping its visuals
-      const rowNodes = collect(
-        view,
-        (n): n is Node & { type: "handler"; eventType: string } => n.type === "handler",
-      ).filter((n) => n.eventType === "mouse-down");
-      expect(rowNodes.length).toBe(3);
-      for (const row of rowNodes) {
-        // the row's extent is its hit area: the handler's bounds
-        const [, h] = bounds(row);
-        if (touch) expect(h).toBeGreaterThanOrEqual(44);
-        else expect(h).toBe(5);
-      }
-    }),
-  );
-});

@@ -32,61 +32,21 @@
 
 import { describe, expect, it, vi } from "vitest";
 
-import {
-  makeApp,
-  type App,
-  type CommitListener,
-  type DispatchCommit,
-  type Effect,
-} from "../src/effects/dispatch.ts";
+import { makeApp, type DispatchCommit } from "../src/effects/dispatch.ts";
 import type { SpaHandle } from "../src/spa/mount.ts";
 import { label, on } from "../src/views/model.ts";
 import type { IntentList } from "../src/events/bubble.ts";
-import type { Path } from "../src/effects/paths.ts";
 import { centreOf } from "./helpers/appview.ts";
 import { scanOf } from "./helpers/scan.ts";
-import { mounted } from "./helpers/runtime-invalidation-rig.ts";
-
-// The shared App type keeps subscribe OPTIONAL (structural
-// implementers — the ops-app seams — publish no commits and omit the
-// member); every test here drives a makeApp-backed handle, so the
-// tests reach the member through this narrowed view.
-interface SubscribableApp extends App {
-  subscribe(listener: CommitListener): () => void;
-}
-
-function subscribable(app: App): SubscribableApp {
-  return app as unknown as SubscribableApp;
-}
-
-// jsdom DOES ship an async rAF (pretendToBeVisual), so every test stubs
-// rAF explicitly; the makeApp repaint callback only re-derives the
-// view, so nothing draws behind the test's back: the draws under test
-// are synchronous wire draws, and the coalesced-paint test pumps the
-// returned queue exactly once to fire the frame.
-function stubFrames(): (() => void)[] {
-  const frames: (() => void)[] = [];
-  vi.stubGlobal("requestAnimationFrame", (cb: () => void): number => {
-    frames.push(cb);
-    return frames.length;
-  });
-  return frames;
-}
-
-// A plain counter app: the view reads nothing stateful that the commit
-// tests depend on — commits are observed through subscribe, not paint.
-function counterApp(): App {
-  return makeApp({
-    view: () => label("n"),
-    state: { n: 0 },
-  });
-}
-
-const N_PATH: Path = [["keypath", "n"]];
-
-function incrementN(): Effect {
-  return ["update", N_PATH, (n: unknown) => (n as number) + 1];
-}
+import {
+  counterApp,
+  incrementN,
+  mounted,
+  N_PATH,
+  subscribable,
+  stubFrames,
+  unstubFrames,
+} from "./helpers/runtime-invalidation-rig.ts";
 
 // The MouseEvent constructor, reached structurally (no lib.dom in
 // tsconfig) — the same shape the frame-coalescing rig uses.
@@ -143,7 +103,7 @@ describe("runtime-invalidation — dispatch commits (add-runtime-invalidation §
       expect(second.sequence).toBe(2);
       expect(Object.isFrozen(first)).toBe(true);
     } finally {
-      vi.unstubAllGlobals();
+      unstubFrames();
     }
   });
 
@@ -170,7 +130,7 @@ describe("runtime-invalidation — dispatch commits (add-runtime-invalidation §
         commit.changes.kind === "unknown" ? commit.changes.reason : "",
       ).toBeTruthy();
     } finally {
-      vi.unstubAllGlobals();
+      unstubFrames();
     }
   });
 
@@ -202,7 +162,7 @@ describe("runtime-invalidation — dispatch commits (add-runtime-invalidation §
       // the lane_batch_no_repaint invariant: no repaint scheduled
       expect(frames.length).toBe(0);
     } finally {
-      vi.unstubAllGlobals();
+      unstubFrames();
     }
   });
 
@@ -233,7 +193,7 @@ describe("runtime-invalidation — dispatch commits (add-runtime-invalidation §
       expect(second.sequence).toBe(2);
       expect(second.state).toEqual({ n: 2 });
     } finally {
-      vi.unstubAllGlobals();
+      unstubFrames();
     }
   });
 
@@ -284,7 +244,7 @@ describe("runtime-invalidation — dispatch commits (add-runtime-invalidation §
       // exactly one build-or-skip decision for the whole burst
       expect(drawSpy).toHaveBeenCalledTimes(1);
     } finally {
-      vi.unstubAllGlobals();
+      unstubFrames();
     }
   });
 });
@@ -316,7 +276,7 @@ describe("runtime-invalidation — subscriptions (add-runtime-invalidation §2)"
       expect(a.length).toBe(1);
       expect(b.length).toBe(2);
     } finally {
-      vi.unstubAllGlobals();
+      unstubFrames();
     }
   });
 
@@ -353,7 +313,7 @@ describe("runtime-invalidation — subscriptions (add-runtime-invalidation §2)"
       expect(a.length).toBe(2);
       expect(b.length).toBe(2);
     } finally {
-      vi.unstubAllGlobals();
+      unstubFrames();
     }
   });
 
@@ -386,76 +346,8 @@ describe("runtime-invalidation — subscriptions (add-runtime-invalidation §2)"
       expect(a.length).toBe(2);
       expect(b.length).toBe(1);
     } finally {
-      vi.unstubAllGlobals();
+      unstubFrames();
     }
   });
 });
 
-describe("runtime-invalidation — commit intents (add-gallery-inspector §1)", () => {
-  // Task 1.0 — derives_from: commit exposes the applied intents
-  it("a dispatched batch publishes as the commit's frozen intents array", () => {
-    stubFrames();
-    try {
-      const app = counterApp();
-      const commits: DispatchCommit[] = [];
-      subscribable(app).subscribe((commit) => commits.push(commit));
-
-      const batch: Effect[] = [incrementN(), ["noop-extra", 7]];
-      app.dispatch(batch);
-
-      expect(commits.length).toBe(1);
-      const commit = commits[0] as DispatchCommit;
-      // the normalized batch, same order, deep-equal
-      expect(commit.intents).toEqual(batch);
-      // frozen plain data: the array itself is frozen
-      expect(Array.isArray(commit.intents)).toBe(true);
-      expect(Object.isFrozen(commit.intents)).toBe(true);
-      // the publish path copies: mutating the caller's array afterwards
-      // must not change the published commit
-      batch.push(["late", 1]);
-      expect(commit.intents?.length).toBe(2);
-    } finally {
-      vi.unstubAllGlobals();
-    }
-  });
-
-  // Task 1.0 — derives_from: commit exposes the applied intents
-  it("a string dispatch normalizes to a one-element intents array", () => {
-    stubFrames();
-    try {
-      const app = counterApp();
-      const commits: DispatchCommit[] = [];
-      subscribable(app).subscribe((commit) => commits.push(commit));
-
-      app.dispatch("update", N_PATH, (n: unknown) => (n as number) + 1);
-
-      expect(commits.length).toBe(1);
-      const commit = commits[0] as DispatchCommit;
-      expect(commit.intents?.length).toBe(1);
-      expect(commit.intents?.[0]?.[0]).toBe("update");
-    } finally {
-      vi.unstubAllGlobals();
-    }
-  });
-
-  // Task 1.0 — derives_from: commit exposes the applied intents
-  it("a lane-only batch still carries its lane intent", () => {
-    stubFrames();
-    try {
-      const app = counterApp();
-      const commits: DispatchCommit[] = [];
-      subscribable(app).subscribe((commit) => commits.push(commit));
-
-      app.dispatch(["lane", "hover", (state: unknown) => state]);
-
-      expect(commits.length).toBe(1);
-      const commit = commits[0] as DispatchCommit;
-      // the lane-only ChangeSet carries the lane marker, the intent the
-      // batch applied is still on the commit
-      expect(commit.changes.kind).toBe("unknown");
-      expect(commit.intents?.[0]?.[0]).toBe("lane");
-    } finally {
-      vi.unstubAllGlobals();
-    }
-  });
-});

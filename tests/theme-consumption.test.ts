@@ -117,7 +117,7 @@ const CONSUMERS: readonly string[] = [
   "src/components/textarea/textarea.ts",
 ];
 const FORBIDDEN_LITERALS: readonly { readonly name: string; readonly shape: RegExp }[] = [
-  { name: "accent light [0, 0.48, 1]", shape: /\[\s*0\s*,\s*0\.48\s*,\s*1\s*\]/ },
+  { name: "accent light [0, 0.42, 1]", shape: /\[\s*0\s*,\s*0\.42\s*,\s*1\s*\]/ },
   { name: "danger light [1, 0, 0]", shape: /\[\s*1\s*,\s*0\s*,\s*0\s*\]/ },
   { name: "border light [0.65, 0.65, 0.65]", shape: /\[\s*0\.65\s*,\s*0\.65\s*,\s*0\.65\s*\]/ },
   { name: "accessible gray [0.45, 0.45, 0.45]", shape: /\[\s*0\.45\s*,\s*0\.45\s*,\s*0\.45\s*\]/ },

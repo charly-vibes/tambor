@@ -20,7 +20,7 @@ Port of `dropdown` and `dropdown-list` from `basic_components.cljc`. `options` i
 | row_select_effect | invariant | a pointer down on a row returns select with the selected path and the row value | [[components.select]] |
 | select_closes | invariant | the dropdown rewrites a select intent into select followed by the effect that sets open? to false | [[components.select]] |
 | select_sets_value | invariant | the select effect sets the selected path to the value | [[components.select]] |
-| row_visuals | invariant | the selected row has a blue fill [0, 0.48, 1] with a white label and a hovered row has a light gray fill [0.976, 0.976, 0.976] | [[components.select]] |
+| row_visuals | invariant | the selected row has a blue fill [0, 0.42, 1] with a white label — darkened from [0, 0.48, 1] so the pair meets the WCAG AA 4.5:1 text floor (tambor-bc2) — and a hovered row has a light gray fill [0.976, 0.976, 0.976] | [[components.select]] |
 | list_geometry | invariant | the row width is the widest label plus 24, a row is label height plus 4 tall, and the box has 8 padding on y and rounded corners of 4 | [[components.select]] |
 | row_hover_keyed | invariant | row hover flags are stored in extra under a key made of the hover marker and the row value, so rows hover independently | [[components.select]] |
 | touch_rows | invariant | rows are at least 44 px tall on touch devices | [[components.select]] |

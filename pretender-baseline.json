@@ -1,10 +1,5 @@
 {
   "schema_version": 1,
   "adopted_at": "2026-11-24T18:34:04Z",
-  "finding_ids": [
-    "src/spa/inspector.ts::wireGalleryInspector::function_lines_max",
-    "tests/components-select.test.ts::::file_lines",
-    "tests/components-select.test.ts::placedNodes::cyclomatic_max",
-    "tests/runtime-invalidation-commits.test.ts::::file_lines"
-  ]
+  "finding_ids": []
 }

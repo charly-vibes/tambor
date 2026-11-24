@@ -87,13 +87,22 @@ import { staticClosure, type MetaOutputs } from "./metafile.ts";
 // calls + stack bookkeeping ride the shared dom chunk); re-recorded
 // 2026-11-24 again to 37637 B for the gate-driven module splits
 // (reconcile.ts + dom-painters-svg.ts extraction — same code, new
-// chunk boundaries in the shared dom chunk). Re-record
+// chunk boundaries in the shared dom chunk); re-recorded 2026-11-24
+// once more to 37638 B for the second pretender-driven split wave
+// (spa/inspector.ts wireGalleryInspector decomposition, d257881-era
+// render splits riding the shared chunks — CI's node-24 zlib measures
+// the shell at 37638 B where the local node-26 zlib lands a byte
+// lower, so the recorded baseline is the CI measurement); re-recorded
+// 2026-11-24 again to 37642 B for the tambor-bc2 spec delta (the
+// row_visuals AA-floor rationale rides the generated components.select
+// content in the docs entry's closure; measured under mise node@24 to
+// match CI's zlib). Re-record
 // ritual: when the docs entry or content ships a bigger
 // measured shell — run the build, read the measured gzip the test
 // reports, update THIS ONE constant, and run tools/stamp-docs.sh if
 // the demo-dist total changed too (it stamps README/EVALUATION from
 // the same metafile).
-export const DOCS_SHELL_GZIP_CEILING_BYTES = 37637;
+export const DOCS_SHELL_GZIP_CEILING_BYTES = 37642;
 
 // The measured shell gzip for a docs entry output: the gzip of every
 // file in its static-import closure (shared chunks ride the initial

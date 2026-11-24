@@ -76,11 +76,13 @@ function changeField(commit: DispatchCommit): string {
     : `unknown: ${commit.changes.reason}`;
 }
 
-export function wireGalleryInspector(
-  d: HostDoc,
-  app: App,
-  _opts?: Record<string, never>,
-): InspectorHandle {
+// The panel skeleton: the read-only aside with its two panes
+// (data-pane="state" | "log") — structure only, no wiring.
+function buildInspectorPanes(d: HostDoc): {
+  el: HostElement;
+  statePane: HostElement;
+  logPane: HostElement;
+} {
   const el = d.createElement("aside");
   el.setAttribute("data-inspector", "");
   const statePane = d.createElement("div");
@@ -89,6 +91,49 @@ export function wireGalleryInspector(
   logPane.setAttribute("data-pane", "log");
   el.appendChild(statePane);
   el.appendChild(logPane);
+  return { el, statePane, logPane };
+}
+
+// One log entry: data-sequence plus the intents and change field spans,
+// both JSON-safe projections (p_json_safe).
+function appendLogEntry(
+  d: HostDoc,
+  logPane: HostElement,
+  commit: DispatchCommit,
+): void {
+  const entry = d.createElement("div");
+  entry.setAttribute("data-entry", "");
+  entry.setAttribute("data-sequence", String(commit.sequence));
+  const intents = d.createElement("span");
+  intents.setAttribute("data-field", "intents");
+  intents.textContent = jsonSafe(commit.intents ?? []);
+  const change = d.createElement("span");
+  change.setAttribute("data-field", "change");
+  change.textContent = changeField(commit);
+  entry.appendChild(intents);
+  entry.appendChild(change);
+  logPane.appendChild(entry);
+}
+
+// The bounded log, repainted whole: oldest→newest, so the log reads in
+// dispatch order.
+function renderLog(
+  d: HostDoc,
+  logPane: HostElement,
+  ring: BoundedSeries<DispatchCommit>,
+): void {
+  logPane.textContent = "";
+  for (const commit of newestSeries(ring, CAPACITY)) {
+    appendLogEntry(d, logPane, commit);
+  }
+}
+
+export function wireGalleryInspector(
+  d: HostDoc,
+  app: App,
+  _opts?: Record<string, never>,
+): InspectorHandle {
+  const { el, statePane, logPane } = buildInspectorPanes(d);
 
   // appendSeries is persistent — each append returns the fresh window,
   // so the local must rebind (never mutate in place)
@@ -98,28 +143,9 @@ export function wireGalleryInspector(
     statePane.textContent = jsonSafe(app.getState());
   };
 
-  const renderLog = (): void => {
-    logPane.textContent = "";
-    // oldest→newest, so the log reads in dispatch order
-    for (const commit of newestSeries(ring, CAPACITY)) {
-      const entry = d.createElement("div");
-      entry.setAttribute("data-entry", "");
-      entry.setAttribute("data-sequence", String(commit.sequence));
-      const intents = d.createElement("span");
-      intents.setAttribute("data-field", "intents");
-      intents.textContent = jsonSafe(commit.intents ?? []);
-      const change = d.createElement("span");
-      change.setAttribute("data-field", "change");
-      change.textContent = changeField(commit);
-      entry.appendChild(intents);
-      entry.appendChild(change);
-      logPane.appendChild(entry);
-    }
-  };
-
   const listener: CommitListener = (commit) => {
     ring = appendSeries(ring, [commit]);
-    renderLog();
+    renderLog(d, logPane, ring);
     // fresh_after_draw: the live read is re-taken per commit
     renderState();
   };

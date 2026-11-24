@@ -31,7 +31,9 @@ export const TOKENS: readonly string[] = [
 
 // The explicit per-theme values. The accent reuses the corpus's
 // selected fill (components.select row_visuals): light is the pinned
-// [0, 0.48, 1]; dark is deeper so the white selected-row label keeps
+// [0, 0.42, 1] — darkened from [0, 0.48, 1] (4.02:1) so the white
+// selected-row label meets the 4.5:1 AA floor at 4.62:1 (tambor-bc2);
+// dark is deeper so the white selected-row label keeps
 // ~6.9:1 contrast (white on the old [0.3, 0.6, 1] was only ~2.4:1).
 // The danger light tone is the delete-X stroke red [1, 0, 0] pinned
 // by example.todo.delete_x_geometry; dark lifts it to [1, 0.35, 0.35]
@@ -43,7 +45,7 @@ export const TOKENS: readonly string[] = [
 const VALUES: Readonly<Record<string, Readonly<Record<Scheme, Color>>>> = {
   background: { light: [1, 1, 1], dark: [0.12, 0.12, 0.14] },
   foreground: { light: [0.1, 0.1, 0.1], dark: [0.95, 0.95, 0.95] },
-  accent: { light: [0, 0.48, 1], dark: [0, 0.31, 0.8] },
+  accent: { light: [0, 0.42, 1], dark: [0, 0.31, 0.8] },
   border: { light: [0.65, 0.65, 0.65], dark: [0.35, 0.35, 0.35] },
   danger: { light: [1, 0, 0], dark: [1, 0.35, 0.35] },
   muted: { light: [0.45, 0.45, 0.45], dark: [0.75, 0.75, 0.75] },
