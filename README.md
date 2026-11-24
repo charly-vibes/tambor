@@ -1,5 +1,8 @@
 # tambor
 
+[![npm](https://img.shields.io/npm/v/@charly-vibes/tambor)](https://www.npmjs.com/package/@charly-vibes/tambor)
+[![Publish to npm](https://github.com/charly-vibes/tambor/actions/workflows/npm-publish.yml/badge.svg)](https://github.com/charly-vibes/tambor/actions/workflows/npm-publish.yml)
+
 **tambor** is a strict-TypeScript, mobile-first UI library. UI is a pure
 function of state: views are plain immutable values, event handlers are pure
 functions that return effects, and components edit parent state only through

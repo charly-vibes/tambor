@@ -1,0 +1,39 @@
+# Publishes @charly-vibes/tambor to npm on a v* tag push — the
+# incitaciones pattern (tag → npm publish, NODE_AUTH_TOKEN secret).
+# Prepack builds dist inside npm publish; npm ci installs the dev toolchain
+# (tsc) that prepack needs. The tag/version guard stops a stale tag from
+# publishing the wrong tree.
+name: Publish to npm
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          registry-url: https://registry.npmjs.org/
+
+      - run: npm ci
+
+      - name: Tag matches package.json version
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          version=$(node -p "require('./package.json').version")
+          if [ "$tag" != "$version" ]; then
+            echo "::error::tag v$tag does not match package.json version $version"
+            exit 1
+          fi
+
+      - name: Publish
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
