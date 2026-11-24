@@ -45,10 +45,10 @@ const CAPACITY = 50;
 const MARKED = "\u0192()";
 
 // Narrowed subscribe view: the shared App keeps subscribe OPTIONAL
-// (structural implementers publish no commits); a makeApp-backed app
-// carries the member.
+// (structural implementers publish no commits), so the narrowed member
+// stays optional too — the ?. is the contract, not decoration.
 interface SubscribableApp extends App {
-  subscribe(listener: CommitListener): () => void;
+  subscribe?(listener: CommitListener): () => void;
 }
 
 export interface InspectorHandle {
