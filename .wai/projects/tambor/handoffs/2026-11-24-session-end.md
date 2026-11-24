@@ -35,10 +35,8 @@ phase: design
 ### git_status
 
 ```
- M .wai/resources/pipelines/.last-run
  M .whisper/branches/main/notes.md
- M src/spa/inspector.ts
-?? .wai/pipeline-runs/tdd-ro5-2026-11-24-release-020-greenup.yml
+ M .whisper/env.md
 ```
 
 ### open_issues
@@ -47,7 +45,6 @@ phase: design
 ○ tambor-1iv P2 heavy-lock: always-on demo-dist lock against ah batch co-selection
 ○ tambor-2ep P2 Execute add-accessibility-model change (0/8 tasks)
 ○ tambor-2xq P2 File upstream issues: spectacular ah silent batch-fallback storms + testaruda select perceived-hang profile
-○ tambor-bc2 P2 [bug] Selected-row label fails text contrast (white on accent [0,0.48,1] = 3.95:1)
 ○ tambor-flq P2 [bug] Bench demos draw leaf text outside the 300px drawn root
 ○ tambor-rtt P2 Wire soft-keyboard bridge into SPA host
 ○ tambor-uro P2 Replace indexForPosition () => 0 stubs in shipped examples with real multi-line hit-test
@@ -66,7 +63,7 @@ phase: design
 ○ tambor-zps P3 [bug] CI-only flake: gate-timing p_gate_timing_logs_row failed once, green on rerun
 
 --------------------------------------------------------------------------------
-Total: 20 issues (20 open, 0 in progress)
+Total: 19 issues (19 open, 0 in progress)
 
 Status: ○ open  ◐ in_progress  ● blocked  ✓ closed  ❄ deferred
 Priority: P0–P4 (label only; not a status icon)
