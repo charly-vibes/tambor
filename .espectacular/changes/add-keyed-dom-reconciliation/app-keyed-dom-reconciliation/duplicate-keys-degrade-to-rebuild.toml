@@ -6,4 +6,4 @@ superseded_by = ""
 authored_with = "0.12.0"
 
 [[tests.vitest]]
-flags = "--testNamePattern=never throws on duplicate keys (first match donates)"
+flags = "--testNamePattern=never throws on duplicate keys"

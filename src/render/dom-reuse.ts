@@ -60,7 +60,7 @@ export interface ReuseCtx {
   // no reusePrev), and this frame's records for the swap.
   keyedPrev?: Map<string, KeyedRecord> | undefined;
   keyedNext: Map<string, KeyedRecord>;
-  keyedPath: readonly number[];
+  keyedPath: number[];
   keyedEnterIndex: number;
   // containers a matching keyed path KEPT this frame (§5.1): the draw
   // swap removes the previous frame's top-level children except these
@@ -86,6 +86,18 @@ export interface KeyedRecord {
 export interface BuiltRange {
   readonly index: number;
   readonly els: readonly ElementLike[];
+}
+
+// The index-path scoping for keyed container records (the mutable stack
+// under ReuseCtx.keyedPath): push one segment, run the build, pop it —
+// a build must never leave its segment behind.
+export function withKeyedSegment<T>(ctx: ReuseCtx, segment: number, build: () => T): T {
+  ctx.keyedPath.push(segment);
+  try {
+    return build();
+  } finally {
+    ctx.keyedPath.pop();
+  }
 }
 
 // Splice placement: appendChild MOVES an already-attached child (the
@@ -221,25 +233,27 @@ export function buildArrayChildren(
   // (canvas semantics) — the box anchors them (tambor-0rp); atOrigin
   // semantics (dom-painters), inlined here to keep the painter split
   // acyclic. The box itself may be the previous frame's container (see
-  // the container-identity note at the keyedPath push below).
-  ctx.keyedPath = [...ctx.keyedPath, ctx.keyedEnterIndex];
-  const pathKey = ctx.keyedPath.join(".");
-  const record = ctx.keyedPrev?.get(pathKey);
-  // container identity (§5.1): a matching path keeps the SAME box so
-  // splices reorder within one parent — re-parenting the focused
-  // element drops focus; a fresh box (first frame, gate closed) builds
-  // everything fresh as before
-  const prevBox = record?.box;
-  const box = prevBox !== undefined ? prevBox : ctx.make("div");
-  if (prevBox !== undefined) ctx.keptContainers.add(box);
-  box.style["position"] = "absolute";
-  box.style["left"] = "0px";
-  box.style["top"] = "0px";
-  const prevInners = keyedPlan(record, children);
-  ctx.keyedNext.set(pathKey, { children, box });
-  placeKeyedChildren(ctx, children, box, prevInners);
-  adoptOrAppend(parent, box);
-  ctx.keyedPath = ctx.keyedPath.slice(0, -1);
+  // the container-identity note below). The array's own index-path
+  // segment is ctx.keyedEnterIndex, set by the buildChildWithReuse /
+  // painter wrapper that entered this array.
+  return withKeyedSegment(ctx, ctx.keyedEnterIndex, () => {
+    const pathKey = ctx.keyedPath.join(".");
+    const record = ctx.keyedPrev?.get(pathKey);
+    // container identity (§5.1): a matching path keeps the SAME box so
+    // splices reorder within one parent — re-parenting the focused
+    // element drops focus; a fresh box (first frame, gate closed) builds
+    // everything fresh as before
+    const prevBox = record?.box;
+    const box = prevBox !== undefined ? prevBox : ctx.make("div");
+    if (prevBox !== undefined) ctx.keptContainers.add(box);
+    box.style["position"] = "absolute";
+    box.style["left"] = "0px";
+    box.style["top"] = "0px";
+    const prevInners = keyedPlan(record, children);
+    ctx.keyedNext.set(pathKey, { children, box });
+    placeKeyedChildren(ctx, children, box, prevInners);
+    adoptOrAppend(parent, box);
+  });
 }
 
 // The per-container placement: build/splice each child into the box,

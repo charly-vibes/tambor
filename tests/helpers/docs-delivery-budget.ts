@@ -80,13 +80,17 @@ import { staticClosure, type MetaOutputs } from "./metafile.ts";
 // 2026-11-24 to 37597 B for the §5.2 churn floor: ElementLike/
 // HostElement insertBefore (domsim + domhost move semantics), the
 // keyed order pass (order-exact minimal-move placement) and the kept-
-// box same-parent append guard. Re-record
+// box same-parent append guard; re-recorded 2026-11-24 to 37631 B for
+// the tambor-4ny fix (withKeyedSegment path scoping: keyedPath is a
+// mutable stack and every wrapper painter scopes its child builds, so
+// array index-paths carry their full structural chain — the scoping
+// calls + stack bookkeeping ride the shared dom chunk). Re-record
 // ritual: when the docs entry or content ships a bigger
 // measured shell — run the build, read the measured gzip the test
 // reports, update THIS ONE constant, and run tools/stamp-docs.sh if
 // the demo-dist total changed too (it stamps README/EVALUATION from
 // the same metafile).
-export const DOCS_SHELL_GZIP_CEILING_BYTES = 37597;
+export const DOCS_SHELL_GZIP_CEILING_BYTES = 37631;
 
 // The measured shell gzip for a docs entry output: the gzip of every
 // file in its static-import closure (shared chunks ride the initial

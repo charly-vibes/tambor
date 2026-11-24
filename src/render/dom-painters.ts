@@ -32,7 +32,7 @@ import type { Color } from "../views/model.ts";
 import { buttonBounds } from "../views/geometry.ts";
 import { currentLabelMeasure } from "../views/nodes.ts";
 import { cssVarColor } from "../ui/ambient-theme.ts";
-import { buildChildWithReuse, type ReuseCtx } from "./dom-reuse.ts";
+import { buildChildWithReuse, withKeyedSegment, type ReuseCtx } from "./dom-reuse.ts";
 // Public surface kept: the reuse machinery lives in dom-reuse.ts.
 export { buildChildWithReuse, reconcile, type BuiltRange, type ReconcileStep, type KeyFn } from "./dom-reuse.ts";
 import { fillExtent, type FillRequest } from "./dom-fill.ts";
@@ -128,7 +128,7 @@ export function buildChildrenOf(ctx: BuildCtx, node: DomNode, parent: ElementLik
   atOrigin(el);
   const drawables = node.drawables ?? [];
   for (let i = 0; i < drawables.length; i++)
-    buildChildWithReuse(ctx, drawables[i]!, el, i);
+    withKeyedSegment(ctx, i, () => buildChildWithReuse(ctx, drawables[i]!, el, i));
   parent.appendChild(el);
 }
 
@@ -210,7 +210,10 @@ export function buildTranslate(ctx: BuildCtx, node: DomNode, parent: ElementLike
   el.style["position"] = "absolute";
   el.style["left"] = `${node.x ?? 0}px`;
   el.style["top"] = `${node.y ?? 0}px`;
-  ctx.build(node.drawable ?? null, el);
+  // the singular drawable is wrapper level 0: without a segment here an
+  // array inside shares its parent's index path with any other array at
+  // the same depth (tambor-4ny)
+  withKeyedSegment(ctx, 0, () => ctx.build(node.drawable ?? null, el));
   parent.appendChild(el);
 }
 
@@ -223,7 +226,11 @@ export function buildWithStyle(ctx: BuildCtx, node: DomNode, parent: ElementLike
   ctx.style = (node.style ?? "fill") as string;
   const el = ctx.make("div");
   atOrigin(el);
-  for (const child of node.drawables ?? []) ctx.build(child, el);
+  const styled = node.drawables ?? [];
+  for (let i = 0; i < styled.length; i++) {
+    const child = styled[i]!;
+    withKeyedSegment(ctx, i, () => ctx.build(child, el));
+  }
   parent.appendChild(el);
   ctx.style = prev;
 }
@@ -264,7 +271,11 @@ export function buildWrapperWithColor(ctx: BuildCtx, node: DomNode, parent: Elem
     ctx.ink = cssColor(node.color!, color);
   }
   if (color) applyWrapperPaint(el, node, color, style, fills);
-  for (const child of node.drawables ?? []) ctx.build(child, el);
+  const inked = node.drawables ?? [];
+  for (let i = 0; i < inked.length; i++) {
+    const child = inked[i]!;
+    withKeyedSegment(ctx, i, () => ctx.build(child, el));
+  }
   ctx.stroke = prevStroke;
   ctx.ink = prevInk;
   parent.appendChild(el);
@@ -284,7 +295,11 @@ export function buildWrapperWithStrokeWidth(ctx: BuildCtx, node: DomNode, parent
   ctx.strokeWidth = node.strokeWidth ?? prev;
   const el = ctx.make("div");
   atOrigin(el);
-  for (const child of node.drawables ?? []) ctx.build(child, el);
+  const stroked = node.drawables ?? [];
+  for (let i = 0; i < stroked.length; i++) {
+    const child = stroked[i]!;
+    withKeyedSegment(ctx, i, () => ctx.build(child, el));
+  }
   ctx.strokeWidth = prev;
   parent.appendChild(el);
 }

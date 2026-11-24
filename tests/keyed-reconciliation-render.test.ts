@@ -25,6 +25,8 @@ import { makeApp, type App } from "../src/effects/dispatch.ts";
 import { keyed, label, type Elem } from "../src/views/model.ts";
 import type { HostElement } from "../src/interop/domhost.ts";
 import { hostDoc, mounted } from "./helpers/runtime-invalidation-rig.ts";
+import { mountSpa } from "../src/spa/todo-spa.ts";
+import { FILTER_PATH, TODOS_PATH } from "../src/examples/todo/todo.ts";
 import { mountDemo, type MountOptions, type SpaHandle } from "../src/spa/mount.ts";
 
 // jsdom DOES ship an async rAF (pretendToBeVisual), so every test stubs
@@ -357,5 +359,48 @@ describe("keyed-dom-reconciliation — boundary gates (add-keyed-dom-reconciliat
     expect(after.map((el) => el.textContent)).toEqual(["b", "a"]);
     expect(after[0]).toBe(before[1]);
     expect(after[1]).toBe(before[0]);
+  });
+});
+
+// The real-wiring regression behind tambor-4ny: with the reuse gate ON
+// (a known ChangeSet from the second add), the filter-flip draw builds
+// through keyed container records. Two arrays at different wrapper
+// depths inside one row subtree derived the SAME index-path key
+// (wrapper painter levels contribute no path segment), so the second
+// visitor adopted the first's persistent box and its orphan sweep
+// deleted the first's freshly built content — row shells survived,
+// their strokes did not (svg 12 -> 0). The §2 pin is output equality
+// with the unkeyed shape: the gated flip must draw every visible row's
+// leaf content, exactly as a fresh mount of the same state does.
+describe("keyed-dom-reconciliation — container identity under the gate (add-keyed-dom-reconciliation §5.1)", () => {
+  it("5.1 gated filter flip keeps every row's leaf content drawn (svg count equals the unkeyed shape)", () => {
+    stubFrames();
+    try {
+      const doc = hostDoc();
+      const container = doc.createElement("div");
+      doc.body.appendChild(container);
+      const spa = mountSpa(doc, container, {
+        debug: true,
+        mode: "immediate",
+      });
+      const host = spa.root.host;
+
+      // initial: 3 todos, all -> 3 rows x 2 delete strokes
+      expect(host.querySelectorAll("svg").length).toBe(6);
+
+      // second add dispatch arms the reuse gate (known ChangeSet)
+      for (let i = 0; i < 3; i++) {
+        spa.app.dispatch(["add-todo", TODOS_PATH, `wip${i}`]);
+      }
+      expect(host.querySelectorAll("svg").length).toBe(12);
+
+      // flip the filter: "active" hides the seeded complete third todo,
+      // so 5 visible rows x 2 strokes = 10 — the gated draw must equal
+      // the unkeyed shape (same count a fresh mount of this state draws)
+      spa.app.dispatch(["set", FILTER_PATH, "active"]);
+      expect(host.querySelectorAll("svg").length).toBe(10);
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });
