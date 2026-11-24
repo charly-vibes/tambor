@@ -1,7 +1,8 @@
 // Purpose: the invariant half of the bench scenario registry
 //   (tambor-54j.14/.19 split) — the Scenario shape and the view-point
-//   resolvers shared by tests/e2e/bench-scenarios.ts (the main rows)
-//   and tests/e2e/bench-scenarios-bz.ts (the BZ rows).
+//   resolvers shared by tests/e2e/bench-scenarios.ts (the main rows),
+//   tests/e2e/bench-scenarios-bz.ts (the BZ rows) and
+//   tests/e2e/bench-scenarios-rinv.ts (the tambor-1cr RINV tail row).
 // Responsibilities: only what both registry halves need — the
 //   Scenario shape (with the expectedDrawn / expectedText "the op
 //   actually happened" checks), the view-point resolvers (button
@@ -47,6 +48,14 @@ export interface Scenario {
    * whose setup button sits behind labels whose replay height diverges
    * from the bundle's real text metrics) */
   readonly drawnSetup?: string;
+  /** opt-in DOM-mutation measurement (tambor-1cr 4.2): the harness
+   * installs an in-page MutationObserver over #demo after the setup and
+   * warmup ops and records, per timed op, the count of distinct DOM
+   * elements added, removed or text-changed — emitted as
+   * result.mutations (parallel to samples, cycle order) so the
+   * invalidation work is judged in mutated DOM nodes, not only
+   * wall-clock ms. Absent = wall-clock only (all existing rows). */
+  readonly countMutations?: boolean;
 }
 
 // The first visible row's toggle checkbox (list-head-stable position).

@@ -2,8 +2,11 @@
 //   it renders view trees as real DOM elements and shares the canvas
 //   backend's input normalisation and backend services.
 // Responsibilities: the BackendContract services, draw(view) building
-//   an element tree under its root element, attach(surface) wiring the
-//   same listeners, resize redrawing, and the runtime wire.
+//   an element tree under its root element with the whole-view identity
+//   short-circuit and the per-frame render hint (add-runtime-invalidation),
+//   attach(surface) wiring the same listeners, resize redrawing, and the
+//   runtime wire. draw() bumps the opt-in §4.0 counters: draw on every
+//   draw, rebuild only when the element tree is rebuilt.
 // Rationale: openspec/specs/backend-render/spec.md is the design authority. The dom
 //   backend draws "accessible, selectable text": labels become text
 //   nodes, buttons become real button elements (natively accessible
@@ -30,13 +33,17 @@ import {
 import { SimElement, type ElementLike, type SimEvent } from "./domsim.ts";
 import { normalizeDOMEvent } from "./input.ts";
 import { phaseTimers } from "../events/phase-timers.ts";
+import { ambientScheme } from "../ui/ambient-theme.ts";
 import type { AnyDraw } from "./primitives.ts";
+import { type FrameHint } from "./dom-reuse.ts";
 import {
   type BuildCtx,
+  type BuiltRange,
   type DomNode,
   type DomPainter,
   buildArc,
   buildButton,
+  buildChildWithReuse,
   buildChildrenOf,
   buildImage,
   buildLabel,
@@ -113,6 +120,23 @@ export class DomBackend implements BackendContract {
   private readonly make: (tag: string) => ElementLike;
   // the persistent scale(k) wrapper under the root (cellScale > 1)
   private cellWrap: ElementLike | undefined;
+  // Whole-view short-circuit state (add-runtime-invalidation §3): the
+  // last drawn view identity plus the ambient conditions it was drawn
+  // under; every draw re-records them, a hintless draw clears the
+  // scheme so the next hinted draw cannot skip on stale ambience.
+  private lastView: AnyDraw | null = null;
+  // Seeded from the ambient scheme (not null): the mount's initial draw
+  // is hintless, and a null seed would make the first hinted wire draw —
+  // whose scheme IS the ambient one — mismatch and rebuild for nothing.
+  private lastScheme: string | null = ambientScheme();
+  private lastSize: Vec2 | null = null;
+  // Per-child reuse state (tasks 3.5/3.6): the previous frame's
+  // Elem→range map, swapped after every build.
+  private reusePrev = new WeakMap<object, BuiltRange>();
+  private reuseDisabled = true;
+  // The current frame's render hint (see FrameHint): undefined until
+  // the spa mount sets it for the next wire draw.
+  frameHint: FrameHint | undefined;
 
   constructor(options: DomBackendOptions = {}) {
     this.containerSize = options.containerSize ?? [512, 512];
@@ -157,12 +181,55 @@ export class DomBackend implements BackendContract {
   // seam calls are no-ops while the timers are off.
   draw(view: AnyDraw): this {
     this.drawCount++;
+    // Opt-in counters (add-runtime-invalidation §4.0): every draw, and
+    // a rebuild only when the element tree is actually rebuilt — the
+    // short-circuit skip counts as a draw with zero rebuilds. No-ops
+    // while the counters are off.
+    phaseTimers.count("draw");
+    // Whole-view identity short-circuit (see shouldSkipDraw).
+    const hint = this.frameHint;
+    const skip = this.shouldSkipDraw(view, hint);
+    this.lastView = view;
+    // A hintless draw (mount's initial draw, non-wire callers) carries no
+    // scheme information — it must PRESERVE the last known ambience, not
+    // reset it to null, or the first hinted wire draw always mismatches.
+    this.lastScheme = hint?.scheme ?? this.lastScheme;
+    this.lastSize = [this.containerSize[0], this.containerSize[1]];
+    if (skip) {
+      phaseTimers.finishDraw();
+      return this;
+    }
+    // Per-child reuse gate (task 3.6): an unknown ChangeSet frame — or
+    // any hintless draw — disables splicing for this build.
+    this.reuseDisabled =
+      hint === undefined || hint.changes.kind !== "known";
     phaseTimers.startSpan("reconcile_layout");
+    phaseTimers.count("rebuild");
     this.root.children.length = 0;
     this.build(view, this.cellTarget(view));
     phaseTimers.endSpan();
     phaseTimers.finishDraw();
     return this;
+  }
+
+  // Whole-view identity short-circuit predicate (add-runtime-invalidation
+  // §3, tasks 3.1/3.2): identity-equal view + no overlay + no lane
+  // movement + unchanged scheme and container size (the viewCache key)
+  // + a known ChangeSet. Unknown ChangeSet forces the rebuild (never
+  // stale output); a hintless draw never skips.
+  private shouldSkipDraw(view: AnyDraw, hint: FrameHint | undefined): boolean {
+    return (
+      hint !== undefined &&
+      hint.changes.kind === "known" &&
+      hint.overlayNull &&
+      hint.lane[0] === 0 &&
+      hint.lane[1] === 0 &&
+      hint.scheme === this.lastScheme &&
+      this.lastView === view &&
+      this.lastSize !== null &&
+      this.lastSize[0] === this.containerSize[0] &&
+      this.lastSize[1] === this.containerSize[1]
+    );
   }
 
   // The build target: the anchored root at cellScale 1; otherwise the
@@ -265,11 +332,18 @@ export class DomBackend implements BackendContract {
       stroke: undefined as string | undefined,
       strokeWidth: undefined as number | undefined,
       fills: [],
+      reusePrev: this.reuseDisabled
+        ? undefined
+        : this.reusePrev as WeakMap<object, BuiltRange> | undefined,
+      reuseNext: new WeakMap<object, BuiltRange>(),
+      reuseUsed: new Set<BuiltRange>(),
     };
     this.buildWith(ctx, view, parent);
     // the tree is attached bottom-up, so percentage sizes only resolve
     // now (see settleFillExtents)
     settleFillExtents(ctx);
+    // this frame's ranges feed the next build's reuse (task 3.5)
+    this.reusePrev = ctx.reuseNext;
     return this;
   }
 
@@ -282,7 +356,9 @@ export class DomBackend implements BackendContract {
       box.style["position"] = "absolute";
       box.style["left"] = "0px";
       box.style["top"] = "0px";
-      for (const child of view as readonly AnyDraw[]) ctx.build(child, box);
+      const children = view as readonly AnyDraw[];
+      for (let i = 0; i < children.length; i++)
+        buildChildWithReuse(ctx, children[i]!, box, i);
       parent.appendChild(box);
       return this;
     }

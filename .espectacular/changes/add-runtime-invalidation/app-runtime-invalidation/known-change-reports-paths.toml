@@ -1,0 +1,9 @@
+id = "known-change-reports-paths"
+description = "a dispatch applying a built-in path edit effect publishes a commit whose ChangeSet is known with the touched paths and which exposes the prior and next state"
+archetype = "SA"
+status = "active"
+superseded_by = ""
+authored_with = "0.12.0"
+
+[[tests.vitest]]
+flags = "--testNamePattern=a u-path dispatch publishes"

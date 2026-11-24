@@ -1,0 +1,9 @@
+id = "unsubscribe-during-delivery-takes-effect-next-commit"
+description = "a listener unsubscribing another during a delivery pass leaves the in-flight pass unchanged and the unsubscribed listener receives no commit from the next dispatch"
+archetype = "CE"
+status = "active"
+superseded_by = ""
+authored_with = "0.12.0"
+
+[[tests.vitest]]
+flags = "--testNamePattern=unsubscribe made during delivery"

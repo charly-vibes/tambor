@@ -1,0 +1,11 @@
+run_id: tdd-ro5u-2026-11-23-tambor-ry3-author-add-render-scheduler
+pipeline: tdd-ro5u
+topic: tambor-ry3 author add-render-scheduler
+created_at: '2026-11-23T18:13:11.820455811+00:00'
+current_step: 8
+approvals: {}
+epic: null
+child_issues: []
+child_runs: []
+handoff_artifact: null
+bypasses: []

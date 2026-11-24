@@ -1,0 +1,9 @@
+id = "unchanged-view-skips-rebuild"
+description = "a dispatch deriving a view identity-equal to the last drawn view with no overlay or lane movement records the draw but performs zero element-tree rebuilds; a new view identity rebuilds exactly once"
+archetype = "NR"
+status = "active"
+superseded_by = ""
+authored_with = "0.12.0"
+
+[[tests.vitest]]
+flags = "--testNamePattern=an identity-equal derive records the draw"

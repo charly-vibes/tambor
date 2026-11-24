@@ -9,9 +9,10 @@
 //   bench-scenarios-shared.ts; this file holds the keyed-table,
 //   todomvc, form-200, turtle-20k, save-restore-5k, time-travel-10k,
 //   dashboard-derived, review-faults and log-stream rows, and
-//   re-exports SCENARIOS with the BZ rows (bench-scenarios-bz.ts —
-//   split out here to keep every registry file under the gate's file
-//   limit WITHOUT changing any scenario id; test names are contract
+//   re-exports SCENARIOS with the BZ rows (bench-scenarios-bz.ts) and
+//   the tambor-1cr RINV tail row (bench-scenarios-rinv.ts) — split
+//   out to keep every registry file under the gate's file limit
+//   WITHOUT changing any scenario id (test names are contract
 //   bindings).
 // Rationale: the ops are cycled, so a run's samples are labelled by
 //   position in the cycle in the samples array (cycle order, per run) —
@@ -24,6 +25,7 @@ import {
   labelText,
 } from "./bench-scenarios-shared.ts";
 import { SCENARIOS_BZ } from "./bench-scenarios-bz.ts";
+import { SCENARIOS_RINV } from "./bench-scenarios-rinv.ts";
 
 export type { Scenario } from "./bench-scenarios-shared.ts";
 
@@ -286,4 +288,5 @@ export const SCENARIOS: readonly Scenario[] = [
     warmupOps: 1,
   },
   ...SCENARIOS_BZ,
+  ...SCENARIOS_RINV,
 ];

@@ -1,0 +1,9 @@
+id = "reentrant-listener-dispatch-queues"
+description = "a subscribe listener dispatching during commit delivery lands the dispatch on a new commit with a strictly greater sequence and no deadlock"
+archetype = "CE"
+status = "active"
+superseded_by = ""
+authored_with = "0.12.0"
+
+[[tests.vitest]]
+flags = "--testNamePattern=reentrant dispatch queues"

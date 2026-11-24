@@ -1,0 +1,9 @@
+id = "unsubscribe-stops-delivery"
+description = "a listener that unsubscribes receives no commit from later dispatches while the other listener still does"
+archetype = "CE"
+status = "active"
+superseded_by = ""
+authored_with = "0.12.0"
+
+[[tests.vitest]]
+flags = "--testNamePattern=subscribe delivers the same frozen commit"

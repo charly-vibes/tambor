@@ -10,7 +10,11 @@
 //   applies synchronously in dispatch order, the derive+draw paints at
 //   most once per animation frame by default ("coalesced"), flush()
 //   drains a pending draw synchronously, "immediate" and hosts without
-//   requestAnimationFrame restore the per-dispatch synchronous draw. (The original todo wiring — createTodoApp/mountSpa —
+//   requestAnimationFrame restore the per-dispatch synchronous draw.
+//   Runtime-invalidation (add-runtime-invalidation §3): the mount
+//   subscribes to keep the last commit and hands every wire draw the
+//   frame's render hint (ChangeSet, overlay, lane, scheme) so the
+//   backend's draw() short-circuits on an identity-equal view. (The original todo wiring — createTodoApp/mountSpa —
 //   moved to todo-spa.ts with add-spa-delivery: a static example
 //   import here pulled src/examples/todo into every initial chunk.)
 //   Wheel input has no backend
@@ -35,6 +39,10 @@
 //   globalThis.__tambor handle AFTER the initial draw, naming the demo
 //   and returning the live app state, the raw app view and the draw
 //   count; unmount clears it so it never names an unmounted demo.
+//   Runtime-invalidation §4.0: the counters?: mount option opts the
+//   phase-timers derive/rebuild/draw counters in for the mount's
+//   lifetime (never stealing an external meter's seam); the debug
+//   snapshot exposes them as counts() next to drawCount.
 // Rationale: openspec/specs/example-todo/spec.md is the design authority,
 //   with routeClick (backends.ts) as the host-side routing shape: the
 //   host dispatches the event and hands the intent list to the app's
@@ -48,24 +56,33 @@
 //   renders as live DOM).
 
 import { DomBackend } from "../render/dom.ts";
-import { type Elem, type Vec2, translate } from "../views/model.ts";
-import { wireExtentSizing } from "./extent.ts";
-import { domMeasure } from "./font.ts";
+import { type App } from "../effects/dispatch.ts";
+import { type Elem } from "../views/model.ts";
+import { type TamborEvent } from "../events/event.ts";
 import {
   RealDomElement,
   realDomFactory,
   type HostDoc,
   type HostElement,
 } from "../interop/domhost.ts";
-import { type App, type Effect, type LaneStore } from "../effects/dispatch.ts";
 import { setFocusSurface } from "./focus.ts";
 import { VIEWPORT } from "./viewport.ts";
-import { dispatch } from "../events/dispatch.ts";
-import { phaseTimers } from "../events/phase-timers.ts";
-import { type TamborEvent } from "../events/event.ts";
 import { wireSurfaceInput } from "./surface-input.ts";
+import { wireExtentSizing } from "./extent.ts";
+import { domMeasure } from "./font.ts";
 import { ambientScheme } from "../ui/ambient-theme.ts";
-import type { Scheme } from "../ui/theme.ts";
+// The wire machinery (coalescer, view cache, lane draws, event wire,
+// input surface) and the debug/counters seams live in sibling modules
+// (mechanical splits); this file re-exports the public surface.
+import {
+  attachInputSurface,
+  drawnSchemeIs,
+  frameCoalescer,
+  wireSurface,
+  type Coalescer,
+} from "./mount-wire.ts";
+import { wireDebugSnapshot, type DebugSnapshot } from "./mount-debug.ts";
+import { mountCounters } from "./mount-counters.ts";
 
 // The dispatch/coalescing mode (add-frame-coalescing D3): "coalesced"
 // paints once per animation frame, "immediate" restores the
@@ -89,39 +106,6 @@ export interface SpaHandle {
   unmount(): void;
 }
 
-// The read-only debug snapshot (add-spa-test-seams): live accessors on
-// the mounted app, never copies.
-//
-// Design decision — read-only-by-API, not a deep-frozen snapshot or a
-// clone/projection. The handle holds function references and allocates
-// nothing on read: state() returns app.getState() (the spec's "equals
-// the app state" is identity, and a copy could never satisfy it),
-// view() returns the RAW app.view() derivation (never the wire's
-// cached or lane-wrapped tree, which is a draw detail), and there is
-// no setter and no dispatch on the handle. A clone/projection would
-// allocate a whole state/view tree per read and put a stale copy
-// between extractors and the app; deep-freezing the live objects would
-// mutate app-owned state (frozen state breaks any app that writes
-// through its own boxes) and still would not pin identity. Isolation
-// is enforced at the API surface, and the tests pin it: a fixed key
-// set with no write path.
-//
-// drawCount reads DomBackend.drawCount, which draw() increments — the
-// single draw path every actual draw goes through (the mount's initial
-// draw, wireDrawTail's state and lane draws, async re-renders, resizes).
-// A forwarded event that yields no intents draws nothing, so the count
-// does not move; debug on/off changes no drawn output.
-export interface DebugSnapshot {
-  /** The gallery demo id actually mounted ("" when unknown). */
-  readonly demo: string;
-  /** The live app state (identity, not a copy). */
-  state(): unknown;
-  /** The raw app view derivation, not the cached/lane-wrapped tree. */
-  view(): Elem;
-  /** Every actual backend draw since this mount was created. */
-  drawCount(): number;
-}
-
 export interface MountOptions {
   /** Publish globalThis.__tambor after the initial draw. */
   readonly debug?: boolean;
@@ -133,307 +117,16 @@ export interface MountOptions {
    * per-dispatch repaint.
    */
   readonly mode?: SpaMode;
+  /**
+   * Opt in the §4.0 derive/rebuild/draw counters (the phase-timers
+   * seam's enable) for the lifetime of this mount. Default off — zero
+   * cost. When the seam is already enabled by an external meter, the
+   * mount leaves it alone and the unmount does not disable it.
+   */
+  readonly counters?: boolean;
 }
 
-// The frame-coalescing painter (add-frame-coalescing D2): the coalescer
-// owns the single scheduling call per frame — repeated paints inside one
-// frame keep only the latest draw closure, the frame callback paints
-// exactly once, and flush() drains a pending draw synchronously (the
-// frame callback sees the cleared pending flag and no-ops, so a flush
-// and its own rAF never double-draw). "immediate" mode and hosts
-// without requestAnimationFrame skip the coalescer entirely: the draw
-// tail runs synchronously per dispatch (the no-rAF path must never add
-// a never-flush state, D2).
-function frameCoalescer(frame: (cb: () => void) => unknown): {
-  paint(draw: () => void): void;
-  flush(): void;
-  drop(): void;
-} {
-  let pending: (() => void) | null = null;
-  let scheduled = false;
-  let dead = false;
-  return {
-    paint(draw: () => void): void {
-      if (dead) return;
-      pending = draw;
-      if (scheduled) return;
-      scheduled = true;
-      frame(() => {
-        scheduled = false;
-        if (dead) return;
-        if (pending !== null) {
-          const drawNow = pending;
-          pending = null;
-          drawNow();
-        }
-      });
-    },
-    flush(): void {
-      if (pending === null) return;
-      const draw = pending;
-      pending = null;
-      draw();
-    },
-    // Kills the coalescer (unmount seam): the pending draw is discarded
-    // and any already-scheduled frame callback no-ops — a post-unmount
-    // frame must not re-derive and draw into the detached tree.
-    drop(): void {
-      dead = true;
-      pending = null;
-    },
-  };
-}
-
-// The host global, reached structurally (tsconfig carries no DOM lib).
-interface DebugGlobal {
-  __tambor?: DebugSnapshot;
-}
-
-// The demo viewport, used for both the app render context and the
-// backend container size.
-// The registry-aware app wire (makeApp): defeffect effects like
-// add-todo apply; the backend is carried so the render context sees
-// the container size.
-// Route-time view cache (tambor-8xm): the drawn tree is reused while
-// the state is unchanged. State changes only through dispatch, so
-// app.getState() identity is the invalidation signal — a derivation
-// happens only on a change, and the phase-timer derive span still
-// opens/closes per route (a cache hit records a ~zero span).
-// The lane transform (tambor-54j.3 Phase 2): the wire draws every tree
-// — cached or freshly derived — under the lane's pan/scroll offset as
-// a translate wrapper (BZ2 pan-as-transform promoted to a seam). The
-// lane keys are "pan" and "scroll", each a Vec2 ([x, y]) or {x, y};
-// absent or non-conforming entries contribute zero. At identity the
-// tree is returned unwrapped so apps that never touch the lane draw
-// exactly as before.
-function laneTransform(lane: LaneStore): Vec2 {
-  let x = 0;
-  let y = 0;
-  for (const key of ["pan", "scroll"]) {
-    const v: unknown = lane[key];
-    if (Array.isArray(v)) {
-      const a = v as unknown[];
-      if (typeof a[0] === "number") x += a[0];
-      if (typeof a[1] === "number") y += a[1];
-    } else if (v !== null && typeof v === "object" && "x" in v) {
-      const o = v as { x?: unknown; y?: unknown };
-      x += typeof o.x === "number" ? o.x : 0;
-      y += typeof o.y === "number" ? o.y : 0;
-    }
-  }
-  return [x, y];
-}
-
-// The scheme the last DERIVED tree resolved with (recorded by the
-// route-time view cache at derive time, not at paint time): the
-// shell's boot-scheme watcher compares the host's live answer against
-// this, because the query answer WOBBLES during early page init and a
-// boot-vs-now comparison never converges.
-let drawnScheme: Scheme | null = null;
-
-// True when the host's live answer equals the scheme of the last
-// derived tree.
-export function drawnSchemeIs(scheme: Scheme): boolean {
-  return drawnScheme !== null && drawnScheme === scheme;
-}
-
-// The route-time view cache: state + container size + ambient scheme
-// key the derived tree. The scheme belongs in the key because the
-// theme resolves at render time — a flip without a state change would
-// otherwise serve the pre-flip view forever. ambientScheme() also
-// OBSERVES the flip (clearing the component render cache) before the
-// derive, so the rebuild sees the new ink; a session whose scheme never
-// changes compares an equal string and keeps its cached view.
-function viewCache(app: App, size: () => unknown): () => Elem {
-  let cache: {
-    state: unknown;
-    size: unknown;
-    scheme: Scheme;
-    view: Elem;
-  } | null = null;
-  return () => {
-    const state = app.getState();
-    const box = size();
-    const scheme = ambientScheme();
-    drawnScheme = scheme;
-    if (
-      cache !== null &&
-      cache.state === state &&
-      cache.size === box &&
-      cache.scheme === scheme
-    )
-      return cache.view;
-    const view = app.view();
-    cache = { state, size: box, scheme, view };
-    return view;
-  };
-}
-
-// The drag overlay (interaction-lane lane_overlay_drawn, Phase 4): a
-// lane entry may carry an overlay renderer `(entry) => Elem` — the
-// dragged shape re-drawn from the lane position. The first such entry
-// in key order is rendered ON TOP of the tree (appended after it in
-// draw order); the renderer is called with its lane entry at draw
-// time. Draw-only: routing semantics are untouched (the pointer
-// stream hits the tree's own handlers). Single-drag scope v1.
-function laneOverlay(app: App): Elem | null {
-  const lane = app.getLane() as Record<string, unknown>;
-  for (const key of Object.keys(lane)) {
-    const v = lane[key];
-    if (v !== null && typeof v === "object") {
-      const overlay = (v as { overlay?: unknown }).overlay;
-      if (typeof overlay === "function") {
-        return (overlay as (entry: unknown) => Elem)(v);
-      }
-    }
-  }
-  return null;
-}
-
-// Every wire draw goes through here: the tree under the lane wrap,
-// with the drag overlay appended on top while a drag entry carries a
-// renderer (lane-only draw, state re-derive and async re-render
-// alike — lane wins on position, state wins on structure).
-// The lane transform wrapper (interaction-lane): every draw — cached
-// or freshly derived — carries the lane's pan/scroll offset, so the
-// scheme the last draw resolved is recorded right after it (main.ts's
-// boot-scheme watcher compares the host's live answer against this).
-function drawWire(
-  backend: DomBackend,
-  app: App,
-  wrap: (tree: Elem) => Elem,
-  tree: Elem,
-): void {
-  const overlay = laneOverlay(app);
-  backend.draw(overlay === null ? wrap(tree) : wrap([tree, overlay]));
-}
-
-// The lane transform wrapper (interaction-lane): every draw — cached
-// or freshly derived — carries the lane's pan/scroll offset, so the
-// lane wins on position while state wins on structure; at identity
-// the tree passes through unwrapped. Shared by the wire route's lane
-// draw, the state draw and the rerender path.
-function laneWrap(app: App): (tree: Elem) => Elem {
-  return (tree) => {
-    const [x, y] = laneTransform(app.getLane());
-    return x === 0 && y === 0 ? tree : translate(x, y, tree);
-  };
-}
-
-// The wire's draw tail — what a routed batch costs after its intents
-// are applied. Empty intents changed nothing (event_pure — the same
-// empty_batch_noop shape the headless wire pins): no re-derivation, no
-// draw. A lane-only batch (interaction-lane lane_draw_no_derive): the
-// state identity is unchanged, so the cached tree is still valid —
-// draw it under the lane transform (usually the 60 Hz pan delta) with
-// NO re-derivation. Any state effect: one derivation + one draw.
-function wireDrawTail(
-  backend: DomBackend,
-  app: App,
-  viewFor: () => Elem,
-  wrap: (tree: Elem) => Elem,
-  intents: readonly Effect[],
-): void {
-  if (intents.length === 0) return;
-  if (intents.every((effect) => effect[0] === "lane")) {
-    drawWire(backend, app, wrap, viewFor());
-    return;
-  }
-  phaseTimers.startSpan("derive");
-  const drawn = viewFor();
-  phaseTimers.endSpan();
-  drawWire(backend, app, wrap, drawn);
-}
-
-// The re-render wrapper (tambor-a45): async applies route through the
-// demo's own dispatch OUTSIDE the event wire, so every non-routed
-// dispatch re-draws from the cached view; the route's own draw stays
-// single (setRouted(true) around the routed apply). A lane-only async
-// dispatch draws the cached tree under the transform too: no repaint
-// was scheduled, and the state identity makes viewFor a cache hit —
-// no re-derivation (lane_draw_no_derive).
-function wireRerender(
-  backend: DomBackend,
-  app: App,
-  viewFor: () => Elem,
-): { setRouted(routed: boolean): void } {
-  const wrap = laneWrap(app);
-  let routed = false;
-  const rawDispatch = app.dispatch;
-  app.dispatch = (batch, ...rest: unknown[]): undefined => {
-    const applied = rawDispatch(batch, ...rest);
-    if (!routed) drawWire(backend, app, wrap, viewFor());
-    return applied;
-  };
-  return { setRouted: (routedNow: boolean) => void (routed = routedNow) };
-}
-
-// One forwarded event = one corpus wire round trip, the routeClick
-// shape: route through the event router, hand the intents to the
-// registry-aware dispatcher, re-draw from the app view. Returns the
-// wire so the surface's own wheel listener (tambor-gov) can feed the
-// same route.
-interface Wire {
-  route(ev: TamborEvent): void;
-  viewFor(): Elem;
-}
-
-function wireSurface(
-  backend: DomBackend,
-  app: App,
-  paint?: (draw: () => void) => void,
-): Wire {
-  // Phase-timer seams (tambor-54j.1, opt-in): derive is accumulated
-  // over the view derivations of the wire (a cache hit records a ~zero
-  // span), handler is the routing plus the intent application, and the
-  // dom draw attributes reconcile_layout and closes the record. All
-  // seam calls are no-ops while the timers are off.
-  const viewFor = viewCache(app, () => backend.containerSize);
-  const wrap = laneWrap(app);
-  const rerender = wireRerender(backend, app, viewFor);
-  const route = (ev: TamborEvent): void => {
-    phaseTimers.begin(ev.type);
-    phaseTimers.startSpan("derive");
-    const view = viewFor();
-    phaseTimers.endSpan();
-    phaseTimers.startSpan("handler");
-    const intents = dispatch(view, ev);
-    rerender.setRouted(true);
-    try {
-      if (intents.length > 0) app.dispatch(intents);
-    } finally {
-      rerender.setRouted(false);
-    }
-    phaseTimers.endSpan();
-    // The paint policy (add-frame-coalescing D2): the default runs the
-    // draw tail synchronously per routed event ("immediate", today's
-    // behavior); the coalesced mount hands in a painter that defers the
-    // tail to once per animation frame. Empty intents never paint
-    // (event_pure) in either mode.
-    if (intents.length === 0) return;
-    (paint ?? ((draw: () => void) => draw()))(() =>
-      wireDrawTail(backend, app, viewFor, wrap, intents),
-    );
-  };
-  backend.subscribe(route);
-  return { route, viewFor };
-}
-
-// The input surface IS the drawn root (tambor-huu): pointer events on
-// the real <button>/<span> children bubble to it, and the origin is
-// the root's own bounding rect, so normalizeDOMEvent's view-space
-// translation lands the hit exactly where the tree was laid out. The
-// root is focusable (tabindex) for keyboard/paste, sized to the
-// viewport so it actually occupies layout, and touch-action:none so
-// touch input feeds the corpus instead of scrolling the page.
-function attachInputSurface(backend: DomBackend, root: RealDomElement): RealDomElement {
-  root.host.setAttribute("tabindex", "0");
-  root.host.style.setProperty("width", `${VIEWPORT[0]}px`);
-  root.host.style.setProperty("height", `${VIEWPORT[1]}px`);
-  root.host.style.setProperty("touch-action", "none");
-  backend.attach(root);
-  return root;
-}
+export { drawnSchemeIs, type DebugSnapshot };
 
 // The label measure/font seam lives in ./font.ts (tambor-v3s): re-exported
 // from here because the browser entries and the demo backend import it
@@ -451,29 +144,61 @@ function demoBackend(doc: HostDoc): DomBackend {
   });
 }
 
-// The opt-in debug snapshot (add-spa-test-seams), published only AFTER
-// the initial draw: a reader that sees the handle sees a demo that is
-// actually drawn. Without the flag no handle is ever created and no
-// cleanup is returned — a stale global from another page belongs to
-// nobody here and is left alone; the cleanup only clears the handle
-// THIS mount published, and only while it is still the mounted one.
-function wireDebugSnapshot(
-  app: App,
+// The coalescing mode (add-frame-coalescing D2/D3): "immediate" and
+// the no-rAF fallback run today's synchronous per-dispatch draw; the
+// coalesced default defers the draw tail to one paint per animation
+// frame with flush() draining a pending draw. rAF is reached
+// structurally and called as a METHOD of the host global (a detached
+// requestAnimationFrame throws "Illegal invocation" in real browsers).
+function mountCoalescer(mode: SpaMode): Coalescer | undefined {
+  const frameHost = globalThis as {
+    requestAnimationFrame?: (cb: () => void) => number;
+  };
+  const raf = frameHost.requestAnimationFrame;
+  return mode === "coalesced" && typeof raf === "function"
+    ? frameCoalescer((cb) => raf.call(globalThis, cb))
+    : undefined;
+}
+
+// Surface wiring + the initial draw (tambor-8xm): the drawn root is
+// appended, made the input surface, fed the wire route, and sized; the
+// initial draw shares the wire's view cache — one derivation for mount
+// + first route.
+function mountSurface(
   backend: DomBackend,
-  opts: MountOptions | undefined,
-): (() => void) | undefined {
-  if (opts === undefined || opts.debug !== true) return undefined;
-  const host = globalThis as DebugGlobal;
-  const snapshot: DebugSnapshot = {
-    demo: opts.demo ?? "",
-    state: () => app.getState(),
-    view: () => app.view(),
-    drawCount: () => backend.drawCount,
-  };
-  host.__tambor = snapshot;
-  return () => {
-    if (host.__tambor === snapshot) delete host.__tambor;
-  };
+  container: HostElement,
+  route: (ev: TamborEvent) => void,
+  viewFor: () => Elem,
+): RealDomElement {
+  const root = backend.root as RealDomElement;
+  container.appendChild(root.host);
+  const surface = attachInputSurface(backend, root);
+  wireSurfaceInput(surface, route, backend);
+  // Root height tracks the drawn extent per draw (tambor-8yn, extent.ts).
+  wireExtentSizing(backend, root.host);
+  // The initial draw shares the wire's view cache: one derivation for
+  // mount + first route (tambor-8xm).
+  backend.draw(viewFor());
+  return surface;
+}
+
+// Unmount seam: remove the host element, drop the focus surface, clear
+// the debug seam, release the counters this mount enabled (never an
+// external meter's seam), and kill the coalescer — post-unmount frames
+// must not re-derive + draw into the detached tree.
+function mountUnmount(
+  container: HostElement,
+  root: RealDomElement,
+  coalescer: Coalescer | undefined,
+  clearDebug: (() => void) | undefined,
+  releaseCounters: () => void,
+): void {
+  // surface == root (tambor-huu): one host element to remove
+  container.removeChild(root.host);
+  setFocusSurface(null);
+  clearDebug?.();
+  releaseCounters();
+  coalescer?.drop();
 }
 
 export function mountDemo(
@@ -487,38 +212,16 @@ export function mountDemo(
   // cleared component render cache, so its first derive builds the new
   // scheme's trees instead of replaying the pre-flip cached ones.
   ambientScheme();
-  // The coalescing mode (add-frame-coalescing D2/D3): "immediate" and
-  // the no-rAF fallback run today's synchronous per-dispatch draw; the
-  // coalesced default defers the draw tail to one paint per animation
-  // frame with flush() draining a pending draw. rAF is reached
-  // structurally and called as a METHOD of the host global (a detached
-  // requestAnimationFrame throws "Illegal invocation" in real browsers).
+  // The coalescing mode (add-frame-coalescing D2/D3): see mountCoalescer.
   const mode: SpaMode = opts?.mode ?? "coalesced";
-  const frameHost = globalThis as {
-    requestAnimationFrame?: (cb: () => void) => number;
-  };
-  const raf = frameHost.requestAnimationFrame;
-  const coalescer =
-    mode === "coalesced" && typeof raf === "function"
-      ? frameCoalescer((cb) => raf.call(globalThis, cb))
-      : undefined;
+  const coalescer = mountCoalescer(mode);
   const app = create();
+  const releaseCounters = mountCounters(opts);
   const backend = demoBackend(doc);
   const wire = wireSurface(backend, app, coalescer?.paint);
 
   const root = backend.root as RealDomElement;
-  container.appendChild(root.host);
-
-  const surface = attachInputSurface(backend, root);
-
-  wireSurfaceInput(surface, wire.route, backend);
-
-  // Root height tracks the drawn extent per draw (tambor-8yn, extent.ts).
-  wireExtentSizing(backend, root.host);
-
-  // The initial draw shares the wire's view cache: one derivation for
-  // mount + first route (tambor-8xm).
-  backend.draw(wire.viewFor());
+  const surface = mountSurface(backend, container, wire.route, wire.viewFor);
 
   const clearDebug = wireDebugSnapshot(app, backend, opts);
 
@@ -532,14 +235,6 @@ export function mountDemo(
     // default ever has one pending, so this is a no-op in "immediate"
     // mode and the no-rAF fallback.
     flush: () => coalescer?.flush(),
-    unmount: () => {
-      // surface == root (tambor-huu): one host element to remove
-      container.removeChild(root.host);
-      setFocusSurface(null);
-      clearDebug?.();
-      // post-unmount frames must not re-derive + draw into the detached
-      // tree: kill the coalescer after the debug seam is cleared
-      coalescer?.drop();
-    },
+    unmount: () => mountUnmount(container, root, coalescer, clearDebug, releaseCounters),
   };
 }

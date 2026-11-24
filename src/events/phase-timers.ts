@@ -9,6 +9,10 @@
 //   startSpan/endSpan bracket a measured region inside the open record;
 //   finishDraw closes the record at the draw site that completes it;
 //   drain() finalizes any open record and hands out buffered records.
+//   The add-runtime-invalidation §4.0 counters (count/counters) extend
+//   the same seam: cumulative derive/rebuild/draw counts since enable(),
+//   bumped at the derive spans and the dom draw/rebuild sites, zero-cost
+//   when off, exposed on the mount handle next to drawCount.
 // Rationale: the doc proposes the split handler · view derivation ·
 //   reconcile/layout · paint · GC; the actual boundaries live in the
 //   code and are instrumented where they happen:
@@ -61,6 +65,22 @@ export interface DispatchTiming {
   readonly phases: DispatchPhases;
 }
 
+// Opt-in counters (add-runtime-invalidation task 4.0): how many view
+// derivations, element-tree rebuilds and backend draws happened since
+// enable(). Cumulative module totals — unlike the spans they are not
+// tied to an open record, because the rerender path draws without one.
+export interface DispatchCounts {
+  readonly derive: number;
+  readonly rebuild: number;
+  readonly draw: number;
+}
+
+function freshCounts(): { derive: number; rebuild: number; draw: number } {
+  return { derive: 0, rebuild: 0, draw: 0 };
+}
+
+let counts = freshCounts();
+
 interface OpenRecord {
   readonly event: string;
   readonly phases: DispatchPhases;
@@ -94,6 +114,7 @@ export function enable(): void {
   buffer.length = 0;
   open = null;
   spanPhase = null;
+  counts = freshCounts();
 }
 
 /** Turn the timers off and clear the buffer: the seams are no-ops again. */
@@ -102,6 +123,7 @@ export function disable(): void {
   buffer.length = 0;
   open = null;
   spanPhase = null;
+  counts = freshCounts();
 }
 
 /** Whether the timers are on. */
@@ -156,6 +178,24 @@ export function finishDraw(): void {
 }
 
 /**
+ * Bump one of the opt-in counters (add-runtime-invalidation task 4.0).
+ * No-op when disabled — zero cost in the hot path, like the spans.
+ */
+export function count(name: "derive" | "rebuild" | "draw"): void {
+  if (!recording) return;
+  counts[name] += 1;
+}
+
+/**
+ * The cumulative derive/rebuild/draw counters since enable(), as one
+ * frozen plain-data snapshot. Reads stay at their defaults (zeros)
+ * while the counters are off and never throw.
+ */
+export function counters(): DispatchCounts {
+  return Object.freeze({ ...counts });
+}
+
+/**
  * Finalize any open record, hand out the buffered records as frozen
  * plain data, and empty the buffer. A meter must drain: the buffer has
  * no other bound.
@@ -188,4 +228,6 @@ export const phaseTimers = {
   endSpan,
   finishDraw,
   drain,
+  count,
+  counters,
 } as const;

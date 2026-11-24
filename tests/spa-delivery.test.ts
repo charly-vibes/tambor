@@ -70,8 +70,13 @@ import {
 // (tambor-bva): the mount-boundary coalescer, wireSurface paint seam,
 // boot-selection mode parsing, and handle flush ship in the shared
 // backend-render/spa chunks (+229 B gzipped); re-recorded again to
-// 157281 B the same day for the RO5U unmount drop guard (+25 B).
-const BASELINE_GZIP_BYTES = 157_281;
+// 157281 B the same day for the RO5U unmount drop guard (+25 B); again
+// to 157735 B for add-runtime-invalidation §1/§2 (ChangeSet/DispatchCommit
+// publication + App.subscribe in the shared effects chunk, +454 B); again
+// to 158409 B for §3/§4 (short-circuit + per-child reuse + counters in the
+// shared dom chunk, +674 B); again to 162934 B for the RO5U fixes (throw
+// isolation, deployed-spec plumbing, counter miss-only semantics, +4525 B).
+const BASELINE_GZIP_BYTES = 162_934;
 
 let heavyRelease: HeavyRelease | undefined;
 

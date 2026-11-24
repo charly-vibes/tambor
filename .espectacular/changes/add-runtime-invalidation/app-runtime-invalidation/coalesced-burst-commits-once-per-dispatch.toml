@@ -1,0 +1,9 @@
+id = "coalesced-burst-commits-once-per-dispatch"
+description = "80 routed dispatches inside one animation frame publish 80 commits with strictly increasing sequences and make exactly one build-or-skip decision for the frame"
+archetype = "NR"
+status = "active"
+superseded_by = ""
+authored_with = "0.12.0"
+
+[[tests.vitest]]
+flags = "--testNamePattern=80 dispatches in one frame"

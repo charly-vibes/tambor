@@ -1,0 +1,9 @@
+id = "unannotated-custom-handler-is-conservative"
+description = "a dispatch applying a custom handler effect that reports no path annotations publishes an unknown ChangeSet with a reason and the next frame performs a full rebuild"
+archetype = "SA"
+status = "active"
+superseded_by = ""
+authored_with = "0.12.0"
+
+[[tests.vitest]]
+flags = "--testNamePattern=a custom unannotated handler publishes"

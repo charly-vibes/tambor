@@ -46,13 +46,23 @@ import { staticClosure, type MetaOutputs } from "./metafile.ts";
 // shared spa bundle the docs shell loads (mount.ts is the npm ./spa
 // subpath and initial chunk by design, add-spa-delivery); re-recorded
 // 2026-11-21 once more to 34490 B for the RO5U fixes (unmount drop
-// guard on the coalescer rides the same shared bundle).
+// guard on the coalescer rides the same shared bundle); re-recorded
+// re-recorded 2026-11-23 to 34844 B for the ChangeSet/DispatchCommit
+// publication + App.subscribe (§1/§2 of the same change, shared
+// effects/dispatch chunk); re-recorded 2026-11-23 again to 35588 B for
+// §3/§4 (whole-view short-circuit, per-child identity reuse machinery,
+// and the opt-in counters riding the shared dom chunk); re-recorded
+// 2026-11-23 to 35805 B for the RO5U fixes (throw isolation, counter
+// miss-only semantics, subscribe-optional plumbing); re-recorded
+// 2026-11-23 to 35874 B after the pretender-gate module splits (mount-wire/
+// mount-debug/mount-counters/dom-reuse/dom-fill extraction — same code,
+// different chunk boundaries).
 // Re-record ritual: when the docs entry or content ships a bigger
 // measured shell — run the build, read the measured gzip the test
 // reports, update THIS ONE constant, and run tools/stamp-docs.sh if
 // the demo-dist total changed too (it stamps README/EVALUATION from
 // the same metafile).
-export const DOCS_SHELL_GZIP_CEILING_BYTES = 34490;
+export const DOCS_SHELL_GZIP_CEILING_BYTES = 35874;
 
 // The measured shell gzip for a docs entry output: the gzip of every
 // file in its static-import closure (shared chunks ride the initial

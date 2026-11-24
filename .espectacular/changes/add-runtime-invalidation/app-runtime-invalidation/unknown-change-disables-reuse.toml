@@ -1,0 +1,9 @@
+id = "unknown-change-disables-reuse"
+description = "a frame whose ChangeSet is unknown reuses no child subtree for that frame even when the view identity is unchanged"
+archetype = "NR"
+status = "active"
+superseded_by = ""
+authored_with = "0.12.0"
+
+[[tests.vitest]]
+flags = "--testNamePattern=rebuild instead of splicing"

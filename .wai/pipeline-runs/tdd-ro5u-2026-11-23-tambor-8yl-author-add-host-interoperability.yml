@@ -1,0 +1,11 @@
+run_id: tdd-ro5u-2026-11-23-tambor-8yl-author-add-host-interoperability
+pipeline: tdd-ro5u
+topic: tambor-8yl author add-host-interoperability
+created_at: '2026-11-23T18:13:11.822918368+00:00'
+current_step: 8
+approvals: {}
+epic: null
+child_issues: []
+child_runs: []
+handoff_artifact: null
+bypasses: []

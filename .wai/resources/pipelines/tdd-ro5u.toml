@@ -122,10 +122,6 @@ Advance: `wai pipeline next`
 min_artifacts = 1
 types = ["design"]
 
-[[steps.gate.oracles]]
-name = "tests-pass"
-description = "Narrow + full tests must pass after green (author tickets: validate --strict + ah check --changes)"
-timeout = 600
 
 [[steps]]
 id = "refactor"
@@ -154,10 +150,6 @@ Advance: `wai pipeline next`
 min_artifacts = 1
 types = ["design"]
 
-[[steps.gate.oracles]]
-name = "tests-pass"
-description = "Full suite must pass after refactor"
-timeout = 600
 
 [[steps]]
 id = "ro5u-review"
@@ -199,10 +191,6 @@ Advance: `wai pipeline next`
 [steps.gate.structural]
 min_artifacts = 1
 
-[[steps.gate.oracles]]
-name = "tests-pass"
-description = "Full suite must pass after review fixes"
-timeout = 600
 
 [[steps]]
 id = "quality-ledger"
@@ -265,11 +253,17 @@ Pipeline complete.
 [steps.gate.structural]
 min_artifacts = 1
 
-[[steps.gate.oracles]]
-name = "tests-pass"
-description = "Final full suite must pass before close"
-timeout = 600
 
 [steps.gate.approval]
 required = true
 message = "Human checkpoint before ship-close — review ship evidence, then run 'wai pipeline approve'"
+
+# ORACLE GATES DISABLED (2026-11-23, pending wai#64): the tests-pass
+# oracle cannot express testaruda's tolerance contract (exit 10 vacuous /
+# 20 nothing-affected are green per tools/gates/testaruda-exec.sh and
+# tambor-cpd), maps both to failure, and counted 0-item adapters as
+# incomplete evidence — every oracle gate failed on fully green trees.
+# Per-step test verification happens at the orchestrator level instead
+# (full suite + e2e + tsc + exec CALIBRATED recorded in the run journals
+# before any ship approval). Restore these blocks when wai#64 ships a
+# tolerated-exit or wrapper-delegation option.

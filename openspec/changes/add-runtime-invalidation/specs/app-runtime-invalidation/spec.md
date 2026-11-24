@@ -37,10 +37,12 @@ paints, never commits.
 
 ### Requirement: Application subscriptions
 
-The App SHALL expose an additive `subscribe(listener)` returning an
-unsubscribe function; listeners SHALL receive the same frozen commit in
-registration order, and attaching listeners SHALL NOT change dispatch,
-effect-ordering, or repaint semantics.
+A makeApp-backed app SHALL expose an additive `subscribe(listener)`
+returning an unsubscribe function; `subscribe` is optional on the
+shared `App` interface — apps built on other seams (the ops-app wire)
+publish no commits, so they MAY omit the member, and subscribing to
+one is a documented no-op — and attaching listeners SHALL NOT change
+dispatch, effect-ordering, or repaint semantics.
 
 #### Scenario: same commit to all listeners
 
@@ -73,6 +75,13 @@ effect-ordering, or repaint semantics.
 - **WHEN** a no-op listener is attached and the pinned
   state-equivalence workload dispatches
 - **THEN** the final state and draw behavior equal the no-listener run
+
+#### Scenario: ops-app subscription is a documented no-op
+
+- **WHEN** a makeOpsApp-backed demo app omits `subscribe` (or accepts a
+  listener through its no-op surface)
+- **THEN** the mount attaches no commit hint and draws with the
+  conservative unknown ChangeSet, and no commit is ever delivered
 
 ### Requirement: Painter identity short-circuit
 
@@ -151,8 +160,9 @@ sound only under this contract.
 ### Requirement: Draw instrumentation is opt-in and zero-cost-off
 
 The mount handle SHALL expose opt-in derive/rebuild/draw counters on
-the existing phase-timer seam, and the counters SHALL impose no
-measurable cost while disabled.
+the existing phase-timer seam, the derive counter SHALL record an
+actual re-derivation (a cache-hit view call records no derive), and the
+counters SHALL impose no measurable cost while disabled.
 
 #### Scenario: counters attribute a coalesced frame
 

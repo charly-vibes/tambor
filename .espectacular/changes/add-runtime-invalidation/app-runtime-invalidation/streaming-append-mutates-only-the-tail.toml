@@ -1,0 +1,9 @@
+id = "streaming-append-mutates-only-the-tail"
+description = "appends into a memo-stable 1,000-row history mutate only the changed tail rows' DOM and every unchanged row keeps the same element references across frames, with derive count still equal to dispatch count"
+archetype = "NR"
+status = "active"
+superseded_by = ""
+authored_with = "0.12.0"
+
+[[tests.vitest]]
+flags = "--testNamePattern=streaming appends into a memo-stable"

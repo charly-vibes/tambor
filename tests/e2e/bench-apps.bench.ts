@@ -10,8 +10,12 @@
 //   (keyed-table-ops builds the 1000 rows it then mutates), cycle the
 //   op points, validate the op actually happened (expectedDrawn /
 //   expectedText), emit one result JSON per scenario into
-//   benchmarks/results/. The declarative scenario registry (SCENARIOS)
-//   lives in bench-scenarios.ts — split to keep both files under the
+//   benchmarks/results/; a scenario opting in (countMutations,
+//   tambor-1cr 4.2) also gets an in-page MutationCounter installed
+//   after setup+warmup and one mutated-element count per timed op,
+//   emitted as result.mutations (parallel to samples). The
+//   declarative scenario registry (SCENARIOS) lives in
+//   bench-scenarios.ts — split to keep both files under the
 //   gate's file limit without renaming any scenario.
 // Rationale: the ops are cycled, so a run's samples are labelled by
 //   position in the cycle in the samples array (cycle order, per run) —
@@ -88,6 +92,87 @@ async function settlePaint(page: Page): Promise<void> {
   await page.evaluate(PAINT);
 }
 
+// The in-page DOM-mutation counter (tambor-1cr 4.2): counts newly
+// created elements + altered text; re-parented existing elements
+// (per-child reuse splices) excluded — the metric is DOM work
+// proportional to what changed, not node bookkeeping. Added/removed
+// SUBTREES are still expanded before counting — a whole-tree rebuild
+// swaps one root child, so gating only on the reported nodes would
+// hide the ~thousand replaced rows behind one wrapper element.
+// A WeakSet of element identities seen BEFORE the timed window
+// (seeded from #demo at install) gates the count: childList
+// addedNodes count only elements not yet seen (genuinely new — the
+// changed tail rows); already-seen ones are re-parent moves
+// (buildChildWithReuse splices rows back via appendChild: the
+// observer records removed+added for the SAME node identity) and are
+// neither counted nor re-marked. removedNodes are dropped from the
+// set, so a row removed and later re-added after a rebuild (new node
+// identity) counts as new. characterData changes count each — text
+// altered in place (fittedLabels refits). Passed as a string
+// (evaluate) — a typed callback would need DOM globals this repo's
+// tsconfig deliberately omits.
+const INSTALL_MUTATIONS =
+  "(() => {" +
+  "const root = document.querySelector('#demo');" +
+  "const seen = new WeakSet();" +
+  "let count = 0;" +
+  "const markNew = (n) => {" +
+  "  if (n == null || n.nodeType !== 1) return;" +
+  "  if (!seen.has(n)) { count++; seen.add(n);" +
+  "    const kids = n.querySelectorAll('*');" +
+  "    for (let i = 0; i < kids.length; i++)" +
+  "      if (!seen.has(kids[i])) { count++; seen.add(kids[i]); }" +
+  "  }" +
+  "};" +
+  "const seed = (n) => { if (n != null && n.nodeType === 1) seen.add(n); };" +
+  "const walk = (n) => { seed(n);" +
+  "  const kids = n.querySelectorAll('*');" +
+  "  for (let i = 0; i < kids.length; i++) seed(kids[i]);" +
+  "};" +
+  "walk(root);" +
+  // Removals are buffered and reconciled at BATCH end: per-child reuse
+  // splices re-parent existing nodes (removed+added in one batch) —
+  // the added pass runs BEFORE the reconciliation, so a same-batch
+  // splice is neither counted nor re-marked by it (dropping the node
+  // from the seen set at removal time would count the whole moved
+  // subtree as new). Removed nodes then leave the set unconditionally:
+  // a node re-added by a LATER batch counts as new — a rebuild carries
+  // a fresh node identity, and a same-identity re-parent after the
+  // batch it moved in reports the moved subtree again.
+  "const gone = [];" +
+  "new MutationObserver((ms) => { for (const m of ms) {" +
+  "  if (m.type === 'childList') {" +
+  "    m.addedNodes.forEach(markNew);" +
+  "    m.removedNodes.forEach((n) => { if (n != null && n.nodeType === 1) gone.push(n);" +
+  "      const kids = n.querySelectorAll('*');" +
+  "      for (let i = 0; i < kids.length; i++) gone.push(kids[i]); });" +
+  "  } else {" +
+  "    count++;" +
+  "  }" +
+  "}" +
+  "for (const n of gone) seen.delete(n);" +
+  "gone.length = 0;" +
+  "}).observe(root, { subtree: true, childList: true, characterData: true });" +
+  "window.__benchMutatedElements = () => { const c = count; count = 0; return c; };" +
+  "})()";
+
+const TAKE_MUTATED_ELEMENTS = "window.__benchMutatedElements()";
+
+// Install the counter only when the scenario opts in (countMutations);
+// otherwise the page is left untouched (every pre-1cr scenario).
+async function installMutationCounter(page: Page, on: boolean): Promise<void> {
+  if (!on) return;
+  await page.evaluate(INSTALL_MUTATIONS);
+}
+
+// One timed op's mutated-element count (distinct elements since the
+// last take); 0 when the scenario does not count mutations — the
+// result field is omitted in that case, not zero-filled.
+async function takeMutatedElements(page: Page, on: boolean): Promise<number> {
+  if (!on) return 0;
+  return (await page.evaluate(TAKE_MUTATED_ELEMENTS)) as number;
+}
+
 async function readPinnedVersions(fs: FsLike): Promise<Record<string, string>> {
   const pkg = (name: string): string => {
     const raw = fs.readFileSync(`node_modules/${name}/package.json`, "utf8");
@@ -117,6 +202,7 @@ test.describe("benchmark scenarios (bench apps)", () => {
 
       const versions = await readPinnedVersions(fs);
       const samples: number[] = [];
+      const mutations: number[] = [];
 
       // The op points, resolved once from a fresh view: the ops sit at
       // fixed view-space positions (control row / list head).
@@ -181,12 +267,21 @@ test.describe("benchmark scenarios (bench apps)", () => {
           await settlePaint(page);
         }
 
+        // DOM-mutation counting (tambor-1cr 4.2), opt-in per scenario:
+        // installed after warmup so warmup paints are not counted, and
+        // read after each timed op's paint settles (outside the timed
+        // window — the observer drains in microtasks before the rAFs).
+        await installMutationCounter(page, scenario.countMutations === true);
+
         for (let op = 0; op < scenario.ops; op++) {
           const t0 = p.hrtime.bigint();
           await clickOp(op);
           await settlePaint(page);
           const ms = Number(p.hrtime.bigint() - t0) / 1e6;
           samples.push(ms);
+          mutations.push(
+            await takeMutatedElements(page, scenario.countMutations === true),
+          );
         }
 
         // The op actually happened: the drawn DOM must reflect the
@@ -227,6 +322,10 @@ test.describe("benchmark scenarios (bench apps)", () => {
         versions,
         samples,
         stats: computeStats(samples),
+        // tambor-bench/1 stays additive: the mutation counts ride along
+        // only when the scenario counted them (validateBenchResult pins
+        // the parallel-to-samples shape; absent = wall-clock only).
+        ...(scenario.countMutations === true ? { mutations } : {}),
       };
 
       // The contract is enforced at the emission point: a malformed

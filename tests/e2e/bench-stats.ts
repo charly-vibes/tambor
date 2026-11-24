@@ -6,7 +6,8 @@
 //   interpolation, sorted copy — never mutates the caller's array);
 //   the BenchResult schema every emitted JSON must satisfy
 //   (tambor-bench/1: pinned versions, commit, CPU throttle rate,
-//   non-empty raw samples, stats consistent with those samples); the
+//   non-empty raw samples, stats consistent with those samples, plus
+//   the tambor-1cr opt-in per-op mutations counts when present); the
 //   validateBenchResult checker returning a list of violations (empty
 //   list = valid).
 // Rationale: the programme principle (chat-repo cold read §4.1) is
@@ -46,6 +47,13 @@ export interface BenchResult {
   readonly versions: Readonly<Record<string, string>>;
   readonly samples: readonly number[];
   readonly stats: BenchStats;
+  // Opt-in DOM-mutation measurement (tambor-1cr 4.2): when present, one
+  // count per timed op (cycle order, parallel to samples) — the
+  // distinct DOM elements that op added, removed or text-changed under
+  // the demo root. Absent = the scenario did not count mutations
+  // (wall-clock only); present-but-empty or a length not matching
+  // samples is a harness bug, not a stat.
+  readonly mutations?: readonly number[];
 }
 
 // The p-th percentile (0–100) of an ascending-sorted sample list, by
@@ -174,6 +182,43 @@ function checkSamples(r: { [k: string]: unknown }): readonly string[] {
   return [];
 }
 
+const isNonNegativeInt = (v: unknown): boolean =>
+  typeof v === "number" && Number.isInteger(v) && v >= 0;
+
+// The opt-in mutations block (tambor-1cr 4.2): absent = not measured
+// (every pre-1cr result stays valid); present = the per-op counts.
+function checkMutations(r: { [k: string]: unknown }): readonly string[] {
+  if (r["mutations"] === undefined) return [];
+  return checkMutationCounts(r["mutations"], r["samples"]);
+}
+
+function checkMutationCounts(
+  m: unknown,
+  samples: unknown,
+): readonly string[] {
+  if (!Array.isArray(m) || m.length === 0) {
+    return ["mutations: non-empty count array required when present"];
+  }
+  const errors: string[] = [];
+  if (!m.every(isNonNegativeInt)) {
+    errors.push("mutations: non-negative integer counts required");
+  }
+  errors.push(...checkMutationParity(m.length, samples));
+  return errors;
+}
+
+// The counts are per-op, labelled by cycle position exactly like
+// samples — a length mismatch means the harness skipped a read.
+function checkMutationParity(
+  count: number,
+  samples: unknown,
+): readonly string[] {
+  if (Array.isArray(samples) && samples.length !== count) {
+    return ["mutations: one count per timed op (parallel to samples)"];
+  }
+  return [];
+}
+
 const isFiniteNonNegative = (v: unknown): boolean =>
   typeof v === "number" && Number.isFinite(v) && v >= 0;
 
@@ -241,7 +286,8 @@ export function validateBenchResult(value: unknown): readonly string[] {
   errors.push(...checkScalars(r));
   errors.push(...checkPositiveInt(r, "port"), ...checkPositiveInt(r, "runs"),
     ...checkPositiveInt(r, "opsPerRun"));
-  errors.push(...checkThrottle(r), ...checkVersions(r), ...checkSamples(r));
+  errors.push(...checkThrottle(r), ...checkVersions(r), ...checkSamples(r),
+    ...checkMutations(r));
   checkStats(r, errors);
   return errors;
 }

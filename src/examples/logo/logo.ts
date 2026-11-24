@@ -23,11 +23,10 @@
 //   (ops_bound_to_app: the registry is constructor state, never module
 //   state) and openspec/specs/example-todo/spec.md the textarea and
 //   wrapOn wiring the SPA runs through. All widgets are corpus
-//   components: slider (components.numeric), textarea
-//   (components.textarea), buttons returning effect vectors. Corpus
-//   labels are single-line (tambor-0rp), so the placeholder line that
-//   outgrew the 300 px stage becomes several labels rather than a CSS
-//   patch; fittedLabels measures against the renderer's own measure.
+//   components: slider, textarea, buttons returning effect vectors.
+//   Corpus labels are single-line (tambor-0rp), so the placeholder line
+//   that outgrew the 300 px stage becomes several labels rather than a
+//   CSS patch; fittedLabels measures against the renderer's own measure.
 
 import { makeOpsApp } from "../../interop/app.ts";
 import { makeRunner } from "./worker-client.ts";
@@ -161,8 +160,8 @@ export function createLogoApp(): App {
   const opsApp = makeOpsApp({ state: logoState(), registry: logoRegistry(hooks, runner.worker) });
   // the app object is built before the hooks so the async worker reply
   // can route through the demo's OWN dispatch (the host-visible apply
-  // path the mount wraps for re-render — tambor-a45): the reply applies
-  // outside the event wire, and only a public dispatch re-draws it.
+  // path the mount wraps — tambor-a45): it applies outside the event
+  // wire; only a public dispatch re-draws.
   const app: App = {
     view: () => logoView(opsApp.getState() as LogoState, {}),
     dispatch: (batch, ...rest) => {
@@ -173,6 +172,9 @@ export function createLogoApp(): App {
     // the demo's own lane store (ops-app is the interop seam, not an
     // effects.makeApp, so it carries no lane of its own)
     getLane: (): LaneStore => lane,
+    // no subscribe member: ops-app publishes no commits (no
+    // effects.makeApp seam); the mount treats absence as the
+    // documented no-op (subscribe is OPTIONAL on App)
   };
   const lane: LaneStore = {};
   hooks.current = {

@@ -2,7 +2,8 @@
 //   (typing-model p-core-dom: the core has zero DOM dependencies).
 // Responsibilities: re-export model, paths, effect dispatch, events and
 //   layout — everything needed to build views, handlers and apps that a
-//   non-DOM backend can render.
+//   non-DOM backend can render, including the runtime-invalidation
+//   commit types and App.subscribe delivery contract.
 // Rationale: openspec/changes/add-distribution-packaging separates the
 //   DOM-free core (./core) from DOM/SPA parts (./spa, ./dom) so embedders
 //   and non-browser hosts never pull DOM modules transitively.
@@ -30,7 +31,12 @@ export {
   type App,
   type AppOptions,
   type Backend,
+  type ChangeSet,
+  type CommitListener,
+  type DispatchCommit,
   type Handler,
+  type KnownChange,
+  type UnknownChange,
   type ViewContext,
   type ViewFn,
 } from "./effects/dispatch.ts";
