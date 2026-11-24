@@ -184,7 +184,7 @@ describe("runtime-invalidation — dispatch commits (add-runtime-invalidation §
       const commits: DispatchCommit[] = [];
       subscribable(app).subscribe((commit) => commits.push(commit));
 
-      app.dispatch([["lane", "pan", (old: unknown) => ((old as number) ?? 0) + 5]]);
+      app.dispatch([["lane", "pan", (old: unknown) => (typeof old === "number" ? old : 0) + 5]]);
 
       // exactly one commit published for the lane-only batch
       expect(commits.length).toBe(1);
