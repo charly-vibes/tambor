@@ -1063,3 +1063,36 @@
   State: all 22 tasks done. Correction to the previous entry: the keyed path navigator (tasks 3.x) had ALREADY landed in a prior session — the 'remaining' line there was stale. This session: 6.3 deployment executed on user approval (authored-directly convention, rinv precedent): deltas stay as spec of record under openspec/changes/.../specs/; 24 overlay TOMLs under .espectacular/changes/add-keyed-dom-reconciliation/ bind priority scenarios (overlay exit 0; no-toml: 22 = tracked mirror debt); missing 1.6 invalid-keys constructor pin landed. Gates at close: vitest 962/962, ah check plain 0 findings, ah check --run-tests 789 passed, validate --strict 0, testaruda wrapper 0, pre-push green. Pushed 17b2e31..6898766; tree clean.
   Constraints for posterity: plain ah check must stay 0 findings — new corpus scenarios need TOMLs before promotion to openspec/specs/; overlay no-toml debt is the accepted tracking class. tambor-1eq (wai pipeline CI reads testaruda exit 10 as failure) still open — tdd-ro5u runs must use wrapper gates manually until fixed.
   Next action: none for ap8. Candidate next work: tambor-90p gallery inspector, tambor-2ep accessibility model, or fresh roadmap pick via bd ready.
+### 2026-11-24 16:10 - tambor-90p execute half complete, awaiting ship approval
+Format: 1
+Timestamp: 2026-11-24T16:10:00Z
+Repo: charly-vibes/tambor (~/para/areas/dev/gh/charly/tambor)
+Branch: main · HEAD: 7d5244b · Session: tambor-90p-execute-2026-11-24
+Task: tambor-90p add-gallery-inspector author+execute (22/22 minus 4.3 deployment)
+Previous entry: 966dd7cc
+State:
+- Change add-gallery-inspector authored (validate --strict 0) and executed:
+  DispatchCommit.intents additive frozen field; src/spa/inspector.ts
+  read-only ?debug=1 panel (live JSON-safe state pane + boundedSeries-50
+  transition log); main.ts wiring per mounted demo. Pushed through
+  5e09f45 (feat) and 7d5244b (closeout artifacts).
+- All gates green at final push: vitest 972/972, tsc, eslint, pretender
+  (14 baselined, 0 new), ah check plain 0, overlay exit 0 (7 bound
+  scenarios; 4 no-toml rinv baseline scenarios = tracked debt), real-
+  browser smoke green (panel live under ?debug=1, two entries dec/inc).
+- tdd-ro5 pipeline run terminal: RO5U review verdict pass (no fixes),
+  quality ledger recorded; terminal step awaits human `wai pipeline
+  approve` - NOT self-approved.
+- Known debt: tambor-1eq variant (hook-time testaruda exit 10 race,
+  comment added); new P3 bombadil pretender debt from fe73293 baselined
+  in pretender-baseline.json.
+Next action: user reviews ship evidence and runs `wai pipeline approve`;
+then 4.3 deploy deltas authored-directly (overlay TOMLs already in-tree,
+ah check --changes exit 0), close tambor-90p, final turu supersede.
+- 2026-11-24T19:08:32Z [id:14e1d34f699dcae8a964f5e2c8d5a58e9567a2b57158d288063316c33bb5cb65] (#resume-tambor-90p) Format: 1
+  Timestamp: 2026-11-24T16:10:00Z
+  Repo: charly-vibes/tambor
+  Branch: main · HEAD: 7d5244b · Session: tambor-90p-execute-2026-11-24
+  Task: tambor-90p add-gallery-inspector execute
+  Previous entry: none
+  State: authored+executed, pushed 5e09f45+7d5244b, gates green, pipeline terminal pending human approve, 4.3 deployment pending user approval. Details in .whisper/branches/main/notes.md entry 2026-11-24 16:10.
