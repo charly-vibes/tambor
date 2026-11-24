@@ -65,13 +65,17 @@ import { staticClosure, type MetaOutputs } from "./metafile.ts";
 // the B2 bench vehicle gained the insert-first op (keyed-table band3);
 // re-recorded 2026-11-24 to 36709 B for §2 painter wiring (keyed
 // records through BuildCtx, buildArrayChildren + reconcile plan
-// consumption in the shared dom chunk).
+// consumption in the shared dom chunk); re-recorded 2026-11-24 to
+// 36937 B for §3 the by-key state-path navigator (paths-walk-keyed
+// handler in the shared effects chunk); re-recorded 2026-11-24 to
+// 36950 B for the §3 tidy split (matchIndexAndCount helper — same
+// code, different function shapes).
 // Re-record ritual: when the docs entry or content ships a bigger
 // measured shell — run the build, read the measured gzip the test
 // reports, update THIS ONE constant, and run tools/stamp-docs.sh if
 // the demo-dist total changed too (it stamps README/EVALUATION from
 // the same metafile).
-export const DOCS_SHELL_GZIP_CEILING_BYTES = 36709;
+export const DOCS_SHELL_GZIP_CEILING_BYTES = 36950;
 
 // The measured shell gzip for a docs entry output: the gzip of every
 // file in its static-import closure (shared chunks ride the initial

@@ -9,6 +9,7 @@
 //   the walk as their first argument so this module never imports the
 //   dispatcher (tambor-272).
 
+import { stepByKey } from "./paths-walk-keyed.ts";
 import {
   DELETED,
   cloneWith,
@@ -376,6 +377,7 @@ export const NAV_HANDLERS: Readonly<Record<string, NavHandler>> = {
   keypath: stepKeypath,
   nth: stepNth,
   "seq-nth": stepSeqNth,
+  "by-key": stepByKey,
   filter: stepFilter,
   take: stepTakeDrop,
   drop: stepTakeDrop,

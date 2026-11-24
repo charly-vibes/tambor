@@ -35,6 +35,7 @@ const NAVIGATORS: ReadonlySet<string> = new Set([
   "keypath",
   "nth",
   "seq-nth",
+  "by-key",
   "filter",
   "take",
   "drop",

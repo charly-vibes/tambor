@@ -66,23 +66,23 @@
 
 ## 3. Keyed path navigator (state-paths)
 
-- [ ] 3.0 Red: unit test — select
+- [x] 3.0 Red: unit test — select
       `["keypath", "messages"], ["by-key", "id", "m-2"],
       ["keypath", "text"]` returns the matching message's text; zero
       matches throw keyed-not-found carrying the field and value;
       duplicate matches throw keyed-ambiguous (select and write
       alike).
-- [ ] 3.1 Green: implement the by-key navigator — vocabulary +
+- [x] 3.1 Green: implement the by-key navigator — vocabulary +
       normalize support in `src/effects/paths-core.ts`, one handler in
       `src/effects/paths-walk-navigators.ts` (select/update/set/delete
       through the matched element; Object.is; exactly-one), following
       the seq-nth loud-failure precedent; `src/effects/paths.ts`
       stays a thin re-export.
-- [ ] 3.2 Red→Green: handler stability — insert a message above and
+- [x] 3.2 Red→Green: handler stability — insert a message above and
       re-run the SAME by-key update path: it lands on the same logical
       message at its new index, the sequence shape is preserved and
       the other messages keep their identity (structural sharing).
-- [ ] 3.3 Red→Green: delete through by-key splices the matched
+- [x] 3.3 Red→Green: delete through by-key splices the matched
       element; a by-key path at a REMOVED id throws keyed-not-found
       instead of writing elsewhere (the index-retarget hazard pinned
       as a loud failure); the existing state-paths contract tests
