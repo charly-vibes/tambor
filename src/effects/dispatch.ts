@@ -368,13 +368,7 @@ function makeAppDispatch(
     // change collection spans the whole top-level dispatch: builtin
     // path edits record their paths, any custom effect degrades the
     // ChangeSet to unknown (conservative full re-derive)
-    const collector: ChangeCollector = {
-      paths: [],
-      unknownReason: null,
-      // the batch being applied, published as commit.intents
-      // (add-gallery-inspector §1)
-      intents: batch,
-    };
+    const collector: ChangeCollector = { paths: [], unknownReason: null, intents: batch };
     const previousState = box.state;
     scopedCollector(collector, () => applyBatch(options, applyOne, collector, batch));
 
