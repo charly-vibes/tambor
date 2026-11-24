@@ -1,0 +1,11 @@
+run_id: tdd-ro5-2026-11-24-tambor-90p-execute-add-gallery-inspector
+pipeline: tdd-ro5
+topic: tambor-90p-execute-add-gallery-inspector
+created_at: '2026-11-24T17:59:41.560312111+00:00'
+current_step: 3
+approvals: {}
+epic: null
+child_issues: []
+child_runs: []
+handoff_artifact: null
+bypasses: []

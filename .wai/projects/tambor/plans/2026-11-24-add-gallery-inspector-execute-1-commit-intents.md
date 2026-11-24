@@ -1,0 +1,5 @@
+---
+tags: [pipeline-run:tdd-ro5-2026-11-24-tambor-90p-execute-add-gallery-inspector, pipeline-step:plan]
+---
+
+add-gallery-inspector execute: (1) commit.intents additive field — RED tests landed in tests/runtime-invalidation-commits.test.ts (3 failing: batch-frozen, string-normalized, lane-only); GREEN = ChangeCollector.intents + buildCommit frozen copy + makeAppDispatch fills batch. (2) src/spa/inspector.ts wireGalleryInspector(d, app, opts) + main.ts landDemo wiring under selection.debug; unmount in select(). (3) Property pins: consumes_never_mutates, every_intent_logged, monotonic_sequence+ring_bounded, json_safe+fresh_after_draw (task 3.0-3.4). (4) Gates: testaruda exec wrapper, ah check --run-tests, test-full; contract TOMLs under .espectacular/changes/add-gallery-inspector/ at task 4.2. Out of scope: panel theme (visual-polish phase 3), diff algorithms, time travel. Files: src/effects/commits.ts, src/effects/dispatch.ts, src/spa/inspector.ts (new), src/spa/main.ts, tests/runtime-invalidation-commits.test.ts, tests/gallery-inspector.test.ts (new).

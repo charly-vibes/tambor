@@ -1,0 +1,9 @@
+id = "p-sequence-monotonic"
+description = "entry sequences are strictly increasing starting at 1 across any number of dispatches"
+archetype = "NR"
+status = "active"
+superseded_by = ""
+authored_with = "0.12.0"
+
+[[tests.vitest]]
+flags = '--testNamePattern=p_monotonic_sequence \+ p_ring_bounded'

@@ -1,0 +1,9 @@
+id = "p-live-state-pane"
+description = "the panel wired to a mounted demo renders the app plain-data state live and re-renders it after each dispatched commit"
+archetype = "NR"
+status = "active"
+superseded_by = ""
+authored_with = "0.12.0"
+
+[[tests.vitest]]
+flags = "--testNamePattern=the live pane renders the current state, fresh after each commit"

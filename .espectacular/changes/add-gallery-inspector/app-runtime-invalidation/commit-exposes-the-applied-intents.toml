@@ -1,0 +1,9 @@
+id = "commit-exposes-the-applied-intents"
+description = "a makeApp dispatch publishes its normalized batch as the commit frozen intents array in order - lane-only batches carry their lane intent - the member stays optional outside the makeApp publish path"
+archetype = "NR"
+status = "active"
+superseded_by = ""
+authored_with = "0.12.0"
+
+[[tests.vitest]]
+flags = "--testNamePattern=a dispatched batch publishes as the commit.+.frozen intents array"

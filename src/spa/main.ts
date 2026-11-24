@@ -39,6 +39,7 @@ import {
 } from "./mount.ts";
 import { DEMOS, type DemoDef } from "./gallery.ts";
 import { bootSelection } from "./boot-selection.ts";
+import { wireGalleryInspector, type InspectorHandle } from "./inspector.ts";
 import { configureLabelMeasure } from "../views/nodes.ts";
 import { ambientScheme, resolveAmbientTheme } from "../ui/ambient-theme.ts";
 import { colorSchemePref, type MediaQueryFn } from "../ui/theme.ts";
@@ -120,6 +121,8 @@ if (doc !== undefined) {
   container.appendChild(content);
 
   let current: SpaHandle | undefined;
+  // the ?debug=1 panel (add-gallery-inspector): rewired per mounted demo
+  let inspector: InspectorHandle | undefined;
   let selectToken = 0;
   // The scheme correction arms once, with the first mount.
   let schemeWatchArmed = false;
@@ -189,6 +192,8 @@ if (doc !== undefined) {
     const demo = DEMOS[demoIndex]!;
     current?.unmount();
     current = undefined;
+    inspector?.unmount();
+    inspector = undefined;
     content.textContent = "";
     // add-spa-delivery: example modules resolve through dynamic
     // import() — the gallery index renders synchronously, the demo
@@ -257,6 +262,13 @@ if (doc !== undefined) {
       demo: demo.id,
       mode: selection.mode,
     });
+    // the visible sibling of the __tambor seam (add-gallery-inspector):
+    // the panel rides the same ?debug=1 opt-in, sits between the drawn
+    // root and the blurb, and follows every demo switch
+    if (selection.debug) {
+      inspector = wireGalleryInspector(d, app);
+      content.appendChild(inspector.el);
+    }
     content.appendChild(blurb(d, demo.blurb));
     markActive(index);
     // The first mount arms the scheme correction: the drawn demo is the

@@ -390,3 +390,72 @@ describe("runtime-invalidation — subscriptions (add-runtime-invalidation §2)"
     }
   });
 });
+
+describe("runtime-invalidation — commit intents (add-gallery-inspector §1)", () => {
+  // Task 1.0 — derives_from: commit exposes the applied intents
+  it("a dispatched batch publishes as the commit's frozen intents array", () => {
+    stubFrames();
+    try {
+      const app = counterApp();
+      const commits: DispatchCommit[] = [];
+      subscribable(app).subscribe((commit) => commits.push(commit));
+
+      const batch: Effect[] = [incrementN(), ["noop-extra", 7]];
+      app.dispatch(batch);
+
+      expect(commits.length).toBe(1);
+      const commit = commits[0] as DispatchCommit;
+      // the normalized batch, same order, deep-equal
+      expect(commit.intents).toEqual(batch);
+      // frozen plain data: the array itself is frozen
+      expect(Array.isArray(commit.intents)).toBe(true);
+      expect(Object.isFrozen(commit.intents)).toBe(true);
+      // the publish path copies: mutating the caller's array afterwards
+      // must not change the published commit
+      batch.push(["late", 1]);
+      expect(commit.intents?.length).toBe(2);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  // Task 1.0 — derives_from: commit exposes the applied intents
+  it("a string dispatch normalizes to a one-element intents array", () => {
+    stubFrames();
+    try {
+      const app = counterApp();
+      const commits: DispatchCommit[] = [];
+      subscribable(app).subscribe((commit) => commits.push(commit));
+
+      app.dispatch("update", N_PATH, (n: unknown) => (n as number) + 1);
+
+      expect(commits.length).toBe(1);
+      const commit = commits[0] as DispatchCommit;
+      expect(commit.intents?.length).toBe(1);
+      expect(commit.intents?.[0]?.[0]).toBe("update");
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  // Task 1.0 — derives_from: commit exposes the applied intents
+  it("a lane-only batch still carries its lane intent", () => {
+    stubFrames();
+    try {
+      const app = counterApp();
+      const commits: DispatchCommit[] = [];
+      subscribable(app).subscribe((commit) => commits.push(commit));
+
+      app.dispatch(["lane", "hover", (state: unknown) => state]);
+
+      expect(commits.length).toBe(1);
+      const commit = commits[0] as DispatchCommit;
+      // the lane-only ChangeSet carries the lane marker, the intent the
+      // batch applied is still on the commit
+      expect(commit.changes.kind).toBe("unknown");
+      expect(commit.intents?.[0]?.[0]).toBe("lane");
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+});

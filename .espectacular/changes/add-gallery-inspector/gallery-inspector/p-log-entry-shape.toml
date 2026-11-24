@@ -1,0 +1,9 @@
+id = "p-log-entry-shape"
+description = "each dispatch lands one log entry carrying the commit sequence, the JSON-safe applied intents projection and the change kind with reason when unknown"
+archetype = "NR"
+status = "active"
+superseded_by = ""
+authored_with = "0.12.0"
+
+[[tests.vitest]]
+flags = "--testNamePattern=one dispatch appends exactly one log entry with sequence, intents and change kind"

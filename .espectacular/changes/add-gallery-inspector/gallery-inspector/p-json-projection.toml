@@ -1,0 +1,9 @@
+id = "p-json-projection"
+description = "function-bearing intents and function-valued state still render - the projection marks non-serializable values instead of throwing"
+archetype = "NR"
+status = "active"
+superseded_by = ""
+authored_with = "0.12.0"
+
+[[tests.vitest]]
+flags = "--testNamePattern=p_json_safe"

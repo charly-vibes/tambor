@@ -21,7 +21,7 @@
 //   symbols for its existing importers.
 
 import type { Path, Step } from "./paths.ts";
-import type { DispatchFn } from "./dispatch.ts";
+import type { DispatchFn, Effect } from "./dispatch.ts";
 
 // Runtime-invalidation ChangeSet (add-runtime-invalidation): what a
 // dispatch touched, as data. Known narrows to the touched keypaths;
@@ -48,6 +48,13 @@ export interface DispatchCommit {
   readonly previousState: unknown;
   readonly state: unknown;
   readonly changes: ChangeSet;
+  /**
+   * The normalized batch of Effect vectors this dispatch applied,
+   * frozen (add-gallery-inspector §1). Additive and optional: commits
+   * published by seams outside makeApp's publish path MAY omit it, and
+   * its presence changes no dispatch/repaint semantics.
+   */
+  readonly intents?: readonly Effect[];
   /** strictly increasing, starting at 1 */
   readonly sequence: number;
 }
@@ -59,6 +66,12 @@ export type CommitListener = (commit: DispatchCommit) => void;
 export interface ChangeCollector {
   paths: Path[];
   unknownReason: string | null;
+  /**
+   * The normalized batch the dispatch is applying (add-gallery-inspector
+   * §1): buildCommit publishes it as the commit's frozen `intents`
+   * array. Absent for seams outside makeApp's publish path.
+   */
+  intents?: readonly Effect[];
 }
 
 // keypath steps unwrap to their bare keys so a one-keypath path reads
@@ -126,10 +139,17 @@ function buildCommit(
     collector.unknownReason !== null
       ? Object.freeze({ kind: "unknown", reason: collector.unknownReason })
       : Object.freeze({ kind: "known", paths: Object.freeze([...collector.paths]) });
+  // the applied batch rides the commit as frozen plain data
+  // (add-gallery-inspector §1); absent for seams that never fill it
+  const intents =
+    collector.intents === undefined
+      ? {}
+      : { intents: Object.freeze([...collector.intents]) };
   return Object.freeze({
     previousState,
     state: state.getState(),
     changes,
+    ...intents,
     sequence: state.sequence,
   });
 }
