@@ -84,13 +84,16 @@ import { staticClosure, type MetaOutputs } from "./metafile.ts";
 // the tambor-4ny fix (withKeyedSegment path scoping: keyedPath is a
 // mutable stack and every wrapper painter scopes its child builds, so
 // array index-paths carry their full structural chain — the scoping
-// calls + stack bookkeeping ride the shared dom chunk). Re-record
+// calls + stack bookkeeping ride the shared dom chunk); re-recorded
+// 2026-11-24 again to 37637 B for the gate-driven module splits
+// (reconcile.ts + dom-painters-svg.ts extraction — same code, new
+// chunk boundaries in the shared dom chunk). Re-record
 // ritual: when the docs entry or content ships a bigger
 // measured shell — run the build, read the measured gzip the test
 // reports, update THIS ONE constant, and run tools/stamp-docs.sh if
 // the demo-dist total changed too (it stamps README/EVALUATION from
 // the same metafile).
-export const DOCS_SHELL_GZIP_CEILING_BYTES = 37631;
+export const DOCS_SHELL_GZIP_CEILING_BYTES = 37637;
 
 // The measured shell gzip for a docs entry output: the gzip of every
 // file in its static-import closure (shared chunks ride the initial

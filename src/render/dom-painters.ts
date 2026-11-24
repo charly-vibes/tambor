@@ -33,8 +33,10 @@ import { buttonBounds } from "../views/geometry.ts";
 import { currentLabelMeasure } from "../views/nodes.ts";
 import { cssVarColor } from "../ui/ambient-theme.ts";
 import { buildChildWithReuse, withKeyedSegment, type ReuseCtx } from "./dom-reuse.ts";
-// Public surface kept: the reuse machinery lives in dom-reuse.ts.
-export { buildChildWithReuse, reconcile, type BuiltRange, type ReconcileStep, type KeyFn } from "./dom-reuse.ts";
+// Public surface kept: the reuse machinery lives in dom-reuse.ts, the
+// pure reconcile plan in reconcile.ts (mechanical split).
+export { buildChildWithReuse, type BuiltRange } from "./dom-reuse.ts";
+export { reconcile, type ReconcileStep, type KeyFn } from "./reconcile.ts";
 import { fillExtent, type FillRequest } from "./dom-fill.ts";
 // Public surface kept: the fill machinery lives in dom-fill.ts.
 export { settleFillExtents } from "./dom-fill.ts";
@@ -117,7 +119,7 @@ export type DomPainter = (ctx: BuildCtx, node: DomNode, parent: ElementLike) => 
 // of the nearest positioned ancestor (the enclosing translate or the
 // anchored root). Absolute siblings with auto z-index stack in DOM order —
 // the paint order.
-function atOrigin(el: ElementLike): void {
+export function atOrigin(el: ElementLike): void {
   el.style["position"] = "absolute";
   el.style["left"] = "0px";
   el.style["top"] = "0px";
@@ -325,86 +327,6 @@ export function buildImage(_ctx: BuildCtx, node: DomNode, parent: ElementLike): 
   el.attrs["width"] = node.width ?? 0;
   el.attrs["height"] = node.height ?? 0;
   parent.appendChild(el);
-}
-
-// path and arc DRAW (tambor-0rp round 3, primitive_set parity): an
-// inline svg anchored at the origin whose viewport COVERS THE GEOMETRY —
-// Chrome paints nothing from a 0×0 svg viewport even with overflow
-// visible (the blank logo world), so width/height are the node's extent.
-// overflow:visible keeps out-of-viewport geometry (negative coords)
-// painting, and pointer-events none keeps the stroke from intercepting
-// clicks (canvas strokes don't hit-test). The stroke inherits the
-// threaded with-color ink.
-function svgExtent(node: DomNode, kind: "path" | "arc"): [number, number] {
-  if (kind === "path") {
-    const pts = node.points ?? [];
-    const xs = pts.map((p) => p[0]);
-    const ys = pts.map((p) => p[1]);
-    return [
-      Math.max(0, ...xs),
-      Math.max(0, ...ys),
-    ];
-  }
-  // the arc lives in the circle box around (cx, cy): the viewport from
-  // the origin covering cx+r, cy+r contains it (overflow shows the rest)
-  const r = node.radius ?? 0;
-  return [
-    Math.max(0, (node.cx ?? 0) + r),
-    Math.max(0, (node.cy ?? 0) + r),
-  ];
-}
-
-function svgStroke(kind: "path" | "arc", node: DomNode, ctx: BuildCtx, parent: ElementLike): void {
-  const el = ctx.make("svg");
-  atOrigin(el);
-  const [w, h] = svgExtent(node, kind);
-  el.attrs["width"] = Math.ceil(w);
-  el.attrs["height"] = Math.ceil(h);
-  el.style["overflow"] = "visible";
-  el.style["pointer-events"] = "none";
-  const p = ctx.make("path");
-  p.attrs["d"] = kind === "path" ? pathData(node) : arcData(node);
-  p.attrs["fill"] = "none";
-  p.attrs["stroke"] = ctx.stroke ?? "currentColor";
-  p.attrs["stroke-width"] = String(ctx.strokeWidth ?? 1);
-  el.appendChild(p);
-  parent.appendChild(el);
-}
-
-function pathData(node: DomNode): string {
-  const pts = node.points ?? [];
-  if (pts.length === 0) return "";
-  const [x0, y0] = pts[0]!;
-  let d = `M ${x0} ${y0}`;
-  for (const [x, y] of pts.slice(1)) d += ` L ${x} ${y}`;
-  return d;
-}
-
-// canvas arc semantics: angles are y-down (0 = +x, PI/2 = +y) and the
-// stroke runs from start to end in the positive-angle direction — the
-// svg sweep-flag 1 direction; delta > PI flips the large-arc flag.
-function arcData(node: DomNode): string {
-  const cx = node.cx ?? 0;
-  const cy = node.cy ?? 0;
-  const r = node.radius ?? 0;
-  const start = node.start ?? 0;
-  const end = node.end ?? 0;
-  const x0 = cx + r * Math.cos(start);
-  const y0 = cy + r * Math.sin(start);
-  const x1 = cx + r * Math.cos(end);
-  const y1 = cy + r * Math.sin(end);
-  const delta = end - start;
-  const large = Math.abs(delta) > Math.PI ? 1 : 0;
-  const sweep = delta >= 0 ? 1 : 0;
-  return `M ${x0} ${y0} A ${r} ${r} 0 ${large} ${sweep} ${x1} ${y1}`;
-}
-
-export function buildPath(ctx: BuildCtx, node: DomNode, parent: ElementLike): void {
-  svgStroke("path", node, ctx, parent);
-}
-
-export function buildArc(ctx: BuildCtx, node: DomNode, parent: ElementLike): void {
-  svgStroke("arc", node, ctx, parent);
 }
 
 export function nodeColor(node: { color?: Color; style?: string }): string | undefined {

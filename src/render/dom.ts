@@ -37,17 +37,16 @@ import { phaseTimers } from "../events/phase-timers.ts";
 import { ambientScheme } from "../ui/ambient-theme.ts";
 import type { AnyDraw } from "./primitives.ts";
 import { type FrameHint, buildArrayChildren, type KeyedRecord } from "./dom-reuse.ts";
+import { buildArc, buildPath } from "./dom-painters-svg.ts";
 import {
   type BuildCtx,
   type BuiltRange,
   type DomNode,
   type DomPainter,
-  buildArc,
   buildButton,
   buildChildrenOf,
   buildImage,
   buildLabel,
-  buildPath,
   buildRectangle,
   buildTextCursor,
   buildTextSelection,
