@@ -1,0 +1,11 @@
+run_id: tdd-ro5u-2026-11-24-tambor-ap8-ss2-painter-wiring-keyed-records-through-buildctx
+pipeline: tdd-ro5u
+topic: tambor-ap8 §2 painter wiring (keyed records through BuildCtx)
+created_at: '2026-11-24T14:14:24.021185128+00:00'
+current_step: 8
+approvals: {}
+epic: null
+child_issues: []
+child_runs: []
+handoff_artifact: null
+bypasses: []

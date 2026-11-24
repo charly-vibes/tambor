@@ -31,11 +31,12 @@ import {
   Subscriptions,
 } from "./backend.ts";
 import { SimElement, type ElementLike, type SimEvent } from "./domsim.ts";
+import { isKeyed, keyedInner } from "../views/nodes.ts";
 import { normalizeDOMEvent } from "./input.ts";
 import { phaseTimers } from "../events/phase-timers.ts";
 import { ambientScheme } from "../ui/ambient-theme.ts";
 import type { AnyDraw } from "./primitives.ts";
-import { type FrameHint } from "./dom-reuse.ts";
+import { type FrameHint, buildArrayChildren, type KeyedRecord } from "./dom-reuse.ts";
 import {
   type BuildCtx,
   type BuiltRange,
@@ -43,7 +44,6 @@ import {
   type DomPainter,
   buildArc,
   buildButton,
-  buildChildWithReuse,
   buildChildrenOf,
   buildImage,
   buildLabel,
@@ -133,6 +133,7 @@ export class DomBackend implements BackendContract {
   // Per-child reuse state (tasks 3.5/3.6): the previous frame's
   // Elem→range map, swapped after every build.
   private reusePrev = new WeakMap<object, BuiltRange>();
+  private keyedPrev: Map<string, KeyedRecord> | undefined;
   private reuseDisabled = true;
   // The current frame's render hint (see FrameHint): undefined until
   // the spa mount sets it for the next wire draw.
@@ -337,31 +338,30 @@ export class DomBackend implements BackendContract {
         : this.reusePrev as WeakMap<object, BuiltRange> | undefined,
       reuseNext: new WeakMap<object, BuiltRange>(),
       reuseUsed: new Set<BuiltRange>(),
+      keyedPrev: this.reuseDisabled ? undefined : this.keyedPrev,
+      keyedNext: new Map<string, KeyedRecord>(), keyedPath: [], keyedEnterIndex: 0,
     };
     this.buildWith(ctx, view, parent);
     // the tree is attached bottom-up, so percentage sizes only resolve
     // now (see settleFillExtents)
     settleFillExtents(ctx);
-    // this frame's ranges feed the next build's reuse (task 3.5)
+    // this frame's ranges feed the next build's reuse (task 3.5); the
+    // keyed container records swap whole-structure alongside them
     this.reusePrev = ctx.reuseNext;
+    this.keyedPrev = ctx.keyedNext;
     return this;
   }
 
   private buildWith(ctx: BuildCtx, view: AnyDraw, parent: ElementLike): this {
     if (view == null) return this;
     if (Array.isArray(view)) {
-      // a bare sequence superimposes its children at the current origin
-      // (canvas semantics) — the box anchors them (tambor-0rp)
-      const box = ctx.make("div");
-      box.style["position"] = "absolute";
-      box.style["left"] = "0px";
-      box.style["top"] = "0px";
-      const children = view as readonly AnyDraw[];
-      for (let i = 0; i < children.length; i++)
-        buildChildWithReuse(ctx, children[i]!, box, i);
-      parent.appendChild(box);
+      // bare sequence: box anchors the children (tambor-0rp); the body
+      // lives in dom-reuse.ts with the keyed records (ap8 §2)
+      buildArrayChildren(ctx, view as readonly AnyDraw[], parent);
       return this;
     }
+    // keyed wrapper: unwrapped BEFORE dispatch (output-equality, no el)
+    if (isKeyed(view)) return this.buildWith(ctx, keyedInner(view), parent);
     const node = view as DomNode;
     const builder = BUILDERS[node.type];
     if (builder === undefined) {

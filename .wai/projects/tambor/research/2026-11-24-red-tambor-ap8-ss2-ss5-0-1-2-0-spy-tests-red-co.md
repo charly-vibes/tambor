@@ -1,0 +1,5 @@
+---
+tags: [pipeline-run:tdd-ro5u-2026-11-24-tambor-ap8-ss2-painter-wiring-keyed-records-through-buildctx, pipeline-step:red]
+---
+
+RED tambor-ap8 §2 + §5.0: (1) 2.0 spy tests RED CONFIRMED — tests/keyed-reconciliation-render.test.ts 3/3 fail on wrapper churn: keyed rows carry a FRESH wrapper div per row per frame (parent-set size 3/4/2 vs required 1); span refs already splice via M1 inner-positional reuse (recorded honestly — the ref assertions green-immediately, shape-equality is the red). (2) §5.0 B2 baseline COMPLETE before 2.1: keyed-table gained insertFirst (fresh row at front, band3 pair with Append 1k, header updated; existing buttonText bindings intact); tests/e2e/bench-scenarios-b2.ts b2-keyed-churn registered (drawnSetup Build 1000, 8 ops = 2 churn cycles Swap/Insert-first/Remove/Replace, countMutations, expectedDrawn 1000); baseline MEASURED at commit 14a2f0c11: median 259.22 ms/op (p25 233.32/p75 293.66/p90 328.90), mutations 3020-3023 per op — whole row-stack wrapper churn, the invariant §2 must drop; benchmarks/findings-b2.md written (rinv conventions, verdict section pending 5.1). docs shell +1B re-recorded 36187 (dated). tsc clean.

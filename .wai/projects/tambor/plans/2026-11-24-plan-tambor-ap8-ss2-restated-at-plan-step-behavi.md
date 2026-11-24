@@ -1,0 +1,5 @@
+---
+tags: [pipeline-run:tdd-ro5u-2026-11-24-tambor-ap8-ss2-painter-wiring-keyed-records-through-buildctx, pipeline-step:plan]
+---
+
+PLAN tambor-ap8 §2 (restated at plan step): BEHAVIOR: task 2.0 spy-backend splice contract (keyed reorder same element refs + rebuildCount unchanged; mid-list insert one fresh range, later rows keep refs; remove keeps refs) + task 5.0 B2 baseline (registered + measured BEFORE 2.1 per PR-01: keyed-table insertFirst op + b2-keyed-churn row countMutations cpu×4 + findings-b2.md). OUT OF SCOPE: by-key navigator (§3), selector (§4), focus API. TESTS FIRST: keyed-reconciliation §2 describe (mounted rig, spy counters) red on missing wiring; baseline scenario registered pre-wiring. NARROW: npx vitest run tests/keyed-reconciliation.test.ts; FULL: just test-full; BENCH: node benchmarks/run.mjs --runs 3 --cpu 4 --scenario b2-keyed-churn. FILES: src/render/{dom-reuse,dom,dom-painters}.ts, src/examples/bench/keyed-table.ts, tests/e2e/bench-scenarios-b2.ts, benchmarks/findings-b2.md. COMMIT: §2+§5.0 feature commit (scaffolding rides the cycle), tidy separate if splits arise.

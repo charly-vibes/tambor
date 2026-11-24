@@ -26,6 +26,7 @@ import {
 } from "./bench-scenarios-shared.ts";
 import { SCENARIOS_BZ } from "./bench-scenarios-bz.ts";
 import { SCENARIOS_RINV } from "./bench-scenarios-rinv.ts";
+import { SCENARIOS_B2 } from "./bench-scenarios-b2.ts";
 
 export type { Scenario } from "./bench-scenarios-shared.ts";
 
@@ -289,4 +290,5 @@ export const SCENARIOS: readonly Scenario[] = [
   },
   ...SCENARIOS_BZ,
   ...SCENARIOS_RINV,
+  ...SCENARIOS_B2,
 ];

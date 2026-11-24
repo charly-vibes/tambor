@@ -40,7 +40,12 @@ export interface FrameHint {
 }
 
 // The reuse half of a build context: element construction and the
-// recursive traversal, plus the per-frame reuse maps.
+// recursive traversal, plus the per-frame reuse maps — and the keyed
+// containers (add-keyed-dom-reconciliation §2): keyedPrev/keyedNext
+// swap whole-structure per build alongside reusePrev/reuseNext, keyed
+// by container index-path; keyedPath/keyedEnterIndex are the mutable
+// index-path stack (pushed on entering the array build branch, popped
+// on leaving) so a key never matches across containers.
 export interface ReuseCtx {
   make(tag: string): ElementLike;
   build(view: AnyDraw, parent: ElementLike): void;
@@ -49,6 +54,22 @@ export interface ReuseCtx {
   // Ranges already spliced this frame: a structurally shared Elem (the
   // same object in two positions) may only donate its elements once.
   reuseUsed: Set<BuiltRange>;
+  // Keyed container records: the PREVIOUS frame's children per
+  // container index-path (undefined under the reuse gate — an unknown
+  // ChangeSet or hintless draw has no keyed records, exactly as it has
+  // no reusePrev), and this frame's records for the swap.
+  keyedPrev?: Map<string, KeyedRecord> | undefined;
+  keyedNext: Map<string, KeyedRecord>;
+  keyedPath: readonly number[];
+  keyedEnterIndex: number;
+}
+
+// One keyed container's previous children (add-keyed-dom-reconciliation
+// §2): the reconcile plan reads them against the next children. The
+// key→prevIndex mapping lives inside reconcile's first-match-wins scan
+// (a map would collapse duplicate keys, which degrade by scan order).
+export interface KeyedRecord {
+  readonly children: readonly AnyDraw[];
 }
 
 // One child's built elements: its position in the parent's child list
@@ -60,17 +81,31 @@ export interface BuiltRange {
 }
 
 // Build one child of a sequence with per-child identity reuse
-// (add-runtime-invalidation task 3.5): an identity match at the SAME
+// (add-runtime-invalidation task 3.5) extended with keyed matching
+// (add-keyed-dom-reconciliation §2): an identity match at the SAME
 // child position splices the previous frame's elements (appendChild
-// moves them in the real-DOM host); a miss builds fresh and records the
-// range it appended. Reorder/insert/remove shift positions, so the
-// index check rebuilds conservatively — no keyed matching.
+// moves them in the real-DOM host); a keyed plan match (keyedPrevInner,
+// resolved per container by the reconcile plan) splices the matched
+// range REGARDLESS of position — the key locates, the Elem identity
+// confirms, the range machinery is still M1's reusePrev/reuseUsed.
+// Any keyed miss (no range, already donated, reuse gate closed) falls
+// through to the positional/fresh rules — the renderer never throws on
+// key bugs. The child builds and records its range under its INNER
+// Elem (keyedInner): the keyed wrapper is fresh per call and never an
+// identity signal.
 export function buildChildWithReuse(
   ctx: ReuseCtx,
   child: AnyDraw,
   parent: ElementLike,
   index: number,
+  keyedPrevInner?: AnyDraw,
 ): void {
+  // the index-path segment this child occupies (an array child's build
+  // branch reads it to derive its own container path)
+  ctx.keyedEnterIndex = index;
+  const inner = keyedInner(child);
+  if (keyedPrevInner !== undefined && spliceKeyed(ctx, keyedPrevInner, inner, parent))
+    return;
   const prev = ctx.reusePrev?.get(child as object);
   if (
     prev !== undefined &&
@@ -79,17 +114,99 @@ export function buildChildWithReuse(
   ) {
     for (const el of prev.els) parent.appendChild(el);
     ctx.reuseUsed.add(prev);
-    ctx.reuseNext.set(child as object, prev);
+    ctx.reuseNext.set(inner as object, prev);
     return;
   }
   const start = parent.children.length;
   ctx.build(child, parent);
-  if (child !== null && typeof child === "object") {
-    ctx.reuseNext.set(child as object, {
-      index,
-      els: parent.children.slice(start),
-    });
-  }
+  recordRange(ctx, child, inner, index, parent, start);
+}
+
+// Record a freshly built child's range: under the CHILD object (the
+// exact children-array element the next frame's positional lookup
+// uses) AND under the inner Elem for a keyed wrapper (the unwrap build
+// path has no inner call to record it) — both point at the SAME range,
+// so keyed lookups and positional lookups stay sound; the keyed splice
+// path re-records under the inner Elem so the moved range stays
+// reachable by key across frames.
+function recordRange(
+  ctx: ReuseCtx,
+  child: AnyDraw,
+  inner: AnyDraw,
+  index: number,
+  parent: ElementLike,
+  start: number,
+): void {
+  if (child === null || typeof child !== "object") return;
+  const range: BuiltRange = { index, els: parent.children.slice(start) };
+  ctx.reuseNext.set(child as object, range);
+  if (inner === null || typeof inner !== "object" || inner === (child as unknown))
+    return;
+  ctx.reuseNext.set(inner as object, range);
+}
+
+// The keyed splice attempt (add-keyed-dom-reconciliation §2): the
+// plan's matched previous Elem donates its range when that range
+// exists and is not already donated this frame — the key located, the
+// Elem identity confirmed by the plan, the range machinery M1's
+// (reusePrev/reuseUsed). Returns false on any miss (gate closed, range
+// gone, donated): the child falls through to the positional/fresh
+// rules — the renderer never throws on key bugs.
+function spliceKeyed(
+  ctx: ReuseCtx,
+  keyedPrevInner: AnyDraw,
+  inner: AnyDraw,
+  parent: ElementLike,
+): boolean {
+  if (ctx.reusePrev === undefined) return false;
+  const keyed = ctx.reusePrev.get(keyedPrevInner as object);
+  if (keyed === undefined || ctx.reuseUsed.has(keyed)) return false;
+  for (const el of keyed.els) parent.appendChild(el);
+  ctx.reuseUsed.add(keyed);
+  ctx.reuseNext.set(inner as object, keyed);
+  return true;
+}
+
+// The sequence/array build branch (moved from dom.ts for the keyed
+// records — the file sits at the pretender file cap): the container box
+// is composited at the containing origin, the keyed plan resolves
+// against THIS container's previous record (index-path keyed — a key
+// never matches across containers), and the path stack pops on exit.
+export function buildArrayChildren(
+  ctx: ReuseCtx,
+  children: readonly AnyDraw[],
+  parent: ElementLike,
+): void {
+  // a bare sequence superimposes its children at the current origin
+  // (canvas semantics) — the box anchors them (tambor-0rp); atOrigin
+  // semantics (dom-painters), inlined here to keep the painter split
+  // acyclic.
+  const box = ctx.make("div");
+  box.style["position"] = "absolute";
+  box.style["left"] = "0px";
+  box.style["top"] = "0px";
+  // push this container's index-path segment, plan against the
+  // previous record (undefined under the reuse gate = positional
+  // rules only), record this frame's children for the swap
+  ctx.keyedPath = [...ctx.keyedPath, ctx.keyedEnterIndex];
+  const record = ctx.keyedPrev?.get(ctx.keyedPath.join("."));
+  const prevInners =
+    record === undefined
+      ? children.map((): AnyDraw | undefined => undefined)
+      : reconcile(record.children, children).map(
+          (step): AnyDraw | undefined => {
+            if (step.op !== "reuse") return undefined;
+            // a null inner (keyed(k, null)) has no range to donate —
+            // the child falls through to the positional/fresh rules
+            const prevInner = keyedInner(record.children[step.prevIndex]!);
+            return prevInner === null ? undefined : prevInner;
+          },
+        );
+  ctx.keyedNext.set(ctx.keyedPath.join("."), { children });
+  for (let i = 0; i < children.length; i++)
+    buildChildWithReuse(ctx, children[i]!, box, i, prevInners[i]);
+  parent.appendChild(box);
+  ctx.keyedPath = ctx.keyedPath.slice(0, -1);
 }
 
 // The pure keyed reconcile plan (add-keyed-dom-reconciliation §1): given

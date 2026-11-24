@@ -6,6 +6,7 @@
 //   rows), KEYED_ROWS_PATH, keyedTableView (three bands of op buttons
 //   over the row stack), and the op builders — buildRows (1000 fresh
 //   rows), replaceEveryTenth (10% relabel), swapFirstTwo (2-row swap),
+//   insertFirst (fresh row at the front, the B2 mid-list churn op),
 //   removeEveryHundredth (~10 rows), appendRows (1k more rows).
 // Rationale: no benchmark-specific fast paths: the view is a pure
 //   function of plain state and every op is an ordinary ["update", …]
@@ -103,6 +104,19 @@ export function swapFirstTwo(
   return [b as KeyedRow, a as KeyedRow, ...rest];
 }
 
+// Insert one fresh row at the FRONT (js-framework-benchmark's insert
+// row first): a NEW id at position 0 shifts every existing row's
+// position — the mid-list insert the B2 baseline exists to measure
+// (the positional rule rebuilds every row at and after the insert;
+// keyed matching builds only the fresh row). Every existing row object
+// is preserved untouched (structural sharing).
+export function insertFirst(
+  rows: readonly KeyedRow[],
+): readonly KeyedRow[] {
+  const id = maxId(rows) + 1;
+  return [{ id, label: `row ${id}` }, ...rows];
+}
+
 // Remove every 100th row: ~10 of the 1000 rows leave the table.
 export function removeEveryHundredth(
   rows: readonly KeyedRow[],
@@ -159,15 +173,21 @@ export function keyedTableView(state: KeyedTableState): Elem {
     spacer(5, 0),
     opButton("Remove 10", removeEveryHundredth),
   ]) as Elem;
-  // A single-button band needs no row: the tail op stands alone.
-  const tail = opButton("Append 1k", appendRows);
+  // band3: the mid-list insert (B2's churn op) paired with the tail
+  // append — "Insert first" measures like "Replace 10%" (~100 px), so
+  // the pair fits the 300 px stage with the same spacer.
+  const band3 = horizontalLayout([
+    opButton("Insert first", insertFirst),
+    spacer(5, 0),
+    opButton("Append 1k", appendRows),
+  ]) as Elem;
   const rows = (verticalLayout(state.rows.map(rowNode)) ?? []) as readonly Elem[];
   const body = [
     band1,
     spacer(0, 4),
     band2,
     spacer(0, 4),
-    tail,
+    band3,
     spacer(0, 10),
     ...rows,
   ] as readonly Elem[];

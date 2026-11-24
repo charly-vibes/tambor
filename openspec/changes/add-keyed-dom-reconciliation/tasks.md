@@ -39,7 +39,7 @@
 
 ## 2. Painter wiring (spy backend)
 
-- [ ] 2.0 Red: spy-backend test — keyed rows reordered
+- [x] 2.0 Red: spy-backend test — keyed rows reordered
       (`[c, a, b]`) splice: the same three element references appear
       in the new order, rebuildCount unchanged vs. the unkeyed baseline
       for the same frame (row-level element identity asserted by
@@ -47,18 +47,18 @@
       mid-list: exactly one new element range and subsequent rows keep
       element references; then keyed remove: the remaining rows keep
       element references.
-- [ ] 2.1 Green: wire the per-parent records through BuildCtx
+- [x] 2.1 Green: wire the per-parent records through BuildCtx
       (previous children + key→prevIndex, swapped whole-structure per
       build with keyed records per container index-path) and consume the
       reconcile plan in `buildChildWithReuse` ahead of the positional
       check; splice donation still flows through reusePrev/reuseUsed.
-- [ ] 2.2 Red→Green: boundary gates — an unknown-ChangeSet frame with
+- [x] 2.2 Red→Green: boundary gates — an unknown-ChangeSet frame with
       keyed children performs a full rebuild (no splice anywhere); a
       hintless draw never reuses; keys never enable the whole-view
       short-circuit (identity-equal view + unknown frame still
       rebuilds, M1's rule re-asserted with keys present); the same key
       under a different parent container rebuilds.
-- [ ] 2.3 Red→Green: M1 invariants intact — the landed
+- [x] 2.3 Red→Green: M1 invariants intact — the landed
       tests/runtime-invalidation.test.ts cases stay green unmodified:
       positional reuse for unkeyed children, fresh-but-equal rebuild,
       unknown disables reuse, streaming-append tail-only mutation
