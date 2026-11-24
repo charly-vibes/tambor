@@ -1,0 +1,5 @@
+---
+tags: [pipeline-run:tdd-ro5-2026-11-24-tambor-akp-pretender-debt, pipeline-step:plan]
+---
+
+tambor-akp refactor plan: (1) NEW bombadil/lib/contrast.ts - move Rgba/Rgb/OPAQUE_WHITE/COLOR_PATTERN/parseColor/over/channel/luminance/contrastRatio/fillColor + header rationale; visual.ts imports them (bundle stays self-contained: module lives inside bombadil/). (2) visual.ts surfaceBehind -> backdropLayers walk helper + thin compositor (exported_cyclomatic<=8 exported_lines<=30). (3) readVisualFacts -> toSurface/isCarvedOut/capPush/surfaceContrast + countLeafViolations (cyclomatic 8) + countUndersizedTargets collectors; readVisualFacts reduces to root check + 3 collector calls. All exports stable (visualFacts/readVisualFacts/types unchanged for 16 spec importers). (4) todo.spec.ts imports deleteStrokes/STROKE_SELECTOR from lib/todo-strokes.ts (done), header marker comment moved with it. (5) GREEN: pretender gate 0 new; drop 10 fixed ids from pretender-baseline.json (keep 4 tambor-90p-era entries); just test-full + tsc + eslint + ah check; commit.

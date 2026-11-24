@@ -1,0 +1,11 @@
+run_id: tdd-ro5-2026-11-24-tambor-akp-pretender-debt
+pipeline: tdd-ro5
+topic: tambor-akp-pretender-debt
+created_at: '2026-11-24T19:29:43.501496325+00:00'
+current_step: 8
+approvals: {}
+epic: null
+child_issues: []
+child_runs: []
+handoff_artifact: null
+bypasses: []

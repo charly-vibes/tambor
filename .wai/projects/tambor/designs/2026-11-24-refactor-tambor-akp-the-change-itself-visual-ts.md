@@ -1,0 +1,5 @@
+---
+tags: [pipeline-run:tdd-ro5-2026-11-24-tambor-akp-pretender-debt, pipeline-step:refactor]
+---
+
+REFACTOR tambor-akp (the change itself): visual.ts 421->316 lines - lib/contrast.ts (78: parseColor/over/luminance/contrastRatio/fillColor + types), lib/backdrop.ts (125: paintedExtent/covers/precedingFill/backdropLayers/surfaceBehind); readVisualFacts -> toSurface/isCarvedOut/capPush/surfaceContrast + countContrast/countClip/countOffRoot increments + countLeafViolations(28 lines)/countUndersizedTargets collectors; extractor exports unchanged for 16 spec importers. todo.spec.ts 422->373 - lib/todo-strokes.ts (58: STROKE_SELECTOR/RED_STROKE/DELETE_DIAGONALS/isDeleteStroke/deleteStrokes + marker rationale). Constraint learned: bombadil extractors eval in-page per captured state - their callee closure must resolve at module scope (cross-module imports fine once real; the earlier 'over is not a function' was importing a non-re-exported binding, missed by root tsc because bombadil/ is excluded - bombadil tsconfig is the typecheck that covers it).
