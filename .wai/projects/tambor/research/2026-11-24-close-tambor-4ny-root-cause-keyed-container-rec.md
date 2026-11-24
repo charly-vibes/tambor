@@ -1,0 +1,5 @@
+---
+tags: [pipeline-run:tdd-ro5-2026-11-24-tambor-4ny-todo-rows, pipeline-step:green]
+---
+
+CLOSE tambor-4ny: root cause = keyed container records collided on index-paths (two arrays at different wrapper depths derived the same path when painter levels contributed no segment; the second visitor adopted the first's persistent box and the orphan sweep deleted its fresh content — row shells, no strokes). Fix = withKeyedSegment path scoping (keyedPath mutable stack; every wrapper painter + buildArrayChildren scopes child builds — full structural chains, collisions impossible). Verified: keyed-reconciliation-render 9/9 incl. new 5.1 gated-flip regression (flip draws 10 svg = unkeyed shape), full suite 160 files/973 tests exit 0, testaruda exec exit 10 (vacuous green, 973 ingested), ah check --run-tests 813 passed 0 execution, LIVE BROWSER: todo demo flip draws 5 rows all stroked (screenshot). Side fixes: docs gzip ceiling re-recorded 37597->37631 (+34B scoping machinery, stamp-docs run), duplicate-keys-degrade-to-rebuild.toml pattern repaired (parens were regex capture group breaking testNamePattern), unused frames binding dropped.

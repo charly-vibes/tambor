@@ -1,0 +1,11 @@
+run_id: tdd-ro5-2026-11-24-tambor-4ny-todo-rows
+pipeline: tdd-ro5
+topic: tambor-4ny-todo-rows
+created_at: '2026-11-24T20:14:53.760906023+00:00'
+current_step: 8
+approvals: {}
+epic: null
+child_issues: []
+child_runs: []
+handoff_artifact: null
+bypasses: []

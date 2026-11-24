@@ -1,0 +1,5 @@
+---
+tags: [pipeline-run:tdd-ro5-2026-11-24-tambor-4ny-todo-rows, pipeline-step:quality-ledger]
+---
+
+QUALITY LEDGER: tambor-4ny keyed path-scoping fix. RED: full suite at HEAD showed 6 failing files (4 delivery via gzip ceiling 37631>37597 after the fix bundle growth — measured AFTER the fix; the true pre-fix red = tambor-4ny's own symptom: todoRowsMatchModel strokes 0 after the gated flip, plus suite red 172 todos scenario). GREEN command=npx vitest run tests/keyed-reconciliation-render.test.ts (9/9) then full verification: npx vitest run = 160 files/973 tests exit 0; testaruda exec = vacuous green (exit 10, 973 ingested, 0 failing); ah check --run-tests = 813 passed, 0 execution findings; live browser: todo demo filter flip draws 5 rows all stroked (screenshot). Non-code: oracle tests-pass.sh aligned to the tambor-cpd vacuous-pass contract (exit 10 + zero failures = pass, said out loud); docs gzip ceiling re-recorded 37597->37631; scenario TOML pattern repaired; stamp-docs re-run. Side effects: none outstanding.
