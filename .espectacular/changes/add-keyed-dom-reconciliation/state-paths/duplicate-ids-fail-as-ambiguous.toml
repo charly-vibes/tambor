@@ -1,0 +1,9 @@
+id = "duplicate-ids-fail-as-ambiguous"
+description = "several elements matching the key throw keyed-ambiguous rather than addressing an arbitrary match"
+archetype = "NR"
+status = "active"
+superseded_by = ""
+authored_with = "0.12.0"
+
+[[tests.vitest]]
+flags = "--testNamePattern=3.0 duplicate matches throw keyed-ambiguous"

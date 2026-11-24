@@ -154,6 +154,21 @@ describe("keyed-dom-reconciliation — view-model transparency (add-keyed-dom-re
     expect(() => keyed("outer", keyed("inner", label("x")))).toThrow(TypeError);
   });
 
+  it("1.6 invalid keys are rejected loudly: empty string, object, NaN, and bare groups throw at construction", () => {
+    expect(() => keyed("", label("x"))).toThrow(TypeError);
+    expect(() => keyed({ id: "k" } as unknown as string, label("x"))).toThrow(
+      TypeError,
+    );
+    expect(() => keyed(null as unknown as string, label("x"))).toThrow(
+      TypeError,
+    );
+    expect(() => keyed(Number.NaN, label("x"))).toThrow(TypeError);
+    expect(() => keyed(Infinity, label("x"))).toThrow(TypeError);
+    expect(() => keyed("g", [label("a"), label("b")] as AnyDraw)).toThrow(
+      TypeError,
+    );
+  });
+
   it("1.5 keyed rows keep the a11y mirror: the wrapper walks through to the inner node", () => {
     expect(accessibilityTree([keyed("k", button("Save"))])).toEqual([
       { role: "button", label: "Save" },

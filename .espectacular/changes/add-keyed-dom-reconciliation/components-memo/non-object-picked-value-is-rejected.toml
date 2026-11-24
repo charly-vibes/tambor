@@ -1,0 +1,9 @@
+id = "non-object-picked-value-is-rejected"
+description = "a pick returning a primitive or null throws the memo TypeError - identity is the invalidation signal, never silently mis-keyed"
+archetype = "NR"
+status = "active"
+superseded_by = ""
+authored_with = "0.12.0"
+
+[[tests.vitest]]
+flags = "--testNamePattern=4.0 a non-object picked value throws the memo TypeError"

@@ -1,0 +1,9 @@
+id = "keyed-insert-splices-subsequent-rows"
+description = "a keyed row inserted mid-list into a memo-stable history builds only the inserted row fresh and every subsequent keyed row keeps its previous element references"
+archetype = "NR"
+status = "active"
+superseded_by = ""
+authored_with = "0.12.0"
+
+[[tests.vitest]]
+flags = "--testNamePattern=2.0 keyed mid-list insert builds exactly one new element"

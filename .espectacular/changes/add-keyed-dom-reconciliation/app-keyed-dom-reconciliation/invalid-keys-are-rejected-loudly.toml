@@ -1,0 +1,9 @@
+id = "invalid-keys-are-rejected-loudly"
+description = "keyed called with an object key, null, an empty string, NaN, Infinity or a bare group throws a TypeError at construction and nothing is built"
+archetype = "NR"
+status = "active"
+superseded_by = ""
+authored_with = "0.12.0"
+
+[[tests.vitest]]
+flags = "--testNamePattern=1.6 invalid keys are rejected loudly"

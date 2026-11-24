@@ -1,0 +1,9 @@
+id = "nesting-keyed-is-rejected-loudly"
+description = "keyed called with an already-keyed drawable throws a TypeError - the renderer unwraps one level, so a nested wrapper could never identity-match"
+archetype = "NR"
+status = "active"
+superseded_by = ""
+authored_with = "0.12.0"
+
+[[tests.vitest]]
+flags = "--testNamePattern=1.5 nested keyed wrappers are rejected loudly"

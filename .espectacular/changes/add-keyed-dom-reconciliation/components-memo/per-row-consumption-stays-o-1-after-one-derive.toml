@@ -1,0 +1,9 @@
+id = "per-row-consumption-stays-o-1-after-one-derive"
+description = "a 1,000-row list re-deriving with one selection change runs build once for the frame and each row's comparison against the derived selection is constant time"
+archetype = "NR"
+status = "active"
+superseded_by = ""
+authored_with = "0.12.0"
+
+[[tests.vitest]]
+flags = "--testNamePattern=4.2 a 1,000-row selection change runs build once"

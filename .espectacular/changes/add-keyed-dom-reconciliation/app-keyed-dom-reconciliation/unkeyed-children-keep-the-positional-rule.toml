@@ -1,0 +1,9 @@
+id = "unkeyed-children-keep-the-positional-rule"
+description = "children carrying no declared keys reuse exactly as app-runtime-invalidation pins - same-position identity splice, conservative rebuild otherwise"
+archetype = "NR"
+status = "active"
+superseded_by = ""
+authored_with = "0.12.0"
+
+[[tests.vitest]]
+flags = "--testNamePattern=1.4 plans unkeyed children exactly as M1"

@@ -1,0 +1,9 @@
+id = "p-stream-tail"
+description = "appends into a memo-stable 1,000-row history of children carrying no declared key mutate only the changed tail rows and every unchanged row keeps its element references (positional rule rescoped to unkeyed children)"
+archetype = "NR"
+status = "active"
+superseded_by = ""
+authored_with = "0.12.0"
+
+[[tests.vitest]]
+flags = "--testNamePattern=streaming appends into a memo-stable"

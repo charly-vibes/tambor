@@ -1,0 +1,9 @@
+id = "a-key-never-crosses-containers"
+description = "a child whose key matched under a different parent container in the previous frame rebuilds - keyed matching is per-container"
+archetype = "NR"
+status = "active"
+superseded_by = ""
+authored_with = "0.12.0"
+
+[[tests.vitest]]
+flags = "--testNamePattern=2.2 a key never crosses containers"

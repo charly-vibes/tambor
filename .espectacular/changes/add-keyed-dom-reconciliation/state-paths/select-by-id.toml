@@ -1,0 +1,9 @@
+id = "select-by-id"
+description = "selecting keypath messages, by-key id m-2, keypath text returns the matched message's text"
+archetype = "NR"
+status = "active"
+superseded_by = ""
+authored_with = "0.12.0"
+
+[[tests.vitest]]
+flags = "--testNamePattern=3.0 select by key returns the matched element"

@@ -1,0 +1,9 @@
+id = "keys-never-enable-the-short-circuit"
+description = "keys never enable the whole-view short-circuit: a known identity-equal frame skips exactly as pinned and an unknown frame still rebuilds regardless of keys"
+archetype = "NR"
+status = "active"
+superseded_by = ""
+authored_with = "0.12.0"
+
+[[tests.vitest]]
+flags = "--testNamePattern=2.2 keys never enable the whole-view short-circuit"

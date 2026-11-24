@@ -1,0 +1,9 @@
+id = "content-change-under-a-stable-key-rebuilds"
+description = "a child whose declared key matches the previous frame but whose Elem is a fresh object rebuilds - the previous DOM is never spliced"
+archetype = "NR"
+status = "active"
+superseded_by = ""
+authored_with = "0.12.0"
+
+[[tests.vitest]]
+flags = "--testNamePattern=1.3 plans build for a key match with a fresh Elem"

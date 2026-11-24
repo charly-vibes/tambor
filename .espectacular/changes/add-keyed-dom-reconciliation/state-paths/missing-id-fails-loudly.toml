@@ -1,0 +1,9 @@
+id = "missing-id-fails-loudly"
+description = "no element matching the key throws keyed-not-found carrying the field and the value - never a silent empty select and never a write elsewhere"
+archetype = "NR"
+status = "active"
+superseded_by = ""
+authored_with = "0.12.0"
+
+[[tests.vitest]]
+flags = "--testNamePattern=3.0 zero matches throw keyed-not-found"

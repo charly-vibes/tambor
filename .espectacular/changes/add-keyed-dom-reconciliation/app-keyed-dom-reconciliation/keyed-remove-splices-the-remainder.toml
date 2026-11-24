@@ -1,0 +1,9 @@
+id = "keyed-remove-splices-the-remainder"
+description = "a keyed row removed from a keyed list leaves the remaining keyed rows keeping their previous element references and the removed row's record dropped"
+archetype = "NR"
+status = "active"
+superseded_by = ""
+authored_with = "0.12.0"
+
+[[tests.vitest]]
+flags = "--testNamePattern=2.0 keyed remove keeps the remaining rows"

@@ -1,0 +1,9 @@
+id = "duplicate-keys-degrade-to-rebuild"
+description = "two children of one container declaring the same key leave the first splicing its key match and the second following the positional/fresh rules - drawn output equals a build with no keys"
+archetype = "NR"
+status = "active"
+superseded_by = ""
+authored_with = "0.12.0"
+
+[[tests.vitest]]
+flags = "--testNamePattern=never throws on duplicate keys (first match donates)"

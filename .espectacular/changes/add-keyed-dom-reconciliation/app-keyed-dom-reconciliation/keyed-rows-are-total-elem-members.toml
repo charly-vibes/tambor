@@ -1,0 +1,9 @@
+id = "keyed-rows-are-total-elem-members"
+description = "a keyed row in a group among unkeyed nodes is accepted by isElem and the group's bounds equal the same tree built with the unkeyed inner"
+archetype = "NR"
+status = "active"
+superseded_by = ""
+authored_with = "0.12.0"
+
+[[tests.vitest]]
+flags = "--testNamePattern=1.5 keyed rows participate in groups"

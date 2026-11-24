@@ -1042,3 +1042,15 @@
   
   BLOCKERS: none. UNKNOWN: none material — B2's exact roadmap wording is in
   docs/reference/runtime-roadmap-2026-11.md (the change's tasks.md cites it).
+- 2026-11-24T17:27:30Z [id:966dd7cc88a9625a5e6f8b6b2a5e05ef525ca586b3e7a9599689a399041f9fc9] (#resume-tambor-ap8) Format: 1
+  Timestamp: 2026-11-24T17:30:00Z
+  Repo: charly-vibes/tambor (~/para/areas/dev/gh/charly/tambor)
+  Branch: main · HEAD: 17b2e31 · Session: ss5-execute-2026-11-24
+  Task: tambor-ap8 execute half - add-keyed-dom-reconciliation
+  Previous entry: d1922add092ca64689b9f996ad2fb5945f168a8895238131e4be75ae22763991
+  Phase: ss5 (bench B2) LANDED AND PUSHED; remaining = §3 keyed path navigator (tasks 3.x) + 6.3 deploy-on-approval.
+  State: keyed splice shipped (placeKeyedChildren order-exact minimal-move; kept-box same-parent guard), keyed focus spec green, B2 wired. Bench @7726fc7 Chrome 156 CPUx4: swap 3018->19, insert 3023->21, remove 3023->19, replace 3020->216 mut/op, wall median 259->232ms. Gates green: vitest 961/961, ah check --run-tests 789/0 findings, openspec validate --strict 0, pretender gate 0 (baseline re-adopted: 5 fixed hotspots dropped, two 6-day-old bombadil findings adopted; dom.ts kept OUT of baseline by removing a leftover [zz] console.log, 400 lines). Push e4a6162..17b2e31 succeeded; tree clean.
+  Constraints: M1-before-M2 held; NOT-copy list stands; spec deltas deploy only on approval (6.3). Known issue tambor-1eq: wai pipeline CI runner treats testaruda exit 10 as failure (wrapper contract 0/10/20 = green) - tdd-ro5u run stuck between green and next step; steps were executed manually with wrapper gates instead. A stale corrective note sits on tambor-zps (ignore; reopened).
+  Validation: pretender check --mode gate exit 0; testaruda wrapper exit 0; ah check 789 passed.
+  Next action: when resuming: bd update tambor-ap8 --claim; implement tasks.md 3.x keyed path navigator (address-by-id), red first per pipeline; do NOT advance the tdd-ro5u run until tambor-1eq fix lands (or run steps manually).
+  Unknowns: whether bombadil owner wants its two adopted findings fixed upstream instead of baselined.

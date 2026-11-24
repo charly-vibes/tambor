@@ -1,0 +1,9 @@
+id = "keyed-reorder-splices"
+description = "children [a, b, c] keyed k1 k2 k3 rebuilt as [c, a, b] with unchanged Elems splice their previous elements - the same element references appear in the new order and no row rebuilds"
+archetype = "NR"
+status = "active"
+superseded_by = ""
+authored_with = "0.12.0"
+
+[[tests.vitest]]
+flags = "--testNamePattern=2.0 keyed reorder splices"
