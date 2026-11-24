@@ -48,10 +48,10 @@
 
 ## 4. Gates
 
-- [ ] 4.1 Full suite green (`just test-full`); `ah check --run-tests`
+- [x] 4.1 Full suite green (`just test-full`); `ah check --run-tests`
       green; `?debug=1` gallery E2E smoke: panel renders, dispatching a
       counter increment appends one entry.
-- [ ] 4.2 Priority-family contract TOMLs under
+- [x] 4.2 Priority-family contract TOMLs under
       `.espectacular/changes/add-gallery-inspector/` bound to landed test
       titles; remaining scenarios tracked via ah check no-toml findings
       per repo precedent.
