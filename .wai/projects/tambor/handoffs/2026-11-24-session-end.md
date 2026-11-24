@@ -35,9 +35,10 @@ phase: design
 ### git_status
 
 ```
- M .beads/issues.jsonl
-MM .whisper/branches/main/notes.md
-?? bombadil/lib/todo-strokes.ts
+ M .wai/resources/pipelines/.last-run
+ M .whisper/branches/main/notes.md
+ M src/spa/inspector.ts
+?? .wai/pipeline-runs/tdd-ro5-2026-11-24-release-020-greenup.yml
 ```
 
 ### open_issues
