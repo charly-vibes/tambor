@@ -28,6 +28,14 @@
       no-key list is byte-equivalent to today's behavior, and
       `keyed(...)` drawables build identically to unkeyed ones
       (output-equality assertion).
+- [x] 1.5 Red→Green (RO5U §1 review CORR-001/EDGE-001/CORR-003 fix):
+      keyed wrappers are transparent to the view model — Elem admits
+      KeyedDraw; geometry reads through (origin/bounds/width/height ==
+      inner's, children == [inner], makeNode roundtrip, isElem true);
+      nesting keyed is a loud TypeError; the a11y mirror walks through
+      the wrapper; the explicit reconcile key extractor is pinned.
+      Spec delta: the transparency requirement in
+      app-keyed-dom-reconciliation.
 
 ## 2. Painter wiring (spy backend)
 

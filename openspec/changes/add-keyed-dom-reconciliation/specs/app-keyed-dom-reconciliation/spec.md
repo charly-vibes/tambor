@@ -121,3 +121,40 @@ rule unchanged.
 - **WHEN** a frame's children carry no declared keys
 - **THEN** reuse behaves exactly as app-runtime-invalidation pins —
   same-position identity splice, conservative rebuild otherwise
+
+### Requirement: Keyed wrappers are transparent to the view model
+
+A keyed wrapper SHALL be a first-class Elem that every view-model query
+reads through to its inner drawable — origin and bounds equal the inner
+node's, the wrapper's children are the inner drawable, makeNode rebuilds
+through the keyed constructor, and the accessibility mirror walks
+through to the inner node — so drawn output and geometry never depend on
+the key. A keyed wrapper SHALL NOT be re-keyed: nesting keyed inside
+keyed is a loud TypeError at construction.
+
+#### Scenario: geometry reads through the wrapper
+
+- **WHEN** a translate row with real extent is wrapped as `keyed("r", row)`
+- **THEN** the wrapper's origin, bounds, width and height equal the inner
+  node's, its children are exactly the inner drawable, and makeNode
+  roundtrips the wrapper through the keyed constructor
+
+#### Scenario: keyed rows are total Elem members
+
+- **WHEN** a keyed row sits in a group among unkeyed nodes
+- **THEN** isElem accepts the tree and the group's bounds equal the
+  bounds of the same tree built with the unkeyed inner (the key is
+  metadata)
+
+#### Scenario: the a11y mirror walks through the wrapper
+
+- **WHEN** a keyed row wraps a button
+- **THEN** the accessibility tree exposes the button exactly as the
+  unkeyed tree does
+
+#### Scenario: nesting keyed is rejected loudly
+
+- **WHEN** keyed is called with an already-keyed drawable
+- **THEN** construction throws a TypeError — the renderer unwraps one
+  level, so a nested wrapper could never identity-match and would
+  silently always-build

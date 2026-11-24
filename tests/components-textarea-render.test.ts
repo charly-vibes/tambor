@@ -25,17 +25,17 @@ import {
   textarea,
   textareaBody,
 } from "../src/components/textarea/textarea.ts";
-import { bounds, children, isGroup, type Color, type Elem, type Node } from "../src/views/model.ts";
+import { bounds, children, isGroup, type Color, type Elem, type KeyedDraw, type Node } from "../src/views/model.ts";
 import { harnessState, propsOf, TEXT_PATH } from "./helpers/textarea.ts";
 
 // Does a with-color node carry the given color?
-function colorMatches(elem: Node, color: Color): boolean {
+function colorMatches(elem: Node | KeyedDraw, color: Color): boolean {
   return elem.type === "with-color" && JSON.stringify(elem.color) === JSON.stringify(color);
 }
 
 // One leaf node's contribution to the color count plus its children's.
 // Children recurse through countColor so group children are handled.
-function countColorIn(elem: Node, color: Color): number {
+function countColorIn(elem: Node | KeyedDraw, color: Color): number {
   const own = colorMatches(elem, color) ? 1 : 0;
   return own + children(elem).reduce((k, e) => k + countColor(e, color), 0);
 }
@@ -48,13 +48,13 @@ function countColor(elem: Elem, color: Color): number {
 }
 
 // Does a node ask for a stroke?
-function strokeAsked(elem: Node): boolean {
+function strokeAsked(elem: Node | KeyedDraw): boolean {
   return elem.type === "with-style" && elem.style === "stroke";
 }
 
 // One leaf node's stroke query or'd with its children's. Children
 // recurse through hasStroke so group children are handled.
-function hasStrokeIn(elem: Node): boolean {
+function hasStrokeIn(elem: Node | KeyedDraw): boolean {
   return strokeAsked(elem) || children(elem).some(hasStroke);
 }
 

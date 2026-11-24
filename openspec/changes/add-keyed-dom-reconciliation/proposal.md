@@ -88,7 +88,10 @@ selector keeps per-item derivation to one compute per slice change.
   children, with the keyed capability cited as the boundary);
   `state-paths` (ADDED — keyed element addressing);
   `components-memo` (ADDED — selector memoization).
-- Affected code: `src/views/nodes.ts` (keyed()); 
+- Affected code: `src/views/nodes.ts` (keyed(); the Elem union admits
+  the wrapper — RO5U §1 review CORR-001);
+  `src/views/geometry.ts` (keyed read-through in the
+  origin/bounds/children/makeNode tables — the wrapper is transparent);
   `src/render/dom-painters.ts` (reconcile + keyed maps in BuildCtx and
   buildChildWithReuse; this change ADDS the per-parent records and the
   container index-path stack — the landed code swaps a single global

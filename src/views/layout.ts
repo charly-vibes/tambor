@@ -20,6 +20,7 @@ import {
   width,
   isGroup,
   type Elem,
+  type KeyedDraw,
   type Node,
   type Rectangle,
   type RoundedRectangle,
@@ -104,7 +105,7 @@ export function center(elem: Elem, container: Vec2): Node {
 // the container size before drawing (stretch_resolved): flagged nodes
 // get the container's size on that axis and drop their flag; the rest
 // of the tree is rebuilt unchanged via children/makeNode.
-function resolveStretchFlags(elem: Node, container: Vec2): Node {
+function resolveStretchFlags(elem: Node | KeyedDraw, container: Vec2): Node | KeyedDraw {
   const [cw, ch] = container;
   switch (elem.type) {
     case "rectangle": {

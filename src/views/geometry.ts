@@ -17,6 +17,8 @@
 import {
   isGroup,
   deepFreeze,
+  keyed,
+  keyedInner,
   label,
   translate,
   withColor,
@@ -28,13 +30,18 @@ import {
   type Color,
   type Elem,
   type Handler,
+  type KeyedDraw,
   type MeasureFn,
   type Node,
   type Style,
   type Vec2,
 } from "./nodes.ts";
 
-type Handler1 = (n: Node) => Vec2;
+type Handler1 = (n: AnyNode) => Vec2;
+
+// The geometry dispatch domain: corpus nodes plus the keyed wrapper
+// (add-keyed-dom-reconciliation) — every table reads through or over it.
+type AnyNode = Node | KeyedDraw;
 
 const atZero = (): Vec2 => [0, 0];
 
@@ -53,6 +60,9 @@ const ORIGINS: Readonly<Record<string, Handler1>> = {
   "button": atZero,
   "handler": atZero,
   "checkbox": atZero,
+  // keyed wrapper (add-keyed-dom-reconciliation): transparent — the
+  // key is metadata, origin reads through to the inner node.
+  "keyed": (n) => origin(keyedInner(n) as Elem),
 };
 
 // The top left corner of an elem's bounds (origin_default: [0, 0]
@@ -79,7 +89,7 @@ function groupBounds(elems: readonly Elem[]): Vec2 {
 }
 
 // Membrane semantics: the max coordinate on each axis.
-function pathBounds(n: Node): Vec2 {
+function pathBounds(n: AnyNode): Vec2 {
   let maxX = 0;
   let maxY = 0;
   for (const [x, y] of (n as { points: readonly Vec2[] }).points) {
@@ -89,7 +99,7 @@ function pathBounds(n: Node): Vec2 {
   return [maxX, maxY];
 }
 
-type SizeFn = (n: Node) => Vec2;
+type SizeFn = (n: AnyNode) => Vec2;
 
 // The corpus button_bounds — label bounds plus 12 on each axis, floored
 // at 44 per axis (ui.mobile.mobile_first touch floor applied to what
@@ -125,10 +135,12 @@ const SIZES: Readonly<Record<string, SizeFn>> = {
     return buttonBounds(bounds(label((n as { text: string }).text)));
   },
   "checkbox": (n) => groupBounds([checkboxDraw((n as { checked: boolean }).checked)]),
+  // keyed wrapper: transparent — bounds read through to the inner node.
+  "keyed": (n) => bounds(keyedInner(n) as Elem),
 };
 
 // Compute (no cache read): the bounds_total reduction per node type.
-function computeBounds(elem: Node): Vec2 {
+function computeBounds(elem: AnyNode): Vec2 {
   const f = SIZES[elem.type];
   if (f === undefined) throw new Error(`unreachable node type: ${elem.type}`);
   return f(elem);
@@ -192,7 +204,7 @@ export function height(elem: Elem): number {
   return bounds(elem)[1];
 }
 
-type ChildrenFn = (n: Node) => readonly Elem[];
+type ChildrenFn = (n: AnyNode) => readonly Elem[];
 
 // group_is_node: a vector's children are its elements, nil is empty.
 const CHILDREN: Readonly<Record<string, ChildrenFn>> = {
@@ -208,6 +220,9 @@ const CHILDREN: Readonly<Record<string, ChildrenFn>> = {
   "with-stroke-width": (n) => (n as { drawables: readonly Elem[] }).drawables,
   "handler": (n) => (n as { drawables: readonly Elem[] }).drawables,
   "checkbox": (n) => [checkboxDraw((n as { checked: boolean }).checked)],
+  // keyed wrapper: its one child is the inner drawable (wrapper with a
+  // drawable, like translate).
+  "keyed": (n) => [keyedInner(n) as Elem],
 };
 
 // Sub elements of an elem (group_is_node: a vector's children are its
@@ -265,7 +280,7 @@ export function makeNode(elem: Elem, newChildren: readonly Elem[]): Elem {
   return rebuild(elem, newChildren);
 }
 
-type Rebuilder = (elem: Node, newChildren: readonly Elem[]) => Elem;
+type Rebuilder = (elem: AnyNode, newChildren: readonly Elem[]) => Elem;
 
 // Leaf nodes hold no children; the wrapper nodes rebuild through
 // their constructor.
@@ -285,9 +300,15 @@ const REBUILDERS: Readonly<Record<string, Rebuilder>> = {
   "path": leaf,
   "spacer": leaf,
   "button": leaf,
+  // keyed wrapper: rebuild through the constructor so the fresh node
+  // stays frozen plain data (make_node_roundtrip).
+  "keyed": (e, cs) => {
+    if (cs.length !== 1) throw new Error("keyed holds exactly one drawable");
+    return keyed((e as { key: string | number }).key, cs[0]!);
+  },
 };
 
-function leaf(elem: Node, newChildren: readonly Elem[]): Elem {
+function leaf(elem: AnyNode, newChildren: readonly Elem[]): Elem {
   if (newChildren.length !== 0) {
     throw new Error(`${(elem as { type: string }).type} holds no children`);
   }

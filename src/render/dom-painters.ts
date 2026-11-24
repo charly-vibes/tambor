@@ -3,10 +3,10 @@
 // Responsibilities: element construction for label, button, rectangle,
 //   rounded rectangle, translate, rotate/scale/scissor, with-color,
 //   with-style, with-stroke-width, handler, text-selection, text-cursor,
-//   image, arc and path; per-child identity reuse
-//   (buildChildWithReuse, add-runtime-invalidation); plus the at-origin
-//   helper every emission uses and the fill extent a with-color wrapper
-//   paints.
+//   image, arc and path; per-child identity reuse and the keyed
+//   reconcile plan (dom-reuse.ts re-export, add-keyed-dom-reconciliation);
+//   plus the at-origin helper every emission uses and the fill extent a
+//   with-color wrapper paints.
 // Rationale: the corpus draw model composites EVERYTHING at the current
 //   origin — a bare sequence superimposes its children there (canvas and
 //   text backends paint each child at the same origin), and only translate
@@ -34,7 +34,7 @@ import { currentLabelMeasure } from "../views/nodes.ts";
 import { cssVarColor } from "../ui/ambient-theme.ts";
 import { buildChildWithReuse, type ReuseCtx } from "./dom-reuse.ts";
 // Public surface kept: the reuse machinery lives in dom-reuse.ts.
-export { buildChildWithReuse, type BuiltRange } from "./dom-reuse.ts";
+export { buildChildWithReuse, reconcile, type BuiltRange, type ReconcileStep, type KeyFn } from "./dom-reuse.ts";
 import { fillExtent, type FillRequest } from "./dom-fill.ts";
 // Public surface kept: the fill machinery lives in dom-fill.ts.
 export { settleFillExtents } from "./dom-fill.ts";

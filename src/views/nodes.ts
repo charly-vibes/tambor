@@ -12,6 +12,8 @@
 //   from model.ts so the model stays a thin hub (tambor-272). No
 //   behavior beyond the corpus.
 
+import type { AnyDraw } from "../render/primitives.ts";
+
 export type Vec2 = readonly [number, number];
 export type Color = readonly number[];
 export type MeasureFn = (text: string) => Vec2;
@@ -120,8 +122,11 @@ export type Node =
   | CheckboxNode;
 
 // Collections are drawables too: a vector of nodes is a group, and nil
-// draws nothing (group_is_node).
-export type Elem = Node | readonly Elem[] | null | undefined;
+// draws nothing (group_is_node). A keyed wrapper rides the union as
+// renderer metadata (add-keyed-dom-reconciliation): geometry and the
+// painters read through it to the inner drawable (the key is metadata;
+// the wrapper is transparent), so a keyed row is a first-class Elem.
+export type Elem = Node | KeyedDraw | readonly Elem[] | null | undefined;
 
 // Array.isArray does not narrow readonly arrays, so groups get an
 // explicit predicate.
@@ -242,6 +247,72 @@ export function withStrokeWidth(
   ...drawables: readonly Elem[]
 ): WithStrokeWidthNode {
   return deepFreeze({ type: "with-stroke-width", strokeWidth, drawables });
+}
+
+// The keyed render hint (add-keyed-dom-reconciliation): app-declared
+// plain data riding the view tree — the key locates a previous-frame
+// sibling by logical identity, the INNER drawable's Elem identity
+// confirms the splice (the renderer unwraps before building). Not a
+// draw type: no backend parity burden — the wrapper is renderer
+// metadata, carried as frozen data like every other view fact.
+export interface KeyedDraw {
+  readonly type: "keyed";
+  readonly key: string | number;
+  // UnknownNode fallback parity: a backend that never unwraps (canvas)
+  // still draws the inner drawable through its children fallback.
+  readonly drawables: readonly [AnyDraw];
+}
+
+// key a node (the row's handler/translate node), not a bare group —
+// groups cannot carry a field, and an already-keyed wrapper would nest
+// lookups the renderer cannot resolve (keyedInner unwraps one level; a
+// fresh nested wrapper never identity-matches, so the row would
+// silently always-build). Both are rejected loudly at construction,
+// mirroring memo's loud contract. A fresh wrapper per call:
+// keyed(k, x) !== keyed(k, x) — the wrapper is never an identity
+// signal, the renderer looks through it.
+export function keyed(key: string | number, drawable: AnyDraw): KeyedDraw {
+  const valid =
+    (typeof key === "string" && key.length > 0) ||
+    (typeof key === "number" && Number.isFinite(key));
+  if (!valid)
+    throw new TypeError(
+      `keyed: key must be a non-empty string or a finite number, got ${String(key)}`,
+    );
+  if (Array.isArray(drawable))
+    throw new TypeError(
+      "keyed: groups cannot be keyed — key a node (the row's handler/translate node), not a bare group",
+    );
+  if (isKeyed(drawable))
+    throw new TypeError(
+      "keyed: already-keyed drawables cannot be re-keyed — key the row's node, not a wrapper",
+    );
+  return deepFreeze({ type: "keyed", key, drawables: [drawable] });
+}
+
+// Look through the keyed wrapper to the drawable that actually builds:
+// the renderer reads the wrapper's key for lookup but builds, records
+// ranges and compares identity by the INNER Elem (the wrapper is fresh
+// per call and never compared by its own identity).
+export function keyedInner(draw: AnyDraw): AnyDraw {
+  return isKeyed(draw) ? draw.drawables[0] : draw;
+}
+
+// Is this draw a keyed wrapper? (The renderer's keyed matching checks
+// this before reading child.key.)
+export function isKeyed(draw: AnyDraw): draw is KeyedDraw {
+  return (
+    draw !== null &&
+    typeof draw === "object" &&
+    !Array.isArray(draw) &&
+    (draw as { type?: unknown }).type === "keyed"
+  );
+}
+
+// The default reconcile key extractor: read the declared `key` field —
+// undefined for unkeyed children (they keep M1's positional rule).
+export function declaredKey(draw: AnyDraw): string | number | undefined {
+  return isKeyed(draw) ? draw.key : undefined;
 }
 
 // The ui checkbox draw: a 12 by 12 rounded square with radius 2, gray
