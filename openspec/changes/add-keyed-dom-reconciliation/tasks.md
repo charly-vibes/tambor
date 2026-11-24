@@ -90,16 +90,16 @@
 
 ## 4. createSelector pattern (components-memo)
 
-- [ ] 4.0 Red: unit test — `createSelector(pick, build)`: N calls
+- [x] 4.0 Red: unit test — `createSelector(pick, build)`: N calls
       across derives with an identity-unchanged picked slice run build
       once and return the same derived value; a changed picked slice
       runs build exactly once; a primitive/null picked value throws
       the memo TypeError.
-- [ ] 4.1 Green: implement in `src/components/memo/` over the memo
+- [x] 4.1 Green: implement in `src/components/memo/` over the memo
       cache shape (WeakMap, weak retention); export from
       `src/index.ts` + `src/interop/index.ts` barrels (`src/core.ts`
       re-exports only).
-- [ ] 4.2 Red→Green: the row-selection pattern — a 1,000-row list
+- [x] 4.2 Red→Green: the row-selection pattern — a 1,000-row list
       re-derived with one selection change: build runs once for the
       frame and each row's selected boolean is an O(1) comparison
       against the derived selection (call-count assertions), and the

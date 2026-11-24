@@ -1,0 +1,6 @@
+---
+reviews: 2026-11-24-ro5u-tambor-ap8-ss2-painter-wiring-review.md
+tags: [pipeline-run:tdd-ro5u-2026-11-24-tambor-ap8-ss4-createselector-pattern-components-memo, pipeline-step:ro5u-review]
+---
+
+RO5U tambor-ap8 §4 (createSelector): verdict READY, CONVERGED stage 2 — zero CRITICAL/HIGH/MEDIUM. Correctness: WeakMap keys the PICKED SLICE (not state — weak retention never retains whole states); instanceof Object guard covers null+primitives at runtime behind the compile-time P extends object guard; identity short-circuit: same slice → cached answer even across different whole-state objects (pinned); build context unsoundness documented (pure_subtree). EDGEs: two selectors over the same slice keep separate caches (per-call closure — correct); build returning undefined caches undefined — WeakMap get(undefined-adjacent)? cached !== undefined check would re-run build for an undefined answer — NOTE: a build returning undefined rebuilds every call; spec's derived answers are drawn values (objects/strings) — noted LOW, consistent with memo's own body (same shape, same behavior). Test quality: 4 unit + 1 render-composition (build-once per frame, identity preservation, flipped-row precision). No fixes required.

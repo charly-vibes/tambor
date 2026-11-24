@@ -69,13 +69,14 @@ import { staticClosure, type MetaOutputs } from "./metafile.ts";
 // 36937 B for §3 the by-key state-path navigator (paths-walk-keyed
 // handler in the shared effects chunk); re-recorded 2026-11-24 to
 // 36950 B for the §3 tidy split (matchIndexAndCount helper — same
-// code, different function shapes).
+// code, different function shapes); re-recorded 2026-11-24 to 36951 B
+// for §4 createSelector (the selector in the shared memo chunk).
 // Re-record ritual: when the docs entry or content ships a bigger
 // measured shell — run the build, read the measured gzip the test
 // reports, update THIS ONE constant, and run tools/stamp-docs.sh if
 // the demo-dist total changed too (it stamps README/EVALUATION from
 // the same metafile).
-export const DOCS_SHELL_GZIP_CEILING_BYTES = 36950;
+export const DOCS_SHELL_GZIP_CEILING_BYTES = 36951;
 
 // The measured shell gzip for a docs entry output: the gzip of every
 // file in its static-import closure (shared chunks ride the initial

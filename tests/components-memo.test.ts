@@ -12,7 +12,7 @@
 //   unchanged ones — the same soundness 8xm's route-time cache rides.
 
 import { describe, expect, it } from "vitest";
-import { memo } from "../src/components/memo/memo.ts";
+import { memo, createSelector } from "../src/components/memo/memo.ts";
 import {
   label as labelNode,
   button,
@@ -156,5 +156,71 @@ describe("memo × cell-writeback closure", () => {
     const node = memo((r: Row) => button(String(r.id), () => []));
     const row: Row = { id: 9, label: "z" };
     expect(node(row)).toBe(node(row));
+  });
+});
+
+describe("components-memo — createSelector (add-keyed-dom-reconciliation §4)", () => {
+  interface Slice {
+    readonly n: number;
+  }
+  it("4.0 an identity-unchanged picked slice runs build once and returns the same derived value", () => {
+    let builds = 0;
+    const slice: Slice = { n: 1 };
+    const sel = createSelector(
+      (state: { s: Slice }) => state.s,
+      (picked: Slice) => {
+        builds++;
+        return `n=${picked.n}`;
+      },
+    );
+    const first = sel({ s: slice });
+    const second = sel({ s: slice });
+    const third = sel({ s: slice });
+    expect(first).toBe(second);
+    expect(first).toBe(third);
+    expect(first).toBe("n=1");
+    expect(builds).toBe(1);
+  });
+
+  it("4.0 a changed picked slice rebuilds exactly once and the new answer is cached", () => {
+    let builds = 0;
+    const sel = createSelector(
+      (state: { s: Slice }) => state.s,
+      (picked: Slice) => {
+        builds++;
+        return `n=${picked.n}`;
+      },
+    );
+    sel({ s: { n: 1 } });
+    const changedState = { s: { n: 2 } };
+    const changed = sel(changedState);
+    const again = sel(changedState);
+    expect(changed).toBe("n=2");
+    expect(again).toBe(changed);
+    expect(builds).toBe(2);
+  });
+
+  it("4.0 a non-object picked value throws the memo TypeError", () => {
+    // the runtime contract survives the compile-time P extends object
+    // guard: reach it through the memo tests' unknown cast precedent
+    const sel = createSelector(
+      (state: { v: number }) => state.v as unknown as Slice,
+      (picked: Slice) => picked,
+    );
+    expect(() => sel({ v: 1 })).toThrowError(TypeError);
+    expect(() => sel({ v: 1 })).toThrowError(/identity is the invalidation signal/);
+    const nullSel = createSelector(
+      (state: { v: null }) => state.v as unknown as Slice,
+      (picked: Slice) => picked,
+    );
+    expect(() => nullSel({ v: null })).toThrowError(/identity is the invalidation signal/);
+  });
+
+  it("4.0 build receives the picked slice and the whole state as context", () => {
+    const sel = createSelector(
+      (state: { s: Slice; tag: string }) => state.s,
+      (picked: Slice, state: { tag: string }) => `${state.tag}:${picked.n}`,
+    );
+    expect(sel({ s: { n: 7 }, tag: "t" })).toBe("t:7");
   });
 });

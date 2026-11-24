@@ -1,13 +1,17 @@
 // Purpose: the memo component (components.memo) — a subtree memo
 //   boundary whose cache key is state identity, sitting above expensive
-//   derives (tambor-54j.8.4).
+//   derives (tambor-54j.8.4), plus the selector flavor
+//   createSelector(pick, build) keyed on the picked slice's identity
+//   (add-keyed-dom-reconciliation §4).
 // Responsibilities: memo(build) returns a memoized render function —
 //   calling it with an object key returns the cached subtree when the
 //   key's identity is unchanged and rebuilds otherwise; the identity
 //   and equality contract (identity-keyed, object keys only, no deep
 //   equality) and the invalidation-soundness contract (state changes
 //   only through dispatch, so a state slice's identity is a sound
-//   invalidation signal) live in its doc and the spec corpus.
+//   invalidation signal) live in its doc and the spec corpus;
+//   createSelector memoizes a derived ANSWER on the picked slice's
+//   identity over the same WeakMap contract.
 // Rationale: openspec/specs/components-memo/spec.md is the design authority.
 //   The route-time view cache (tambor-8xm) skips whole-view derivation
 //   only when NO state changed; a view whose most subtrees are
@@ -55,6 +59,46 @@ export function memo<K extends object, V>(
     if (cached !== undefined) return cached;
     const fresh = build(key);
     cache.set(key, fresh);
+    return fresh;
+  };
+}
+
+// A memoized selector: build runs at most once per distinct picked-
+// slice identity; every other call returns the cached answer.
+export type Selected<S, V> = (state: S) => V;
+
+// createSelector(pick, build) (components-memo, add-keyed-dom-
+// reconciliation §4): memoize a derived answer on the PICKED SLICE's
+// object identity — the memo contract verbatim (WeakMap cache, object
+// keys only, weak retention, the same loud TypeError on a non-object
+// slice: identity is the invalidation signal, never silently
+// mis-keyed). The Solid createSelector correspondence: theirs memoizes
+// the selected key so only flipped rows re-run; tambor derives the
+// whole view per frame, so the equivalent win is deriving the answer
+// ONCE per slice change instead of once per row — pick a slice, derive
+// the answer, compare per row at O(1). state is CONTEXT passed through
+// to build: a build reading beyond the picked slice for its VALUE is
+// unsound (the cached answer outlives that state — memo's pure_subtree
+// precedent; the context shape exists for build signatures that need
+// the frame, e.g. container size).
+export function createSelector<P extends object, S, V>(
+  pick: (state: S) => P,
+  build: (picked: P, state: S) => V,
+): Selected<S, V> {
+  const cache = new WeakMap<P, V>();
+  return (state: S): V => {
+    const picked = pick(state);
+    // instanceof covers null and every primitive (WeakMap keys must be
+    // objects): the same loud TypeError the memo contract pins
+    if (!(picked instanceof Object)) {
+      throw new TypeError(
+        "memo: the key must be an object — identity is the invalidation signal",
+      );
+    }
+    const cached = cache.get(picked);
+    if (cached !== undefined) return cached;
+    const fresh = build(picked, state);
+    cache.set(picked, fresh);
     return fresh;
   };
 }

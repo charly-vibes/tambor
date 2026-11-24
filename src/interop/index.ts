@@ -31,7 +31,7 @@ export {
 } from "../effects/dispatch.ts";
 export { concatPath, each, filterNav, nthNav } from "./paths.ts";
 export { defui } from "./defui.ts";
-export { memo, type Memoized } from "../components/memo/memo.ts";
+export { memo, createSelector, type Memoized, type Selected } from "../components/memo/memo.ts";
 export {
   TERMINATED_MESSAGE,
   makeWorkerEffect,
