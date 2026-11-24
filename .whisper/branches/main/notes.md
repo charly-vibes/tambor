@@ -1096,3 +1096,25 @@ ah check --changes exit 0), close tambor-90p, final turu supersede.
   Task: tambor-90p add-gallery-inspector execute
   Previous entry: none
   State: authored+executed, pushed 5e09f45+7d5244b, gates green, pipeline terminal pending human approve, 4.3 deployment pending user approval. Details in .whisper/branches/main/notes.md entry 2026-11-24 16:10.
+### 2026-11-24 16:20 - tambor-90p CLOSED (22/22, deployed)
+Format: 1
+Timestamp: 2026-11-24T16:20:00Z
+Repo: charly-vibes/tambor
+Branch: main · HEAD: pre-commit · Session: tambor-90p-execute-2026-11-24
+Task: tambor-90p add-gallery-inspector - complete
+Previous entry: 14e1d34f
+State:
+- User approved ship: pipeline tdd-ro5 approve ran, run closed; 4.3
+  deployment verified (validate --strict 0, overlay exit 0, plain ah
+  check 0 findings), 22/22 tasks, ticket closed with deployment record.
+- Open threads: tambor-1eq (testaruda exit 10 race + wai oracle misread,
+  variant documented), P3 bombadil pretender debt (visual.ts/todo.spec).
+Next action: none for tambor-90p. Candidates: tambor-2ep accessibility
+model, tambor-pz6 theme tokens (blocked-by-90p now satisfied), or bd ready.
+- 2026-11-24T19:17:04Z [id:cdc3a820e8e78ed965b1ddbc2335c88b1f023b2e2e35a4cac7f0cf3a5fb7662b] (#resume-tambor-90p) Format: 1
+  Timestamp: 2026-11-24T16:20:00Z
+  Repo: charly-vibes/tambor
+  Branch: main · Session: tambor-90p-execute-2026-11-24
+  Task: tambor-90p add-gallery-inspector - CLOSED
+  Previous entry: 14e1d34f699dcae8a964f5e2c8d5a58e9567a2b57158d288063316c33bb5cb65
+  State: 22/22 tasks, deployed authored-directly, pipeline approved+closed, ticket closed. Open: tambor-1eq exit-10 race, P3 bombadil pretender debt. Next: none for tambor-90p.

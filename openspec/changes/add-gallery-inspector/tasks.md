@@ -55,5 +55,5 @@
       `.espectacular/changes/add-gallery-inspector/` bound to landed test
       titles; remaining scenarios tracked via ah check no-toml findings
       per repo precedent.
-- [ ] 4.3 On approval, spec deltas deployed per the authored-directly
+- [x] 4.3 On approval, spec deltas deployed per the authored-directly
       corpus convention (tambor-41q).
