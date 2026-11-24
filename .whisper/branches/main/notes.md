@@ -1054,3 +1054,12 @@
   Validation: pretender check --mode gate exit 0; testaruda wrapper exit 0; ah check 789 passed.
   Next action: when resuming: bd update tambor-ap8 --claim; implement tasks.md 3.x keyed path navigator (address-by-id), red first per pipeline; do NOT advance the tdd-ro5u run until tambor-1eq fix lands (or run steps manually).
   Unknowns: whether bombadil owner wants its two adopted findings fixed upstream instead of baselined.
+- 2026-11-24T17:46:31Z [id:779190fa771afff8babdb387facb59d18ee6fbe9bc7df5a258f6bf3f74e7adec] (#resume-tambor-ap8) Format: 1
+  Timestamp: 2026-11-24T18:05:00Z
+  Repo: charly-vibes/tambor (~/para/areas/dev/gh/charly/tambor)
+  Branch: main · HEAD: 6898766 · Session: ss5-6-3-close-2026-11-24
+  Task: tambor-ap8 COMPLETE and CLOSED — add-keyed-dom-reconciliation shipped
+  Previous entry: 966dd7cc88a9625a5e6f8b6b2a5e05ef525ca586b3e7a9599689a399041f9fc9
+  State: all 22 tasks done. Correction to the previous entry: the keyed path navigator (tasks 3.x) had ALREADY landed in a prior session — the 'remaining' line there was stale. This session: 6.3 deployment executed on user approval (authored-directly convention, rinv precedent): deltas stay as spec of record under openspec/changes/.../specs/; 24 overlay TOMLs under .espectacular/changes/add-keyed-dom-reconciliation/ bind priority scenarios (overlay exit 0; no-toml: 22 = tracked mirror debt); missing 1.6 invalid-keys constructor pin landed. Gates at close: vitest 962/962, ah check plain 0 findings, ah check --run-tests 789 passed, validate --strict 0, testaruda wrapper 0, pre-push green. Pushed 17b2e31..6898766; tree clean.
+  Constraints for posterity: plain ah check must stay 0 findings — new corpus scenarios need TOMLs before promotion to openspec/specs/; overlay no-toml debt is the accepted tracking class. tambor-1eq (wai pipeline CI reads testaruda exit 10 as failure) still open — tdd-ro5u runs must use wrapper gates manually until fixed.
+  Next action: none for ap8. Candidate next work: tambor-90p gallery inspector, tambor-2ep accessibility model, or fresh roadmap pick via bd ready.
