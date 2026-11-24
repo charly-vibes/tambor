@@ -1118,3 +1118,32 @@ model, tambor-pz6 theme tokens (blocked-by-90p now satisfied), or bd ready.
   Task: tambor-90p add-gallery-inspector - CLOSED
   Previous entry: 14e1d34f699dcae8a964f5e2c8d5a58e9567a2b57158d288063316c33bb5cb65
   State: 22/22 tasks, deployed authored-directly, pipeline approved+closed, ticket closed. Open: tambor-1eq exit-10 race, P3 bombadil pretender debt. Next: none for tambor-90p.
+### 2026-11-24 17:10 - tambor-akp CLOSED (pretender debt refactored away)
+Format: 1
+Timestamp: 2026-11-24T17:10:00Z
+Repo: charly-vibes/tambor
+Branch: main · HEAD: 2041042 · Session: tambor-akp-pretender-debt-2026-11-24
+Task: tambor-akp pretender debt - complete
+Previous entry: cdc3a820
+State:
+- visual.ts 421->316 via lib/contrast.ts + lib/backdrop.ts + collector
+  split; todo.spec.ts 422->373 via lib/todo-strokes.ts; both files
+  finding-free, 10 baseline ids dropped, gate 4 known/0 new (the 4
+  remaining = tambor-90p-era: inspector fn_lines + 2 test file_lines +
+  placedNodes cyclomatic, tracked in baseline).
+- tdd-ro5 run complete (plan/RED/GREEN/REFACTOR/RO5U pass/ledger).
+  just test 972/972; 60s bombadil todo walk green on visual floors.
+- Constraint recorded: bombadil extractor callees resolve at module
+  scope in the in-page eval; bombadil/ is outside root tsc (bombadil/
+  tsconfig.json is the covering typecheck).
+- Discovered + filed tambor-4ny (P2): todo demo draws no rows at HEAD
+  (todoRowsMatchModel red, strokes: 0, bisected to HEAD, fe73293
+  window suspect). Blocks only the todo property suite.
+Next action: tambor-4ny (P2 bug) or bd ready.
+- 2026-11-24T20:07:34Z [id:510736b8ee32b6b5cac0cf2431099927725d99477a73c1dd8ecc4f284edd507f] (#resume-tambor-akp) Format: 1
+  Timestamp: 2026-11-24T17:10:00Z
+  Repo: charly-vibes/tambor
+  Branch: main · HEAD: 2041042 · Session: tambor-akp-pretender-debt-2026-11-24
+  Task: tambor-akp pretender debt - CLOSED
+  Previous entry: none
+  State: refactored debt away (visual.ts 316, todo.spec.ts 373, gate 0 new, 10 baseline ids dropped), pipeline complete, pushed. Discovered tambor-4ny P2 (todo demo draws no rows, suite red at HEAD). Next: tambor-4ny or bd ready. Details in whisper notes 2026-11-24 17:10.
