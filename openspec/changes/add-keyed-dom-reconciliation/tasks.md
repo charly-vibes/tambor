@@ -2,28 +2,28 @@
 
 ## 1. Key declaration + reconcile core (pure)
 
-- [ ] 1.0 Red: unit test — `reconcile(prev, next, key)` on keyed,
+- [x] 1.0 Red: unit test — `reconcile(prev, next, key)` on keyed,
       identity-stable children: prev `[a, b, c]` (k1/k2/k3), next
       `[c, a, b]` plans reuse of previous indexes 2, 0, 1 with zero
       build steps; the key extractor defaults to reading the declared
       `key` field.
-- [ ] 1.1 Green: implement `keyed(key, drawable)` in
+- [x] 1.1 Green: implement `keyed(key, drawable)` in
       `src/views/nodes.ts` (plain frozen data via the existing
       deepFreeze; loud TypeError on non-primitive/empty-string/
       non-finite keys and on group drawables) and the pure
       `reconcile(prev, next, key)` plan function in
       `src/render/dom-painters.ts` (per-next-child steps:
       reuse(prevIndex) or build; no DOM, no elements touched).
-- [ ] 1.2 Red→Green: keyed insert — prev `[a, b, c]`, next
+- [x] 1.2 Red→Green: keyed insert — prev `[a, b, c]`, next
       `[x, a, b, c]` with x fresh-keyed plans build for x only; keyed
       remove — prev `[a, b, c]`, next `[a, c]` plans reuse 0 and 2 with
       no step for b.
-- [ ] 1.3 Red→Green: the identity guard — a next child whose key
+- [x] 1.3 Red→Green: the identity guard — a next child whose key
       matches but whose Elem is fresh plans build (never splice);
       duplicate keys plan at most one donation — the first candidate
       reuses, further same-key children fall through to the
       positional/fresh steps (the renderer never throws on key bugs).
-- [ ] 1.4 Red→Green: unkeyed children plan exactly M1's positional
+- [x] 1.4 Red→Green: unkeyed children plan exactly M1's positional
       rule (same-index identity reuse, else build) — the plan for a
       no-key list is byte-equivalent to today's behavior, and
       `keyed(...)` drawables build identically to unkeyed ones

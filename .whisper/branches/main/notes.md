@@ -969,3 +969,76 @@
   vs ap8 bundled) — user preference; stale epic-orchestrator run from Oct-15
   (y9d.3 re-runs, step 3/7) still active — candidate for wai close. Context ran
   long this session — recommend /clear after closing.
+- 2026-11-24T12:48:31Z [id:d1922add092ca64689b9f996ad2fb5945f168a8895238131e4be75ae22763991] (#resume-tambor-ap8) Format: 1
+  Timestamp: 2026-11-24T00:00:00Z
+  Repo: charly-vibes/tambor (~/para/areas/dev/gh/charly/tambor)
+  Branch: main · HEAD: e4a6162 · Session: next-skill-handoff-2026-11-24
+  Task: tambor-ap8 execute half — add-keyed-dom-reconciliation (M2 keyed matching)
+  
+  OBJECTIVE: Implement the authored M2 change (keyed sibling matching, by-key
+  path navigator, createSelector) on top of the LANDED M1 invalidation
+  machinery. Waves 1-3 of the SolidJS workstream are DONE and pushed
+  (origin/main == e4a6162): ilc/9qo/bva/1cr executed; ry3/8yl/3mf/ap8-author
+  authored — all bd-closed except ap8 (OPEN, claimed, execute half remains).
+  
+  PHASE: red (the change is authored + RO5U-clean; execution not started).
+  
+  EXACT NEXT ACTION: `bd show tambor-ap8`; read
+  openspec/changes/add-keyed-dom-reconciliation/tasks.md (21 red→green tasks,
+  6 sections — 5.0 B2-baseline BEFORE task 2.1 per PR-01); start the pipeline:
+  `wai pipeline start tdd-ro5u --topic="tambor-ap8 execute
+  add-keyed-dom-reconciliation"`; then §1 reconcile core red→green.
+  
+  STATE/CONSTRAINTS (all verified at e4a6162):
+  - Change dir openspec/changes/add-keyed-dom-reconciliation/ is strict-valid,
+  RO5U-clean (Ap8Review FIX-FIRST findings all applied: H1 option (a)
+  MODIFIED delta retargeted wholesale at the deployed 'Property coverage
+  mirror' requirement preserving VERIFIES links; H2 option (b) keyed guard
+  unwraps to the inner Elem identity — keyed(k,x) is fresh per call, the
+  memo boundary owns Elem stability; M3 container index-path stack; M4
+  selector purity pin; L5-L8 applied). Validate INFO about the MODIFIED
+  header is RESOLVED by the retarget.
+  - M1 landed machinery (do not contradict): positional per-child reuse
+  (src/render/dom-painters.ts buildChildWithReuse), whole-view short-circuit
+  (src/render/dom.ts FrameHint + shouldSkipDraw), commit stream
+  (src/effects/commits.ts publishCommit — lane-only batches DO publish
+  {kind:"unknown", reason:"lane-only batch"}, no repaint), App.subscribe
+  optional on the interface. Module splits: dom-reuse.ts, dom-fill.ts,
+  mount-wire.ts, mount-debug.ts, mount-counters.ts.
+  - Design decisions pinned: keyed(key, drawable) app-declared plain-data key;
+  key locates + inner Elem identity confirms; keyed splice fires only inside
+  M1's known-ChangeSet reuse gate; duplicate keys degrade (FIRST MATCH WINS
+  both frames); keys never enable the short-circuit nor rescue unknown
+  ChangeSets; unkeyed lists keep the positional fallback; by-key navigator
+  = ["by-key", field, primitive-value], exactly-one, Object.is, loud
+  keyed-not-found/ambiguous/non-sequence; createSelector pure over the
+  picked slice (memo pure_subtree precedent); container identity =
+  index-path stack pushed/popped in the array build branch.
+  - GATES: pretender role budgets on staged commits (app 400 / script 300
+  lines; function 40 / cyclomatic 10) — run
+  `~/.cargo/bin/pretender check --staged --mode gate` before committing;
+  module splits are the standard fix (see mount-wire/dom-reuse precedent).
+  testaruda: static test titles only (dynamic titles drift the store —
+  theme-css-sync lesson); store may need `testaruda discover` after adding
+  test files. eslint: no throw-in-finally, no unknown-vs-undefined
+  comparisons (typed {error}|null results).
+  - WAI: tdd-ro5u oracle gates DISABLED pending wai#64 (documented in
+  .wai/resources/pipelines/tdd-ro5u.toml) — advances don't re-run the
+  suite; per-step verification is the orchestrator's (just test-full,
+  e2e, tsc, exec CALIBRATED before ship approval). Bypass records exist
+  for the disabled-oracle era in the 8 completed runs.
+  - SIZE BUDGETS: docs shell ceiling 35915 B
+  (tests/helpers/docs-delivery-budget.ts), shipped js 162934 B
+  (tests/spa-delivery.test.ts) — re-record with dated ritual comments when
+  the chunk contents shift (B2 keyed code WILL shift them).
+  
+  VALIDATION: just test-full 929/929 + e2e 87 passed + tsc clean at
+  e4a6162; ah check --changes add-keyed-dom-reconciliation = 44 no-toml
+  structural (proposal stage); exec CALIBRATED exit 0 on the committed tree.
+  
+  OWNERSHIP: tambor-ap8 claimed (charly vibes). 1cr/ry3/8yl/3mf CLOSED.
+  Upstream filed: testaruda#94 (dynamic-title catalog gap), wai#64 (oracle
+  tolerance gap).
+  
+  BLOCKERS: none. UNKNOWN: none material — B2's exact roadmap wording is in
+  docs/reference/runtime-roadmap-2026-11.md (the change's tasks.md cites it).

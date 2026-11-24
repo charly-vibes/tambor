@@ -1,0 +1,5 @@
+---
+tags: [pipeline-run:tdd-ro5u-2026-11-24-tambor-ap8-execute-add-keyed-dom-reconciliation, pipeline-step:fix-review]
+---
+
+RO5U-FIXES tambor-ap8 §1 COMPLETE: CORR-001 CRITICAL — Elem admits KeyedDraw (nodes.ts), geometry read-through in ORIGINS/SIZES/CHILDREN/REBUILDERS via AnyNode=Node|KeyedDraw param widening (geometry.ts; origin/bounds/children == inner's, makeNode roundtrips through keyed(), isElem true via SIZES), layout.ts resolveStretchFlags + textarea test helpers widened; CORR-002 — a11y walkthrough pinned by test; CORR-003 — explicit KeyFn extractor test; EDGE-001 — nested keyed TypeError; CLAR-001 — comment reworded; EDGE-002/003 documented (no code change, pins-consistent). Spec: ADDED 'Keyed wrappers are transparent to the view model' requirement (4 scenarios) in app-keyed-dom-reconciliation; tasks.md task 1.5 added+ticked; proposal Impact names geometry. Gates: openspec validate --strict valid; tsc clean; just test-full 939/939 (933+6 new); docs shell re-recorded 2026-11-24 to 36186 B (+259 B read-through entries), stamp-docs refreshed bundle=465.5 kB. RED confirmed before green edits (4 failing transparency tests).
