@@ -203,7 +203,6 @@ export class DomBackend implements BackendContract {
     // disable splicing for this build.
     this.reuseDisabled =
       hint === undefined || hint.changes.kind !== "known";
-    console.log(`[zz] draw hint=${hint === undefined ? "none" : hint.changes.kind} disabled=${this.reuseDisabled}`);
     phaseTimers.startSpan("reconcile_layout");
     phaseTimers.count("rebuild");
     // §5.1: build while the previous frame stays attached (a pre-build

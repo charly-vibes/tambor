@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "adopted_at": "2026-11-18T21:53:46Z",
+  "adopted_at": "2026-11-24T17:21:22Z",
   "finding_ids": [
     "bombadil/lib/visual.ts::::file_lines",
     "bombadil/lib/visual.ts::readVisualFacts::abc_max",
@@ -12,11 +12,6 @@
     "bombadil/lib/visual.ts::surfaceBehind::exported_cyclomatic",
     "bombadil/lib/visual.ts::surfaceBehind::exported_lines",
     "bombadil/todo.spec.ts::::file_lines",
-    "src/render/dom-painters.ts::::file_lines",
-    "src/render/dom-painters.ts::buildWrapperWithColor::function_lines_max",
-    "src/render/dom-painters.ts::fillExtent::cyclomatic_max",
-    "src/spa/mount.ts::::file_lines",
-    "src/spa/mount.ts::mountDemo::function_lines_max",
     "tests/components-select.test.ts::::file_lines",
     "tests/components-select.test.ts::placedNodes::cyclomatic_max"
   ]
