@@ -67,6 +67,8 @@ export interface ElementLike {
   removeEventListener(type: string, fn: (ev: SimEvent) => void): void;
   dispatch(ev: SimEvent): boolean;
   appendChild(child: ElementLike): ElementLike;
+  insertBefore(child: ElementLike, ref: ElementLike | null): ElementLike;
+  removeChild(child: ElementLike): ElementLike;
   setAttribute(name: string, value: string | number): void;
 }
 
@@ -75,6 +77,10 @@ export class SimElement {
   readonly attrs: Record<string, string | number> = {};
   readonly style: Record<string, string> = {};
   readonly children: SimElement[] = [];
+  // the unique current parent, maintained by append/remove — the
+  // keyed splice's adopt-in-place guard reads it (dom-reuse.ts
+  // adoptOrAppend); real-DOM hosts carry the same field natively
+  parentElement: SimElement | null = null;
   textContent = "";
   rect: SimRect = { x: 0, y: 0, width: 0, height: 0 };
   private listeners = new Map<string, Listener[]>();
@@ -132,7 +138,44 @@ export class SimElement {
   }
 
   appendChild(child: SimElement): SimElement {
+    // SimElement move semantics (the keyed splice reorders siblings):
+    // appending a child this parent already holds MOVES it to the end —
+    // drop the old slot first, or children[] double-counts moved rows
+    // and positional bookkeeping (the keyed orphan sweep) reads
+    // phantom entries. domhost mirrors this contract on the real DOM.
+    const at = this.children.indexOf(child);
+    if (at >= 0) this.children.splice(at, 1);
+    if (child.parentElement !== null && child.parentElement !== this) {
+      // the element was attached elsewhere: detach there first, the
+      // real-DOM move does the same
+      const old = child.parentElement.children.indexOf(child);
+      if (old >= 0) child.parentElement.children.splice(old, 1);
+    }
+    child.parentElement = this;
     this.children.push(child);
+    return child;
+  }
+
+  removeChild(child: SimElement): SimElement {
+    const i = this.children.indexOf(child);
+    if (i >= 0) this.children.splice(i, 1);
+    if (child.parentElement === this) child.parentElement = null;
+    return child;
+  }
+
+  insertBefore(child: SimElement, ref: SimElement | null): SimElement {
+    // move semantics mirror appendChild: detach from the old slot (here
+    // or from another parent) before recording the insert
+    if (child.parentElement !== null && child.parentElement !== this)
+      child.parentElement.removeChild(child);
+    else {
+      const here = this.children.indexOf(child);
+      if (here >= 0) this.children.splice(here, 1);
+    }
+    const at = ref === null ? this.children.length : this.children.indexOf(ref);
+    if (at < 0) this.children.push(child);
+    else this.children.splice(at, 0, child);
+    child.parentElement = this;
     return child;
   }
 

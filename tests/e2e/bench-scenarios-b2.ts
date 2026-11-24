@@ -34,12 +34,17 @@ export const SCENARIOS_B2: readonly Scenario[] = [
     expectedDrawn: 1000,
     app: "keyed-table (bench demo, dist/spa.js)",
     demoId: "keyed-table",
+    // drawnOps, not pointsOf: "Replace 10%" is a band's second button —
+    // the replay point falls inside the drawn first button's box
+    // (tambor-54j.17), and the misdirected click fired Build 1000
+    // instead (a full ~2000-element rebuild measured as the replace op)
     pointsOf: [
       buttonText("Swap Rows"),
       buttonText("Insert first"),
       buttonText("Remove 10"),
       buttonText("Replace 10%"),
     ],
+    drawnOps: ["Swap Rows", "Insert first", "Remove 10", "Replace 10%"],
     drawnSetup: "Build 1000",
     ops: 8,
     warmupOps: 1,

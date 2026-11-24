@@ -131,9 +131,11 @@ export class DomBackend implements BackendContract {
   private lastScheme: string | null = ambientScheme();
   private lastSize: Vec2 | null = null;
   // Per-child reuse state (tasks 3.5/3.6): the previous frame's
-  // Elem→range map, swapped after every build.
+  // Elem→range map (swapped after every build).
   private reusePrev = new WeakMap<object, BuiltRange>();
   private keyedPrev: Map<string, KeyedRecord> | undefined;
+  // §5.1: boxes a matching keyed path kept (the draw swap keeps these)
+  private keptContainers = new Set<ElementLike>();
   private reuseDisabled = true;
   // The current frame's render hint (see FrameHint): undefined until
   // the spa mount sets it for the next wire draw.
@@ -182,42 +184,45 @@ export class DomBackend implements BackendContract {
   // seam calls are no-ops while the timers are off.
   draw(view: AnyDraw): this {
     this.drawCount++;
-    // Opt-in counters (add-runtime-invalidation §4.0): every draw, and
-    // a rebuild only when the element tree is actually rebuilt — the
-    // short-circuit skip counts as a draw with zero rebuilds. No-ops
-    // while the counters are off.
+    // Opt-in counters (add-runtime-invalidation §4.0): every draw, a
+    // rebuild only when the tree actually rebuilds. No-ops when off.
     phaseTimers.count("draw");
-    // Whole-view identity short-circuit (see shouldSkipDraw).
-    const hint = this.frameHint;
+    const hint = this.frameHint; // whole-view short-circuit below
     const skip = this.shouldSkipDraw(view, hint);
     this.lastView = view;
-    // A hintless draw (mount's initial draw, non-wire callers) carries no
-    // scheme information — it must PRESERVE the last known ambience, not
-    // reset it to null, or the first hinted wire draw always mismatches.
+    // A hintless draw (mount's initial draw, non-wire callers) carries
+    // no scheme: PRESERVE the last ambience (never reset to null), or
+    // the first hinted wire draw always mismatches.
     this.lastScheme = hint?.scheme ?? this.lastScheme;
     this.lastSize = [this.containerSize[0], this.containerSize[1]];
     if (skip) {
       phaseTimers.finishDraw();
       return this;
     }
-    // Per-child reuse gate (task 3.6): an unknown ChangeSet frame — or
-    // any hintless draw — disables splicing for this build.
+    // Per-child reuse gate (task 3.6): unknown/hintless frames
+    // disable splicing for this build.
     this.reuseDisabled =
       hint === undefined || hint.changes.kind !== "known";
+    console.log(`[zz] draw hint=${hint === undefined ? "none" : hint.changes.kind} disabled=${this.reuseDisabled}`);
     phaseTimers.startSpan("reconcile_layout");
     phaseTimers.count("rebuild");
-    this.root.children.length = 0;
-    this.build(view, this.cellTarget(view));
+    // §5.1: build while the previous frame stays attached (a pre-build
+    // clear drops focus before the keyed splice could keep it)
+    const target = this.cellTarget(view);
+    const previous: ElementLike[] = [...target.children];
+    this.keptContainers = new Set();
+    this.build(view, target);
+    for (const old of previous)
+      if (!this.keptContainers.has(old)) target.removeChild(old);
     phaseTimers.endSpan();
     phaseTimers.finishDraw();
     return this;
   }
 
-  // Whole-view identity short-circuit predicate (add-runtime-invalidation
-  // §3, tasks 3.1/3.2): identity-equal view + no overlay + no lane
-  // movement + unchanged scheme and container size (the viewCache key)
-  // + a known ChangeSet. Unknown ChangeSet forces the rebuild (never
-  // stale output); a hintless draw never skips.
+  // Whole-view identity short-circuit (add-runtime-invalidation §3):
+  // identity-equal view + no overlay + no lane movement + unchanged
+  // scheme/size + known ChangeSet; unknown forces the rebuild (never
+  // stale), a hintless draw never skips.
   private shouldSkipDraw(view: AnyDraw, hint: FrameHint | undefined): boolean {
     return (
       hint !== undefined &&
@@ -233,16 +238,13 @@ export class DomBackend implements BackendContract {
     );
   }
 
-  // The build target: the anchored root at cellScale 1; otherwise the
-  // persistent scale(k) wrapper, with the root sized bounds(view)×k so
-  // one unit occupies k px (tambor#1). Geometry stays in unit space —
-  // the wrapper transform does all the scaling.
+  // The build target: the anchored root at cellScale 1, else the
+  // persistent scale(k) wrapper (root sized bounds(view)×k, tambor#1);
+  // geometry stays in unit space, the transform does all the scaling.
   private cellTarget(view: AnyDraw): ElementLike {
     if (this.cellScale === 1) return this.root;
-    // The stage reserves the drawn extent (bounds×k). The backend-only
-    // shapes bounds() rejects — text-selection, text-cursor, unknown
-    // foreign nodes, which build an empty box — keep the container
-    // extent.
+    // The stage reserves the drawn extent (bounds×k); backend-only
+    // shapes (which build an empty box) keep the container extent.
     const [w, h] = isElem(view) ? bounds(view) : this.containerSize;
     this.root.style["width"] = `${w * this.cellScale}px`;
     this.root.style["height"] = `${h * this.cellScale}px`;
@@ -255,7 +257,8 @@ export class DomBackend implements BackendContract {
     wrap.style["transform"] = `scale(${this.cellScale})`;
     wrap.style["width"] = `${w}px`;
     wrap.style["height"] = `${h}px`;
-    wrap.children.length = 0;
+    // no wrap pre-clear: the draw swaps the old frame out after the
+    // build (see draw) so splices move focused elements, not detach them
     this.root.appendChild(wrap);
     return wrap;
   }
@@ -317,15 +320,12 @@ export class DomBackend implements BackendContract {
   }
 
   // The element-building traversal (primitive_set): one builder per
-  // drawable type behind the BUILDERS dispatch table; unknown node
-  // types fall back to drawing their children.
+  // drawable type; unknown node types draw their children.
   build(view: AnyDraw, parent: ElementLike): this {
     if (view == null) return this;
     // One ctx per root build: the mutable style field threads the
-    // with-style mode down the subtree across recursive calls
-    // (tambor-0rp — a fresh ctx per recursion would drop it); the fill
-    // list collects the with-color wrappers that need their extent
-    // settled once the tree is attached.
+    // with-style mode down the subtree (tambor-0rp — a fresh ctx per
+    // recursion would drop it); fills settle once attached.
     const ctx: BuildCtx = {
       make: (tag: string) => this.make(tag),
       build: (v: AnyDraw, p: ElementLike) => this.buildWith(ctx!, v, p),
@@ -340,13 +340,14 @@ export class DomBackend implements BackendContract {
       reuseUsed: new Set<BuiltRange>(),
       keyedPrev: this.reuseDisabled ? undefined : this.keyedPrev,
       keyedNext: new Map<string, KeyedRecord>(), keyedPath: [], keyedEnterIndex: 0,
+      keptContainers: this.keptContainers,
     };
     this.buildWith(ctx, view, parent);
     // the tree is attached bottom-up, so percentage sizes only resolve
     // now (see settleFillExtents)
     settleFillExtents(ctx);
     // this frame's ranges feed the next build's reuse (task 3.5); the
-    // keyed container records swap whole-structure alongside them
+    // keyed container records swap alongside them
     this.reusePrev = ctx.reuseNext;
     this.keyedPrev = ctx.keyedNext;
     return this;

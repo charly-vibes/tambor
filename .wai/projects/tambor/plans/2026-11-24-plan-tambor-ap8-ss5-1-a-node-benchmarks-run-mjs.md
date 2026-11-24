@@ -1,0 +1,5 @@
+---
+tags: [pipeline-run:tdd-ro5u-2026-11-24-tambor-ap8-ss5-1-keyed-b2-re-run-focus-verification, pipeline-step:plan]
+---
+
+PLAN tambor-ap8 §5.1: (a) node benchmarks/run.mjs --runs 3 --cpu 4 --scenario b2-keyed-churn on the keyed tree; append the verdict section to benchmarks/findings-b2.md (baseline vs keyed: mutations + wall-clock medians, honest reading, environment table rows). (b) e2e focus spec: tests/e2e/ — a playwright test that mounts a keyed list of text inputs (input node exists? check view vocabulary: textarea/text-input node or a minimal demo app), focuses row N's input via keyboard, clicks Insert-first, asserts document.activeElement is the SAME element with identical value + selectionStart/End. Vehicle decision at implementation: prefer a bench-demo addition (keyed-input-list) mounted through the ordinary gallery path. NARROW: playwright e2e via npx playwright test <spec>; FULL: just test-full + node benchmarks/run.mjs. FILES: benchmarks/findings-b2.md, tests/e2e/*, maybe src/examples/bench/*. COMMIT: §5.1 findings+spec commit.

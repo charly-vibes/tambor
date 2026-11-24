@@ -180,6 +180,13 @@ export const DEMOS: readonly DemoDef[] = [
     load: async () => (await import("../examples/bench/keyed-table.ts")).createKeyedTableApp(),
   },
   {
+    id: "keyed-focus-list",
+    title: "keyed-focus-list",
+    blurb:
+      "keyed focus verification — 200 keyed button rows over plain state: focus a row, then Insert first / Remove first and watch focus stay on the SAME moved element (add-keyed-dom-reconciliation §5.1 real-browser proof).",
+    load: async () => (await import("../examples/bench/keyed-focus-list.ts")).createKeyedFocusListApp(),
+  },
+  {
     id: "turtle-20k",
     title: "turtle-20k",
     blurb:

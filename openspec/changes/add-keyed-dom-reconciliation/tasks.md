@@ -108,7 +108,7 @@
 
 ## 5. Bench B2 — DOM reconciliation (roadmap-pinned for M2)
 
-- [ ] 5.0 Register the B2 baseline scenario in the bench registry
+- [x] 5.0 Register the B2 baseline scenario in the bench registry
       (tests/e2e/bench-scenarios-* pattern) and record the BASELINE
       before the mechanism lands — this task completes BEFORE task
       2.1. The baseline is TODAY'S positional-only reuse under
@@ -117,7 +117,7 @@
       `benchmarks/findings-b2.md` with findings-bz.md conventions
       (environment table, medians/p25/p75/p90, pinned commit +
       browser, raw JSON kept).
-- [ ] 5.1 After §2 lands: re-run B2 — keyed rows' DOM mutations drop
+- [x] 5.1 After §2 lands: re-run B2 — keyed rows' DOM mutations drop
       to the structural delta (moved elements moved, not rebuilt);
       focus/selection preservation verified in a REAL browser (focus
       an input inside a keyed row, insert a row above, the focused

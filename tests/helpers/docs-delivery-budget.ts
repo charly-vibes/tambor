@@ -70,13 +70,23 @@ import { staticClosure, type MetaOutputs } from "./metafile.ts";
 // handler in the shared effects chunk); re-recorded 2026-11-24 to
 // 36950 B for the §3 tidy split (matchIndexAndCount helper — same
 // code, different function shapes); re-recorded 2026-11-24 to 36951 B
-// for §4 createSelector (the selector in the shared memo chunk).
-// Re-record ritual: when the docs entry or content ships a bigger
+// for §4 createSelector (the selector in the shared memo chunk);
+// re-recorded 2026-11-24 to 37321 B for the §5.1 focus demo + orphan
+// sweep (keyed focus list entry + placeKeyedChildren/keyedPlan/
+// refreshKeyedPos helpers in the keyed render chunk); re-recorded
+// 2026-11-24 to 37558 B for the §5.2 B2 bench demo wiring (keyed-table
+// keyed rows + manual stack accumulate — keyed at the array's top
+// level, the demo the bench churn scenario drives); re-recorded
+// 2026-11-24 to 37597 B for the §5.2 churn floor: ElementLike/
+// HostElement insertBefore (domsim + domhost move semantics), the
+// keyed order pass (order-exact minimal-move placement) and the kept-
+// box same-parent append guard. Re-record
+// ritual: when the docs entry or content ships a bigger
 // measured shell — run the build, read the measured gzip the test
 // reports, update THIS ONE constant, and run tools/stamp-docs.sh if
 // the demo-dist total changed too (it stamps README/EVALUATION from
 // the same metafile).
-export const DOCS_SHELL_GZIP_CEILING_BYTES = 36951;
+export const DOCS_SHELL_GZIP_CEILING_BYTES = 37597;
 
 // The measured shell gzip for a docs entry output: the gzip of every
 // file in its static-import closure (shared chunks ride the initial

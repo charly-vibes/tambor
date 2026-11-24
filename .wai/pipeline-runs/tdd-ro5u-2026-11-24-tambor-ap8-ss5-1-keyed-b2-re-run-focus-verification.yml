@@ -1,0 +1,11 @@
+run_id: tdd-ro5u-2026-11-24-tambor-ap8-ss5-1-keyed-b2-re-run-focus-verification
+pipeline: tdd-ro5u
+topic: tambor-ap8 §5.1 keyed B2 re-run + focus verification
+created_at: '2026-11-24T15:12:01.860714580+00:00'
+current_step: 8
+approvals: {}
+epic: null
+child_issues: []
+child_runs: []
+handoff_artifact: null
+bypasses: []

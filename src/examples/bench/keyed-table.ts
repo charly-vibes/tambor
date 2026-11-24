@@ -34,11 +34,14 @@
 
 import {
   button,
+  keyed,
   label as labelNode,
   spacer,
+  translate,
   type Elem,
 } from "../../views/model.ts";
-import { horizontalLayout, verticalLayout } from "../../views/layout.ts";
+import { horizontalLayout } from "../../views/layout.ts";
+import { height, origin } from "../../views/geometry.ts";
 import type {IntentList } from "../../events/bubble.ts";
 import type { Path } from "../../effects/paths.ts";
 import { makeApp, type App } from "../../effects/dispatch.ts";
@@ -141,9 +144,18 @@ function opButton(text: string, op: (rows: readonly KeyedRow[]) => readonly Keye
   return button(text, (): IntentList => [["update", KEYED_ROWS_PATH, op]]);
 }
 
-// The drawn row: one label carrying the row's id and label.
+// The drawn row: one label carrying the row's id and label, inside a
+// mutable translate wrapper — labelNode deep-freezes its node, so the
+// per-frame y offset (written by keyedTableView's stack accumulate)
+// lands on the unfrozen wrapper; the keyed wrapper's inner element
+// stays identity-stable across frames.
 function rowLabel(row: KeyedRow): Elem {
-  return labelNode(`row ${row.id} — ${row.label}`);
+  return {
+    type: "translate",
+    x: 0,
+    y: 0,
+    drawable: labelNode(`row ${row.id} — ${row.label}`),
+  } as Elem;
 }
 
 // The memoized row label: keyed on the row object's identity, so an
@@ -181,17 +193,43 @@ export function keyedTableView(state: KeyedTableState): Elem {
     spacer(5, 0),
     opButton("Append 1k", appendRows),
   ]) as Elem;
-  const rows = (verticalLayout(state.rows.map(rowNode)) ?? []) as readonly Elem[];
-  const body = [
+  // The whole stack accumulates MANUALLY (the keyed-focus-list pattern):
+  // the keyed reconcile plan (add-keyed-dom-reconciliation §2) only sees
+  // keyed() siblings as DIRECT array children — a translate wrapper
+  // (what verticalLayout would wrap every row in) hides the key and
+  // every churn op falls back to M1's positional rule (the B2
+  // baseline's ~3k mutations/frame). Control bands stay unkeyed (M1's
+  // positional rule); rows are keyed by id with the offset written onto
+  // the memoized node so the keyed wrapper's inner element stays
+  // identity-stable across frames.
+  const items: readonly Elem[] = [
     band1,
     spacer(0, 4),
     band2,
     spacer(0, 4),
     band3,
     spacer(0, 10),
-    ...rows,
-  ] as readonly Elem[];
-  return (verticalLayout(body) ?? band1) as Elem;
+  ];
+  const children: Elem[] = [];
+  let offset = 0;
+  for (const [i, item] of items.entries()) {
+    if (i === 0) {
+      children.push(item);
+    } else {
+      children.push(translate(0, offset, item));
+    }
+    offset += height(item) + origin(item)[1] + 1;
+  }
+  for (const row of state.rows) {
+    const node = rowNode(row);
+    (node as { y: number }).y = offset;
+    children.push(keyed(row.id, node));
+    // next y = this y + height + gap: origin(node)[1] is the y just
+    // set (translate origin = its own offset), so it must NOT re-enter
+    // the accumulate
+    offset += height(node) + 1;
+  }
+  return children;
 }
 
 // The bench app: the ordinary registry-aware makeApp mount, the same

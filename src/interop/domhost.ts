@@ -66,6 +66,7 @@ export interface HostElement {
     contains(name: string): boolean;
   };
   appendChild(child: HostElement): HostElement;
+  insertBefore(child: HostElement, ref: HostElement | null): HostElement;
   removeChild(child: HostElement): HostElement;
   childNodes: Iterable<HostElement>;
   textContent: string;
@@ -143,6 +144,9 @@ export class RealDomElement {
   readonly attrs: Record<string, string | number>;
   readonly style: Record<string, string>;
   readonly children: RealDomElement[] = [];
+  // the unique current parent, maintained by append/remove — the keyed
+  // splice's adopt-in-place guard reads it (dom-reuse.ts adoptOrAppend)
+  private parentRef: RealDomElement | null = null;
   rect: SimRect = { x: 0, y: 0, width: 0, height: 0 };
   readonly host: HostElement;
   private readonly byType = new Map<string, ShimListener[]>();
@@ -211,9 +215,53 @@ export class RealDomElement {
         this.host.removeChild(existing);
       }
     }
+    // SimElement move semantics (the keyed splice reorders siblings):
+    // a real-DOM appendChild MOVES an existing child to the end, so the
+    // mirror must drop the child's old slot before recording the append
+    // — otherwise children[] double-counts moved rows and positional
+    // bookkeeping (the keyed orphan sweep) reads phantom entries. The
+    // same move detaches the child from a DIFFERENT mirrored parent.
+    const at = this.children.indexOf(child);
+    if (at >= 0) this.children.splice(at, 1);
+    if (child.parentRef !== null && child.parentRef !== this) {
+      const old = child.parentRef.children.indexOf(child);
+      if (old >= 0) child.parentRef.children.splice(old, 1);
+    }
+    child.parentRef = this;
     this.children.push(child);
     this.host.appendChild(child.host);
     return child;
+  }
+
+  removeChild(child: RealDomElement): RealDomElement {
+    const i = this.children.indexOf(child);
+    if (i >= 0) this.children.splice(i, 1);
+    if (child.parentRef === this) child.parentRef = null;
+    this.host.removeChild(child.host);
+    return child;
+  }
+
+  insertBefore(child: RealDomElement, ref: RealDomElement | null): RealDomElement {
+    // move semantics mirror appendChild: detach from the old slot (here
+    // or from another mirrored parent) before recording the insert
+    if (child.parentRef !== null && child.parentRef !== this) {
+      child.parentRef.removeChild(child);
+    } else {
+      const here = this.children.indexOf(child);
+      if (here >= 0) this.children.splice(here, 1);
+    }
+    const at =
+      ref === null ? this.children.length : this.children.indexOf(ref);
+    if (at < 0) this.children.push(child);
+    else this.children.splice(at, 0, child);
+    child.parentRef = this;
+    this.host.insertBefore(child.host, ref === null ? null : ref.host);
+    return child;
+  }
+
+  // the unique current parent (see parentRef above)
+  get parentElement(): RealDomElement | null {
+    return this.parentRef;
   }
 
   setAttribute(name: string, value: string | number): this {

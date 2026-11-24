@@ -51,4 +51,48 @@ pinned state-equivalence contract stay green in both runs.
 
 ## Post-keying verdict (task 5.1 — after §2 lands)
 
-Recorded after the keyed re-run at the same protocol.
+Recorded after the keyed re-run at the same protocol: same machine, Chrome
+156.0.8078.4, CDP CPU ×4, 15 runs × 8 ops (+1 untimed warmup op), commit
+`7726fc7fc` (§1 keyed declaration + §2 painter splice + §4 selector + §5.1
+container identity + §5.2 bench wiring landed).
+
+| metric | baseline (pre-keying) | keyed |
+|---|---|---|
+| wall-clock median | 259.22 ms/op | 231.52 ms/op |
+| mutations: Swap Rows | 3 018 | **19** |
+| mutations: Insert first | 3 023 | **21** |
+| mutations: Remove 10 | 3 023 | **19** |
+| mutations: Replace 10% | 3 020 | **216** |
+| DOM mutations per op (median) | 3 022 | **21** |
+
+Target met: every churn op now measures the structural delta — a swap moves
+the 2 displaced row elements (the other 17 nodes are the three unkeyed
+control-band buttons/spacers, rebuilt per frame by M1's positional rule by
+design), an insert-first builds 1 fresh row, a remove drops the removed
+rows, and the Replace 10% control rebuilds only the ~100 relabelled rows
+plus the control bands. Focus/selection preservation is verified separately
+by `tests/e2e/keyed-focus.spec.ts` (§5.1).
+
+Two protocol fixes landed with the measurement (both in
+`tests/e2e/bench-scenarios-b2.ts` / harness, not the mechanism):
+
+1. **The scenario clicks `drawnOps`, not `pointsOf`.** "Replace 10%" is a
+   band's second button; the in-process replay point for a non-first
+   button falls inside the drawn first button's box (tambor-54j.17), so
+   the replay-coordinate click fired **Build 1000** instead — every
+   replace sample measured a full ~2 019-element rebuild (2 els × 1 000
+   rows + bands) that has nothing to do with the keyed mechanism. The
+   first keyed re-run recorded this artifact (replace = 2 019, median
+   2022); `drawnOps` clicks the drawn button's live DOM box (drive.ts
+   `clickDrawnText`, tambor-54j.13/.17 ground truth).
+2. **The kept keyed box no longer re-appends to a same parent.** The box
+   is a persistent child of the draw target; re-appending it every frame
+   fired a childList move whose re-added subtree the expanded-mutation
+   counter counts again (~1 005 elements/op even with splices intact).
+   The box now adopts in place (`adoptOrAppend` same-parent guard) and
+   the keyed container's order pass restores exact childList order with
+   `insertBefore` moves only where the order actually changed.
+
+Order-exactness stays contractual: the §2 suite pins that a keyed draw
+builds identically to the unkeyed shape (same childList order), so the
+placement pass is order-exact minimal-move, not append-only.

@@ -287,7 +287,15 @@ export function keyed(key: string | number, drawable: AnyDraw): KeyedDraw {
     throw new TypeError(
       "keyed: already-keyed drawables cannot be re-keyed — key the row's node, not a wrapper",
     );
-  return deepFreeze({ type: "keyed", key, drawables: [drawable] });
+  // shallow freeze: the WRAPPER is fresh per call and immutable, but the
+  // CALLER's node keeps its own mutability contract — corpus constructors
+  // already deep-freeze their nodes, and an app-owned node (the memoized
+  // keyed row whose position the view re-skins per frame) must stay
+  // assignable or the keyed splice cannot move it (§5.1 focus demo).
+  const wrapper = { type: "keyed", key, drawables: [drawable] } as KeyedDraw;
+  Object.freeze(wrapper);
+  Object.freeze(wrapper.drawables);
+  return wrapper;
 }
 
 // Look through the keyed wrapper to the drawable that actually builds:

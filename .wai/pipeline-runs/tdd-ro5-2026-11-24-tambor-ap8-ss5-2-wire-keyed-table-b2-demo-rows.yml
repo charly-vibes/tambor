@@ -1,0 +1,11 @@
+run_id: tdd-ro5-2026-11-24-tambor-ap8-ss5-2-wire-keyed-table-b2-demo-rows
+pipeline: tdd-ro5
+topic: tambor-ap8 ss5.2 wire keyed-table B2 demo rows
+created_at: '2026-11-24T16:18:19.724384538+00:00'
+current_step: 3
+approvals: {}
+epic: null
+child_issues: []
+child_runs: []
+handoff_artifact: null
+bypasses: []

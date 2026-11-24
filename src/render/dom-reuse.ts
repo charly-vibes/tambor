@@ -62,6 +62,9 @@ export interface ReuseCtx {
   keyedNext: Map<string, KeyedRecord>;
   keyedPath: readonly number[];
   keyedEnterIndex: number;
+  // containers a matching keyed path KEPT this frame (§5.1): the draw
+  // swap removes the previous frame's top-level children except these
+  keptContainers: Set<ElementLike>;
 }
 
 // One keyed container's previous children (add-keyed-dom-reconciliation
@@ -70,6 +73,11 @@ export interface ReuseCtx {
 // (a map would collapse duplicate keys, which degrade by scan order).
 export interface KeyedRecord {
   readonly children: readonly AnyDraw[];
+  // the container element this record built (§5.1): a matching path
+  // REUSES the box, so keyed splices reorder within one parent —
+  // re-parenting a focused element drops focus (Chrome), reordering
+  // in place keeps it; undefined for sim-built records
+  readonly box?: ElementLike;
 }
 
 // One child's built elements: its position in the parent's child list
@@ -78,6 +86,20 @@ export interface KeyedRecord {
 export interface BuiltRange {
   readonly index: number;
   readonly els: readonly ElementLike[];
+}
+
+// Splice placement: appendChild MOVES an already-attached child (the
+// move-mirror contract) — re-appending every spliced element every
+// frame fires a childList mutation per element with no visual effect.
+// The keyed container's placement pass (placeKeyedChildren's order
+// pass) restores exact childList order with minimal moves afterward;
+// in a fresh container (buildChildrenOf's new div) the parent check
+// misses and the append runs as before. Hosts without a parentElement
+// reading fall back to the append (always-move) behavior.
+function adoptOrAppend(parent: ElementLike, el: ElementLike): void {
+  const current = (el as { parentElement?: ElementLike | null }).parentElement;
+  if (current === parent) return;
+  parent.appendChild(el);
 }
 
 // Build one child of a sequence with per-child identity reuse
@@ -99,27 +121,31 @@ export function buildChildWithReuse(
   parent: ElementLike,
   index: number,
   keyedPrevInner?: AnyDraw,
-): void {
+): readonly ElementLike[] {
   // the index-path segment this child occupies (an array child's build
   // branch reads it to derive its own container path)
   ctx.keyedEnterIndex = index;
   const inner = keyedInner(child);
-  if (keyedPrevInner !== undefined && spliceKeyed(ctx, keyedPrevInner, inner, parent))
-    return;
+  if (keyedPrevInner !== undefined) {
+    const keyed = spliceKeyed(ctx, keyedPrevInner, inner, parent);
+      if (keyed !== undefined) return keyed.els;
+  }
   const prev = ctx.reusePrev?.get(child as object);
   if (
     prev !== undefined &&
     prev.index === index &&
     !ctx.reuseUsed.has(prev)
   ) {
-    for (const el of prev.els) parent.appendChild(el);
+    for (const el of prev.els) adoptOrAppend(parent, el);
     ctx.reuseUsed.add(prev);
     ctx.reuseNext.set(inner as object, prev);
-    return;
+    return prev.els;
   }
   const start = parent.children.length;
   ctx.build(child, parent);
+  const els = parent.children.slice(start);
   recordRange(ctx, child, inner, index, parent, start);
+  return els;
 }
 
 // Record a freshly built child's range: under the CHILD object (the
@@ -157,14 +183,28 @@ function spliceKeyed(
   keyedPrevInner: AnyDraw,
   inner: AnyDraw,
   parent: ElementLike,
-): boolean {
-  if (ctx.reusePrev === undefined) return false;
+): BuiltRange | undefined {
+  if (ctx.reusePrev === undefined) return undefined;
   const keyed = ctx.reusePrev.get(keyedPrevInner as object);
-  if (keyed === undefined || ctx.reuseUsed.has(keyed)) return false;
-  for (const el of keyed.els) parent.appendChild(el);
+  if (keyed === undefined || ctx.reuseUsed.has(keyed)) return undefined;
+  for (const el of keyed.els) adoptOrAppend(parent, el);
+  refreshKeyedPos(keyed.els[0], inner);
   ctx.reuseUsed.add(keyed);
   ctx.reuseNext.set(inner as object, keyed);
-  return true;
+  return keyed;
+}
+
+// The donated wrapper keeps the PREVIOUS frame's geometry — a keyed row
+// that shifted position (a row inserted above it) would land at its old
+// y. The keyed contract (nodes.ts) keys "the row's translate node", so
+// the fresh inner carries the new coordinates: re-skin the donated
+// wrapper's position from them (the subtree is untouched — identity is
+// the whole point).
+function refreshKeyedPos(el: ElementLike | undefined, inner: AnyDraw): void {
+  if (el === undefined || inner === null || typeof inner !== "object") return;
+  const pos = inner as { x?: number; y?: number };
+  el.style["left"] = `${pos.x ?? 0}px`;
+  el.style["top"] = `${pos.y ?? 0}px`;
 }
 
 // The sequence/array build branch (moved from dom.ts for the keyed
@@ -180,33 +220,78 @@ export function buildArrayChildren(
   // a bare sequence superimposes its children at the current origin
   // (canvas semantics) — the box anchors them (tambor-0rp); atOrigin
   // semantics (dom-painters), inlined here to keep the painter split
-  // acyclic.
-  const box = ctx.make("div");
+  // acyclic. The box itself may be the previous frame's container (see
+  // the container-identity note at the keyedPath push below).
+  ctx.keyedPath = [...ctx.keyedPath, ctx.keyedEnterIndex];
+  const pathKey = ctx.keyedPath.join(".");
+  const record = ctx.keyedPrev?.get(pathKey);
+  // container identity (§5.1): a matching path keeps the SAME box so
+  // splices reorder within one parent — re-parenting the focused
+  // element drops focus; a fresh box (first frame, gate closed) builds
+  // everything fresh as before
+  const prevBox = record?.box;
+  const box = prevBox !== undefined ? prevBox : ctx.make("div");
+  if (prevBox !== undefined) ctx.keptContainers.add(box);
   box.style["position"] = "absolute";
   box.style["left"] = "0px";
   box.style["top"] = "0px";
-  // push this container's index-path segment, plan against the
-  // previous record (undefined under the reuse gate = positional
-  // rules only), record this frame's children for the swap
-  ctx.keyedPath = [...ctx.keyedPath, ctx.keyedEnterIndex];
-  const record = ctx.keyedPrev?.get(ctx.keyedPath.join("."));
-  const prevInners =
-    record === undefined
-      ? children.map((): AnyDraw | undefined => undefined)
-      : reconcile(record.children, children).map(
-          (step): AnyDraw | undefined => {
-            if (step.op !== "reuse") return undefined;
-            // a null inner (keyed(k, null)) has no range to donate —
-            // the child falls through to the positional/fresh rules
-            const prevInner = keyedInner(record.children[step.prevIndex]!);
-            return prevInner === null ? undefined : prevInner;
-          },
-        );
-  ctx.keyedNext.set(ctx.keyedPath.join("."), { children });
-  for (let i = 0; i < children.length; i++)
-    buildChildWithReuse(ctx, children[i]!, box, i, prevInners[i]);
-  parent.appendChild(box);
+  const prevInners = keyedPlan(record, children);
+  ctx.keyedNext.set(pathKey, { children, box });
+  placeKeyedChildren(ctx, children, box, prevInners);
+  adoptOrAppend(parent, box);
   ctx.keyedPath = ctx.keyedPath.slice(0, -1);
+}
+
+// The per-container placement: build/splice each child into the box,
+// then drop this frame's ORPHANS (state-removed rows nobody donates —
+// the persistent box would otherwise keep them visible).
+function placeKeyedChildren(
+  ctx: ReuseCtx,
+  children: readonly AnyDraw[],
+  box: ElementLike,
+  prevInners: readonly (AnyDraw | undefined)[],
+): void {
+  const placed = new Set<ElementLike>();
+  const placedOrder: ElementLike[] = [];
+  for (let i = 0; i < children.length; i++)
+    for (const el of buildChildWithReuse(ctx, children[i]!, box, i, prevInners[i])) {
+      placed.add(el);
+      placedOrder.push(el);
+    }
+  // identity sweep, not a tail-count: a KEPT nested keyed box (§5.1)
+  // moved within this box adds nothing new to slice, so placed alone
+  // under-counts — kept containers are never orphans by definition
+  for (const el of [...box.children])
+    if (!placed.has(el) && !ctx.keptContainers.has(el)) box.removeChild(el);
+  // order pass: childList order must equal the view order (the §2 pin —
+  // a keyed draw builds identically to the unkeyed shape) while moving
+  // only misplaced elements (the B2 target: a swap moves 2, an
+  // insert-first inserts 1 and moves 0 — insertBefore shifts the tail
+  // without touching it). The box is persistent (container identity),
+  // so an element already at its target index is left untouched and
+  // untouched rows fire no childList mutation.
+  for (let i = 0; i < placedOrder.length; i++) {
+    const el = placedOrder[i]!;
+    if (box.children[i] === el) continue;
+    box.insertBefore(el, box.children[i] ?? null);
+  }
+}
+
+// The keyed plan for one container: the previous children's inner
+// Elems per reused index (undefined elsewhere — build steps and
+// null-inner keyed wrappers donate nothing).
+function keyedPlan(
+  record: KeyedRecord | undefined,
+  children: readonly AnyDraw[],
+): readonly (AnyDraw | undefined)[] {
+  if (record === undefined) return children.map(() => undefined);
+  return reconcile(record.children, children).map((step) => {
+    if (step.op !== "reuse") return undefined;
+    // a null inner (keyed(k, null)) has no range to donate — the
+    // child falls through to the positional/fresh rules
+    const prevInner = keyedInner(record.children[step.prevIndex]!);
+    return prevInner === null ? undefined : prevInner;
+  });
 }
 
 // The pure keyed reconcile plan (add-keyed-dom-reconciliation §1): given
