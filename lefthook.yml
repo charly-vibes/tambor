@@ -43,8 +43,7 @@ pre-push:
   commands:
 # sad:managed:start
     sad-check:
-      # Timing wrapped for the gate-cost distribution (tambor-j44 contract).
-      run: tools/gate-timing.sh sad-check sad check
+      run: sad check
 # sad:managed:end
   jobs:
     - name: espectacular-contracts

@@ -86,13 +86,32 @@ describe("gate-timing.sh", () => {
 });
 
 describe("lefthook pre-push wiring", () => {
+  // sad's managed blocks are tool-owned: `sad hooks install`/`uninstall` match
+  // their content exactly, so any hand-edit inside them (e.g. adding the
+  // gate-timing wrapper) makes the next install inject a duplicate block that
+  // lefthook cannot parse (tambor-ufk). Their run lines are therefore exempt
+  // from the timing contract; sad's gate cost (~0.3s) is intentionally not
+  // logged to .gate-timing.log.
+  const stripSadManaged = (text: string): string =>
+    text.replace(/^# sad:managed:start\n[\s\S]*?^# sad:managed:end\n?/gm, "");
+
   it("p_every_push_gate_times_itself: every pre-push job runs through the timing wrapper", () => {
     const yml = readFileSync(path.resolve("lefthook.yml"), "utf8");
     expect(yml).toContain("\npre-push:");
-    const prePush = yml.split("\npre-push:")[1] ?? "";
+    const prePush = stripSadManaged(yml.split("\npre-push:")[1] ?? "");
     // every job's `run:` in the pre-push block goes through gate-timing.sh
     const runs = [...prePush.matchAll(/^\s+run:\s*(.+)$/gm)].map((m) => m[1]);
     expect(runs.length).toBeGreaterThan(0);
     for (const r of runs) expect(r).toMatch(/tools\/gate-timing\.sh/);
+  });
+
+  it("p_sad_managed_block_is_tool_exact: sad managed blocks keep the installer-exact run line", () => {
+    const yml = readFileSync(path.resolve("lefthook.yml"), "utf8");
+    const blocks = [...yml.matchAll(/^# sad:managed:start\n([\s\S]*?)^# sad:managed:end/gm)];
+    expect(blocks.length).toBeGreaterThanOrEqual(2);
+    for (const [, body] of blocks) {
+      const runLines = [...body.matchAll(/^\s+run:\s*(.+)$/gm)].map((m) => m[1]);
+      expect(runLines).toEqual(["sad check"]);
+    }
   });
 });
